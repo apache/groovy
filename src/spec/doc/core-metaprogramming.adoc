@@ -85,6 +85,10 @@ else (no)
 endif
 ....
 
+A method call or property access without an explicit receiver inside a closure first selects its receiver from the
+closure's owner and delegate, as described in the
+link:core-closures.html#closure-resolution-rules[closure resolution rules]. The steps above then apply to that receiver.
+
 === GroovyObject interface
 
 gapi:groovy.lang.GroovyObject[] is the main interface in Groovy as the `Object` class is in Java. `GroovyObject` has a default implementation in the gapi:groovy.lang.GroovyObjectSupport[] class and it is responsible to transfer invocation to the gapi:groovy.lang.MetaClass[] object. The `GroovyObject` source looks like this:
@@ -882,6 +886,17 @@ separated.
 * _staticExtensionClasses_: the list of extension helper classes for
 static methods. You can provide several classes, given that they are
 comma separated.
+
+An optional fifth key, _requiredClasses_, lists classes (comma separated)
+that must be loadable before the extension helper classes are loaded,
+typically a class from an optional dependency that the extension methods'
+signatures mention. While one of them is missing, Groovy defers the module
+instead of failing to load it, and registers the module as soon as a later
+`@Grab` adds the missing dependency to the class loader that holds the
+module (for a module in the distribution's `lib` directory, that is the
+launcher's root loader, so the grab needs
+`@GrabConfig(systemClassLoader=true)`). The runtime and the static type
+checker both honour the key.
 
 Note that it is not required for a module to define both static helpers
 and instance helpers, and that you may add several classes to a single

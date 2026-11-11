@@ -646,4 +646,39 @@ final class ScriptToTreeNodeAdapterTest {
         assert methodNodeTest
     }
 
+    @Test // GEP-19
+    void testPatternExpression() {
+        def script = '''
+            def describe(o) {
+                switch (o) {
+                    case Integer i when i > 0 -> 'positive'
+                    default                   -> 'other'
+                }
+            }
+        '''
+        // before lowering the node shows the pattern, and its children are what was written
+        assertTreeStructure(script, CompilePhase.CANONICALIZATION, [
+                startsWith('ClassNode - script'),
+                eq('Methods'),
+                startsWith('MethodNode - describe'),
+                eq('Body'),
+                eq('BlockStatement - (1)'),
+                startsWith('SwitchStatement'),
+                startsWith('CaseStatement'),
+                eq('Pattern - java.lang.Integer i when (i > 0)'),
+                eq('Binary - (i > 0)'),
+        ], createAdapter(true, true, true))
+        // once lowered, the derived test on the switch subject is what the children show
+        assertTreeStructure(script, CompilePhase.INSTRUCTION_SELECTION, [
+                startsWith('ClassNode - script'),
+                eq('Methods'),
+                startsWith('MethodNode - describe'),
+                eq('Body'),
+                eq('BlockStatement - (1)'),
+                startsWith('SwitchStatement'),
+                startsWith('CaseStatement'),
+                eq('Pattern - java.lang.Integer i when (i > 0)'),
+                startsWith('Binary - (__$$pv'),
+        ], createAdapter(true, true, true))
+    }
 }

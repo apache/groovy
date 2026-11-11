@@ -145,6 +145,7 @@ public class StaticInvocationWriter extends InvocationWriter {
             super.writeInvokeConstructor(call);
             return;
         }
+        if (call.isUsingAnonymousInnerClass()) RuntimePackageCheck.checkAnonymousClass(controller, call);
         if (writeAICCall(call)) return;
         ConstructorNode cn;
         if (mn instanceof ConstructorNode) {
@@ -155,6 +156,7 @@ public class StaticInvocationWriter extends InvocationWriter {
         }
         ClassNode declaringClass = cn.getDeclaringClass();
         ClassNode enclosingClass = controller.getClassNode();
+        RuntimePackageCheck.checkConstructor(controller, cn, false, call);
         List<Expression> argList = call.getArguments() instanceof TupleExpression
                 ? ((TupleExpression) call.getArguments()).getExpressions() : List.of(call.getArguments());
         if (!AsmClassGenerator.isMemberDirectlyAccessible(cn.getModifiers(), declaringClass, enclosingClass)) {
@@ -220,6 +222,7 @@ public class StaticInvocationWriter extends InvocationWriter {
             cn = new ConstructorNode(mn.getModifiers(), mn.getParameters(), mn.getExceptions(), mn.getCode());
             cn.setDeclaringClass(mn.getDeclaringClass());
         }
+        RuntimePackageCheck.checkConstructor(controller, cn, true, call);
         // load "this"
         controller.getMethodVisitor().visitVarInsn(ALOAD, 0);
         String ownerDescriptor = BytecodeHelper.getClassInternalName(cn.getDeclaringClass());
@@ -370,6 +373,8 @@ public class StaticInvocationWriter extends InvocationWriter {
         if (StaticTypeCheckingSupport.isClassClassNodeWrappingConcreteType(receiverType) && !ClassHelper.isClassType(declaringClass)) {
             receiverType = receiverType.getGenericsTypes()[0].getType(); // GROOVY-11694
         }
+
+        RuntimePackageCheck.checkMethod(controller, target, receiver == null || isSuperExpression(receiver) ? null : receiverType, currentCall != null ? currentCall : receiver != null ? receiver : args);
 
         if (AsmClassGenerator.isMemberDirectlyAccessible(target.getModifiers(), declaringClass, enclosingClass)
                 && !(target.isProtected() && !inSamePackage(declaringClass, enclosingClass) && !isSubtype(receiverType, enclosingClass))) { // GROOVY-7325
@@ -656,7 +661,12 @@ public class StaticInvocationWriter extends InvocationWriter {
             cce.putNodeMetaData(StaticTypesMarker.DIRECT_METHOD_CALL_TARGET,
                     StaticCompilationVisitor.ARRAYLIST_CONSTRUCTOR);
             var result = new TemporaryVariableExpression(cce);
-            if (produceResultList) result.visit(controller.getAcg());
+            if (produceResultList) {
+                // keep the list only in its slot while looping: a loop entered with
+                // a non-empty operand stack cannot be compiled on-stack by HotSpot
+                result.visit(controller.getAcg());
+                operandStack.pop();
+            }
 
             ClassNode elementType = StaticTypeCheckingVisitor.inferLoopElementType(controller.getTypeChooser().resolveType(receiver, controller.getClassNode()));
             Parameter element = new Parameter(elementType, "for$it$" + labelCounter.incrementAndGet());
@@ -700,6 +710,7 @@ public class StaticInvocationWriter extends InvocationWriter {
             loop.setVariableScope(varScope); // GROOVY-11816
             loop.visit(controller.getAcg());
             if (produceResultList) {
+                result.visit(controller.getAcg());
                 result.remove(controller);
             }
             // end of if/else

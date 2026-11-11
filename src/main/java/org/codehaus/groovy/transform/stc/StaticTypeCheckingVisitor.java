@@ -29,6 +29,11 @@ import groovy.transform.TypeCheckingMode;
 import groovy.transform.stc.ClosureParams;
 import groovy.transform.stc.ClosureSignatureConflictResolver;
 import groovy.transform.stc.ClosureSignatureHint;
+import org.apache.groovy.ast.pattern.MatchPattern;
+import org.apache.groovy.ast.pattern.MatchPattern.BindingPattern;
+import org.apache.groovy.ast.pattern.MatchPattern.ListPattern;
+import org.apache.groovy.ast.pattern.MatchPattern.MapPattern;
+import org.apache.groovy.ast.pattern.MatchPattern.RecordPattern;
 import org.apache.groovy.util.SystemUtil;
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.ast.ASTNode;
@@ -80,6 +85,7 @@ import org.codehaus.groovy.ast.expr.MethodCallExpression;
 import org.codehaus.groovy.ast.expr.MethodPointerExpression;
 import org.codehaus.groovy.ast.expr.MethodReferenceExpression;
 import org.codehaus.groovy.ast.expr.NotExpression;
+import org.codehaus.groovy.ast.expr.PatternExpression;
 import org.codehaus.groovy.ast.expr.PostfixExpression;
 import org.codehaus.groovy.ast.expr.PrefixExpression;
 import org.codehaus.groovy.ast.expr.PropertyExpression;
@@ -132,8 +138,10 @@ import java.lang.reflect.Modifier;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.BitSet;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Deque;
 import java.util.EnumMap;
 import java.util.Enumeration;
 import java.util.HashMap;
@@ -144,20 +152,33 @@ import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.NavigableMap;
+import java.util.NavigableSet;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Queue;
 import java.util.Set;
+import java.util.SortedMap;
+import java.util.SortedSet;
 import java.util.StringJoiner;
+import java.util.TreeMap;
 import java.util.TreeSet;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.BiPredicate;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.IntPredicate;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import static org.apache.groovy.ast.tools.ClassNodeUtils.getNestHost;
 import static org.apache.groovy.ast.tools.ClassNodeUtils.hasNoEnclosingInstance;
+import static org.apache.groovy.ast.tools.ExpressionUtils.isThisExpression;
 import static org.apache.groovy.ast.tools.MethodNodeUtils.withDefaultArgumentMethods;
 import static org.apache.groovy.ast.tools.SwitchExpressionUtils.enumConstantName;
 import static org.apache.groovy.ast.tools.SwitchExpressionUtils.intConstant;
@@ -165,6 +186,9 @@ import static org.apache.groovy.ast.tools.SwitchExpressionUtils.isIntegralType;
 import static org.apache.groovy.ast.tools.SwitchExpressionUtils.isOptimizedIntSwitch;
 import static org.apache.groovy.ast.tools.SwitchExpressionUtils.stringConstant;
 import static org.apache.groovy.ast.tools.SwitchExpressionUtils.unwrapEnumType;
+import static org.apache.groovy.ast.tools.SwitchPatternUtils.getElementsVariable;
+import static org.apache.groovy.ast.tools.SwitchPatternUtils.getSubjectVariable;
+import static org.apache.groovy.ast.tools.SwitchPatternUtils.isPatternArm;
 import static org.apache.groovy.util.BeanUtils.capitalize;
 import static org.apache.groovy.util.BeanUtils.decapitalize;
 import static org.codehaus.groovy.ast.ClassHelper.AUTOCLOSEABLE_TYPE;
@@ -307,6 +331,8 @@ import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.boundU
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.checkCompatibleAssignmentTypes;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.checkPossibleLossOfPrecision;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.chooseBestMethod;
+import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.concreteArgumentContainsWildcard;
+import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.typeVariableBoundEscapes;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.evaluateExpression;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.extractGenericsConnections;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.extractGenericsParameterMapOfThis;
@@ -339,6 +365,7 @@ import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.isTrai
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.isUsingGenericsOrIsArrayUsingGenerics;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.isWildcardLeftHandSide;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.missesGenericsTypes;
+import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.prettyPrintCapture;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.prettyPrintType;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.prettyPrintTypeName;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.resolveClassNodeGenerics;
@@ -414,6 +441,48 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     protected static final ClassNode LINKEDHASHMAP_CLASSNODE = LinkedHashMap_TYPE;
     /** Cached {@link Enumeration} type. */
     protected static final ClassNode ENUMERATION_TYPE = ClassHelper.make(Enumeration.class);
+
+    // interface targets of a list or map literal and the default implementation the runtime cast
+    // creates for each; keep in step with DefaultTypeTransformation's table
+    private static final Map<String, ClassNode> LIST_LITERAL_DEFAULTS = Map.of(
+        SortedSet.class.getName(), ClassHelper.make(TreeSet.class),
+        NavigableSet.class.getName(), ClassHelper.make(TreeSet.class),
+        Queue.class.getName(), ClassHelper.make(LinkedList.class),
+        Deque.class.getName(), ClassHelper.make(LinkedList.class),
+        BlockingQueue.class.getName(), ClassHelper.make(LinkedBlockingQueue.class));
+    private static final Map<String, ClassNode> MAP_LITERAL_DEFAULTS = Map.of(
+        SortedMap.class.getName(), ClassHelper.make(TreeMap.class),
+        NavigableMap.class.getName(), ClassHelper.make(TreeMap.class),
+        ConcurrentMap.class.getName(), ClassHelper.make(ConcurrentHashMap.class));
+
+    /**
+     * A concrete collection class that a list literal initializes through its copy constructor,
+     * or else its no-arg constructor followed by addAll, as the runtime cast does, rather than
+     * by passing the elements as constructor arguments.
+     */
+    private static boolean isCopyableCollectionType(final ClassNode type) {
+        if (type.isArray() || type.isInterface() || type.isAbstract()
+                || !implementsInterfaceOrIsSubclassOf(type, Collection_TYPE)) {
+            return false;
+        }
+        List<ConstructorNode> constructors = type.getDeclaredConstructors();
+        if (constructors.isEmpty()) return true; // default constructor
+        for (ConstructorNode constructor : constructors) {
+            if (constructor.isPrivate()) continue;
+            Parameter[] parameters = constructor.getParameters();
+            if (parameters.length == 0 || (parameters.length == 1
+                    && implementsInterfaceOrIsSubclassOf(ArrayList_TYPE, parameters[0].getType()))) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static ClassNode literalDefaultImplementation(final ClassNode target, final Expression literal) {
+        if (literal instanceof ListExpression) return LIST_LITERAL_DEFAULTS.get(target.redirect().getName());
+        if (literal instanceof MapExpression) return MAP_LITERAL_DEFAULTS.get(target.redirect().getName());
+        return null;
+    }
     /** Cached {@link CharSequence} type (GROOVY-9848: membership operator dispatch). */
     protected static final ClassNode CHAR_SEQUENCE_TYPE = ClassHelper.make(CharSequence.class);
     /** Cached {@link Map.Entry} type. */
@@ -471,6 +540,10 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     protected DefaultTypeCheckingExtension extension;
     /** Mutable state for the current type-checking run. */
     protected TypeCheckingContext typeCheckingContext;
+    /** GEP-19: the record component bindings of the pattern being checked, or {@code null}. */
+    private PatternBindingTypes patternBindingTypes;
+    /** GEP-19: the subject variable of the pattern arm being checked, whose tests are checked with the arm. */
+    private Parameter patternSubject;
 
     /**
      * Creates a static type-checking visitor for the supplied source and class.
@@ -805,7 +878,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     vexp.putNodeMetaData(INFERRED_TYPE, temporaryType);
                 }
                 if (vexp.getAccessedVariable() != accessedVariable) { // GROOVY-11360: field hidden by dynamic property
-                    if (vexp.getLineNumber() > 0 && !typeCheckingContext.reportedErrors.contains(((long) vexp.getLineNumber()) << 16 + vexp.getColumnNumber())) {
+                    if (vexp.getLineNumber() > 0 && !typeCheckingContext.reportedErrors.contains((((long) vexp.getLineNumber()) << 32) + vexp.getColumnNumber())) {
                         String text = "The field: " + accessedVariable.getName() + " of class: " + prettyPrintTypeName(((FieldNode) accessedVariable).getDeclaringClass()) +
                                                 " is hidden by a dynamic property. A qualifier is required to reference it.";
                         Token token = new Token(0, name, vexp.getLineNumber(), vexp.getColumnNumber()); // ASTNode to CSTNode
@@ -843,6 +916,9 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             ClassNode inferredType = getInferredTypeFromTempInfo(localVariable, localVariable.getNodeMetaData(INFERRED_TYPE));
             if (inferredType != null && !isObjectType(inferredType) && !inferredType.equals(isTraitSelf(vexp))) {
                 vexp.putNodeMetaData(INFERRED_TYPE, inferredType);
+            } else if (vexp != localVariable) {
+                // a reference node may be shared (e.g. by a transform) across branches; drop any type narrowed elsewhere
+                vexp.removeNodeMetaData(INFERRED_TYPE);
             }
         }
     }
@@ -920,6 +996,12 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         if (inaccessibleField != null) { // GROOVY-12314: the property exists but Java access rules reject it
             addStaticTypeError("Cannot access field: " + inaccessibleField.getName() + " of class: " + prettyPrintTypeName(inaccessibleField.getDeclaringClass())
                     + " from class: " + prettyPrintTypeName(typeCheckingContext.getEnclosingClassNode()), expression.getLineNumber() > 0 ? expression : expression.getProperty());
+            return;
+        }
+        if (expression.getPropertyAsString() == null) {
+            addStaticTypeError(expression instanceof AttributeExpression
+                    ? "Cannot resolve dynamic attribute name at compile time"
+                    : "Cannot resolve dynamic property name at compile time; consider using subscript notation, e.g. receiver[name], instead", expression.getProperty());
             return;
         }
 
@@ -1047,7 +1129,12 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
                 // the write of a final field by an operator other than ?= or ??= blocks its flow type
                 if (op != ELVIS_EQUAL && op != NULL_COALESCE_EQUAL) blockFinalFieldFlow(leftExpression);
-                visitBinaryExpression(assignX(leftExpression, rightExpression, expression));
+                BinaryExpression assignment = assignX(leftExpression, rightExpression, expression);
+                visitBinaryExpression(assignment);
+                // GROOVY-12535: a map value converted for the assignment is converted for the compound write too
+                if (assignment.getRightExpression() instanceof CastExpression cast && cast.getNodeMetaData(MAP_VALUE_CONVERSION) != null) {
+                    convertMapValue(expression, cast.getType());
+                }
                 // GROOVY-12524: the write of leftExpression records the setter; keep the getter too
                 rememberExtensionPropertyGetter(leftExpression, readClone);
                 expression.copyNodeMetaData(rightExpression);
@@ -1074,6 +1161,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 }
                 if (op != LOGICAL_OR) {
                     rightExpression.visit(this);
+                    if (op == EQUAL) typePatternBinding(expression, leftExpression, rightExpression); // GEP-19
                 } else {
                     var lhs = typeCheckingContext.temporaryIfBranchTypeInformation.pop();
                     typeCheckingContext.pushTemporaryTypeInfo();
@@ -1132,7 +1220,9 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     List<MethodNode> methods = findMethod(lType, "putAt", arguments);
                     if (methods.isEmpty()) {
                         addNoMatchingMethodError(lType, "putAt", arguments, enclosingBinaryExpression);
-                    } else if (methods.size() == 1) {
+                    } else if (methods.size() == 1
+                            // GROOVY-12535: the assignment converts a value that only the tagged putAt accepts
+                            && mapValueTypeToConvertTo(lType, arguments[0], arguments[1]) == null) {
                         typeCheckMethodsWithGenericsOrFail(lType, arguments, methods.get(0), enclosingExpressionRHS);
                     }
                 }
@@ -1154,11 +1244,13 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
                 ClassNode originType = getOriginalDeclarationType(leftExpression);
                 typeCheckAssignment(expression, leftExpression, originType, rightExpression, resultType);
-                // GROOVY-12535: property writes into a Map call Map.put(Object, Object). A GString
-                // assigned to a String value is accepted, as "String s = gString" is, but is stored
-                // unchanged. Convert it here so the write keeps compiling and stores a String.
-                if (coerceGStringToStringForMapValue(expression, leftExpression, rightExpression, originType, rType)) {
-                    resultType = originType;
+                // GROOVY-12535: a property or subscript write to a map stores the value as is, through
+                // Map.put(Object, Object). A value accepted for the map's value type but not of that type,
+                // such as a GString for String, is converted to it, as putAt(Map, Object, Object, Class) does.
+                ClassNode mapValueType = mapValueTypeToConvertTo(leftExpression, rType);
+                if (mapValueType != null) {
+                    convertMapValue(expression, mapValueType);
+                    resultType = mapValueType;
                 }
                 // check for implicit conversion like "String a = 123", "int[] b = [1,2,3]", "List c = [].stream()", etc.
                 if (!implementsInterfaceOrIsSubclassOf(wrapTypeIfNecessary(resultType), wrapTypeIfNecessary(originType))) {
@@ -1207,7 +1299,10 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             } else if (op == KEYWORD_INSTANCEOF) {
                 rType = rightExpression.getType();
                 if (lType instanceof WideningCategories.LowestUpperBoundClassNode) lType = lType.getUnresolvedSuperClass();
-                if (lType instanceof UnionTypeClassNode union) {
+                if (patternSubject != null && leftExpression instanceof VariableExpression subjectVar
+                        && subjectVar.getAccessedVariable() == patternSubject) {
+                    // GEP-19: a pattern test against the switch subject is checked by checkPatternSwitchLabels
+                } else if (lType instanceof UnionTypeClassNode union) {
                     boolean compatible = rType.isInterface();
                     for (int i = 0; !compatible && i < union.getDelegates().length; i += 1) {
                         ClassNode delegate = union.getDelegates()[i];
@@ -1326,6 +1421,8 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 inferParameterAndReturnTypesOfClosureOnRHS(target, lambda);
                 source.putNodeMetaData(PARAMETER_TYPE, lambda.getNodeMetaData(PARAMETER_TYPE));
                 source.putNodeMetaData(CLOSURE_ARGUMENTS, extractTypesFromParameters(lambda.getParameters()));
+            } else if (source instanceof MethodPointerExpression) { // as for a method pointer argument
+                source.putNodeMetaData(PARAMETER_TYPE, target);
             }
         }
     }
@@ -2087,14 +2184,18 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
         ClassNode concreteType;
         List<Expression> expressions = ((ListExpression) rightExpression).getExpressions();
         if (implementsInterfaceOrIsSubclassOf((concreteType = ArrayList_TYPE), leftRedirect)
-                || implementsInterfaceOrIsSubclassOf((concreteType = LinkedHashSet_TYPE), leftRedirect)) {
+                || implementsInterfaceOrIsSubclassOf((concreteType = LinkedHashSet_TYPE), leftRedirect)
+                || (concreteType = literalDefaultImplementation(leftRedirect, rightExpression)) != null) {
             // GROOVY-11309: (? super ArrayList or LinkedHashSet) x = [ ]
+            // GROOVY-12643: (SortedSet, NavigableSet, Queue, Deque or BlockingQueue) x = [ ]
             if (expressions.isEmpty()) { // skip SBA.createList for empty
                 rightExpression.putNodeMetaData(DIRECT_METHOD_CALL_TARGET,
                     concreteType.getDeclaredConstructor(Parameter.EMPTY_ARRAY));
             }
         } else if (isWildcardLeftHandSide(leftRedirect) && !isClassType(leftRedirect)) {
             // GROOVY-6802, GROOVY-6803: ([Bb]oolean or String) x = [ ]
+        } else if (isCopyableCollectionType(leftRedirect)) {
+            // GROOVY-12643: (LinkedList, Vector, ...) x = [ ] copies the elements
         } else if (leftRedirect.isArray() || !leftRedirect.isAbstract()) {
             // if left type is not a list but right type is a list, then we're in the case of a groovy
             // constructor type : Dimension d = [100,200]
@@ -2112,8 +2213,10 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
     }
 
     private void addMapAssignmentConstructorErrors(final ClassNode leftRedirect, final Expression leftExpression, final MapExpression rightExpression) {
-        if (implementsInterfaceOrIsSubclassOf(LinkedHashMap_TYPE, leftRedirect)) {
+        if (implementsInterfaceOrIsSubclassOf(LinkedHashMap_TYPE, leftRedirect)
+                || literalDefaultImplementation(leftRedirect, rightExpression) != null) {
             // GROOVY-11309: (? super LinkedHashMap) x = map literal
+            // GROOVY-12643: (SortedMap, NavigableMap or ConcurrentMap) x = map literal
         } else if (isWildcardLeftHandSide(leftRedirect) && !isClassType(leftRedirect)) {
             // GROOVY-6802, GROOVY-6803: [Bb]oolean or String target
         } else {
@@ -2126,13 +2229,24 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
     }
 
     private void checkTypeGenerics(final ClassNode leftExpressionType, final ClassNode rightExpressionType, final Expression rightExpression) {
-        if (leftExpressionType.isUsingGenerics()
-                && !missesGenericsTypes(rightExpressionType)
-                && !(rightExpression instanceof ClosureExpression) // GROOVY-10277
-                && !(rightExpression instanceof ConstructorCallExpression && ((ConstructorCallExpression) rightExpression).isUsingAnonymousInnerClass()) // GROOVY-12319: AIC type is the generated class, not the diamond super type
-                && !isNullConstant(rightExpression) && !UNKNOWN_PARAMETER_TYPE.equals(rightExpressionType)
-                && !GenericsUtils.buildWildcardType(leftExpressionType).isCompatibleWith(wrapTypeIfNecessary(rightExpressionType)))
+        if (!leftExpressionType.isUsingGenerics()
+                || rightExpression instanceof ClosureExpression // GROOVY-10277
+                || (rightExpression instanceof ConstructorCallExpression && ((ConstructorCallExpression) rightExpression).isUsingAnonymousInnerClass()) // GROOVY-12319
+                || isNullConstant(rightExpression) || UNKNOWN_PARAMETER_TYPE.equals(rightExpressionType)) {
+            return;
+        }
+        ClassNode right = wrapTypeIfNecessary(rightExpressionType);
+        // A type variable is not "missing" generics: its bound is known.
+        // Raw types and uninferred diamonds still skip the check.
+        boolean unresolved = missesGenericsTypes(right);
+        boolean incompatible = !unresolved && (
+                !GenericsUtils.buildWildcardType(leftExpressionType).isCompatibleWith(right)
+                || concreteArgumentContainsWildcard(leftExpressionType, right));
+        boolean typeVariableEscapes = unresolved && (typeVariableBoundEscapes(leftExpressionType, right)
+                || concreteArgumentContainsWildcard(leftExpressionType, right));
+        if (incompatible || typeVariableEscapes) {
             addStaticTypeError("Incompatible generic argument types. Cannot assign " + prettyPrintType(rightExpressionType) + " to: " + prettyPrintType(leftExpressionType), rightExpression);
+        }
     }
 
     private boolean hasGStringStringError(final ClassNode leftExpressionType, final ClassNode wrappedRHS, final Expression rightExpression) {
@@ -2145,6 +2259,10 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
     }
 
     private static boolean isConstructorAbbreviation(final ClassNode leftType, final Expression rightExpression) {
+        if (literalDefaultImplementation(leftType, rightExpression) != null
+                || (rightExpression instanceof ListExpression && isCopyableCollectionType(leftType.redirect()))) {
+            return false;
+        }
         if (rightExpression instanceof ListExpression) {
             return !(ArrayList_TYPE.isDerivedFrom(leftType) || ArrayList_TYPE.implementsInterface(leftType)
                     || LinkedHashSet_TYPE.isDerivedFrom(leftType) || LinkedHashSet_TYPE.implementsInterface(leftType));
@@ -2155,37 +2273,77 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
         return false;
     }
 
+    private static final String MAP_VALUE_CONVERSION = "stc.mapValueConversion";
+
     /**
-     * Wraps a {@code GString} written to a {@code String}-valued map property in a cast to
-     * {@code String}. {@code Map.put} cannot see the value type parameter, so without the cast
-     * the {@code GString} is stored as-is. Direct {@code put} and {@code putAt} are unchanged.
-     *
-     * @return {@code true} when the right-hand side was rewritten
+     * Returns the value type of the map written by a property or subscript assignment
+     * when the value needs converting to it, or {@code null}. The property may be
+     * one of a map delegate ({@code map.with { key = value }}).
      */
-    private boolean coerceGStringToStringForMapValue(final BinaryExpression assignment, final Expression leftExpression, final Expression rightExpression, final ClassNode leftType, final ClassNode rightType) {
-        if (!isStringType(leftType) || !isGStringOrGStringStringLUB(rightType) || !isMapValueWrite(leftExpression)) {
-            return false;
+    private ClassNode mapValueTypeToConvertTo(final Expression lhs, final ClassNode valueType) {
+        ClassNode mapType = null, keyType = STRING_TYPE;
+        if (lhs instanceof PropertyExpression pexp) {
+            mapType = getType(pexp.getObjectExpression());
+        } else if (lhs instanceof VariableExpression vexp && vexp.getAccessedVariable() instanceof DynamicVariable) {
+            Object owner = vexp.getNodeMetaData(StaticCompilationMetadataKeys.PROPERTY_OWNER);
+            if (owner instanceof ClassNode ownerType) mapType = ownerType;
+        } else if (lhs instanceof BinaryExpression subscript && isArrayOp(subscript.getOperation().getType())) {
+            mapType = getType(subscript.getLeftExpression());
+            keyType = getType(subscript.getRightExpression());
         }
-        CastExpression cast = castX(STRING_TYPE, rightExpression);
-        cast.setSourcePosition(rightExpression);
-        cast.putNodeMetaData(INFERRED_TYPE, STRING_TYPE);
-        assignment.setRightExpression(cast);
-        return true;
+        return mapType == null ? null : mapValueTypeToConvertTo(mapType, keyType, valueType);
     }
 
     /**
-     * A property-style write whose receiver is a {@code Map}, including an implicit
-     * property resolved through a map delegate ({@code map.with { key = value }}).
+     * Type checks a write of a value to a map as the call {@code putAt(map, key, value)}.
+     * Returns the map's value type when the value is accepted only by the {@code putAt}
+     * whose {@link ClassTag} token the compiler supplies from that type: the value is not
+     * of the type but converts to it. The upgrade of the write is treated as a
+     * {@code @ClassTag} preemption, so the consent veto of
+     * {@link CompilerConfiguration#isClassTagPreemptionDisabled()} keeps the write as it is.
      */
-    private boolean isMapValueWrite(final Expression lhs) {
-        if (lhs instanceof PropertyExpression pexp) {
-            return isOrImplements(getType(pexp.getObjectExpression()), MAP_TYPE);
+    private ClassNode mapValueTypeToConvertTo(final ClassNode mapType, final ClassNode keyType, final ClassNode valueType) {
+        if (valueType == null || valueType == UNKNOWN_PARAMETER_TYPE || !isOrImplements(mapType, MAP_TYPE)
+                || !ClassTagSupport.isPreemptionPossible(this)) {
+            return null;
         }
-        if (lhs instanceof VariableExpression vexp && vexp.getAccessedVariable() instanceof DynamicVariable) {
-            Object owner = vexp.getNodeMetaData(StaticCompilationMetadataKeys.PROPERTY_OWNER);
-            return owner instanceof ClassNode ownerType && isOrImplements(ownerType, MAP_TYPE);
+        // the value type of the map, as a variable of that type would be declared
+        GenericsType[] mapTypeArguments = GenericsUtils.parameterizeType(mapType, MAP_TYPE).getGenericsTypes();
+        if (mapTypeArguments == null || mapTypeArguments.length != 2 || mapTypeArguments[1].isWildcard() || mapTypeArguments[1].isPlaceholder()) {
+            return null;
         }
-        return false;
+        ClassNode mapValueType = mapTypeArguments[1].getType();
+        // the value is accepted for a variable of the value type
+        if (!checkCompatibleAssignmentTypes(mapValueType, valueType, null, false)
+                || (mapValueType.isUsingGenerics() && !missesGenericsTypes(valueType)
+                    && !GenericsUtils.buildWildcardType(mapValueType).isCompatibleWith(wrapTypeIfNecessary(valueType)))) {
+            return null;
+        }
+        ClassNode[] args = {keyType, valueType};
+        for (MethodNode putAt : findMethod(mapType, "putAt", args)) {
+            if (typeCheckMethodsWithGenerics(mapType, args, putAt)) return null; // the value is of the value type
+        }
+        // only the putAt whose token the compiler supplies accepts the value: it converts the value
+        ClassTagSupport.ClassTagMatch tagged = ClassTagSupport.matchAdditive(this, List.of(Receiver.<String>make(mapType)), "putAt", args);
+        if (tagged == null) return null;
+        ClassNode[] taggedArgs = tagged.expandArgumentTypes(args);
+        for (MethodNode putAt : findMethod(mapType.getPlainNodeReference(), "putAt", taggedArgs)) {
+            if (typeCheckMethodsWithGenerics(mapType, taggedArgs, putAt)) return mapValueType;
+        }
+        return null;
+    }
+
+    /**
+     * Wraps the value of an assignment in a cast to the value type of the map it is
+     * written to; see {@link #mapValueTypeToConvertTo(ClassNode, ClassNode, ClassNode)}.
+     */
+    private static void convertMapValue(final BinaryExpression assignment, final ClassNode valueType) {
+        Expression value = assignment.getRightExpression();
+        CastExpression cast = castX(valueType, value);
+        cast.setSourcePosition(value);
+        cast.putNodeMetaData(INFERRED_TYPE, valueType);
+        cast.putNodeMetaData(MAP_VALUE_CONVERSION, Boolean.TRUE);
+        assignment.setRightExpression(cast);
     }
 
     /**
@@ -2394,6 +2552,11 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
                 pexp.putNodeMetaData(INFERRED_TYPE, lowestUpperBound(propertyTypes));
                 pexp.putNodeMetaData(DYNAMIC_RESOLUTION, Boolean.TRUE);
                 return true;
+            }
+            // GROOVY-12534, GROOVY-12649: explicit spread (people*.name) reads each element, even
+            // when the list, set or other iterable declares that property or an extension supplies it
+            if (pexp.isSpreadSafe() && isOrImplements(receiverType, ITERABLE_TYPE)) {
+                continue;
             }
             if (receiverType.isArray() && propertyName.equals("length")) {
                 pexp.putNodeMetaData(READONLY_PROPERTY, Boolean.TRUE);
@@ -3477,9 +3640,12 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
                 } else if (statement.isReturningNullOrVoid() ? !isPrimitiveType(inferredReturnType) // GROOVY-7713, GROOVY-8202
                      : GenericsUtils.buildWildcardType(wrapTypeIfNecessary(inferredReturnType)).isCompatibleWith(wrapTypeIfNecessary(type))) {
                     type = inferredReturnType; // GROOVY-8310, GROOVY-10082, GROOVY-10091, GROOVY-10128, GROOVY-10306: allow simple covariance
+                } else if (!statement.isReturningNullOrVoid() && isPrimitiveType(inferredReturnType)
+                        && checkReturnValue(inferredReturnType, type, expression, statement)) {
+                    type = inferredReturnType; // GROOVY-12616: the value is converted to a primitive return type as by a method's return
                 } else if ((statement.isReturningNullOrVoid() || !isPrimitiveVoid(type)) && !extension.handleIncompatibleReturnType(statement, type)) {
                     // GROOVY-10277, GROOVY-11490: incompatible return statement (null for primitive or inconvertible type)
-                    String value = (statement.isReturningNullOrVoid() ? "null" : "value of type " + prettyPrintType(type));
+                    String value = (statement.isReturningNullOrVoid() ? "null" : "value of type " + prettyPrintValueType(type, expression));
                     String which = (enclosingClosure.getClosureExpression() instanceof LambdaExpression ? "lambda" : "closure");
                     addStaticTypeError("Cannot return " + value + " for " + which + " expecting " + prettyPrintType(inferredReturnType), expression);
                 }
@@ -3490,19 +3656,52 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
         MethodNode enclosingMethod = typeCheckingContext.getEnclosingMethod();
         if (enclosingMethod != null && !enclosingMethod.isVoidMethod() && !enclosingMethod.isDynamicReturnType()) {
             ClassNode returnType = enclosingMethod.getReturnType();
-            if (!isPrimitiveVoid(getUnwrapper(type)) && !checkCompatibleAssignmentTypes(returnType, type, expression, false)) {
+            if (!isPrimitiveVoid(getUnwrapper(type)) && !checkReturnValue(returnType, type, expression, statement)) {
                 if (!extension.handleIncompatibleReturnType(statement, type)) {
-                    addStaticTypeError("Cannot return value of type " + prettyPrintType(type) + " for method returning " + prettyPrintType(returnType), expression);
+                    addStaticTypeError("Cannot return value of type " + prettyPrintValueType(type, expression) + " for method returning " + prettyPrintType(returnType), expression);
                 }
-            } else if (implementsInterfaceOrIsSubclassOf(type, returnType)) {
-                BinaryExpression dummy = assignX(varX("{target}", returnType), expression, statement);
-                ClassNode resultType = getResultType(returnType, ASSIGN, type, dummy); // GROOVY-10295
-                checkTypeGenerics(returnType, resultType, expression);
-            } else { // GROOVY-11623: check array items or number bounds
-                addPrecisionErrors(returnType.redirect(), returnType, type, expression);
             }
         }
         return null;
+    }
+
+    /**
+     * Checks a value returned to {@code target}: the return type of a method, or the primitive
+     * return type of the functional interface implemented by a closure, lambda or method reference.
+     * A return converts its value as an assignment does, so the rules are those of
+     * {@link StaticTypeCheckingSupport#checkCompatibleAssignmentTypes(ClassNode, ClassNode, Expression, boolean)
+     * checkCompatibleAssignmentTypes}, followed by the assignment check for a list or map literal,
+     * the generics check for a subtype or the loss-of-precision check for a number. Use this rather
+     * than a separate set of rules, so that every kind of return accepts the same values.
+     *
+     * @param target    the type returned to
+     * @param type      the type of the returned value
+     * @param value     the returned value, or the method reference whose method returns it
+     * @param statement the return statement, or {@code null} for a method reference
+     * @return {@code false} if the types are incompatible, which the caller reports; a literal,
+     *         generics or precision error is reported here and still returns {@code true}
+     */
+    private boolean checkReturnValue(final ClassNode target, final ClassNode type, final Expression value, final ReturnStatement statement) {
+        boolean literal = statement != null && !target.isArray() && !isPrimitiveType(target) // arrays: see addPrecisionErrors
+                && (value instanceof ListExpression || value instanceof MapExpression);
+        if (!checkCompatibleAssignmentTypes(target, type, value, literal)) {
+            return false;
+        }
+        if (literal && !implementsInterfaceOrIsSubclassOf(type, target)) {
+            // GROOVY-12644: check a list or map literal as for "ReturnType x = literal"
+            BinaryExpression dummy = assignX(varX("{target}", target), value, statement);
+            ClassNode resultType = getResultType(target, ASSIGN, type, dummy);
+            typeCheckAssignment(dummy, dummy.getLeftExpression(), target, value, resultType);
+        } else if (implementsInterfaceOrIsSubclassOf(type, target)) {
+            if (statement != null) {
+                BinaryExpression dummy = assignX(varX("{target}", target), value, statement);
+                ClassNode resultType = getResultType(target, ASSIGN, type, dummy); // GROOVY-10295
+                checkTypeGenerics(target, resultType, value);
+            }
+        } else { // GROOVY-11623: check array items or number bounds
+            addPrecisionErrors(target.redirect(), target, type, value);
+        }
+        return true;
     }
 
     /**
@@ -3656,8 +3855,76 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
                 // which would otherwise win the distance tie-break and then fail to coerce
                 type.putNodeMetaData(StaticTypesMarker.METHOD_REFERENCE_TYPE, Boolean.TRUE);
             }
+            IntPredicate arity = null;
+            if (type != null && exp instanceof MethodPointerExpression) {
+                arity = functorArity((MethodPointerExpression) exp);
+            } else if (type != null && exp instanceof ClosureExpression) {
+                arity = functorArity((ClosureExpression) exp);
+            }
+            if (arity != null) type.putNodeMetaData(StaticTypeCheckingSupport.FUNCTOR_ARITY, arity);
             return type;
         }).toArray(ClassNode[]::new);
+    }
+
+    /**
+     * Returns the numbers of arguments a closure or lambda with declared parameters can be
+     * called with, allowing for parameters with a default value and a trailing array, or
+     * {@code null} for one with an implicit parameter, which can be called with none or one.
+     */
+    private static IntPredicate functorArity(final ClosureExpression closure) {
+        Parameter[] parameters = closure.getParameters();
+        if (parameters == null) return n -> n == 0; // "{ -> }"
+        if (parameters.length == 0) return null;   // implicit "it"
+        int max = parameters.length, min = 0;
+        for (Parameter parameter : parameters) {
+            if (!parameter.hasInitialExpression()) min += 1;
+        }
+        if (parameters[max - 1].getType().isArray()) {
+            int least = Math.min(min, max - 1);
+            return n -> n >= least;
+        }
+        int least = min;
+        return n -> n >= least && n <= max;
+    }
+
+    /**
+     * Returns the numbers of arguments a method reference or pointer can be called with,
+     * as the methods of its name allow: their own parameters for a static method or a
+     * bound receiver, one more (the receiver) for {@code Type::instanceMethod}; or
+     * {@code null} if no method is known.
+     */
+    private IntPredicate functorArity(final MethodPointerExpression pointer) {
+        if (!(pointer.getMethodName() instanceof ConstantExpression)) return null;
+        String name = pointer.getMethodName().getText();
+        Expression receiver = pointer.getExpression();
+        boolean typeReceiver = receiver instanceof ClassExpression;
+        ClassNode receiverType = typeReceiver ? receiver.getType() : getType(receiver);
+        if (receiverType == null) return null;
+        receiverType = wrapTypeIfNecessary(receiverType);
+
+        List<MethodNode> methods = new ArrayList<>();
+        if ("new".equals(name)) {
+            if (receiverType.isArray()) return n -> n == 1;
+            methods.addAll(receiverType.getDeclaredConstructors());
+            typeReceiver = false;
+        } else {
+            methods.addAll(findMethodsWithGenerated(receiverType, name));
+            methods.addAll(findDGMMethodsForClassNode(getSourceUnit().getClassLoader(), receiverType, name));
+        }
+        if (methods.isEmpty()) return null;
+
+        BitSet counts = new BitSet();
+        int varargsFrom = Integer.MAX_VALUE;
+        for (MethodNode method : methods) {
+            Parameter[] parameters = method.getParameters();
+            int count = parameters.length + (typeReceiver && !method.isStatic() ? 1 : 0);
+            counts.set(count);
+            if (parameters.length > 0 && parameters[parameters.length - 1].getType().isArray()) {
+                varargsFrom = Math.min(varargsFrom, count - 1);
+            }
+        }
+        int fromVarargs = varargsFrom;
+        return n -> n >= fromVarargs || counts.get(n);
     }
 
     private Map<VariableExpression, ClassNode> scanVars(final ClosureExpression expr) {
@@ -3795,6 +4062,11 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
                 }
 
                 ClassNode ownerType = receiverType;
+                ClassNode targetSAM = expression.getNodeMetaData(PARAMETER_TYPE);
+                // a method pointer is not given the SAM parameter types, so its methods stay
+                // selected at run time; they are used only to resolve a returned type parameter
+                ClassNode[] samArguments = arguments != null || expression instanceof MethodReferenceExpression
+                        || !isSAMType(targetSAM) ? arguments : GenericsUtils.parameterizeSAM(targetSAM).getV1();
                 candidates.stream()
                         .peek(candidate -> checkOrMarkPrivateAccess(expression, candidate)) // GROOVY-11365
                         .map (candidate -> {
@@ -3805,6 +4077,9 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
                                 extractGenericsConnections(spec, ownerType, candidate.getDeclaringClass());
                                 returnType = applyGenericsContext(spec, returnType);
                             }
+                            if (returnType.isGenericsPlaceHolder() && asBoolean(samArguments)) { // GROOVY-12623
+                                returnType = resolveMethodReferenceReturnType(expression, candidate, returnType, samArguments);
+                            }
                             return returnType;
                         })
                         .reduce(WideningCategories::lowestUpperBound).ifPresent(returnType -> {
@@ -3814,7 +4089,7 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
                             ClassNode targetType = expression.getNodeMetaData(PARAMETER_TYPE);
                             if (!returnType.isGenericsPlaceHolder() && isSAMType(targetType)) {
                                 targetType = GenericsUtils.parameterizeSAM(targetType).getV2();
-                                if (!isPrimitiveVoid(targetType) && !checkCompatibleAssignmentTypes(targetType, returnType, null, false)) // TODO: ext.handleIncompatibleReturnType
+                                if (!isPrimitiveVoid(targetType) && !checkReturnValue(targetType, returnType, expression, null)) // TODO: ext.handleIncompatibleReturnType
                                     addStaticTypeError("Invalid return type: " + prettyPrintType(returnType) + " is not convertible to " + prettyPrintType(targetType), expression);
                             }
                         });
@@ -3836,6 +4111,39 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
                 addStaticTypeError("Cannot find matching method " + prettyPrintTypeName(type) + "#" + nameText + ". Please check if the declared type is correct and if the method exists.", nameExpr);
             }
         }
+    }
+
+    /**
+     * Resolves a type parameter of the referenced method that the method returns, from the
+     * parameter types of the functional interface. The method's parameters take the functional
+     * interface's parameters, after the receiver for an instance method referenced through its
+     * class, or after the self parameter for an extension method referenced through an instance.
+     *
+     * @return the type argument, or {@code returnType} if it cannot be resolved
+     */
+    private static ClassNode resolveMethodReferenceReturnType(final MethodPointerExpression expression, final MethodNode candidate,
+                                                              final ClassNode returnType, final ClassNode[] arguments) {
+        boolean referenceThroughClass = expression.getExpression() instanceof ClassExpression;
+        MethodNode method = candidate;
+        int offset = 0; // index of the functional interface parameter given to the method's first parameter
+        if (candidate instanceof ExtensionMethodNode extension && !extension.isStaticExtension()) {
+            method = extension.getExtensionMethodNode(); // the self parameter comes first
+            if (!referenceThroughClass) offset = -1; // the receiver is the self parameter
+        } else if (!candidate.isStatic() && referenceThroughClass) {
+            offset = 1; // the first parameter is the receiver
+        }
+        Parameter[] parameters = method.getParameters();
+        Map<GenericsTypeName, GenericsType> spec = new HashMap<>();
+        for (int i = Math.max(0, -offset), n = parameters.length; i < n && i + offset < arguments.length; i += 1) {
+            ClassNode parameterType = parameters[i].getType();
+            ClassNode argumentType = wrapTypeIfNecessary(arguments[i + offset]);
+            if (parameterType.isArray() && !argumentType.isArray() && i == n - 1) {
+                parameterType = parameterType.getComponentType(); // variadic
+            }
+            extractGenericsConnections(spec, argumentType, parameterType);
+        }
+        ClassNode resolved = applyGenericsContext(spec, returnType);
+        return resolved.isGenericsPlaceHolder() ? returnType : resolved;
     }
 
     private static Expression typedValueExpression(final ClassNode type) {
@@ -4227,6 +4535,7 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
     private void publishInferredReturnType(final MethodNode node) {
         List<ClassNode> types = node.getNodeMetaData(RETURN_TYPES);
         node.removeNodeMetaData(RETURN_TYPES);
+        if (types == null) return; // nothing was recorded for this method
         ClassNode inferred = null;
         for (ClassNode type : types) {
             inferred = (inferred == null ? type : lowestUpperBound(inferred, type));
@@ -5253,6 +5562,8 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
                         if (tagged != null) {
                             ClassNode[] taggedArgs = tagged.expandArgumentTypes(args);
                             List<MethodNode> taggedMn = findMethod(tagged.receiver.getType().getPlainNodeReference(), name, taggedArgs);
+                            // the tagged overload must accept the call with its generics, else the call stays as written
+                            taggedMn.removeIf(taggedMethod -> !typeCheckMethodsWithGenerics(tagged.receiver.getType(), taggedArgs, taggedMethod));
                             if (!taggedMn.isEmpty()) {
                                 MethodNode taggedFirst = taggedMn.get(0);
                                 taggedMn = allowStaticAccessToMember(taggedMn, !tagged.receiver.isObject());
@@ -5753,9 +6064,20 @@ trying: for (ClassNode[] signature : signatures) {
             // resolved where a switch expression resolves its own labels, outside
             // the tracking block, so that the two positions see the same types
             typeCheckSwitchIsCase(statement.getExpression(), statement.getCaseStatements(), false);
+            PatternCoverage coverage = checkPatternSwitchLabels(statement.getExpression(), statement.getCaseStatements());
+            // JEP 441: a switch statement has to be exhaustive only when it uses a
+            // pattern label. Constant and class-literal labels never demand a
+            // default, so every switch statement written before patterns existed
+            // keeps compiling; a class literal can still help satisfy the check
+            // once a pattern has triggered it.
+            if (statement.getCaseStatements().stream().anyMatch(cs -> isPatternArm(cs))) {
+                checkSwitchExhaustiveness(statement, statement.getExpression(), statement.getCaseStatements(),
+                        statement.getDefaultStatement(), coverage, "statement");
+            }
         } finally {
             typeCheckingContext.popTemporaryTypeInfo();
             typeCheckingContext.popEnclosingSwitchStatement();
+            forgetSubjectVariable(statement);
         }
     }
 
@@ -5794,10 +6116,13 @@ trying: for (ClassNode[] signature : signatures) {
 
             typeCheckSwitchIsCase(expression.getExpression(), expression.getCaseStatements(), true);
             checkSwitchDuplicateLabels(expression.getExpression(), expression.getCaseStatements());
-            checkSwitchExpressionExhaustiveness(expression);
+            PatternCoverage coverage = checkPatternSwitchLabels(expression.getExpression(), expression.getCaseStatements());
+            checkSwitchExhaustiveness(expression, expression.getExpression(), expression.getCaseStatements(),
+                    expression.getDefaultStatement(), coverage, "expression");
         } finally {
             typeCheckingContext.popTemporaryTypeInfo();
             typeCheckingContext.popEnclosingSwitchExpression();
+            forgetSubjectVariable(expression);
         }
     }
 
@@ -5828,7 +6153,7 @@ trying: for (ClassNode[] signature : signatures) {
         }
         for (CaseStatement caseStatement : caseStatements) {
             Expression caseValue = caseStatement.getExpression();
-            if (isNullConstant(caseValue)) {
+            if (isNullConstant(caseValue) || isPatternArm(caseStatement)) { // GEP-19: a pattern arm's label is a boolean test
                 continue;
             }
             ClassNode caseType = getType(caseValue);
@@ -5874,6 +6199,7 @@ trying: for (ClassNode[] signature : signatures) {
         ClassNode enumType = unwrapEnumType(getType(selector));
         Set<Object> seen = new HashSet<>();
         for (CaseStatement caseStatement : caseStatements) {
+            if (isPatternArm(caseStatement)) continue;
             Expression label = caseStatement.getExpression();
             Object key = null;
             if (enumType != null && enumType.isEnum()) {
@@ -5899,6 +6225,7 @@ trying: for (ClassNode[] signature : signatures) {
         typeCheckingContext.pushTemporaryTypeInfo();
         Expression conditionExpression = expression.getExpression();
         conditionExpression.putNodeMetaData(TYPE, getType(conditionExpression));
+        rememberSubjectVariable(expression, conditionExpression);
     }
 
     /**
@@ -5928,19 +6255,29 @@ trying: for (ClassNode[] signature : signatures) {
         return typeCheckingContext.getEnclosingSwitchSelector();
     }
 
-    private void checkSwitchExpressionExhaustiveness(final SwitchExpression expression) {
-        if (expression.getDefaultStatement() != null && !expression.getDefaultStatement().isEmpty()) {
+    /**
+     * Reports a switch that does not cover every input, for an expression, which
+     * must always be exhaustive, and for a statement that carries a pattern label,
+     * which must be exhaustive under JEP 441 (GEP-19). A {@code default}, a
+     * complete set of enum constants, an unconditional pattern, or type tests
+     * covering a sealed hierarchy all satisfy it.
+     */
+    private void checkSwitchExhaustiveness(final ASTNode node, final Expression selector,
+            final List<CaseStatement> caseStatements, final Statement defaultStatement,
+            final PatternCoverage coverage, final String kind) {
+        if (defaultStatement != null && !defaultStatement.isEmpty()) {
             return;
         }
-        Expression selector = expression.getExpression();
         ClassNode selectorType = getType(selector);
-        if (selectorType != null && selectorType.isEnum() && coversAllEnumConstants(expression, selectorType)) {
-            return;
+        boolean exhaustive = selectorType != null && selectorType.isEnum() && coversAllEnumConstants(caseStatements, selectorType);
+        // GEP-19: an unconditional pattern, or type tests covering a sealed hierarchy, are exhaustive
+        exhaustive = exhaustive || coverage.unconditional() || coversAllPermittedSubclasses(selectorType, coverage.typeTests());
+        if (!exhaustive) {
+            addError("the switch " + kind + " does not cover all possible input values", node);
+        } else if (node instanceof SwitchExpression) {
+            // lets the writer tell an added constant or subtype from an ordinary unmatched value
+            node.putNodeMetaData(StaticTypesMarker.SWITCH_EXHAUSTIVE, Boolean.TRUE);
         }
-        if (coversAllPermittedSubclasses(expression, selectorType)) {
-            return;
-        }
-        addError("the switch expression does not cover all possible input values", expression);
     }
 
     /**
@@ -5984,7 +6321,15 @@ trying: for (ClassNode[] signature : signatures) {
         return null;
     }
 
-    private boolean coversAllPermittedSubclasses(final SwitchExpression expression, final ClassNode selectorType) {
+    /**
+     * True when the type tests of a switch cover every member of the closed
+     * native sealed hierarchy rooted at {@code selectorType}. The tests are the
+     * class-literal labels and, under GEP-19, the unguarded type patterns. A
+     * concrete sealed class needs a test for itself; a permitted subtype that is
+     * an abstract sealed class or a sealed interface may instead be covered by
+     * tests for its own permitted subtypes.
+     */
+    private boolean coversAllPermittedSubclasses(final ClassNode selectorType, final List<ClassNode> typeTests) {
         if (!nativeSealedClosed(selectorType)) {
             return false;
         }
@@ -5993,25 +6338,243 @@ trying: for (ClassNode[] signature : signatures) {
         if (permitted == null || permitted.isEmpty()) {
             return false;
         }
-        Set<ClassNode> remaining = new LinkedHashSet<>(permitted);
-        if (!sealedType.isInterface() && !sealedType.isAbstract()) {
-            remaining.add(sealedType);
+        if (!sealedType.isInterface() && !sealedType.isAbstract() && !coveredByTypeTest(sealedType, sealedType, typeTests)) {
+            return false;
         }
-        for (CaseStatement caseStatement : expression.getCaseStatements()) {
-            Expression caseExpr = caseStatement.getExpression();
-            if (caseExpr instanceof ClassExpression classExpression) {
-                ClassNode caseType = classExpression.getType().redirect();
-                // A type case is a member of the sealed hierarchy. Unrelated
-                // labels (including a mis-resolved Object) stay ordinary isCase.
-                if (caseType.equals(sealedType) || implementsInterfaceOrIsSubclassOf(caseType, sealedType)) {
-                    remaining.removeIf(p -> implementsInterfaceOrIsSubclassOf(p.redirect(), caseType));
+        for (ClassNode permittedType : permitted) {
+            ClassNode member = permittedType.redirect();
+            if (!coveredByTypeTest(member, sealedType, typeTests) && !coversAllPermittedSubclasses(member, typeTests)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /**
+     * Whether one of the type tests covers {@code member}. A type test counts
+     * only when it names a member of the sealed hierarchy; unrelated labels
+     * (including a mis-resolved Object) stay ordinary isCase.
+     */
+    private static boolean coveredByTypeTest(final ClassNode member, final ClassNode sealedType, final List<ClassNode> typeTests) {
+        for (ClassNode typeTest : typeTests) {
+            ClassNode testType = typeTest.redirect();
+            if (testType.equals(sealedType) || implementsInterfaceOrIsSubclassOf(testType, sealedType)) {
+                if (member.equals(testType) || implementsInterfaceOrIsSubclassOf(member, testType)) {
+                    return true;
                 }
             }
         }
-        return remaining.isEmpty();
+        return false;
     }
 
-    private boolean coversAllEnumConstants(final SwitchExpression expression, final ClassNode enumType) {
+    /**
+     * The statically known coverage of a switch's labels (GEP-19): the type
+     * tests that are unconditional (a type pattern without guard or a class
+     * literal label), and whether an unguarded type pattern covers the selector
+     * type. A class literal label is an ordinary {@code isCase} test and never
+     * makes a switch exhaustive on its own, though it still counts toward the
+     * coverage of a sealed hierarchy.
+     */
+    private record PatternCoverage(List<ClassNode> typeTests, boolean unconditional) {
+    }
+
+    /**
+     * Checks the pattern arms of a switch (GEP-19): an error for a pattern that
+     * cannot match the selector's static type or a record pattern whose arity
+     * differs from the record's, and a warning for a pattern dominated by a
+     * preceding label. Returns the coverage used for exhaustiveness.
+     */
+    private PatternCoverage checkPatternSwitchLabels(final Expression selector, final List<CaseStatement> caseStatements) {
+        List<ClassNode> typeTests = new ArrayList<>();
+        boolean unconditional = false;
+        ClassNode selectorType = wrapTypeIfNecessary(getType(selector));
+        for (CaseStatement caseStatement : caseStatements) {
+            Expression label = caseStatement.getExpression();
+            MatchPattern pattern = label instanceof PatternExpression patternLabel ? patternLabel.getPattern() : null;
+            boolean guarded = label instanceof PatternExpression patternLabel && patternLabel.hasGuard();
+            ClassNode typeTest = pattern != null ? pattern.headType() : null;
+            if (typeTest == null && label instanceof ClassExpression) {
+                typeTest = label.getType(); // a class literal label has type-test semantics
+            }
+            if (typeTest == null) {
+                if (pattern instanceof ListPattern listPattern) {
+                    if (!selectorType.isArray() && provablyDisjoint(selectorType, ITERABLE_TYPE)) {
+                        // a list pattern destructures List, array and Iterable values only
+                        addStaticTypeError("The list pattern is incompatible with the switch subject type " + prettyPrintTypeName(selectorType), label);
+                    } else if (!guarded && listPattern.isUnconditionalFor(selectorType)) {
+                        if (!selectorType.isArray()) typeTests.add(ITERABLE_TYPE);
+                        unconditional = true;
+                    }
+                }
+                if (pattern instanceof MapPattern && provablyDisjoint(selectorType, MAP_TYPE)) {
+                    // a map pattern destructures Map values only
+                    addStaticTypeError("The map pattern is incompatible with the switch subject type " + prettyPrintTypeName(selectorType), label);
+                }
+                continue;
+            }
+            ClassNode wrappedTest = wrapTypeIfNecessary(typeTest);
+            if (pattern != null && provablyDisjoint(selectorType, wrappedTest)) {
+                addStaticTypeError("The case pattern type " + prettyPrintTypeName(typeTest) + " is incompatible with the switch subject type " + prettyPrintTypeName(selectorType), label);
+                continue;
+            }
+            if (pattern instanceof RecordPattern recordPattern && recordPattern.isRecord()) {
+                int componentCount = typeTest.getRecordComponents().size();
+                if (componentCount != recordPattern.components().size()) {
+                    addStaticTypeError("The record pattern specifies " + recordPattern.components().size() + " component(s) but " + prettyPrintTypeName(typeTest) + " has " + componentCount, label);
+                }
+            }
+            // a pattern that can fail for a value of its head type (a record pattern
+            // with a nested or nullable component, or deconstructed through toList())
+            // does not count toward coverage
+            if (pattern != null && !pattern.isTotal()) guarded = true;
+            for (ClassNode prior : typeTests) {
+                if (implementsInterfaceOrIsSubclassOf(wrappedTest, prior)) {
+                    addPatternSwitchWarning("The case pattern is dominated by a preceding case label and will never match", label);
+                    break;
+                }
+            }
+            if (!guarded) {
+                typeTests.add(wrappedTest);
+                if (pattern != null && pattern.isUnconditionalFor(selectorType)) unconditional = true;
+            }
+        }
+        return new PatternCoverage(typeTests, unconditional);
+    }
+
+
+    /**
+     * The type of a record pattern's record: {@code recordType}, with the type
+     * arguments of a raw generic record inferred from the static type of the
+     * value it deconstructs (JEP 440), so that {@code Box(var s)} against a
+     * {@code Box<String>} binds {@code s} as a {@code String}.
+     */
+    private static ClassNode inferRecordPatternType(final ClassNode sourceType, final ClassNode recordType) {
+        GenericsType[] typeParameters = recordType.redirect().getGenericsTypes();
+        if (typeParameters == null || recordType.getGenericsTypes() != null || sourceType == null || !sourceType.isUsingGenerics()) {
+            return recordType; // not generic, or explicitly parameterized
+        }
+        ClassNode genericPatternType = GenericsUtils.makeClassSafeWithGenerics(recordType.redirect(), typeParameters);
+        // the source type in terms of the pattern's type parameters; a record is final, so the
+        // pattern type is the source type or one of its subtypes, such as a sealed member
+        ClassNode sourceAsSeenByPattern = GenericsUtils.findParameterizedType(sourceType.redirect(), genericPatternType);
+        if (sourceAsSeenByPattern == null) return recordType;
+        Map<GenericsTypeName, GenericsType> connections = new HashMap<>();
+        extractGenericsConnections(connections, sourceType, sourceAsSeenByPattern);
+        if (connections.isEmpty()) return recordType;
+        return applyGenericsContext(connections, genericPatternType);
+    }
+
+    /**
+     * The static type of component {@code index} of {@code recordType}: the
+     * record component type with the record's type arguments applied, or
+     * {@code null} when the type declares no such record component.
+     */
+    private static ClassNode getRecordPatternComponentType(final ClassNode recordType, final int index) {
+        List<RecordComponentNode> components = recordType.redirect().getRecordComponents();
+        if (index >= components.size()) return null;
+        ClassNode componentType = components.get(index).getType();
+        if (recordType.getGenericsTypes() != null) {
+            componentType = applyGenericsContext(GenericsUtils.extractPlaceholders(recordType), componentType);
+        }
+        if (GenericsUtils.hasUnresolvedGenerics(componentType)) {
+            componentType = componentType.getPlainNodeReference(); // an uninferred type parameter erases to its bound
+        }
+        return wrapTypeIfNecessary(componentType);
+    }
+
+    /**
+     * The types of the {@code var}/{@code def} record component bindings of one
+     * pattern (GEP-19), by name, computed from the pattern and the static type of
+     * the matched value when first needed, which is after that value is visited.
+     *
+     * @param byDeclaration whether a binding is introduced by its declaration
+     *                      (the matching steps of a switch arm) or by an
+     *                      assignment within the match ({@code instanceof})
+     */
+    private record PatternBindingTypes(MatchPattern pattern, Supplier<ClassNode> sourceType, boolean byDeclaration, Map<String, ClassNode> types) {
+        PatternBindingTypes(final MatchPattern pattern, final Supplier<ClassNode> sourceType, final boolean byDeclaration) {
+            this(pattern, sourceType, byDeclaration, new HashMap<>());
+        }
+
+        ClassNode typeOf(final String name) {
+            if (types.isEmpty()) collect(pattern, sourceType.get());
+            return types.get(name);
+        }
+
+        private void collect(final MatchPattern pattern, final ClassNode source) {
+            if (pattern instanceof RecordPattern record) {
+                ClassNode recordType = inferRecordPatternType(source, record.type());
+                for (int i = 0, n = record.components().size(); i < n; i += 1) {
+                    MatchPattern component = record.components().get(i);
+                    ClassNode componentType = getRecordPatternComponentType(recordType, i);
+                    if (component instanceof BindingPattern binding) {
+                        if (componentType != null) types.put(binding.name(), componentType);
+                    } else {
+                        collect(component, componentType != null ? componentType : OBJECT_TYPE);
+                    }
+                }
+            } else if (pattern instanceof ListPattern list) {
+                for (MatchPattern element : list.elements()) collect(element, OBJECT_TYPE);
+            } else if (pattern instanceof MapPattern map) {
+                for (MapPattern.Entry entry : map.entries()) collect(entry.value(), OBJECT_TYPE);
+            }
+        }
+    }
+
+    /**
+     * Types the value assigned to a record component binding (GEP-19) as the
+     * record component, when the assignment is the one the lowered pattern makes.
+     */
+    private void typePatternBinding(final BinaryExpression assignment, final Expression target, final Expression value) {
+        if (patternBindingTypes != null && target instanceof VariableExpression variable
+                && (assignment instanceof DeclarationExpression) == patternBindingTypes.byDeclaration()) {
+            ClassNode type = patternBindingTypes.typeOf(variable.getName());
+            if (type != null) storeType(value, type);
+        }
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public void visitPatternExpression(final PatternExpression expression) {
+        if (!expression.isInstanceOf() || expression.getLowered() == null) {
+            super.visitPatternExpression(expression);
+            return;
+        }
+        PatternBindingTypes enclosingBindings = patternBindingTypes;
+        patternBindingTypes = new PatternBindingTypes(expression.getPattern(), () -> getType(expression.getSource()), false);
+        try {
+            super.visitPatternExpression(expression);
+        } finally {
+            patternBindingTypes = enclosingBindings;
+        }
+    }
+
+    private void addPatternSwitchWarning(final String text, final ASTNode node) {
+        Token token = new Token(0, "", node.getLineNumber(), node.getColumnNumber()); // ASTNode to CSTNode
+        SourceUnit source = getSourceUnit();
+        ErrorCollector collector = typeCheckingContext.getErrorCollector();
+        if (collector == null) {
+            collector = source.getErrorCollector();
+        }
+        if (collector == null) {
+            return;
+        }
+        collector.addWarning(new WarningMessage(WarningMessage.LIKELY_ERRORS, text, token, source));
+    }
+
+    private static boolean provablyDisjoint(final ClassNode subjectType, final ClassNode patternType) {
+        if (isObjectType(subjectType)
+                || subjectType.isArray() || patternType.isArray()
+                || implementsInterfaceOrIsSubclassOf(patternType, subjectType)
+                || implementsInterfaceOrIsSubclassOf(subjectType, patternType)) {
+            return false;
+        }
+        if (subjectType.isInterface()) return Modifier.isFinal(patternType.getModifiers());
+        if (patternType.isInterface()) return Modifier.isFinal(subjectType.getModifiers());
+        return true; // unrelated classes
+    }
+
+    private boolean coversAllEnumConstants(final List<CaseStatement> caseStatements, final ClassNode enumType) {
         Set<String> remaining = new LinkedHashSet<>();
         for (FieldNode field : enumType.redirect().getFields()) {
             if (field.isEnum()) {
@@ -6029,7 +6592,7 @@ trying: for (ClassNode[] signature : signatures) {
         if (remaining.isEmpty()) {
             return false;
         }
-        for (CaseStatement caseStatement : expression.getCaseStatements()) {
+        for (CaseStatement caseStatement : caseStatements) {
             Expression caseExpr = caseStatement.getExpression();
             if (caseExpr instanceof VariableExpression variable) {
                 remaining.remove(variable.getName());
@@ -6049,6 +6612,33 @@ trying: for (ClassNode[] signature : signatures) {
         typeCheckingContext.pushTemporaryTypeInfo();
         Expression conditionExpression = statement.getExpression();
         conditionExpression.putNodeMetaData(TYPE, getType(conditionExpression));
+        rememberSubjectVariable(statement, conditionExpression);
+    }
+
+    /**
+     * Types the subject variable of a pattern switch (GEP-19) as the selector
+     * type, the way a for-loop variable is typed.
+     */
+    private void rememberSubjectVariable(final ASTNode switchNode, final Expression selector) {
+        Parameter subject = getSubjectVariable(switchNode);
+        if (subject != null) {
+            typeCheckingContext.controlStructureVariables.put(subject, wrapTypeIfNecessary(selector.getNodeMetaData(TYPE)));
+        }
+        Parameter elements = getElementsVariable(switchNode);
+        if (elements != null) { // the selector as a list, for the list pattern arms
+            typeCheckingContext.controlStructureVariables.put(elements, LIST_TYPE.getPlainNodeReference());
+        }
+    }
+
+    private void forgetSubjectVariable(final ASTNode switchNode) {
+        Parameter subject = getSubjectVariable(switchNode);
+        if (subject != null) {
+            typeCheckingContext.controlStructureVariables.remove(subject);
+        }
+        Parameter elements = getElementsVariable(switchNode);
+        if (elements != null) {
+            typeCheckingContext.controlStructureVariables.remove(elements);
+        }
     }
 
     /** {@inheritDoc} */
@@ -6064,6 +6654,22 @@ trying: for (ClassNode[] signature : signatures) {
     /** {@inheritDoc} */
     @Override
     public void visitCaseStatement(final CaseStatement statement) {
+        PatternBindingTypes enclosingBindings = patternBindingTypes;
+        Parameter enclosingSubject = patternSubject;
+        if (statement.getExpression() instanceof PatternExpression label && label.getLowered() != null) {
+            Parameter subject = label.getSubject(); // GEP-19: the arm's bindings are typed from the selector type
+            patternBindingTypes = new PatternBindingTypes(label.getPattern(), () -> typeCheckingContext.controlStructureVariables.get(subject), true);
+            patternSubject = subject;
+        }
+        try {
+            visitCaseStatementWithinPatternScope(statement);
+        } finally {
+            patternBindingTypes = enclosingBindings;
+            patternSubject = enclosingSubject;
+        }
+    }
+
+    private void visitCaseStatementWithinPatternScope(final CaseStatement statement) {
         Expression selectable = selectableOfEnclosingSwitch();
         if (selectable == null) {
             super.visitCaseStatement(statement);
@@ -6093,6 +6699,10 @@ trying: for (ClassNode[] signature : signatures) {
         if (!GeneralUtils.mayCompleteNormally(statement.getCode())) { // same analysis as the bytecode generator
             typeCheckingContext.temporaryIfBranchTypeInformation
                 .peek().remove(selectableKey);
+            if (statement.getExpression() instanceof PatternExpression label && label.getSubject() != null) {
+                // GEP-19: the pattern arm narrowed the subject variable
+                typeCheckingContext.temporaryIfBranchTypeInformation.peek().remove(label.getSubject());
+            }
             restoreTypeBeforeConditional(); // isolate assignment branch
         } else {
             Expression nextLabel = nextCaseLabel(statement, selectable);
@@ -6115,8 +6725,8 @@ trying: for (ClassNode[] signature : signatures) {
 
     /**
      * Returns the label of the case following the given one in the enclosing
-     * switch, or {@code null} if it is the last case (the default statement,
-     * if any, has no label).
+     * switch, or {@code null} if it is the last case or the enclosing switch
+     * cannot be found (the default statement, if any, has no label).
      */
     private Expression nextCaseLabel(final CaseStatement statement, final Expression selectable) {
         List<CaseStatement> caseStatements;
@@ -6124,7 +6734,9 @@ trying: for (ClassNode[] signature : signatures) {
         if (switchStatement != null && switchStatement.getExpression() == selectable) {
             caseStatements = switchStatement.getCaseStatements();
         } else {
-            caseStatements = typeCheckingContext.getEnclosingSwitchExpression().getCaseStatements();
+            SwitchExpression switchExpression = typeCheckingContext.getEnclosingSwitchExpression();
+            if (switchExpression == null) return null;
+            caseStatements = switchExpression.getCaseStatements();
         }
         int index = caseStatements.indexOf(statement);
         if (index < 0 || index + 1 == caseStatements.size()) return null;
@@ -6426,7 +7038,10 @@ trying: for (ClassNode[] signature : signatures) {
         if (targetType.isUsingGenerics()
                 && missesGenericsTypes(resultType)
                 // GROOVY-10324, GROOVY-10342, et al.
-                && !resultType.isGenericsPlaceHolder()) {
+                && !resultType.isGenericsPlaceHolder()
+            // A declared type variable has a bound. Do not paint the target
+            // over "? extends T"; inference placeholders ("#E") still may.
+            && !containsDeclaredTypeVariable(resultType)) {
             // unchecked assignment
             // List<Type> list = new LinkedList()
             // Iterable<Type> iter = new LinkedList()
@@ -6464,6 +7079,33 @@ trying: for (ClassNode[] signature : signatures) {
         }
 
         return resultType;
+    }
+
+    /** A type variable declared by the program, not an inference placeholder ({@code #T}). */
+    private static boolean containsDeclaredTypeVariable(final ClassNode type) {
+        if (type == null) return false;
+        if (type.isArray()) return containsDeclaredTypeVariable(type.getComponentType());
+        if (type.isGenericsPlaceHolder()) {
+            String name = type.getUnresolvedName();
+            return name != null && !name.startsWith("#");
+        }
+        GenericsType[] args = type.getGenericsTypes();
+        if (args == null) return false;
+        for (GenericsType arg : args) {
+            if (arg.isPlaceholder()) {
+                String name = arg.getName();
+                if (name != null && !name.startsWith("#")) return true;
+            }
+            if (containsDeclaredTypeVariable(arg.getType())) return true;
+            if (containsDeclaredTypeVariable(arg.getLowerBound())) return true;
+            ClassNode[] upper = arg.getUpperBounds();
+            if (upper != null) {
+                for (ClassNode bound : upper) {
+                    if (containsDeclaredTypeVariable(bound)) return true;
+                }
+            }
+        }
+        return false;
     }
 
     private static boolean isTypeSource(final Expression expr, final Expression right) {
@@ -6646,8 +7288,11 @@ trying: for (ClassNode[] signature : signatures) {
                     return getUnwrapper(right);
                 }
 
-                // as anything can be assigned to a String, Class or [Bb]oolean, return the left type instead
-                if (isWildcardLeftHandSide(initialType) && !isObjectType(initialType)) {
+                // as anything can be assigned to a String, Class or [Bb]oolean, return the left type instead.
+                // A parameterized Class must keep the right-hand type: substituting the target
+                // would make Class<?> assignable to Class<? extends CharSequence>.
+                if (isWildcardLeftHandSide(initialType) && !isObjectType(initialType)
+                        && !(isClassType(initialType) && initialType.isUsingGenerics())) {
                     return initialType;
                 }
             }
@@ -6664,10 +7309,21 @@ trying: for (ClassNode[] signature : signatures) {
                             || LinkedHashSet_TYPE.isDerivedFrom(leftRedirect)) { // GROOVY-6912
                         return getLiteralResultType(left, right, LinkedHashSet_TYPE); // GROOVY-7128
                     }
+                    ClassNode defaultType = literalDefaultImplementation(leftRedirect, rightExpression);
+                    if (defaultType != null) { // GROOVY-12643
+                        return getLiteralResultType(left, right, defaultType);
+                    }
+                    if (isCopyableCollectionType(leftRedirect)) { // GROOVY-12643
+                        return getLiteralResultType(left, right, leftRedirect);
+                    }
                 } else if (rightExpression instanceof MapExpression) {
                     if (MAP_TYPE.equals(leftRedirect)
                             || LinkedHashMap_TYPE.isDerivedFrom(leftRedirect)) {
                         return getLiteralResultType(left, right, LinkedHashMap_TYPE); // GROOVY-7128, GROOVY-9844
+                    }
+                    ClassNode defaultType = literalDefaultImplementation(leftRedirect, rightExpression);
+                    if (defaultType != null) { // GROOVY-12643
+                        return getLiteralResultType(left, right, defaultType);
                     }
                 } else if (rightExpression instanceof ClosureExpression
                         || rightExpression instanceof MethodPointerExpression) {
@@ -7939,13 +8595,25 @@ trying: for (ClassNode[] signature : signatures) {
         outer.forEach(target::putIfAbsent);
     }
 
+    /**
+     * Returns the type named by {@code Type::name}, or by {@code this::name} in a static context.
+     */
+    private static ClassNode typeReference(final Expression expression) {
+        if (expression instanceof ClassExpression) return expression.getType();
+        if (isThisExpression(expression)) {
+            ClassNode type = expression.getNodeMetaData(INFERRED_TYPE);
+            if (type != null && isClassClassNodeWrappingConcreteType(type)) return type.getGenericsTypes()[0].getType();
+        }
+        return null;
+    }
+
     private static ClassNode[] collateMethodReferenceParameterTypes(final MethodPointerExpression source, final MethodNode target) {
         Parameter[] params;
 
         if (target instanceof ExtensionMethodNode && !((ExtensionMethodNode) target).isStaticExtension()) {
             params = ((ExtensionMethodNode) target).getExtensionMethodNode().getParameters();
-        } else if (!target.isStatic() && source.getExpression() instanceof ClassExpression) {
-            ClassNode thisType = source.getExpression().getType();
+        } else if (!target.isStatic() && typeReference(source.getExpression()) != null) {
+            ClassNode thisType = typeReference(source.getExpression());
             // there is an implicit parameter for "String::length"
             int n = target.getParameters().length;
             params = new Parameter[n + 1];
@@ -8170,7 +8838,7 @@ out:    for (ClassNode type : todo) {
     /** {@inheritDoc} */
     @Override
     public void addError(final String msg, final ASTNode node) {
-        Long err = ((long) node.getLineNumber()) << 16 + node.getColumnNumber();
+        Long err = (((long) node.getLineNumber()) << 32) + node.getColumnNumber();
         if ((DEBUG_GENERATED_CODE && node.getLineNumber() < 0) || !typeCheckingContext.reportedErrors.contains(err)) {
             SourceUnit source = getSourceUnit();
             ErrorCollector sourceCollector = source.getErrorCollector();
@@ -8251,7 +8919,47 @@ out:    for (ClassNode type : todo) {
      * Reports an incompatible assignment between the supplied types.
      */
     protected void addAssignmentError(final ClassNode leftType, final ClassNode rightType, final Expression expression) {
-        addStaticTypeError("Cannot assign value of type " + prettyPrintType(rightType) + " to variable of type " + prettyPrintType(leftType), expression);
+        addStaticTypeError("Cannot assign value of type " + prettyPrintValueType(rightType, expression) + " to variable of type " + prettyPrintType(leftType), expression);
+    }
+
+    /**
+     * Prints {@code type}. When {@code expression} is a call whose return type
+     * is a type variable instantiated by a wildcard, names that capture
+     * ({@code capture-of ? super java.lang.Integer}) instead of the upper
+     * bound the checker uses. The bound stays the type that was checked.
+     */
+    private String prettyPrintValueType(final ClassNode type, final Expression expression) {
+        String capture = captureOfReturnType(expression);
+        return capture != null ? capture : prettyPrintType(type);
+    }
+
+    private String captureOfReturnType(final Expression expression) {
+        Expression value = expression;
+        if (value instanceof BinaryExpression binary && isAssignment(binary.getOperation().getType())) {
+            value = binary.getRightExpression();
+        }
+        Expression receiverExpression = null;
+        if (value instanceof MethodCallExpression call) {
+            receiverExpression = call.getObjectExpression();
+        } else if (value instanceof PropertyExpression property) {
+            receiverExpression = property.getObjectExpression();
+        }
+        if (receiverExpression == null) return null;
+
+        MethodNode target = value.getNodeMetaData(DIRECT_METHOD_CALL_TARGET);
+        if (target == null || target instanceof ExtensionMethodNode || target.isStatic()) return null;
+        ClassNode declaredReturn = target.getReturnType();
+        if (declaredReturn == null || !declaredReturn.isGenericsPlaceHolder()) return null;
+        ClassNode receiver = getType(receiverExpression);
+        ClassNode declaring = target.getDeclaringClass();
+        if (receiver == null || declaring == null) return null;
+        if (!receiver.equals(declaring) && !implementsInterfaceOrIsSubclassOf(receiver, declaring)) return null;
+
+        Map<GenericsTypeName, GenericsType> spec = extractPlaceHoldersVisibleToDeclaration(receiver, target, null);
+        if (spec == null) return null;
+        GenericsType witness = spec.get(new GenericsTypeName(declaredReturn.getUnresolvedName()));
+        if (witness == null || !witness.isWildcard()) return null;
+        return prettyPrintCapture(witness);
     }
 
     /**
