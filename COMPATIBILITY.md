@@ -969,12 +969,12 @@ The same release also changes these related behaviours:
 `Supplier` of the cache; the overloads taking a cache instance are
 unchanged. `japicmp` sees only additions.
 
-### Groovy 7 — `@IndexedProperty` adds no indexed setter to a record (GROOVY-12730)
+### Groovy 6.0.1 — `@IndexedProperty` adds no indexed setter to a record (GROOVY-12730)
 
 An `@IndexedProperty` component of a record, or property of a `@RecordType` or
 `@RecordBase` class, gets only the indexed getter `getX(int)`, as an
-`@Immutable` class's property already did. Groovy 6 also generated the indexed
-setter `setX(int, V)`, although a record has no other setters. A record is
+`@Immutable` class's property already did. Earlier versions also generated the
+indexed setter `setX(int, V)`, although a record has no other setters. A record is
 only shallowly immutable, so its list or array can still be changed through
 the value the accessor returns.
 
