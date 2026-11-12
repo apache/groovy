@@ -66,7 +66,6 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.classX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.constX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.ctorX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.defaultValueX;
-import static org.codehaus.groovy.ast.tools.GeneralUtils.elvisX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.getAllProperties;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.ifS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.isNullX;
@@ -152,9 +151,7 @@ public class NamedVariantASTTransformation extends AbstractASTTransformation {
                 } else if (AnnotatedNodeUtils.hasAnnotation(mNodeParam, NAMED_DELEGATE_TYPE)) {
                     if (!processDelegateParam(mNode, mapParam, args, propNames, mNodeParam, coerce)) return;
                 } else {
-                    Expression arg = varX(mNodeParam);
-                    Expression argOrDefault = mNodeParam.hasInitialExpression() ? elvisX(arg, mNodeParam.getDefaultValue()) : arg;
-                    args.addExpression(asType(argOrDefault, mNodeParam.getType(), coerce));
+                    args.addExpression(asType(varX(mNodeParam), mNodeParam.getType(), coerce));
                     if (hasDuplicates(this, mNode, propNames, mNodeParam.getName())) return;
                     genParams.add(mNodeParam);
                 }
