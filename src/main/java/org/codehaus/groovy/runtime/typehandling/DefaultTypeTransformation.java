@@ -48,13 +48,27 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Deque;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
+import java.util.NavigableMap;
+import java.util.NavigableSet;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Queue;
+import java.util.Set;
+import java.util.SortedMap;
+import java.util.SortedSet;
+import java.util.TreeMap;
+import java.util.TreeSet;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.BaseStream;
@@ -489,8 +503,10 @@ public class DefaultTypeTransformation {
             return asArray(object, type);
         } else if (type.isEnum()) {
             return ShortTypeHandling.castToEnum(object, type);
-        } else if (Collection.class.isAssignableFrom(type)) {
+        } else if (Collection.class.isAssignableFrom(type) || type == Iterable.class) {
             return continueCastOnCollection(object, type);
+        } else if (Map.class.isAssignableFrom(type) && object instanceof Map) {
+            return continueCastOnMap((Map) object, type);
         } else if (type == String.class) {
             return FormatHelper.toString(object);
         } else if (type == Boolean.class) {
@@ -504,13 +520,39 @@ public class DefaultTypeTransformation {
         return continueCastOnNumber(object, type);
     }
 
+    /**
+     * The implementation used when a value is cast or coerced to one of these
+     * collection or map interfaces and is not already an instance of it.
+     */
+    private static final Map<Class<?>, Supplier<?>> DEFAULT_IMPLEMENTATIONS = Map.ofEntries(
+        Map.entry(Iterable.class, ArrayList::new),
+        Map.entry(Collection.class, ArrayList::new),
+        Map.entry(List.class, ArrayList::new),
+        Map.entry(Set.class, LinkedHashSet::new),
+        Map.entry(SortedSet.class, TreeSet::new),
+        Map.entry(NavigableSet.class, TreeSet::new),
+        Map.entry(Queue.class, LinkedList::new), // unlike ArrayDeque, accepts null elements
+        Map.entry(Deque.class, LinkedList::new),
+        Map.entry(BlockingQueue.class, LinkedBlockingQueue::new),
+        Map.entry(SortedMap.class, TreeMap::new),
+        Map.entry(NavigableMap.class, TreeMap::new),
+        Map.entry(ConcurrentMap.class, ConcurrentHashMap::new)
+    );
+
+    private static boolean isConcrete(final Class type) {
+        return !type.isInterface() && !Modifier.isAbstract(type.getModifiers());
+    }
+
     private static Object continueCastOnCollection(final Object object, final Class type) {
         if (object instanceof Collection && type.isAssignableFrom(LinkedHashSet.class)) {
             return new LinkedHashSet((Collection) object);
         }
 
         Supplier<Collection> newCollection = () -> {
-            if (type.isAssignableFrom(ArrayList.class) && Modifier.isAbstract(type.getModifiers())) {
+            Supplier<?> defaultImplementation = DEFAULT_IMPLEMENTATIONS.get(type);
+            if (defaultImplementation != null) {
+                return (Collection) defaultImplementation.get();
+            } else if (type.isAssignableFrom(ArrayList.class) && Modifier.isAbstract(type.getModifiers())) {
                 return new ArrayList();
             } else if (type.isAssignableFrom(LinkedHashSet.class) && Modifier.isAbstract(type.getModifiers())) {
                 return new LinkedHashSet();
@@ -542,7 +584,51 @@ public class DefaultTypeTransformation {
             return answer;
         }
 
+        if (object instanceof Collection collection) {
+            if (DEFAULT_IMPLEMENTATIONS.containsKey(type)) {
+                Collection answer = newCollection.get();
+                answer.addAll(collection);
+                return answer;
+            }
+            if (isConcrete(type)) {
+                // prefer a copy constructor, then a no-arg constructor plus addAll, over
+                // passing the elements as constructor arguments, e.g. Vector(int capacity)
+                Object answer = newCollectionOf(type, collection);
+                if (answer != null) return answer;
+            }
+        }
+
         return continueCastOnNumber(object, type);
+    }
+
+    private static Object continueCastOnMap(final Map map, final Class type) {
+        Supplier<?> defaultImplementation = DEFAULT_IMPLEMENTATIONS.get(type);
+        if (defaultImplementation != null) {
+            Map answer = (Map) defaultImplementation.get();
+            answer.putAll(map);
+            return answer;
+        }
+
+        return continueCastOnNumber(map, type);
+    }
+
+    /**
+     * Fills a concrete collection class through its copy constructor, or else
+     * its no-arg constructor followed by addAll; null if neither works.
+     * Failures are left to the caller's fallback, which reports them (GROOVY-7867).
+     */
+    private static Object newCollectionOf(final Class type, final Collection elements) {
+        try {
+            return InvokerHelper.invokeConstructorOf(type, new Object[]{elements});
+        } catch (Exception ignore) {
+        }
+        try {
+            Collection answer = (Collection) InvokerHelper.invokeConstructorOf(type, null);
+            answer.addAll(elements);
+            return answer;
+        } catch (Exception ignore) {
+        }
+        return null;
     }
 
     private static Object continueCastOnNumber(Object object, Class type) {
@@ -1247,7 +1333,8 @@ public class DefaultTypeTransformation {
         if (left instanceof List && right instanceof List) {
             return DefaultGroovyMethods.equals((List) left, (List) right);
         }
-        if (left instanceof Comparable) {
+        // GROOVY-12699: a Number that is not Comparable compares numerically, as for <=>
+        if (left instanceof Comparable || (left instanceof Number && right instanceof Number)) {
             return compareToWithEqualityCheck(left, right, true) == 0;
         }
         // handle arrays on both sides as special case for efficiency

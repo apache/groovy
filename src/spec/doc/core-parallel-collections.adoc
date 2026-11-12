@@ -160,6 +160,7 @@ ConcurrentConfig.defaultParallelism = 16
 
 |`collectParallel { }` |Transforms each element (parallel map)
 |`collectManyParallel { }` |Transforms and flattens (parallel flatMap)
+|`collectManyParallel()` |Flattens a collection of collections
 |===
 
 [source,groovy]
@@ -175,9 +176,12 @@ def allTags = articles.collectManyParallel { it.tags }
 |Method |Description
 
 |`findAllParallel { }` |Elements matching predicate
+|`findAllParallel()` |Elements that are true by Groovy truth
 |`findParallel { }` |First element matching predicate
+|`findParallel()` |First element that is true by Groovy truth
 |`findAnyParallel { }` |Any element matching (may be faster, no order guarantee)
 |`grepParallel(filter)` |Pattern match via `isCase` (Class, regex, Range, etc.)
+|`grepParallel()` |Elements that are true by Groovy truth
 |`splitParallel { }` |Partition into [matching, non-matching]
 |===
 
@@ -212,7 +216,9 @@ items.eachWithIndexParallel { item, idx -> println "$idx: $item" }
 |Method |Description
 
 |`anyParallel { }` |True if any element matches
+|`anyParallel()` |True if any element is true by Groovy truth
 |`everyParallel { }` |True if all elements match
+|`everyParallel()` |True if all elements are true by Groovy truth
 |`countParallel { }` |Count of matching elements
 |===
 
@@ -229,18 +235,27 @@ def errorCount = logs.countParallel { it.level == 'ERROR' }
 |===
 |Method |Description
 
+|`sumParallel()` |Adds the elements, as `sum()` does
+|`sumParallel { }` |Adds the transformed elements, as `sum { }` does
 |`sumParallel { a, b -> }` |Reduce with binary operator
 |`injectParallel(seed) { a, b -> }` |Reduce with seed (accumulator must be associative)
+|`minParallel()` |Minimum by natural ordering, as `min()`
+|`minParallel { }` |Minimum by key, as `min { }`
 |`minParallel { a, b -> }` |Minimum by comparator
+|`maxParallel()` |Maximum by natural ordering, as `max()`
+|`maxParallel { }` |Maximum by key, as `max { }`
 |`maxParallel { a, b -> }` |Maximum by comparator
 |`groupByParallel { }` |Group into map by classifier
 |===
 
 [source,groovy]
 ----
-def total = amounts.sumParallel { a, b -> a + b }
+def total = amounts.sumParallel()
+def totalPrice = items.sumParallel { it.price }
+def joined = words.sumParallel { a, b -> a + ' ' + b }
 def product = numbers.injectParallel(1) { a, b -> a * b }
-def youngest = people.minParallel { a, b -> a.age <=> b.age }
+def youngest = people.minParallel { it.age }
+def oldest = people.maxParallel { a, b -> a.age <=> b.age }
 def byDept = employees.groupByParallel { it.department }
 ----
 
@@ -248,6 +263,23 @@ NOTE: `injectParallel` takes the identity value of an associative
 accumulator, matching `Stream.reduce(identity, accumulator)`. A seed
 that is not an identity, or an accumulator that is not associative,
 does not match a sequential `inject`.
+
+The no-argument forms behave as their sequential namesakes. `sumParallel()`
+calls `plus` on the left operand, as `sum()` does, so it matches `sum()`
+when `plus` is associative for the elements: integers, big decimals,
+strings and lists, but not floating-point values, whose rounding depends
+on the order of the additions. `minParallel()` and `maxParallel()` skip
+null elements and compare as Groovy's `<` and `>` do, as `min()` and
+`max()` do. When several elements are equal, the minimum and maximum
+methods return the earliest.
+
+A closure or lambda with one parameter gives `sumParallel` a transform and
+`minParallel` and `maxParallel` a key; one with two parameters gives a
+combiner or a comparator. A method reference selects by the number of
+arguments its method takes, so `words.sumParallel(String::length)` sums the
+lengths and `numbers.sumParallel(Integer::sum)` combines. A key is computed
+once for each element, and keys compare as Groovy's `<` does, with `null`
+the least, as in `min { }` and `max { }`.
 
 A matching `null` from `findParallel` or `findAnyParallel` returns
 `null`, the same as no match. `minParallel` passes null elements to
