@@ -526,6 +526,12 @@ from a number to a character casts the `Number.intvalue()` to `char`. Groovy con
 using `Number.doubleValue()` when converting from a `Float` or `Double`, otherwise it constructs using `toString()`.
 Other conversions have their behavior defined by `java.lang.Number`.
 
+== Static type checking
+
+Groovy checks types at compile time only in code marked with `@TypeChecked` or `@CompileStatic`. That checking differs
+from Java's in a number of deliberate ways, such as flow typing, assignment conversions and unchecked exceptions.
+They are listed under <<{core-semantics}#stc-java-differences,Differences from Java>> in the semantics guide.
+
 == Extra keywords
 
 Groovy has many of the same keywords as Java and Groovy 3 and above also has the same `var` reserved type as Java.

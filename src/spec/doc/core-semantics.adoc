@@ -1571,6 +1571,10 @@ include::../test/typing/TypeCheckingTest.groovy[tags=stc_assign_equals,indent=0]
 include::../test/typing/TypeCheckingTest.groovy[tags=stc_assign_specialcase,indent=0]
 ----
 ====
++
+The value is converted when the assignment runs: to its `toString()` for a `String`, by <<the-groovy-truth,Groovy truth>>
+for a `boolean`, and to the class it names for a `Class`. This rule is for assignments and `return` statements;
+it does not apply to the arguments of a method call.
 
 * _or_ `o` is null and `T` is not a primitive type
 
@@ -1919,6 +1923,130 @@ There are possible workarounds, like introducing an interface, but basically, by
 but you loose some features of the language. Hopefully, Groovy introduces some features like flow typing to reduce the gap between
 type-checked and non type-checked Groovy.
 ====
+
+[[stc-generics]]
+==== Generic types
+
+The rules above compare classes. When a type has type arguments, as `List<String>` does, the type arguments are
+compared too, in the same way for an assignment, a `return` statement and a method argument. The rules are
+close to Java's. The deliberate differences from Java are <<stc-java-differences,listed at the end of this chapter>>.
+
+*Type arguments must be the same.* A `List<Integer>` is not a `List<Number>`, even though an `Integer` is a `Number`.
+If it were, a `Double` could be added to the list through the second type:
+
+[source,groovy]
+----
+include::../test/typing/TypeCheckingTest.groovy[tags=stc_generics_invariant,indent=0]
+----
+
+*A wildcard accepts a range of type arguments.* `? extends Number` accepts `Number` and its subtypes,
+`? super Integer` accepts `Integer` and its supertypes, and `?` accepts every type argument.
+`?` and `? extends Object` are the same wildcard.
+
+[source,groovy]
+----
+include::../test/typing/TypeCheckingTest.groovy[tags=stc_generics_wildcards,indent=0]
+----
+<1> `Integer` is within `? extends Number`
+<2> `Number` is within `? super Integer`
+<3> every type argument is within `?`
+<4> a wildcard is within another wildcard when everything it accepts is accepted by the other
+
+A wildcard that accepts more than the target does is rejected, and so is `?` for a target with a bound:
+
+[source,groovy]
+----
+include::../test/typing/TypeCheckingTest.groovy[tags=stc_generics_wildcard_range_fail,indent=0]
+include::../test/typing/TypeCheckingTest.groovy[tags=stc_generics_wildcard_unbounded_fail,indent=0]
+----
+
+A wildcard stands for one type that is not known, so it is not accepted where a particular type argument is required:
+
+[source,groovy]
+----
+include::../test/typing/TypeCheckingTest.groovy[tags=stc_generics_wildcard_exact_fail,indent=0]
+----
+
+*What can be read and written through a wildcard follows from its bound.* A value read through `? extends Number` is a
+`Number`. A value written through `? super Integer` must be an `Integer`.
+
+[source,groovy]
+----
+include::../test/typing/TypeCheckingTest.groovy[tags=stc_generics_read_write,indent=0]
+----
+<1> whatever the element type is, it is a `Number`
+<2> whatever the element type is, it can hold an `Integer`
+
+Nothing can be written through `? extends`, because the element type might be any subtype, and through `? super`
+only the bound and its subtypes can be written:
+
+[source,groovy]
+----
+include::../test/typing/TypeCheckingTest.groovy[tags=stc_generics_write_extends_fail,indent=0]
+include::../test/typing/TypeCheckingTest.groovy[tags=stc_generics_write_super_fail,indent=0]
+----
+
+*A raw type is not checked.* A raw type is a generic type used without type arguments, such as `List`. It is accepted
+for the same type with any type arguments, and the other way round. Java gives an "unchecked" warning for the first
+of these; Groovy has no such warning. The elements of a raw type are of type `Object`.
+
+[source,groovy]
+----
+include::../test/typing/TypeCheckingTest.groovy[tags=stc_generics_raw,indent=0]
+----
+<1> a raw `List` is accepted for a `List<String>`; nothing checks that it holds strings
+<2> a `List<String>` is accepted for a raw `List`
+<3> the same holds for an argument
+
+[source,groovy]
+----
+include::../test/typing/TypeCheckingTest.groovy[tags=stc_generics_raw_element_fail,indent=0]
+----
+
+A cast to a type with type arguments, such as `(List<String>) value`, is not checked against the type arguments either.
+
+*A literal or a diamond takes its type arguments from the target.* A list or map literal and a constructor call
+written with `<>` have no type arguments of their own, so the elements are checked against the type arguments
+of the variable they are assigned to:
+
+[source,groovy]
+----
+include::../test/typing/TypeCheckingTest.groovy[tags=stc_generics_literal,indent=0]
+----
+<1> each element must be a `Number`
+<2> an `ArrayList<Number>`
+
+Without a declared type, the type arguments of a literal are <<section-lub,inferred from its elements>>.
+
+*The type arguments of a generic method are inferred from the arguments of the call.* The inferred type arguments
+must be within the bounds that the method declares:
+
+[source,groovy]
+----
+include::../test/typing/TypeCheckingTest.groovy[tags=stc_generics_method,indent=0]
+----
+<1> `T` is `Integer`, so the call returns an `Integer`
+
+[source,groovy]
+----
+include::../test/typing/TypeCheckingTest.groovy[tags=stc_generics_method_fail,indent=0]
+----
+
+[[stc-generics-class]]
+===== `Class` and its type argument
+
+A `Class` value is compared by its type argument like a value of any other generic type:
+
+[source,groovy]
+----
+include::../test/typing/TypeCheckingTest.groovy[tags=stc_generics_class,indent=0]
+----
+<1> `Integer` is within `? extends Number`
+
+[source,groovy]
+----
+include::../test/typing/TypeCheckingTest.groovy[tags=stc_generics_class_fail,indent=0]
+----
 
 [[type-inference]]
 ==== Type inference
@@ -2689,6 +2817,87 @@ and only the erased class is reified (`List<List<String>>` yields `List.class`);
 * when every token would erase to `Object` (for example a `List<Object>` receiver), no token is synthesised:
 a checked `Object` view could never reject anything;
 * passing the `Class` explicitly always works, in every mode.
+
+[[stc-java-differences]]
+==== Differences from Java
+
+Type-checked Groovy accepts most Java code and gives it the same meaning. The deliberate differences are listed in
+the table below: each one removes a cast, a conversion or a declaration that Java requires. Where the types alone do not
+guarantee the result, Groovy converts or casts the value when the code runs, so a wrong value fails at that point.
+
+[cols="2,3,3" options="header"]
+|===
+|Difference
+|Java
+|Type-checked Groovy
+
+|<<section-flow-typing,Flow typing>>
+|A variable has its declared type everywhere.
+|A variable has the type of the value last assigned to it, so its members can be used without a cast.
+With `@CompileStatic` that type also selects among overloaded methods.
+
+|<<_instanceof_inference,`instanceof` inference>>
+|After `o instanceof String`, using `o` as a `String` needs a cast or a pattern variable.
+|`o` is a `String` where the test holds.
+
+|<<section-lub,Least upper bound>>
+|The type of a conditional expression is found by Java's own rules, and there are no collection literals.
+|A list literal, a conditional expression or a variable assigned in several branches has the least upper bound
+of the types involved, which can be an intersection such as `Serializable & Comparable`.
+
+|<<_type_checking_assignments,Assignment to `String`, `boolean` and `Class`>>
+|Only a value of the type is accepted.
+|Any value is accepted and converted when the code runs.
+
+|`GString` to `String`
+|Not applicable.
+|A `GString` is accepted for a `String`, as an assigned value and as an argument.
+
+|<<number-assignment,Number conversions>>
+|Widening between primitive types, and boxing to the matching wrapper only: `Double d = 1` is an error.
+|As in the <<number-assignment,table of number types>>, for primitive and wrapper types alike.
+
+|<<the-groovy-truth,Groovy truth>>
+|A condition must be a `boolean`.
+|A condition can be any value.
+
+|<<_list_and_map_constructors,List and map constructors>>, arrays from lists
+|Not applicable.
+|A list or map literal can be assigned to a type that it can construct, and a list to an array.
+
+|<<closure-coercion,Closure to SAM type>>
+|A lambda or a method reference is accepted for a functional interface.
+|So is a closure, for any type with a single abstract method, including an abstract class.
+
+|Raw types and casts
+|Using a raw type for a parameterized type, or a cast to a parameterized type, gives an "unchecked" warning.
+|No warning. See <<stc-generics,raw types>>.
+
+|Checked exceptions
+|A checked exception must be caught or declared.
+|Not checked.
+
+|Method selection
+|An overloaded method is selected at compile time from the declared types of the arguments.
+|With `@TypeChecked` the method is selected when the code runs, from the classes of the argument values.
+With `@CompileStatic` it is selected at compile time, from the types that flow typing gives the arguments.
+
+|Closures
+|A lambda sees only its enclosing scope.
+|A closure can resolve names against a delegate, declared to the type checker with
+link:core-domain-specific-languages.html#section-delegatesto[`@DelegatesTo`]; its parameter types can be declared with
+`@ClosureParams`.
+|===
+
+[source,groovy]
+----
+include::../test/typing/TypeCheckingTest.groovy[tags=stc_checked_exceptions,indent=0]
+----
+<1> `withReader` and `readLine` throw `IOException`, which is neither caught nor declared
+<2> nor is the exception thrown here
+
+A <<type-checking-extensions,type checking extension>> can accept more or reject more than these
+rules do for the code it is applied to.
 
 === Static compilation
 

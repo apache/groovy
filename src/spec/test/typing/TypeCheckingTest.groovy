@@ -1085,4 +1085,186 @@ import groovy.transform.stc.FirstParam
             // end::stc_skip[]
             '''
     }
+
+    @Test
+    void testGenericTypeArguments() {
+        shouldFailWithMessages '''
+            // tag::stc_generics_invariant[]
+            List<Number> widen(List<Integer> ints) {
+                ints                                    // fails
+            }
+            // end::stc_generics_invariant[]
+        ''', 'Incompatible generic argument types. Cannot assign java.util.List<java.lang.Integer> to: java.util.List<java.lang.Number>'
+
+        assertScript '''
+            // tag::stc_generics_wildcards[]
+            List<? extends Number> producer(List<Integer> ints) { ints }        // <1>
+            List<? super Integer> consumer(List<Number> numbers) { numbers }    // <2>
+            List<?> anything(List<String> strings) { strings }                  // <3>
+            List<? extends Number> narrower(List<? extends Integer> ints) { ints } // <4>
+            // end::stc_generics_wildcards[]
+            assert producer([1]) == [1]
+            assert consumer([1]) == [1]
+            assert anything(['a']) == ['a']
+            assert narrower([1]) == [1]
+        '''
+
+        shouldFailWithMessages '''
+            // tag::stc_generics_wildcard_range_fail[]
+            List<? extends Integer> narrow(List<? extends Number> numbers) {
+                numbers                                 // fails
+            }
+            // end::stc_generics_wildcard_range_fail[]
+        ''', 'Incompatible generic argument types. Cannot assign java.util.List<? extends java.lang.Number> to: java.util.List<? extends java.lang.Integer>'
+
+        shouldFailWithMessages '''
+            // tag::stc_generics_wildcard_unbounded_fail[]
+            List<? extends Number> assume(List<?> values) {
+                values                                  // fails
+            }
+            // end::stc_generics_wildcard_unbounded_fail[]
+        ''', 'Incompatible generic argument types. Cannot assign java.util.List<?> to: java.util.List<? extends java.lang.Number>'
+
+        shouldFailWithMessages '''
+            // tag::stc_generics_wildcard_exact_fail[]
+            List<Number> exact(List<? extends Number> numbers) {
+                numbers                                 // fails
+            }
+            // end::stc_generics_wildcard_exact_fail[]
+        ''', 'Incompatible generic argument types. Cannot assign java.util.List<? extends java.lang.Number> to: java.util.List<java.lang.Number>'
+    }
+
+    @Test
+    void testWildcardReadAndWrite() {
+        assertScript '''
+            // tag::stc_generics_read_write[]
+            Number first(List<? extends Number> numbers) {
+                numbers.get(0)                          // <1>
+            }
+            void fill(List<? super Integer> sink) {
+                sink.add(42)                            // <2>
+            }
+            // end::stc_generics_read_write[]
+            assert first([1.5]) == 1.5
+            def sink = []
+            fill(sink)
+            assert sink == [42]
+        '''
+
+        shouldFailWithMessages '''
+            // tag::stc_generics_write_extends_fail[]
+            void fill(List<? extends Number> numbers) {
+                numbers.add(42)                         // fails
+            }
+            // end::stc_generics_write_extends_fail[]
+        ''', 'Cannot call java.util.List#add(capture-of ? extends java.lang.Number) with arguments [int]'
+
+        shouldFailWithMessages '''
+            // tag::stc_generics_write_super_fail[]
+            void fill(List<? super Integer> sink) {
+                sink.add('forty-two')                   // fails
+            }
+            // end::stc_generics_write_super_fail[]
+        ''', 'Cannot call java.util.List#add(capture-of ? super java.lang.Integer) with arguments [java.lang.String]'
+    }
+
+    @Test
+    void testRawTypes() {
+        assertScript '''
+            // tag::stc_generics_raw[]
+            List<String> assume(List raw) { raw }       // <1>
+            List forget(List<String> strings) { strings } // <2>
+            int count(List<Number> numbers) { numbers.size() }
+            int countRaw(List raw) { count(raw) }       // <3>
+            // end::stc_generics_raw[]
+            assert assume(['a']) == ['a']
+            assert forget(['a']) == ['a']
+            assert countRaw([1, 2]) == 2
+        '''
+
+        shouldFailWithMessages '''
+            // tag::stc_generics_raw_element_fail[]
+            Integer first(List raw) {
+                raw.get(0)                              // fails
+            }
+            // end::stc_generics_raw_element_fail[]
+        ''', 'Cannot return value of type java.lang.Object for method returning java.lang.Integer'
+    }
+
+    @Test
+    void testGenericTypeArgumentsFromTheTarget() {
+        assertScript '''
+            // tag::stc_generics_literal[]
+            List<Number> numbers = [1, 2.5]             // <1>
+            Map<String, Number> totals = [a: 1]
+            List<Number> more = new ArrayList<>()       // <2>
+            more.add(3)
+            // end::stc_generics_literal[]
+            assert numbers.size() == 2
+            assert totals.a == 1
+            assert more == [3]
+        '''
+    }
+
+    @Test
+    void testGenericMethodCall() {
+        assertScript '''
+            // tag::stc_generics_method[]
+            <T extends Number> T first(List<T> list) { list.get(0) }
+
+            Integer firstOf(List<Integer> ints) {
+                first(ints)                             // <1>
+            }
+            // end::stc_generics_method[]
+            assert firstOf([4, 5]) == 4
+        '''
+
+        shouldFailWithMessages '''
+            <T extends Number> T first(List<T> list) { list.get(0) }
+
+            // tag::stc_generics_method_fail[]
+            def firstOf(List<String> strings) {
+                first(strings)                          // fails
+            }
+            // end::stc_generics_method_fail[]
+        ''', '#first(java.util.List<T>) with arguments [java.util.List<java.lang.String>]'
+    }
+
+    @Test
+    void testCheckedExceptionsAreNotChecked() {
+        assertScript '''
+            // tag::stc_checked_exceptions[]
+            String firstLine(File file) {
+                file.withReader { it.readLine() }       // <1>
+            }
+            void fail() {
+                throw new IOException('not declared')   // <2>
+            }
+            // end::stc_checked_exceptions[]
+            try {
+                fail()
+                assert false
+            } catch (IOException e) {
+                assert e.message == 'not declared'
+            }
+        '''
+    }
+
+    @Test
+    void testClassTypeArgument() {
+        assertScript '''
+            // tag::stc_generics_class[]
+            Class<? extends Number> numberType(Class<Integer> type) { type }    // <1>
+            // end::stc_generics_class[]
+            assert numberType(Integer) == Integer
+        '''
+
+        shouldFailWithMessages '''
+            // tag::stc_generics_class_fail[]
+            Class<Number> exactType(Class<Integer> type) {
+                type                                    // fails
+            }
+            // end::stc_generics_class_fail[]
+        ''', 'Incompatible generic argument types. Cannot assign java.lang.Class<java.lang.Integer> to: java.lang.Class<java.lang.Number>'
+    }
 }
