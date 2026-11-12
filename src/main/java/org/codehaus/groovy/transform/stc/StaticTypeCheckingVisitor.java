@@ -134,8 +134,10 @@ import org.codehaus.groovy.transform.sc.StaticCompilationMetadataKeys;
 import org.codehaus.groovy.transform.trait.Traits;
 import org.objectweb.asm.Opcodes;
 
+import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.text.MessageFormat;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.BitSet;
@@ -373,6 +375,7 @@ import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.toMeth
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.typeCheckMethodArgumentWithGenerics;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.typeCheckMethodsWithGenerics;
 import static org.codehaus.groovy.transform.stc.StaticTypesMarker.CLOSURE_ARGUMENTS;
+import static org.codehaus.groovy.transform.stc.StaticTypesMarker.CLOSURE_TARGET_INTERFACE;
 import static org.codehaus.groovy.transform.stc.StaticTypesMarker.COMPOUND_ASSIGN_TARGET;
 import static org.codehaus.groovy.transform.stc.StaticTypesMarker.DECLARATION_INFERRED_TYPE;
 import static org.codehaus.groovy.transform.stc.StaticTypesMarker.DELEGATION_METADATA;
@@ -422,6 +425,12 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     private static final Object BODY_RETURN_TYPE = new Object();
     /** Metadata key marking an untyped closure or lambda parameter declared with the type its functional interface gives it. */
     private static final Object FUNCTIONAL_PARAMETER_TYPE = new Object();
+    /** Metadata key marking a value of type Closure that is stored as it is where a closure literal would be converted, and has been reported. */
+    private static final Object CLOSURE_VALUE_NOT_CONVERTED = new Object();
+    /** The type parameter {@code V} of {@code Map.put(K, V)}, which stores a map entry written as a property. */
+    private static final ClassNode MAP_VALUE_TYPE = MAP_TYPE.getMethods("put").get(0).getParameters()[1].getType();
+    /** The names of the methods of {@code Closure}, which a closure class cannot implement for an interface. */
+    private static final Set<String> CLOSURE_METHOD_NAMES = closureMethodNames();
     /** Cached {@code Closure#getDelegate()} method. */
     protected static final MethodNode GET_DELEGATE = CLOSURE_TYPE.getGetterMethod("getDelegate");
     /** Cached {@code Closure#getOwner()} method. */
@@ -1253,6 +1262,10 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 if (mapValueType != null) {
                     convertMapValue(expression, mapValueType);
                     resultType = mapValueType;
+                }
+                if (op == EQUAL && isSAMType(lType) && isStaticDispatchScope()) {
+                    ClassNode slotType = getTypeParameterOfSlot(leftExpression, rType);
+                    if (slotType != null) convertClosureValue(rightExpression, lType, slotType);
                 }
                 // check for implicit conversion like "String a = 123", "int[] b = [1,2,3]", "List c = [].stream()", etc.
                 if (!implementsInterfaceOrIsSubclassOf(wrapTypeIfNecessary(resultType), wrapTypeIfNecessary(originType))) {
@@ -2416,11 +2429,9 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
                         if (!extension.handleIncompatibleAssignment(targetType, valueType, entryExpression)) {
                             addAssignmentError(targetType, valueType, entryExpression);
                         }
-                    } else if (propertyTypes.size() == 1 && implementsInterfaceOrIsSubclassOf(valueType, CLOSURE_TYPE)) {
-                        ClassNode propertyType = propertyTypes.iterator().next();
-                        if (isSAMType(propertyType)) { // a closure value is converted to the type of the property
-                            keyExpression.putNodeMetaData(PARAMETER_TYPE, propertyType);
-                        }
+                    } else if (propertyTypes.size() == 1 && isSAMType(propertyTypes.iterator().next()) && isStaticDispatchScope()) {
+                        ClassNode slotType = getTypeParameterOfSlot(dummyExpression, valueType);
+                        if (slotType != null) convertClosureValue(valueExpression, propertyTypes.iterator().next(), slotType);
                     }
                 }
             }
@@ -4823,6 +4834,13 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
                         targetType = targetType.getComponentType();
                     ClassNode functionalType = (i < nSelf || !isFunctionalLiteral(expression) ? null
                             : getFunctionalTypeArgument(receiver, selectedMethod, arguments, i - nSelf, targetType));
+                    if (functionalType != null && !(expression instanceof LambdaExpression || expression instanceof MethodReferenceExpression)) {
+                        if (isClosureTargetInterface(functionalType, targetType)) { // the closure class implements the interface
+                            expression.putNodeMetaData(CLOSURE_TARGET_INTERFACE, functionalType);
+                        } else {
+                            functionalType = null; // the closure is passed as it is
+                        }
+                    }
                     if (functionalType != null) { // a type parameter the call binds to a functional interface
                         targetType = functionalType;
                         if (declared.getAnnotations(CLOSUREPARAMS_CLASSNODE).isEmpty())
@@ -4858,6 +4876,14 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
                 }
                 expression.visit(this);
                 expression.removeNodeMetaData(DELEGATION_METADATA);
+            } else if (visitFunctors && nthParameter != -1 && i >= nSelf && isStaticDispatchScope()
+                    && implementsInterfaceOrIsSubclassOf(getType(expression), CLOSURE_TYPE)) {
+                // a conditional expression or a value of type Closure, such as a variable
+                ClassNode targetType = parameters[Math.min(i, nthParameter)].getType();
+                if (targetType.isArray() && i >= nthParameter)
+                    targetType = targetType.getComponentType();
+                ClassNode functionalType = getFunctionalTypeArgument(receiver, selectedMethod, arguments, i - nSelf, targetType);
+                if (functionalType != null) convertClosureValue(expression, functionalType, targetType);
             }
             if (i == 0 && parameters.length > 0 && expression instanceof MapExpression) {
                 checkNamedParamsAnnotation(parameters[0], (MapExpression) expression);
@@ -4866,12 +4892,112 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
     }
 
     /**
-     * Tells if the expression is a lambda or method reference written where the type checker resolves the
-     * functional interface of a parameter declared with a type parameter: only in statically compiled code.
+     * Tells if the expression is a closure, lambda or method reference written where the type checker resolves
+     * the functional interface of a parameter declared with a type parameter: only in statically compiled code.
      * Dynamic and type-checked calls pass such an argument as they are.
      */
     private boolean isFunctionalLiteral(final Expression expression) {
-        return (expression instanceof LambdaExpression || expression instanceof MethodReferenceExpression) && isStaticDispatchScope();
+        return (expression instanceof ClosureExpression || expression instanceof MethodReferenceExpression) && isStaticDispatchScope();
+    }
+
+    /**
+     * Tells if a closure literal written for a slot of the given declared type can be compiled as an
+     * implementation of the interface the slot is bound to. It cannot if the slot's erasure is the interface,
+     * where the closure is converted as before, or if the interface is one that {@code Closure} already
+     * implements, such as {@code Runnable} or {@code Callable}. Neither can it implement an interface whose
+     * abstract method declares type parameters or has the name of a method of {@code Closure}, such as
+     * {@code call} or {@code isCase}, nor an interface the closure class cannot access.
+     */
+    private boolean isClosureTargetInterface(final ClassNode type, final ClassNode slotType) {
+        if (!type.isInterface() || type.equals(slotType.redirect()) || CLOSURE_TYPE.implementsInterface(type)) return false;
+        MethodNode sam = findSAM(type);
+        if (sam == null || sam.getGenericsTypes() != null || CLOSURE_METHOD_NAMES.contains(sam.getName())) return false;
+        return Modifier.isPublic(type.getModifiers()) || inSamePackage(typeCheckingContext.getEnclosingClassNode(), type);
+    }
+
+    private static Set<String> closureMethodNames() {
+        Set<String> names = new HashSet<>();
+        names.add("doCall"); // declared by every closure class
+        Deque<Class<?>> types = new ArrayDeque<>(List.of(Closure.class));
+        while (!types.isEmpty()) {
+            Class<?> type = types.removeFirst();
+            for (Method method : type.getDeclaredMethods()) {
+                if (!Modifier.isPrivate(method.getModifiers())) names.add(method.getName());
+            }
+            if (type.getSuperclass() != null) types.add(type.getSuperclass());
+            types.addAll(List.of(type.getInterfaces()));
+        }
+        return Set.copyOf(names);
+    }
+
+    /**
+     * Converts a closure value written for a slot declared with a type parameter, which the call or assignment
+     * binds to the functional interface, if a closure literal can implement it: a closure literal, or either
+     * branch of a conditional expression that is one, implements the interface. Any other value of type
+     * {@code Closure}, such as a variable, is passed as it is, and the type checker warns that it is.
+     */
+    private void convertClosureValue(final Expression value, final ClassNode type, final ClassNode slotType) {
+        if (isClosureTargetInterface(type, slotType)) markClosureValue(value, type);
+    }
+
+    private void markClosureValue(final Expression value, final ClassNode type) {
+        if (value instanceof TernaryExpression ternary) { // or Elvis
+            markClosureValue(ternary.getTrueExpression(), type);
+            markClosureValue(ternary.getFalseExpression(), type);
+        } else if (value instanceof ClosureExpression && !(value instanceof LambdaExpression)) {
+            value.putNodeMetaData(CLOSURE_TARGET_INTERFACE, type);
+        } else if (implementsInterfaceOrIsSubclassOf(getType(value), CLOSURE_TYPE)
+                && value.putNodeMetaData(CLOSURE_VALUE_NOT_CONVERTED, Boolean.TRUE) == null) {
+            String target = prettyPrintType(type);
+            addWarning(WarningMessage.LIKELY_ERRORS, "The Closure is stored as it is, not converted to " + target
+                    + "; write 'as " + target + "' to convert it", value);
+        }
+    }
+
+    /**
+     * Returns the type parameter that a subscript or property an assignment writes is declared with, such as
+     * {@code V} of {@code putAt(Map<K, V>, K, V)} or {@code T} of the property of a {@code Holder<T>}: the value
+     * is stored as the erasure of the type parameter.
+     *
+     * @return the type parameter, or {@code null} if the subscript or property is declared with another type
+     */
+    private ClassNode getTypeParameterOfSlot(final Expression target, final ClassNode valueType) {
+        if (target instanceof BinaryExpression subscript && isArrayOp(subscript.getOperation().getType())) {
+            ClassNode receiverType = getType(subscript.getLeftExpression());
+            if (receiverType.isArray()) return null;
+            List<MethodNode> putAt = findMethod(receiverType, "putAt", getType(subscript.getRightExpression()), valueType);
+            if (putAt.size() == 1) {
+                Parameter[] parameters = (putAt.get(0) instanceof ExtensionMethodNode emn ? emn.getExtensionMethodNode() : putAt.get(0)).getParameters();
+                ClassNode type = parameters[parameters.length - 1].getType();
+                if (type.isGenericsPlaceHolder()) return type;
+            }
+        } else if (target instanceof PropertyExpression property && !property.isSpreadSafe()
+                && !(property.getObjectExpression() instanceof ClassExpression) && property.getPropertyAsString() != null) {
+            ClassNode[] declaredType = new ClassNode[1];
+            PropertyExpression probe = propX(varX("_", getType(property.getObjectExpression())), property.getPropertyAsString());
+            if (property instanceof AttributeExpression) probe = new AttributeExpression(probe.getObjectExpression(), probe.getProperty());
+            existsProperty(probe, true, new ClassCodeVisitorSupport() {
+                @Override
+                protected SourceUnit getSourceUnit() {
+                    return StaticTypeCheckingVisitor.this.getSourceUnit();
+                }
+                @Override
+                public void visitField(final FieldNode node) {
+                    declaredType[0] = node.getOriginType();
+                }
+                @Override
+                public void visitMethod(final MethodNode node) {
+                    declaredType[0] = node.getReturnType();
+                }
+                @Override
+                public void visitProperty(final PropertyNode node) {
+                    // a map entry, which put(K, V) stores
+                    declaredType[0] = node.getDeclaringClass().getProperty(node.getName()) == node ? node.getOriginType() : MAP_VALUE_TYPE;
+                }
+            });
+            if (declaredType[0] != null && declaredType[0].isGenericsPlaceHolder()) return declaredType[0];
+        }
+        return null;
     }
 
     /**
@@ -6635,6 +6761,10 @@ trying: for (ClassNode[] signature : signatures) {
     }
 
     private void addPatternSwitchWarning(final String text, final ASTNode node) {
+        addWarning(WarningMessage.LIKELY_ERRORS, text, node);
+    }
+
+    private void addWarning(final int level, final String text, final ASTNode node) {
         Token token = new Token(0, "", node.getLineNumber(), node.getColumnNumber()); // ASTNode to CSTNode
         SourceUnit source = getSourceUnit();
         ErrorCollector collector = typeCheckingContext.getErrorCollector();
@@ -6644,7 +6774,7 @@ trying: for (ClassNode[] signature : signatures) {
         if (collector == null) {
             return;
         }
-        collector.addWarning(new WarningMessage(WarningMessage.LIKELY_ERRORS, text, token, source));
+        collector.addWarning(new WarningMessage(level, text, token, source));
     }
 
     private static boolean provablyDisjoint(final ClassNode subjectType, final ClassNode patternType) {
@@ -7475,9 +7605,17 @@ trying: for (ClassNode[] signature : signatures) {
             typeCheckMethodsWithGenericsOrFail(left, new ClassNode[]{right}, method, expr);
 
             Parameter[] parameters = (method instanceof ExtensionMethodNode emn ? emn.getExtensionMethodNode() : method).getParameters();
-            if (parameters.length > 0 && isFunctionalLiteral(rightExpression)) { // an operand is compiled like an argument
-                ClassNode functionalType = getFunctionalTypeArgument(left, method, args(rightExpression), 0, parameters[parameters.length - 1].getType());
-                if (functionalType != null) rightExpression.putNodeMetaData(PARAMETER_TYPE, functionalType);
+            if (parameters.length > 0 && isStaticDispatchScope() && (isFunctionalLiteral(rightExpression)
+                    || implementsInterfaceOrIsSubclassOf(right, CLOSURE_TYPE))) { // an operand is converted like an argument
+                ClassNode parameterType = parameters[parameters.length - 1].getType();
+                ClassNode functionalType = getFunctionalTypeArgument(left, method, args(rightExpression), 0, parameterType);
+                if (functionalType != null) {
+                    if (rightExpression instanceof LambdaExpression || rightExpression instanceof MethodReferenceExpression) {
+                        rightExpression.putNodeMetaData(PARAMETER_TYPE, functionalType);
+                    } else {
+                        convertClosureValue(rightExpression, functionalType, parameterType);
+                    }
+                }
             }
 
             if (isAssignment(op)) return left;
