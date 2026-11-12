@@ -2362,6 +2362,29 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
         return true;
     }
 
+    private static boolean isRawType(final ClassNode type) {
+        return type.getGenericsTypes() == null && type.redirect().getGenericsTypes() != null && !type.isGenericsPlaceHolder();
+    }
+
+    /**
+     * Indicates whether {@code type} uses a type parameter of the class of {@code owner} whose
+     * bound is a raw type, such as {@code T} of {@code Holder<T extends List>}. Substituting that
+     * bound for a raw {@code owner} would give a raw bound, such as {@code Class<? extends List>},
+     * where JLS 4.8 gives the erasure, {@code Class}.
+     */
+    private static boolean mentionsTypeParameterWithRawBound(final ClassNode type, final ClassNode owner) {
+        Set<String> used = new HashSet<>();
+        collectTypeVariableNames(type, used);
+        for (GenericsType tp : owner.redirect().getGenericsTypes()) {
+            if (!used.contains(tp.getName()) || tp.getUpperBounds() == null) continue;
+            for (ClassNode bound : tp.getUpperBounds()) {
+                if (!bound.isGenericsPlaceHolder() && bound.getGenericsTypes() == null
+                        && bound.redirect().getGenericsTypes() != null) return true;
+            }
+        }
+        return false;
+    }
+
     private static void collectTypeVariableNames(final ClassNode type, final Set<String> names) {
         if (type == null) return;
         if (type.isArray()) {
@@ -3213,7 +3236,10 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
     }
 
     private void storeWithResolve(ClassNode type, final ClassNode receiver, final ClassNode declaringClass, final boolean isStatic, final Expression expressionToStoreOn) {
-        if (!isStatic && GenericsUtils.hasUnresolvedGenerics(type)) {
+        if (!isStatic && !type.isGenericsPlaceHolder() && !type.isArray()
+                && isRawType(receiver) && mentionsTypeParameterWithRawBound(type, receiver)) {
+            type = type.getPlainNodeReference(); // JLS 4.8: the erasure, not a raw bound
+        } else if (!isStatic && GenericsUtils.hasUnresolvedGenerics(type)) {
             type = resolveGenericsWithContext(extractPlaceHolders(receiver, declaringClass), type);
         }
         if (expressionToStoreOn instanceof PropertyExpression) {
@@ -8503,10 +8529,11 @@ trying: for (ClassNode[] signature : signatures) {
         // 2) resolve type parameters of method's enclosing context
 
         if (context != null) {
+            boolean erase = isRawType(receiver) && !returnType.isGenericsPlaceHolder() && !returnType.isArray()
+                    && mentionsTypeParameterWithRawBound(returnType, receiver); // JLS 4.8: the erasure, not a raw bound
             returnType = applyGenericsContext(context, returnType);
 
-            if (receiver.getGenericsTypes() == null && receiver.redirect().getGenericsTypes() != null
-                    && !receiver.isGenericsPlaceHolder() && GenericsUtils.hasUnresolvedGenerics(returnType)) {
+            if (erase || (isRawType(receiver) && GenericsUtils.hasUnresolvedGenerics(returnType))) {
                 returnType = returnType.getPlainNodeReference(); // GROOVY-10049: not "Stream<E>" for raw type
             }
         }
@@ -9634,7 +9661,10 @@ out:    for (ClassNode type : todo) {
         }
 
         private void reportPropertyType(ClassNode type, final ClassNode declaringClass) {
-            if (declaringClass != null && GenericsUtils.hasUnresolvedGenerics(type)) { // GROOVY-10787
+            if (declaringClass != null && !type.isGenericsPlaceHolder() && !type.isArray()
+                    && isRawType(receiverType) && mentionsTypeParameterWithRawBound(type, receiverType)) {
+                type = type.getPlainNodeReference(); // JLS 4.8: the erasure, not a raw bound
+            } else if (declaringClass != null && GenericsUtils.hasUnresolvedGenerics(type)) { // GROOVY-10787
                 Map<GenericsTypeName, GenericsType> spec = extractPlaceHolders(receiverType, declaringClass);
                 type = applyGenericsContext(spec, type);
             }

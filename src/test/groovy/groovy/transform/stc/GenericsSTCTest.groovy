@@ -3196,6 +3196,34 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
             'Incompatible generic argument types. Cannot assign java.util.List<java.lang.Class<? extends java.lang.String>> to: java.util.List<java.lang.Class<?>>'
     }
 
+    // GROOVY-12755
+    @Test
+    void testMemberOfRawTypeIsErasedForRawBound() {
+        assertScript '''
+            class Holder<T extends List> {
+                Class<? extends T> type = ArrayList
+                List<T> items = []
+                Class<? extends T> get() { type }
+            }
+            Class<? extends List<String>> field(Holder holder) { holder.type }
+            Class<? extends List<String>> method(Holder holder) { holder.get() }
+            List<String> items(Holder holder) { holder.items }
+
+            def holder = new Holder()
+            assert field(holder) == ArrayList
+            assert method(holder) == ArrayList
+            assert items(holder) == []
+        '''
+
+        shouldFailWithMessages '''
+            class Holder<T extends List> {
+                Class<? extends T> type
+            }
+            Class<? extends List<String>> test(Holder<ArrayList> holder) { holder.type }
+        ''',
+            'Incompatible generic argument types. Cannot assign java.lang.Class<? extends java.util.ArrayList> to: java.lang.Class<? extends java.util.List<java.lang.String>>'
+    }
+
     // GROOVY-8961, GROOVY-9915
     @Test
     void testShouldUseMethodGenericType3() {
