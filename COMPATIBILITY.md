@@ -1774,12 +1774,10 @@ type of `e`, as in Java: `Class<? extends String>` for a `String` and
   error, as in Java. So is passing `t.getClass()` to a parameter typed by a
   type variable in scope, such as `accept(Class<? extends T>)` or
   `Map<Class<? extends T>, T>.put` within `Box<T>`.
-- **`instanceof` does not change the class of a variable.** After
+- **The class of a variable follows `instanceof`.** After
   `o instanceof String` for an `Object o`, `o.getClass()` and `o.class` are a
-  `Class<?>`, as in Java, so returning them as a `Class<? extends String>` is a
-  compile error. A pattern variable (`o instanceof String s`), a cast and a new
-  variable have the narrower type, and calls such as `o.length()` are still
-  accepted after the test.
+  `Class<? extends String>`, like every other member of `o` there. Java types
+  them `Class<?>` at that point; this is Groovy's `instanceof` inference.
 
 - **The simple name of an inner class keeps the type arguments of the
   enclosing class.** Within `Outer<T>`, `Inner` now means `Outer<T>.Inner`
