@@ -114,6 +114,7 @@ import org.codehaus.groovy.classgen.asm.OptimizingStatementWriter;
 import org.codehaus.groovy.classgen.asm.PeepholeOptimizingMethodVisitor;
 import org.codehaus.groovy.classgen.asm.WriterController;
 import org.codehaus.groovy.classgen.asm.WriterControllerFactory;
+import org.codehaus.groovy.classgen.asm.sc.RuntimePackageCheck;
 import org.codehaus.groovy.classgen.asm.sc.StaticInvocationWriter;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.runtime.IntersectionCastSupport;
@@ -690,10 +691,10 @@ public class AsmClassGenerator extends ClassGenerator {
             if (code != null && cn.getOuterClass() != null) {
                 // GROOVY-4471: if the class is an inner class node, there are chances that
                 // the call to super is already added so we must ensure not to add it twice
-                if (code instanceof BlockStatement) {
-                    hasCallToSuper = ((BlockStatement) code).getStatements().stream()
-                        .map(statement -> statement instanceof ExpressionStatement ? ((ExpressionStatement) statement).getExpression() : null)
-                        .anyMatch(expression -> expression instanceof ConstructorCallExpression && ((ConstructorCallExpression) expression).isSuperCall());
+                if (code instanceof BlockStatement block) {
+                    hasCallToSuper = block.getStatements().stream()
+                        .map(statement -> statement instanceof ExpressionStatement es ? es.getExpression() : null)
+                        .anyMatch(expression -> expression instanceof ConstructorCallExpression cce && cce.isSuperCall());
                 }
             }
             if (!hasCallToSuper) {
@@ -711,6 +712,8 @@ public class AsmClassGenerator extends ClassGenerator {
                 }
                 // add call to "super()"
                 mv.visitVarInsn(ALOAD, 0);
+                ConstructorNode superCtor = controller.getClassNode().getSuperClass().getDeclaredConstructor(Parameter.EMPTY_ARRAY);
+                if (superCtor != null) RuntimePackageCheck.checkConstructor(controller, superCtor, true, node.getLineNumber() > 0 ? node : cn);
                 mv.visitMethodInsn(INVOKESPECIAL, controller.getInternalBaseClassName(), "<init>", "()V", false);
             }
         }
@@ -720,8 +723,12 @@ public class AsmClassGenerator extends ClassGenerator {
         }
 
         if (code == null || maybeFallsThrough(code)) {
-            if (code != null) { // GROOVY-7647, GROOVY-9373
-                controller.visitLineNumber(code.getLastLineNumber());
+            if (code != null) {
+                int line = code.getLastLineNumber(); // GROOVY-7647, GROOVY-9373
+                if (line < 1 && code instanceof BlockStatement block && !block.isEmpty()) { // GROOVY-12752
+                    line = block.getStatements().get(block.getStatements().size() - 1).getLastLineNumber();
+                }
+                controller.visitLineNumber(line);
             }
             if (node.isVoidMethod()) {
                 mv.visitInsn(RETURN);
@@ -1685,6 +1692,7 @@ public class AsmClassGenerator extends ClassGenerator {
      */
     @Override
     public void visitFieldExpression(final FieldExpression expression) {
+        RuntimePackageCheck.checkField(controller, expression.getField(), null, expression);
         if (expression.getField().isStatic()) {
             if (controller.getCompileStack().isLHS()) {
                 storeStaticField(expression);
