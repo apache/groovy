@@ -21,6 +21,7 @@ import groovy.transform.Immutable
 import org.junit.jupiter.api.Test
 
 import static groovy.test.GroovyAssert.assertScript
+import static groovy.test.GroovyAssert.shouldFail
 
 final class SemanticsTest {
 
@@ -92,11 +93,60 @@ final class SemanticsTest {
     }
 
     @Test
+    void testMultipleAssignmentEvaluatesValuesFirst() {
+        // tag::multiple_assignment_swap[]
+        def a = 1, b = 2, c = 3
+        (a, b) = [b, a]                 // swap
+        assert a == 2 && b == 1
+        (a, b, c) = [b, c, a]           // rotate
+        assert a == 1 && b == 3 && c == 2
+        // end::multiple_assignment_swap[]
+    }
+
+    @Test
+    void testMultipleAssignmentDeclarationReadsEarlierMeaning() {
+        assertScript '''
+        // tag::multiple_assignment_declaration_scope[]
+        class Counter {
+            int count = 10
+            def reset() {
+                def (count, previous) = [0, count]  // this count is the field
+                [count, previous]
+            }
+        }
+        assert new Counter().reset() == [0, 10]
+        // end::multiple_assignment_declaration_scope[]
+        '''
+    }
+
+    @Test
+    void testMultipleAssignmentValue() {
+        // tag::multiple_assignment_value[]
+        def a = 1, b = 2
+        def result = ((a, b) = [b, a])
+        assert result == [2, 1]
+        // end::multiple_assignment_value[]
+    }
+
+    @Test
     void testMultipleAssignmentOverflow() {
         // tag::multiple_assignment_overflow[]
         def (a, b, c) = [1, 2]
         assert a == 1 && b == 2 && c == null
         // end::multiple_assignment_overflow[]
+    }
+
+    @Test
+    void testMultipleAssignmentOverflowTypeChecked() {
+        // tag::multiple_assignment_overflow_type_checked[]
+        def err = shouldFail '''
+            @groovy.transform.TypeChecked
+            def m() {
+                def (a, b, c) = [1, 2]
+            }
+        '''
+        assert err.message.contains('Incorrect number of values. Expected:3 Was:2')
+        // end::multiple_assignment_overflow_type_checked[]
     }
 
     @Test

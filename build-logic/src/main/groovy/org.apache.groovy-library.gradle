@@ -38,10 +38,12 @@ tasks.named('repackageJar') { RepackageJarTask task ->
         instruction 'Fragment-Host', 'groovy' // GROOVY-9402, GROOVY-11570
         def folder = file("${projectDir}/src/main/resources/META-INF/services")
         if (folder.exists() && folder.listFiles().count { it.name ==~ /^(?!(org.codehaus.groovy.transform.ASTTransformation)$).*$/ } > 0) {
-            instruction 'Require-Capability', 'osgi.extender;filter:="(osgi.extender=osgi.serviceloader.processor)"'
-            instruction 'Require-Capability', 'osgi.extender;filter:="(osgi.extender=osgi.serviceloader.registrar)"'
+            // Optional so modules still resolve without a ServiceLoader Mediator such as Aries SPI Fly;
+            // where one is installed these are still wired and mediation still happens (GROOVY-12690)
+            instruction 'Require-Capability', 'osgi.extender;filter:="(osgi.extender=osgi.serviceloader.processor)";resolution:=optional'
+            instruction 'Require-Capability', 'osgi.extender;filter:="(osgi.extender=osgi.serviceloader.registrar)";resolution:=optional'
             folder.eachFileMatch(~/^(?!(org.codehaus.groovy.transform.ASTTransformation)$).*$/) {
-                instruction 'Require-Capability', "osgi.serviceloader;filter:=\"(osgi.serviceloader=${it.name})\";cardinality:=multiple"
+                instruction 'Require-Capability', "osgi.serviceloader;filter:=\"(osgi.serviceloader=${it.name})\";cardinality:=multiple;resolution:=optional"
                 instruction 'Provide-Capability', "osgi.serviceloader;osgi.serviceloader=\"${it.name}\""
             }
         }

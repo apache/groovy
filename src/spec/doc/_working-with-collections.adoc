@@ -285,6 +285,11 @@ Groovy identifiers:
 include::../test/gdk/WorkingWithCollectionsTest.groovy[tags=map_property,indent=0]
 --------------------------------------------------
 
+NOTE: Since Groovy 7, under `@TypeChecked` and `@CompileStatic`, writing to a map whose value type is known,
+by property or subscript, converts the value to that type as an assignment to a variable of that type would:
+`Map<String,String> m; m.name = "$first $last"` stores a `String`, not a `GString`. See the
+link:core-semantics.html#classtag-annotation[`@ClassTag` documentation]. Dynamic code stores the value as it is.
+
 Note: by design `map.foo` will always look for the key `foo` in the map. This
 means `foo.class` will return `null` on a map that doesn't contain the `class` key. Should you really want to know
 the class, then you must use `getClass()`:

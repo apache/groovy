@@ -1001,6 +1001,56 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-12595
+    @Test
+    void testArrayCloneOfArrayElement() {
+        assertScript '''
+            float[] one(float[][] a) { a[0].clone() }
+            String[] two(String[][] a) { a[0].clone() }
+
+            float[][] f = [[1f, 2f] as float[]]
+            assert one(f) == [1f, 2f] as float[]
+            assert !one(f).is(f[0])
+
+            String[][] s = [['x', 'y'] as String[]]
+            assert two(s) == ['x', 'y'] as String[]
+            assert !two(s).is(s[0])
+        '''
+    }
+
+    // GROOVY-12595
+    @Test
+    void testArrayCloneOfFlowTypedVariable() {
+        assertScript '''
+            float[][] f = [[1f, 2f] as float[], [3f] as float[]]
+            float[][] copies = f.collect { it.clone() } as float[][]
+            assert copies == f
+            assert !copies[0].is(f[0])
+
+            def g = f[1]
+            float[] h = g.clone()
+            assert h == [3f] as float[]
+            assert !h.is(f[1])
+        '''
+    }
+
+    // GROOVY-12595
+    @Test
+    void testProtectedMethodOfFlowTypedVariable() {
+        assertScript '''
+            class MyList extends ArrayList<String> {
+                MyList(Collection<String> c) { super(c) }
+                void dropFirst(ArrayList<String> other) {
+                    if (other instanceof MyList) other.removeRange(0, 1)
+                }
+            }
+
+            def list = new MyList(['a', 'b', 'c'])
+            list.dropFirst(list)
+            assert list == ['b', 'c']
+        '''
+    }
+
     // GROOVY-5793
     @Test
     void testShouldNotForceAsTypeWhenListOfNullAssignedToArray() {
@@ -1364,9 +1414,16 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
             assert list.size() == 3
         '''
 
+        // GROOVY-12643: a collection class copies the elements rather than taking them as constructor arguments
         assertScript '''
-            ArrayDeque<String> deque = [123] // ArrayDeque(int numElements)
+            ArrayDeque<Integer> deque = [123] // not ArrayDeque(int numElements)
+            assert deque.size() == 1 && deque.peek() == 123
         '''
+
+        shouldFailWithMessages '''
+            ArrayDeque<String> deque = [123]
+        ''',
+        'Cannot assign java.util.ArrayDeque<java.lang.Integer> to: java.util.ArrayDeque<java.lang.String>'
     }
 
     // GROOVY-10002
@@ -1392,20 +1449,18 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
         ''',
         'Cannot assign java.util.ArrayList<java.lang.Integer> to: java.util.Collection<java.lang.String>'
 
-        shouldFailWithMessages '''
+        // GROOVY-12643: Queue and Deque literals give a LinkedList
+        assertScript '''
             Deque<String> deque = []
-        ''',
-        'Cannot assign value of type java.util.ArrayList','to variable of type java.util.Deque<java.lang.String>'
-
-        shouldFailWithMessages '''
             Queue<String> queue = []
-        ''',
-        'Cannot assign value of type java.util.ArrayList','to variable of type java.util.Queue<java.lang.String>'
+            Deque<String> filled = [""]
+            assert deque instanceof LinkedList && queue instanceof LinkedList && filled.peekFirst() == ""
+        '''
 
         shouldFailWithMessages '''
-            Deque<String> deque = [""]
+            Deque<String> deque = [1,2,3]
         ''',
-        'Cannot assign value of type java.util.ArrayList<java.lang.String> to variable of type java.util.Deque<java.lang.String>'
+        'Cannot assign java.util.LinkedList<java.lang.Integer> to: java.util.Deque<java.lang.String>'
     }
 
     // GROOVY-7128

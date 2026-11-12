@@ -1350,12 +1350,18 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Converts the given collection to another type. A default concrete
-     * type is used for List, Set, or SortedSet. If the given type has
-     * a constructor taking a collection, that is used. Otherwise, the
-     * call is deferred to {@link #asType(Object,Class)}.  If this
-     * collection is already of the given type, the same instance is
-     * returned.
+     * Converts the given collection to another type. If this collection is
+     * already of the given type, the same instance is returned. For a
+     * collection interface such as List, Set, SortedSet, Queue or Deque, a
+     * default concrete type is used. Otherwise a constructor taking a
+     * collection is used, or for a collection class, the no-arg constructor
+     * followed by addAll. Failing those, the call is deferred to
+     * {@link #asType(Object,Class)}.
+     * <pre class="language-groovy groovyTestCase">
+     * assert ([3, 1, 2, 1] as SortedSet) == [1, 2, 3] as TreeSet
+     * assert ([3, 1, 2] as Deque).peekFirst() == 3
+     * assert ([3, 1, 2] as Stack).peek() == 2
+     * </pre>
      *
      * @param col   a collection
      * @param clazz the desired class
@@ -1368,26 +1374,9 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         if (col.getClass() == clazz) {
             return (T) col;
         }
-        if (clazz == List.class) {
-            return (T) asList(col);
-        }
-        if (clazz == Set.class) {
-            if (col instanceof Set) return (T) col;
-            return (T) new LinkedHashSet(col);
-        }
-        if (clazz == SortedSet.class) {
-            if (col instanceof SortedSet) return (T) col;
-            return (T) new TreeSet(col);
-        }
-        if (clazz == Queue.class) {
-            if (col instanceof Queue) return (T) col;
-            return (T) new LinkedList(col);
-        }
-        if (clazz == Stack.class) {
-            if (col instanceof Stack) return (T) col;
-            final Stack stack = new Stack();
-            stack.addAll(col);
-            return (T) stack;
+        if (Collection.class.isAssignableFrom(clazz)
+                && (clazz.isInterface() || Modifier.isAbstract(clazz.getModifiers()))) {
+            return asType((Object) col, clazz); // default implementation, e.g. TreeSet for SortedSet
         }
 
         if (clazz!=String[].class && clazz.isArray()) {
@@ -1457,6 +1446,12 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     @SuppressWarnings("unchecked")
     public static <T> T asType(Map map, Class<T> clazz) {
+        if (!(clazz.isInstance(map)) && clazz.isInterface() && Map.class.isAssignableFrom(clazz)) {
+            try { // a default implementation exists for SortedMap, NavigableMap and ConcurrentMap
+                return (T) DefaultTypeTransformation.castToType(map, clazz);
+            } catch (GroovyCastException ignore) {
+            }
+        }
         if (!(clazz.isInstance(map)) && clazz.isInterface() && !Traits.isTrait(clazz)) {
             return (T) Proxy.newProxyInstance(
                     clazz.getClassLoader(),
@@ -14614,6 +14609,38 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     public static <V> V putAt(Map<? super String,V> self, String key, V value) {
         self.put(key, value);
         return value;
+    }
+
+    /**
+     * A helper method to allow maps to work with subscript operators and property
+     * writes when the type of the values is known. The value is converted to that
+     * type, as an assignment to a variable of that type converts it: a {@code GString}
+     * becomes a {@code String}, an {@code Integer} written to a map of {@code Long}
+     * values a {@code Long}. The map then holds values of the type it declares.
+     * <pre class="groovyTestCase">
+     * def name = 'Groovy'
+     * Map&lt;String, String&gt; greetings = [:]
+     * greetings.putAt('hello', "Hello, $name", String)
+     * assert greetings.hello instanceof String
+     * assert greetings.hello == 'Hello, Groovy'
+     * </pre>
+     * Under static type checking the type token is compiler-supplied from the map's
+     * value type: a property or subscript write, or a call of {@code putAt} without
+     * the token, selects this method in place of the other {@code putAt} methods, which
+     * store the value as it is. {@code greetings.hello = "Hello, $name"} on a
+     * {@code Map<String, String>} stores a {@code String}.
+     *
+     * @param self      a Map
+     * @param key       an Object as a key for the map
+     * @param value     the value to convert and put into the map
+     * @param valueType the type of the values of the map
+     * @return the converted value
+     * @since 7.0.0
+     */
+    public static <K,V> V putAt(Map<K,V> self, K key, Object value, @ClassTag(preempt=true) Class<V> valueType) {
+        V converted = valueType.cast(DefaultTypeTransformation.castToType(value, valueType));
+        self.put(key, converted);
+        return converted;
     }
 
     /**
