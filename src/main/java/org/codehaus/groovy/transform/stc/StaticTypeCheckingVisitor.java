@@ -4816,7 +4816,8 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
                     ClassNode targetType = target.getType();
                     if (targetType.isArray() && i >= nthParameter)
                         targetType = targetType.getComponentType();
-                    ClassNode functionalType = (i < nSelf ? null : getFunctionalTypeArgument(receiver, selectedMethod, arguments, i - nSelf, targetType));
+                    ClassNode functionalType = (i < nSelf || !isFunctionalLiteral(expression) ? null
+                            : getFunctionalTypeArgument(receiver, selectedMethod, arguments, i - nSelf, targetType));
                     if (functionalType != null) { // a type parameter the call binds to a functional interface
                         targetType = functionalType;
                         if (declared.getAnnotations(CLOSUREPARAMS_CLASSNODE).isEmpty())
@@ -4852,14 +4853,6 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
                 }
                 expression.visit(this);
                 expression.removeNodeMetaData(DELEGATION_METADATA);
-            } else if (visitFunctors && nthParameter != -1 && i >= nSelf
-                    && implementsInterfaceOrIsSubclassOf(getType(expression), CLOSURE_TYPE)) {
-                // a closure value, such as a variable or a conditional expression, is converted like a literal
-                ClassNode targetType = parameters[Math.min(i, nthParameter)].getType();
-                if (targetType.isArray() && i >= nthParameter)
-                    targetType = targetType.getComponentType();
-                ClassNode functionalType = getFunctionalTypeArgument(receiver, selectedMethod, arguments, i - nSelf, targetType);
-                if (functionalType != null) expression.putNodeMetaData(PARAMETER_TYPE, functionalType);
             }
             if (i == 0 && parameters.length > 0 && expression instanceof MapExpression) {
                 checkNamedParamsAnnotation(parameters[0], (MapExpression) expression);
@@ -4868,12 +4861,21 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
     }
 
     /**
+     * Tells if the expression is a lambda or method reference written where the type checker resolves the
+     * functional interface of a parameter declared with a type parameter: only in statically compiled code.
+     * Dynamic and type-checked calls pass such an argument as they are.
+     */
+    private boolean isFunctionalLiteral(final Expression expression) {
+        return (expression instanceof LambdaExpression || expression instanceof MethodReferenceExpression) && isStaticDispatchScope();
+    }
+
+    /**
      * Returns the functional interface a call binds a parameter declared with a type parameter to, such as
      * {@code Supplier<String>} for the parameter of {@code add(E)} called on a {@code List<Supplier<String>>},
      * or for the second {@code T} of {@code <T extends Function<String, String>> m(T a, T b)} called with a
-     * subinterface of {@code Function} as the first argument. A closure argument for the parameter is converted
-     * to that interface. Neither the argument itself nor any other closure passed for a parameter that is not a
-     * functional interface is a witness for the type parameter: each is converted to what the others give.
+     * subinterface of {@code Function} as the first argument. A lambda or method reference for the parameter
+     * is compiled for that interface. Neither the argument itself nor any closure, lambda or method reference
+     * passed for a parameter that is not a functional interface is a witness for the type parameter.
      *
      * @return the interface, or {@code null} if the parameter is not declared with a type parameter or the call
      *         does not bind it to a functional interface
@@ -7468,7 +7470,7 @@ trying: for (ClassNode[] signature : signatures) {
             typeCheckMethodsWithGenericsOrFail(left, new ClassNode[]{right}, method, expr);
 
             Parameter[] parameters = (method instanceof ExtensionMethodNode emn ? emn.getExtensionMethodNode() : method).getParameters();
-            if (parameters.length > 0 && implementsInterfaceOrIsSubclassOf(right, CLOSURE_TYPE)) { // a closure operand is converted like an argument
+            if (parameters.length > 0 && isFunctionalLiteral(rightExpression)) { // an operand is compiled like an argument
                 ClassNode functionalType = getFunctionalTypeArgument(left, method, args(rightExpression), 0, parameters[parameters.length - 1].getType());
                 if (functionalType != null) rightExpression.putNodeMetaData(PARAMETER_TYPE, functionalType);
             }
