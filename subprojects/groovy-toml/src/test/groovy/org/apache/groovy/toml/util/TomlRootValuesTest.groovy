@@ -16,10 +16,25 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
+package org.apache.groovy.toml.util
 
-// GEP-19: map pattern keys must be constants
-def k = 'name'
-def result = switch ([name: 'sam']) {
-    case [("$k"): var n] -> n
-    default              -> 'other'
+import groovy.toml.TomlRuntimeException
+import org.junit.jupiter.api.Test
+import tools.jackson.dataformat.toml.TomlMapper
+
+import static groovy.test.GroovyAssert.shouldFail
+
+class TomlRootValuesTest {
+
+    @Test
+    void testCarrierMustStayABareKey() {
+        // GROOVY-12738
+        // A table is not wrapped by write(). Passing one here is the case where
+        // Jackson expands the carrier into a path ("v.a = 1") instead of "v = ...".
+        def mapper = TomlMapper.builder().configureForJackson2().build()
+        def e = shouldFail(TomlRuntimeException) {
+            TomlRootValues.writeWithEmptyKey(mapper, [a: 1])
+        }
+        assert e.message.contains('document root')
+    }
 }

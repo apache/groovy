@@ -19,8 +19,10 @@
 package org.codehaus.groovy.runtime.memoize
 
 
+import groovy.transform.PackedClosures
 import org.junit.jupiter.api.Test
 
+import static groovy.test.GroovyAssert.shouldFail
 import static org.junit.jupiter.api.Assertions.assertEquals
 
 
@@ -38,6 +40,45 @@ abstract class AbstractMemoizeTestCase {
         Closure mem = buildMemoizeClosure(cl)
         assert 10 == mem(5)
         assert 4 == mem(2)
+    }
+
+    // GROOVY-12673
+    @Test
+    void testDelegateAndThisObject() {
+        def d = [name: 'd']
+        Closure cl = { x -> name + x }
+        cl.delegate = d
+        cl.resolveStrategy = Closure.DELEGATE_FIRST
+        Closure mem = buildMemoizeClosure(cl)
+
+        assert mem.owner === this
+        assert mem.thisObject === this
+        assert mem.delegate === d
+        assert mem.resolveStrategy == Closure.DELEGATE_FIRST
+        assert mem(1) == 'd1'
+    }
+
+    // GROOVY-12673
+    @Test
+    void testSetDelegateAndResolveStrategy() {
+        def d = [name: 'd']
+        Closure mem = buildMemoizeClosure { x -> name + x }
+        mem.delegate = d
+        mem.resolveStrategy = Closure.DELEGATE_ONLY
+
+        assert mem.delegate === d
+        assert mem.resolveStrategy == Closure.DELEGATE_ONLY
+        assert mem(1) == 'd1'
+    }
+
+    // GROOVY-12673
+    @Test
+    void testWith() {
+        Closure mem = buildMemoizeClosure { m -> name }
+
+        assert [name: 'd'].with(mem) == 'd'
+        assert mem.delegate === this
+        assert mem.resolveStrategy == Closure.OWNER_FIRST
     }
 
     abstract Closure buildMemoizeClosure(Closure cl)
@@ -126,5 +167,136 @@ abstract class AbstractMemoizeTestCase {
         callFlag.clear()
         assert desiredResult == mem(*args)
         assert callFlag.empty
+    }
+
+    // GROOVY-12669
+    @Test
+    void testRehydrateCallsTheRehydratedClosure() {
+        def o = new Named('o')
+        def p = new Named('p')
+        Closure mem = buildMemoizeClosure(o.closure())
+        assert mem(1) == 'o1'
+
+        Closure copy = mem.rehydrate(null, p, p)
+        assert copy.owner.is(p)
+        assert copy(1) == 'p1'
+        assert copy(2) == 'p2'
+        assert copy(1) == 'p1'
+        assert p.calls == 2
+
+        assert mem(1) == 'o1'
+        assert mem(2) == 'o2'
+        assert o.calls == 2
+    }
+
+    // GROOVY-12669
+    @Test
+    void testRehydrateUsesTheNewDelegate() {
+        Closure cl = { x -> bar + x }
+        cl.delegate = [bar: 'a']
+        Closure mem = buildMemoizeClosure(cl)
+        assert mem(1) == 'a1'
+
+        Closure copy = mem.rehydrate([bar: 'b'], this, this)
+        assert copy(1) == 'b1'
+        assert mem(1) == 'a1'
+    }
+
+    // GROOVY-12669
+    @Test
+    void testDehydrateClearsTheMemoizedClosure() {
+        def o = new Named('o')
+        def p = new Named('p')
+        Closure mem = buildMemoizeClosure(o.closure())
+        assert mem(1) == 'o1'
+
+        Closure copy = mem.dehydrate()
+        assert copy.owner == null
+        shouldFail(MissingMethodException) {
+            copy(1)
+        }
+        assert copy.rehydrate(null, p, p)(1) == 'p1'
+        assert o.calls == 1
+    }
+
+    static class Named {
+        final String name
+        int calls
+
+        Named(String name) {
+            this.name = name
+        }
+
+        String foo() {
+            calls++
+            name
+        }
+
+        Closure closure() {
+            return { x -> foo() + x }
+        }
+    }
+
+    // GROOVY-12674
+    @Test
+    void testSerializedCopyStillMemoizes() {
+        Closure mem = buildMemoizeClosure(new Counting().closure())
+        assert mem(1) == 2
+
+        Closure copy = roundTrip(mem)
+        Counting owner = copy.owner
+        assert owner.calls == 1
+        assert copy(1) == 2
+        assert copy(2) == 4
+        assert copy(3) == 6
+        int calls = owner.calls
+        assert copy(2) == 4
+        assert copy(3) == 6
+        assert owner.calls == calls
+    }
+
+    // GROOVY-12674
+    @Test
+    void testSerializedCopyOfDehydratedClosure() {
+        Closure mem = buildMemoizeClosure(Counting.dehydrated())
+        assert mem(1) == 2
+
+        Closure copy = roundTrip(mem)
+        assert copy.owner == null
+        assert copy(1) == 2
+        assert copy(2) == 4
+        assert mem(2) == 4
+    }
+
+    // GROOVY-12669: the serialized form names cache factory classes, not compiler-generated lambda methods,
+    // which a reader on another version or build of Groovy cannot resolve
+    @Test
+    void testSerializedFormHoldsNoLambda() {
+        Closure mem = buildMemoizeClosure(Counting.dehydrated())
+        def out = new ByteArrayOutputStream()
+        out.withObjectOutputStream { it.writeObject(mem) }
+        assert !new String(out.toByteArray(), 'ISO-8859-1').contains('SerializedLambda')
+    }
+
+    static Closure roundTrip(Closure closure) {
+        def out = new ByteArrayOutputStream()
+        out.withObjectOutputStream { it.writeObject(closure) }
+        new ByteArrayInputStream(out.toByteArray()).withObjectInputStream(AbstractMemoizeTestCase.classLoader) {
+            (Closure) it.readObject()
+        }
+    }
+
+    // serialized fixtures: the closures have to compile as classes
+    @PackedClosures(mode = PackedClosures.PackMode.DISABLED)
+    static class Counting implements Serializable {
+        int calls
+
+        Closure closure() {
+            return { x -> calls++; x == null ? null : x * 2 }
+        }
+
+        static Closure dehydrated() {
+            return { x -> x * 2 }.dehydrate()
+        }
     }
 }

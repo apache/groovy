@@ -744,6 +744,67 @@ returns a different object on each evaluation:
   same object. Before, the read came from one object and the write went to
   the next.
 
+### Groovy 6.0.1 — closure wrappers report and take the delegation settings of the closure they wrap (GROOVY-12673)
+
+The closures returned by `memoize()` and its variants, `trampoline()`,
+`curry()` and its relatives, `>>`/`<<` composition and `asWritable()` wrap
+another closure and call through to it. They reported a `thisObject` of
+their own, `null` or the owner, and the memoize and trampoline wrappers
+also kept a `delegate` and `resolveStrategy` of their own that nothing
+consulted: a delegate set on a memoized or trampolined closure never
+reached the closure that ran, so
+such a closure could not be handed to a builder, or to `with()` and `tap()`,
+without a `MissingMethodException` on the delegate's methods. This was so in
+4.0.x, 5.x and 6.0.0.
+
+A wrapper now reports the `thisObject` of the closure it wraps. The memoize,
+trampoline and async wrappers (GROOVY-12679) also report and take its
+`delegate` and `resolveStrategy`: setting either on the wrapper sets it on
+the wrapped closure, which is, as before, the very closure that was wrapped,
+so a setting made on the original after wrapping is seen by the wrapper too.
+`clone()` of a memoize or trampoline wrapper copies the wrapped closure, so
+`with()`, `tap()` and builders that bind a clone leave the original alone. An
+async wrapper, and a trampolined writable or composed closure, report the
+parameter count and types of the closure they wrap, where they reported a
+single `Object[]` parameter.
+
+The same release also changes these related behaviours:
+
+- `dehydrate()` and `rehydrate()` on a wrapper return a wrapper over the
+  dehydrated or rehydrated copy, where they returned a copy of the wrapper
+  still calling the old closure (GROOVY-12665, GROOVY-12669). A rehydrated
+  memoized closure starts with an empty cache.
+- `memoizeAtMost`, `memoizeAtLeast` and `memoizeBetween` closures, and a
+  memoized closure that has cached a `null` result, are serializable
+  (GROOVY-12674, GROOVY-12677). Softly referenced cached values are not
+  carried in the stream. The serialized form of a memoized closure now
+  holds a cache factory, a named class with a fixed `serialVersionUID`: a
+  plain `memoize()` closure written by 6.0.1 still reads in 6.0.0 and 5.x,
+  and one written by those versions reads in 6.0.1.
+- An `ObjectInputStream` created with a class loader, through
+  `newObjectInputStream` or `withObjectInputStream` on a stream, file or
+  path, resolves primitive classes such as `int.class` and the interfaces
+  of a serialized `Proxy` through that loader, where it threw
+  `ClassNotFoundException` (GROOVY-12676, GROOVY-12681).
+
+**Who is affected (runtime behaviour).**
+
+- Code that read `thisObject` from a wrapper and compared it to the owner
+  now gets the wrapped closure's `thisObject`, which is what the closure
+  itself reports.
+- Code that set the delegate or resolve strategy of a memoized or
+  trampolined closure now has that setting take effect, on the wrapped
+  closure as well. Call `clone()` first for a copy whose settings are
+  independent of the original.
+- A `wrapAsync` or `wrapAsyncGenerator` closure (async/await, incubating)
+  serialized by 6.0.0 does not deserialize in 6.0.1: the anonymous wrapper
+  classes are now named classes with their own serialized form.
+
+**Who is not affected (binary).** `Memoize` gains two public overloads of
+`buildMemoizeFunction` and `buildSoftReferenceMemoizeFunction` that take a
+`Supplier` of the cache; the overloads taking a cache instance are
+unchanged. `japicmp` sees only additions.
+
 ### Groovy 6.0.1 — a `setProperty` or `getProperty` from another interface's default method receives every access (GROOVY-12489)
 
 For a dynamic property write or read, the runtime checks whether the receiver
@@ -1097,6 +1158,47 @@ package-private constructor of a class that a `GroovyClassLoader` defined in
 another compilation, such as a class of an earlier `GroovyShell` parse. Dynamic
 and `@TypeChecked` code select the constructor at run time as before.
 
+### Groovy 6.0.1 — statically compiled code in a `GroovyShell` reports what the JVM refuses across class loaders (GROOVY-12568)
+
+The JVM allows access to a protected or package-private member only within
+the same run-time package, which is the package name and the class loader. A
+`GroovyClassLoader` defines each compilation in memory with a class loader of
+its own, so a class of an earlier `GroovyShell` parse, or a precompiled class
+used by a script, is in another run-time package even when the package name is
+the same. Statically compiled code that calls such a constructor or method, or
+reads or writes such a field, compiled and then failed with
+`IllegalAccessError` when it ran.
+
+With the new option `CompilerConfiguration.RUNTIME_PACKAGE_CHECK`, such an
+access is a compile error, reported when the class is generated:
+
+```
+Cannot call package-private method pm of p.M from class p.C: M is defined by
+another class loader, so the JVM refuses this access. Use @CompileDynamic to
+reach it through the meta-class
+```
+
+**Who is affected.** `@CompileStatic` code compiled by a `GroovyShell`,
+including scripts run with the `groovy` command: a shell turns the option on
+for the class loader it creates, unless the configuration sets it. Such code that used to fail at run time now fails
+to compile, and so does such code on a path that never ran. Mark the method or
+class `@CompileDynamic`, or make the member public. A protected member that a
+subclass reaches through `this`, `super` or a receiver of the subclass type is
+not reported, as the JVM allows it.
+
+**What is unchanged.** Code compiled to class files (groovyc, Gradle, Maven,
+Ant, joint compilation), dynamic and `@TypeChecked` code, members of classes
+of the same compilation, and constructor references, which already go through
+the meta-class (GROOVY-12488). A `GroovyClassLoader` that a shell did not
+create, as used by `parseClass` or JSR-223, has the option off. The bytecode
+is the same as before.
+
+**Opting out.** Set `RUNTIME_PACKAGE_CHECK` to `false` in the configuration's
+optimization options, or the system property
+`groovy.runtime.package.check=false`, to keep the failure at run time.
+`CompilerConfiguration.RUNTIME_PACKAGE_CHECK` is a new `@Incubating` constant;
+`japicmp` sees only the addition.
+
 ### Groovy 7 — a final `def` field is read with the type of its value (GROOVY-12315)
 
 Within the class that declares it, a read of a final field declared without a
@@ -1282,6 +1384,282 @@ They now see a `PatternExpression` with `isInstanceOf()` true; the matched
 value is `getSource()`, the type and variable are on the `TypePattern`, and
 the negated form is a `NotExpression` around it. `e instanceof T` without a
 binding is a `BinaryExpression` as before.
+
+### Groovy 6.0.1 — `@IndexedProperty` adds no indexed setter to a record (GROOVY-12730)
+
+An `@IndexedProperty` component of a record, or property of a `@RecordType` or
+`@RecordBase` class, gets only the indexed getter `getX(int)`, as an
+`@Immutable` class's property already did. Earlier versions also generated the
+indexed setter `setX(int, V)`, although a record has no other setters. A record is
+only shallowly immutable, so its list or array can still be changed through
+the value the accessor returns.
+
+**Who is affected.** Code that calls `setX(int, V)` on such a record no longer
+compiles under static compilation or Java, and fails with a
+`MissingMethodException` in dynamic Groovy. `japicmp` reports the method as
+removed from the affected classes.
+
+### Groovy 6.0.1 — a method reference selects a functional-interface overload it can be called as at run time (GROOVY-12758)
+
+When overloads take functional interfaces whose abstract methods have
+different numbers of parameters, such as `Function` and `BinaryOperator`,
+`Function` and `Supplier`, or `Consumer` and `Runnable`, run-time method
+selection now first drops the candidates whose interface method a method
+reference or method pointer cannot be called with, as Java does. This applies
+to dynamic code; under `@TypeChecked` and `@CompileStatic` such calls are
+still rejected as ambiguous. When no candidate fits, all are kept and
+selection proceeds as before.
+
+Before, such calls failed:
+
+- `red(numbers, Integer::sum)` with `red(Collection, BinaryOperator)` and
+  `red(Collection, Function)` was ambiguous: `Ambiguous method overloading`.
+- A method reference passed where `Runnable` or `Callable` competed with an
+  interface that takes arguments, such as `Consumer`, matched `Runnable` or
+  `Callable`, because `Closure` implements them, and failed when run, as no
+  method of its name takes no arguments.
+
+**Who is affected.** Only calls that were ambiguous, or that chose an
+overload whose call then failed. A method reference whose methods accept both
+arities, such as `Integer::valueOf`, is still ambiguous, and a dehydrated
+method closure is selected for as before. Closures and lambdas are chosen for
+as before.
+
+**Who is not affected (binary).** There is no change to public API apart
+from two static helpers on the internal `MetaClassHelper`, and the serial
+form of `MethodClosure` is unchanged. A dynamic selection that depends on
+which method a reference names, rather than on argument classes alone, is
+not cached; this arises only for calls that were ambiguous or chose the
+wrong overload before.
+
+### Groovy 7 — a functional argument selects a functional-interface overload it can be called as (GROOVY-11010, GROOVY-12759)
+
+When overloads take functional interfaces whose abstract methods have
+different numbers of parameters, such as `Function` and `BinaryOperator`,
+`Function` and `Supplier`, or `Consumer` and `Runnable`, method selection now
+first drops the candidates whose interface method the functional argument
+cannot be called with, as Java does. This applies to method references and
+method pointers, and to closures and lambdas with declared parameters,
+counting parameters with a default value and a trailing array. It applies
+under `@TypeChecked` and `@CompileStatic`, and at run time for dynamic code
+and for `@TypeChecked` calls, which are dispatched at run time. When no
+candidate fits, all are kept and selection proceeds as before. Run-time
+selection for method references and method pointers does this from Groovy
+6.0.1 (see the entry above); Groovy 7 adds static type checking, and
+closures and lambdas.
+
+Before, such calls failed or picked the wrong overload:
+
+- `red(numbers, Integer::sum)` with `red(Collection, BinaryOperator)` and
+  `red(Collection, Function)`, or `from(Main::m)` with `Function` and
+  `Supplier` overloads, was ambiguous: `Reference to method is ambiguous`
+  under static type checking, `Ambiguous method overloading` at run time.
+- A method reference, or a closure or lambda with declared parameters,
+  passed where `Runnable` or `Callable` competed with an interface that takes
+  arguments, such as `Consumer` or `Function`, matched `Runnable` or
+  `Callable`, because `Closure` implements them. Static type checking then
+  rejected the call (for a closure, `Wrong number of parameters`); at run
+  time the closure was called with `null` arguments, and the method
+  reference failed when run, as no method of its name takes no arguments.
+
+**Who is affected (runtime behaviour).** Dynamic code that passes a closure
+with declared parameters, such as `{ String s -> ... }`, to overloads where
+`Runnable` or `Callable` competes with an interface of matching arity. Such a call now selects that interface, so the
+closure receives the arguments it declares instead of `null`. Code that
+relied on `Runnable` or `Callable` being chosen, and on the closure being
+called without arguments, should pass a closure without parameters
+(`{ -> ... }`).
+
+**What is unchanged.** A closure with an implicit parameter (`{ ... }`,
+`{ it }`) and `{ -> ... }` still prefer `Runnable` and `Callable`, and
+interfaces of the same arity, such as `Runnable` and `Callable`, are chosen
+between as before. Parameters of type `Closure`, `Object` and interfaces
+without a single abstract method, such as `Serializable`, are not affected.
+A method reference whose methods accept both arities, such as
+`Integer::valueOf`, is still ambiguous. The wrappers `memoize()`, `curry()`
+and `trampoline()` return, and a dehydrated method closure, are selected for
+as before.
+
+**Who is not affected (binary).** There is no change to public API apart
+from a static helper on the internal `MetaClassHelper`.
+
+### Groovy 7 — a value written to a typed map is converted to the map's value type (GROOVY-12535)
+
+Under `@TypeChecked` and `@CompileStatic`, a property or subscript write to a
+map whose value type is known (`Map<String,String> m; m.k = "$name"`,
+`m['k'] = "$name"`, `m.k ?= "$name"`, `m.with { k = "$name" }`) stores the
+value converted to the value type, as an assignment to a variable of that type
+does. So `String s = "$name"` and `Long l = 1` give the rules: a `GString`
+becomes a `String`, an `Integer` written to a `Map<String,Long>` a `Long`, and
+a number written to a `Map<String,String>`, as in `m.k = 123`, the `String`
+`"123"`. The
+compiler supplies the value type to `putAt(Map, Object, Object, Class)` as a
+`@ClassTag` token, and an explicit `m.putAt('k', "$name")` binds the same
+overload. Before, the property write stored the `GString` as it was and the
+subscript write was rejected.
+
+**Who is affected.** Code that read the stored value back as a `GString`, for
+example to see later changes to an interpolated variable, or compared it with
+`is`. Code that relied on the stored value keeping its own type, such as an
+`Integer` in a `Map<String,Long>` or a number in a `Map<String,String>`, now
+reads a value of the declared type. A value of the value type is stored as
+before, a map whose value type is not known (`def`, raw or a wildcard) is
+written as before, and dynamic code is unchanged. `Map.put` with a `GString`
+is still rejected.
+
+**Opting out.** The upgrade is a `@ClassTag` preemption, so
+`groovy.classtag.preemption.disable` (or
+`CompilerConfiguration.setClassTagPreemptionDisabled`) keeps the previous
+behaviour.
+
+### Groovy 6.0.1 — a closure method call skips a null owner or delegate (GROOVY-12667)
+
+A closure's owner or delegate can be null: after `dehydrate()`, after
+`rehydrate` with a null argument, or after `delegate = null`. A method call in
+the closure body that resolves through the owner and delegate now skips a null
+one instead of calling on null:
+
+- **The other candidate answers.** With `OWNER_FIRST` (the default) and a null
+  owner, the delegate's method is used; with `DELEGATE_FIRST` and a null
+  delegate, the owner's. Earlier versions threw `NullPointerException` (from
+  Groovy 4 on; Groovy 3 skipped the null).
+- **With no candidate, the error is a missing method.** When both are null, or
+  the one target of `OWNER_ONLY` or `DELEGATE_ONLY` is null, a method of the
+  closure itself (`toString()`, `with`, `tap` and the like) runs on the
+  closure, and any other method throws `MissingMethodException`, where
+  `NullPointerException` was thrown before. In Groovy 6.0.0, `toString()` and
+  `with` instead ran against `null`, as such methods are first tried on the
+  delegate and owner (GROOVY-11858).
+
+The rules are the same whether the closure dispatches through its own
+metaclass or, once it has an `ExpandoMetaClass` (after
+`ExpandoMetaClass.enableGlobally()` or after adding to a closure's metaclass),
+through `MetaClassImpl`. A method call compiled against the owner is
+unchanged. Property access is unchanged: with a null owner or delegate it can
+still throw `NullPointerException` (Groovy 7 skips the null there too,
+GROOVY-12671).
+
+**Who is affected.** Code that catches `NullPointerException` around a method
+call in a closure with a null owner or delegate, and code that relied on
+`toString()` or `with` receiving `null` there. Nothing that ran without an
+exception before behaves differently, apart from those methods of the
+closure. No public API changes, so `japicmp` does not report this.
+
+### Groovy 7 — a closure skips a null owner or delegate for a property (GROOVY-12671)
+
+A closure's owner or delegate can be null: after `dehydrate()`, after
+`rehydrate` with a null argument, or after `delegate = null`. A property access
+in the closure body that resolves through the owner and delegate now skips a
+null one instead of reading or writing on null, as a method call does from
+Groovy 6.0.1 (GROOVY-12667, see the entry above):
+
+- **The other candidate answers.** With `OWNER_FIRST` (the default) and a null
+  owner, the delegate's property is used. Earlier versions threw
+  `NullPointerException`. With `DELEGATE_FIRST` and a null delegate, the
+  owner's property was already used.
+- **With no candidate, the error is a missing property.** When both are null,
+  or the one target of `OWNER_ONLY` or `DELEGATE_ONLY` is null, a property
+  read or write throws `MissingPropertyException`, where
+  `NullPointerException` was thrown before. So does a write that the first
+  candidate does not take when the second is null.
+
+In a `@CompileStatic` closure, a property write resolves this way too. A
+property read compiled against the owner is unchanged.
+
+The resulting rules are stated in full under "Resolution rules" in
+[`src/spec/doc/core-closures.adoc`](src/spec/doc/core-closures.adoc).
+
+**Who is affected.** Code that catches `NullPointerException` around a
+property access in a closure with a null owner or delegate. Nothing that ran
+without an exception before behaves differently. No public API changes, so
+`japicmp` does not report this.
+
+### Groovy 7 — a closure's metaclass does not expose the private fields of `Closure` (GROOVY-12675, GROOVY-12680)
+
+A closure class does not inherit the private fields of `groovy.lang.Closure`
+(`bcw`, `thisType`, `mopPerturbed`, `serialVersionUID` and others), and its
+metaclass now treats them as any metaclass treats a superclass's private
+fields: `getProperties()` does not list them, `getMetaProperty` and
+`hasProperty` return null, and `getProperty` and `setProperty` throw
+`MissingPropertyException`. Earlier versions returned `bcw` and
+`serialVersionUID` through the metaclass. From Groovy 5 they also found and
+overwrote `thisType`, through the metaclass or through `closure.thisType = ...`
+under `TO_SELF`, and overwriting it broke the closure's access to private
+fields of its enclosing class. A `MissingPropertyException` for a closure no
+longer suggests these fields ("Possible solutions: bcw").
+
+**Who is affected.** Only code reading these fields through a closure's
+metaclass. `closure.properties` and the public properties of `Closure`
+(`owner`, `delegate`, `resolveStrategy`, `maximumNumberOfParameters` and the
+rest) are unchanged.
+
+### Groovy 7 — closure parameters for an extension method's functional parameter are typed from the receiver (GROOVY-12746)
+
+Under `@TypeChecked` and `@CompileStatic`, a closure or lambda passed for a
+functional-interface parameter of an extension method now gets parameter
+types from the receiver's type arguments. Before, a type parameter that
+only the extension method's `self` parameter mentions fell back to its
+bound, usually `Object`, so `List<Integer>` with
+`numbers.collectParallel { it * 2 }` or `numbers.sumParallel { a, b -> a + b }`
+did not compile. Type arguments inferred from the call's arguments still
+take precedence.
+
+**Who is affected.** Code that compiled before, with parameters typed as
+the bound, now has them typed as the receiver's element type, as for any
+other functional-interface parameter such as `Stream.map`'s:
+
+- Under static compilation, a call in the closure that passes such a
+  parameter to an overloaded method can select a more specific overload,
+  such as `helper(Integer)` instead of `helper(Object)`, as dynamic Groovy
+  already does.
+- A body that is invalid for the element type is reported with that type.
+  For example, `it instanceof String` for an `Integer` element no longer
+  compiles, as with DGM `collect`.
+- A closure that assigns a value of another type to its own parameter, such
+  as `numbers.collectParallel { n -> n = n.toString(); n }`, no longer
+  compiles, as for any other functional-interface parameter (GROOVY-12747).
+  Assign to a new local variable instead.
+
+### Groovy 7 — assigning a value of another type to a closure parameter typed from a functional interface is an error (GROOVY-12747)
+
+Under `@TypeChecked` and `@CompileStatic`, an untyped closure or lambda
+parameter whose type comes from a functional interface is declared with
+that type. Assigning it a value of another type used to compile, and the
+value was then converted to the parameter's type when the closure ran:
+`List<Integer> numbers; numbers.stream().map { n -> n = n.toString(); n }`
+gave `[49, 50]` for `[1, 2]` (the character codes of `"1"` and `"2"`),
+`n = n + 0.5` dropped the fraction, and `n = 'ab'` failed with a
+`GroovyCastException`. Such an assignment is now reported:
+`Cannot assign value of type java.lang.String to variable of type java.lang.Integer`.
+
+**Who is affected.** Code that compiled before and assigns a value of
+another type to such a parameter. It gave a converted value or failed at
+run time; assign to a new local variable instead. Assigning a value of the
+parameter's type, such as `n = n * 2` or `n += 1`, is unchanged. So are an
+implicit `it`, which is declared `Object`, and parameters typed through
+`@ClosureParams`, as for DGM `collect`, which keep the assigned value as
+dynamic Groovy does.
+
+### Groovy 7 — `sumParallel`, `minParallel` and `maxParallel` accept a transform or key (GROOVY-12722)
+
+`sumParallel(Function)`, `minParallel(Function)` and `maxParallel(Function)`
+sit beside the existing `BinaryOperator` and `Comparator` overloads. A closure
+or lambda literal, or a method reference, selects between them by the number
+of parameters it takes (GROOVY-11010, GROOVY-10714), so existing calls keep
+their meaning.
+
+**Who is affected (source).** Under `@TypeChecked` and `@CompileStatic`, a
+variable or expression of type `Closure` passed to these methods is now
+ambiguous, because its parameter count is not known statically:
+`Closure<Integer> c = { Integer a, Integer b -> a + b }; numbers.sumParallel(c)`
+compiled before and now reports `Reference to method is ambiguous`. Declare the
+variable with the functional interface instead (`BinaryOperator<Integer>`,
+`Comparator<T>`, `Function<T, R>`), cast with `as`, or pass the closure literal
+directly. Dynamic code, where the closure's parameter count is known at run
+time, is unaffected.
+
+**Who is not affected (binary).** Existing call sites are compiled against
+the unchanged existing overloads.
 
 ## The binary-compatibility check
 

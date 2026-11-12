@@ -38,7 +38,6 @@ import org.antlr.v4.runtime.misc.Interval;
 import org.antlr.v4.runtime.misc.ParseCancellationException;
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.TerminalNode;
-import org.apache.groovy.ast.tools.TypeUseUtils;
 import org.apache.groovy.ast.pattern.MatchPattern;
 import org.apache.groovy.ast.pattern.MatchPattern.BindingPattern;
 import org.apache.groovy.ast.pattern.MatchPattern.ConstantPattern;
@@ -49,6 +48,7 @@ import org.apache.groovy.ast.pattern.MatchPattern.RestPattern;
 import org.apache.groovy.ast.pattern.MatchPattern.TypePattern;
 import org.apache.groovy.ast.pattern.MatchPattern.WildcardPattern;
 import org.apache.groovy.ast.pattern.PatternLowering;
+import org.apache.groovy.ast.tools.TypeUseUtils;
 import org.apache.groovy.parser.antlr4.internal.DescriptiveErrorStrategy;
 import org.apache.groovy.parser.antlr4.util.StringUtils;
 import org.apache.groovy.util.Maps;
@@ -65,12 +65,12 @@ import org.codehaus.groovy.ast.EnumConstantClassNode;
 import org.codehaus.groovy.ast.FieldNode;
 import org.codehaus.groovy.ast.GenericsType;
 import org.codehaus.groovy.ast.ImportNode;
-import org.codehaus.groovy.ast.MultipleAssignmentMetadata;
 import org.codehaus.groovy.ast.InnerClassNode;
 import org.codehaus.groovy.ast.IntersectionTypeClassNode;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.ModifierNode;
 import org.codehaus.groovy.ast.ModuleNode;
+import org.codehaus.groovy.ast.MultipleAssignmentMetadata;
 import org.codehaus.groovy.ast.NodeMetaDataHandler;
 import org.codehaus.groovy.ast.PackageNode;
 import org.codehaus.groovy.ast.Parameter;
@@ -144,12 +144,12 @@ import org.codehaus.groovy.control.ModuleImportHelper;
 import org.codehaus.groovy.control.ResolveVisitor;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.control.messages.SyntaxErrorMessage;
-import org.codehaus.groovy.transform.AsyncTransformHelper;
 import org.codehaus.groovy.runtime.ArrayGroovyMethods;
 import org.codehaus.groovy.runtime.StringGroovyMethods;
 import org.codehaus.groovy.syntax.Numbers;
 import org.codehaus.groovy.syntax.SyntaxException;
 import org.codehaus.groovy.syntax.Types;
+import org.codehaus.groovy.transform.AsyncTransformHelper;
 import org.objectweb.asm.Opcodes;
 
 import java.io.BufferedReader;
@@ -161,6 +161,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Deque;
 import java.util.HashSet;
+import java.util.IdentityHashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
@@ -168,10 +169,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.regex.Pattern;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static groovy.lang.Tuple.tuple;
@@ -305,6 +306,14 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
                 return this.moduleNode;
             }
             throw cfe;
+        } finally {
+            // Drop this parse's interpreter before the recognizer can outlive the visit.
+            // A replaced prediction cache stays reachable through any parser that still
+            // points at the retired ATN, which is what pushes a single large class over
+            // the default compiler heap during class generation.
+            releaseRecognizers();
+            parameterContexts.clear();
+            parameterModifierManagers.clear();
         }
     }
 
@@ -341,20 +350,33 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
             this.moduleNode.addClass(node);
         }
 
-        if (this.isPackageInfoDeclaration()) {
-            ClassNode packageInfo = ClassHelper.make(this.moduleNode.getPackageName() + PACKAGE_INFO);
+        var sourceUnitName = this.sourceUnit.getName();
+        if (sourceUnitName != null && sourceUnitName.endsWith("package-info.groovy")) {
+            ClassNode packageInfo = ClassHelper.make(this.moduleNode.getPackageName() + "package-info");
             if (!this.moduleNode.getClasses().contains(packageInfo)) {
                 this.moduleNode.addClass(packageInfo);
             }
-        } else if (this.isBlankScript()) {
+        } else if (this.moduleNode.getClasses().isEmpty()
+                && this.moduleNode.getMethods().isEmpty()
+                && this.moduleNode.getStatementBlock().isEmpty()) {
             // add "return null" if script has no statements/methods/classes
             this.moduleNode.addStatement(ReturnStatement.RETURN_NULL_OR_VOID);
         }
 
-        this.configureScriptClassNode();
+        var scriptClassNode = this.moduleNode.getScriptClassDummy();
+        if (scriptClassNode != null) {
+            List<Statement> statements = this.moduleNode.getStatementBlock().getStatements();
+            if (!statements.isEmpty()) {
+                Statement firstStatement = statements.get(0);
+                scriptClassNode.setSourcePosition(firstStatement);
+                Statement lastStatement  = statements.get(statements.size() - 1);
+                scriptClassNode.setLastLineNumber(lastStatement.getLastLineNumber());
+                scriptClassNode.setLastColumnNumber(lastStatement.getLastColumnNumber());
+            }
+        }
 
         if (this.numberFormatError != null) {
-            throw createParsingFailedException(this.numberFormatError.getV2().getMessage(), this.numberFormatError.getV1());
+            throw this.createParsingFailedException(this.numberFormatError.getV2().getMessage(), this.numberFormatError.getV1());
         }
 
         return this.moduleNode;
@@ -1942,8 +1964,8 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
         final int n = parameters.length;
         for (int i = 0; i < n; i += 1) {
             Parameter parameter = parameters[i];
-            FormalParameterContext parameterCtx = parameter.getNodeMetaData(PARAMETER_CONTEXT);
-            ModifierManager parameterModifierManager = parameter.getNodeMetaData(PARAMETER_MODIFIER_MANAGER);
+            FormalParameterContext parameterCtx = (FormalParameterContext) parameterContexts.get(parameter);
+            ModifierManager parameterModifierManager = parameterModifierManagers.get(parameter);
             PropertyNode propertyNode = declareProperty(parameterCtx, parameterModifierManager, parameter.getType(), classNode, i,
                     parameter, parameter.getName(), parameter.getModifiers() | Opcodes.ACC_FINAL, parameter.getInitialExpression());
             propertyNode.getField().putNodeMetaData(IS_RECORD_GENERATED, Boolean.TRUE);
@@ -5679,8 +5701,9 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
                                         ctx
                                 )
                         );
-        parameter.putNodeMetaData(PARAMETER_MODIFIER_MANAGER, modifierManager);
-        parameter.putNodeMetaData(PARAMETER_CONTEXT, ctx);
+        // kept by the builder, not on the parameter: a parse context's parent chain is the whole CST
+        parameterModifierManagers.put(parameter, modifierManager);
+        parameterContexts.put(parameter, ctx);
 
         if (asBoolean(expressionContext)) {
             parameter.setInitialExpression((Expression) this.visit(expressionContext));
@@ -5812,15 +5835,6 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
         return TYPE_DEFAULT_VALUE_MAP.get(type);
     }
 
-    private boolean isPackageInfoDeclaration() {
-        String name = this.sourceUnit.getName();
-        return name != null && name.endsWith(PACKAGE_INFO_FILE_NAME);
-    }
-
-    private boolean isBlankScript() {
-        return moduleNode.getStatementBlock().isEmpty() && moduleNode.getMethods().isEmpty() && moduleNode.getClasses().isEmpty();
-    }
-
     private boolean isInsideParentheses(final NodeMetaDataHandler nodeMetaDataHandler) {
         Number insideParenLevel = nodeMetaDataHandler.getNodeMetaData(INSIDE_PARENTHESES_LEVEL);
         return insideParenLevel != null && insideParenLevel.intValue() > 0;
@@ -5870,23 +5884,6 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
                 token.getLine(),
                 token.getCharPositionInLine() + 1
         );
-    }
-
-    /**
-     * Sets the script source position.
-     */
-    private void configureScriptClassNode() {
-        var scriptClassNode = moduleNode.getScriptClassDummy();
-        if (scriptClassNode != null) {
-            List<Statement> statements = moduleNode.getStatementBlock().getStatements();
-            if (!statements.isEmpty()) {
-                Statement firstStatement = statements.get(0);
-                scriptClassNode.setSourcePosition(firstStatement);
-                Statement lastStatement  = statements.get(statements.size() - 1);
-                scriptClassNode.setLastLineNumber(lastStatement.getLastLineNumber());
-                scriptClassNode.setLastColumnNumber(lastStatement.getLastColumnNumber());
-            }
-        }
     }
 
     private String getOriginalText(final ParserRuleContext context) {
@@ -5983,6 +5980,15 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
         };
     }
 
+    /**
+     * Detach this parse from the shared prediction cache. The cache itself stays
+     * softly reachable for the next file; this parse must not keep a retired copy.
+     */
+    private void releaseRecognizers() {
+        if (parser != null) parser.release();
+        if (lexer != null) lexer.release();
+    }
+
     private void removeErrorListeners() {
         lexer.removeErrorListeners();
         parser.removeErrorListeners();
@@ -6056,8 +6062,8 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
     private final Deque<ClassNode> classNodeStack = new ArrayDeque<>();
     private final Deque<List<InnerClassNode>> anonymousInnerClassesDefinedInMethodStack = new ArrayDeque<>();
     private final Deque<GroovyParserRuleContext> switchExpressionRuleContextStack = new ArrayDeque<>();
-
-    /** Name of the synthetic variable holding the selector of the enclosing pattern switch ("" for a switch without pattern labels). */
+    private final Map<Parameter, GroovyParserRuleContext> parameterContexts = new IdentityHashMap<>();
+    private final Map<Parameter, ModifierManager> parameterModifierManagers = new IdentityHashMap<>();
     /** one entry per enclosing closure/lambda: TRUE if it is the closure of an {@code async} expression */
     private final Deque<Boolean> asyncClosureStack = new ArrayDeque<>();
     /** set just before visiting the closure/lambda of an {@code async} expression; consumed by the closure/lambda visit */
@@ -6100,9 +6106,6 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
             DOLLAR_SLASH_STR, SLASH_DOLLAR_STR
     );
 
-    private static final String PACKAGE_INFO = "package-info";
-    private static final String PACKAGE_INFO_FILE_NAME = PACKAGE_INFO + ".groovy";
-
     // GROOVY-10355: a binary expression rebuilt from a "(name) +/- x" cast mis-parse; parents
     // re-associate it so the textual left-to-right grouping is preserved
     private static final String REPAIRED_PAREN_NAME_BINARY = "_REPAIRED_PAREN_NAME_BINARY";
@@ -6136,8 +6139,6 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
     private static final String INTEGER_LITERAL_TEXT = "_INTEGER_LITERAL_TEXT";
     private static final String FLOATING_POINT_LITERAL_TEXT = "_FLOATING_POINT_LITERAL_TEXT";
     private static final String ENCLOSING_INSTANCE_EXPRESSION = "_ENCLOSING_INSTANCE_EXPRESSION";
-    private static final String PARAMETER_MODIFIER_MANAGER = "_PARAMETER_MODIFIER_MANAGER";
-    private static final String PARAMETER_CONTEXT = "_PARAMETER_CONTEXT";
     private static final String IS_RECORD_GENERATED = "_IS_RECORD_GENERATED";
     private static final String RECORD_HEADER = "_RECORD_HEADER";
     private static final String RECORD_TYPE_NAME = "groovy.transform.RecordType";

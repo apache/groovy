@@ -21,6 +21,8 @@ package org.codehaus.groovy.runtime.memoize;
 import org.apache.groovy.util.concurrent.concurrentlinkedhashmap.ConcurrentLinkedHashMap;
 
 import javax.annotation.concurrent.ThreadSafe;
+import java.io.Serial;
+import java.io.Serializable;
 import java.lang.ref.SoftReference;
 import java.util.Iterator;
 import java.util.Map;
@@ -30,7 +32,9 @@ import java.util.concurrent.ConcurrentMap;
  * A cache backed by a ConcurrentLinkedHashMap
  */
 @ThreadSafe
-public final class LRUCache<K, V> implements MemoizeCache<K, V> {
+public final class LRUCache<K, V> implements MemoizeCache<K, V>, Serializable {
+    @Serial private static final long serialVersionUID = -2873520698361449839L;
+
     private final ConcurrentMap<K, V> map;
 
     /**
