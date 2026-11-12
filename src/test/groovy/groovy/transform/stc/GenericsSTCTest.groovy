@@ -5833,6 +5833,20 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-12754
+    @Test
+    void testWildcardNestedInCaptureBoundForTypeParameterOfBound() {
+        for (type in ['String', 'Integer']) {
+            shouldFailWithMessages """
+                public <T extends Number, U extends List<T>> int count(Class<U> type) { 1 }
+                void test(Class<? extends ArrayList<? extends $type>> type) {
+                    count(type)
+                }
+            """,
+                '#count(java.lang.Class<U>) with arguments [java.lang.Class<? extends java.util.ArrayList<? extends '
+        }
+    }
+
     // GROOVY-12755
     @Test
     void testWildcardArgumentForDiamondConstructor() {

@@ -2409,7 +2409,8 @@ public abstract class StaticTypeCheckingSupport {
                     extractGenericsConnections(connections, captureBound, bound);
                     for (Map.Entry<GenericsTypeName, GenericsType> entry : connections.entrySet()) {
                         GenericsType value = entry.getValue();
-                        if (value.isWildcard() || value.isPlaceholder()) continue;
+                        if (value.isWildcard()) return false; // a type parameter is not inferred as a wildcard
+                        if (value.isPlaceholder()) continue;
                         ClassNode placeholder = make(entry.getKey().getName());
                         placeholder.setGenericsPlaceHolder(true);
                         if (!captureWithinBound(Collections.singletonList(typeVariableBound(value.getType())), null,
