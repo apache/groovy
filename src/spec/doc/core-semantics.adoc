@@ -1574,7 +1574,7 @@ include::../test/typing/TypeCheckingTest.groovy[tags=stc_assign_specialcase,inde
 +
 The value is converted when the assignment runs: to its `toString()` for a `String`, by <<the-groovy-truth,Groovy truth>>
 for a `boolean`, and to the class it names for a `Class`. This rule is for assignments and `return` statements;
-it does not apply to the arguments of a method call.
+it does not apply to the arguments of a method call. See <<stc-generics-class,below>> for a `Class` with a type argument.
 
 * _or_ `o` is null and `T` is not a primitive type
 
@@ -2003,6 +2003,14 @@ include::../test/typing/TypeCheckingTest.groovy[tags=stc_generics_raw,indent=0]
 include::../test/typing/TypeCheckingTest.groovy[tags=stc_generics_raw_element_fail,indent=0]
 ----
 
+A raw type used as the bound of a wildcard is checked, though: `? extends Map` is not within
+`? extends Map<String, Object>`.
+
+[source,groovy]
+----
+include::../test/typing/TypeCheckingTest.groovy[tags=stc_generics_raw_bound_fail,indent=0]
+----
+
 A cast to a type with type arguments, such as `(List<String>) value`, is not checked against the type arguments either.
 
 *A literal or a diamond takes its type arguments from the target.* A list or map literal and a constructor call
@@ -2032,6 +2040,51 @@ include::../test/typing/TypeCheckingTest.groovy[tags=stc_generics_method,indent=
 include::../test/typing/TypeCheckingTest.groovy[tags=stc_generics_method_fail,indent=0]
 ----
 
+When the type argument of an argument is a wildcard, the wildcard stands for one type that is not known. The call is
+accepted when every type the wildcard accepts is within the bounds of the type parameter:
+
+[source,groovy]
+----
+include::../test/typing/TypeCheckingTest.groovy[tags=stc_generics_method_wildcard,indent=0]
+----
+<1> `T` is the unknown element type, which is an `Integer` or a subtype, so it is within `T extends Number`
+
+[source,groovy]
+----
+include::../test/typing/TypeCheckingTest.groovy[tags=stc_generics_method_wildcard_fail,indent=0]
+----
+
+A `List<?>` is rejected for the same reason wherever the type parameter has a bound.
+
+When the call is assigned or returned, the type arguments are also taken from the target:
+
+[source,groovy]
+----
+include::../test/typing/TypeCheckingTest.groovy[tags=stc_generics_method_target,indent=0]
+----
+<1> `T` is `Number`, from the return type, and the argument `1` is a `Number`
+
+[source,groovy]
+----
+include::../test/typing/TypeCheckingTest.groovy[tags=stc_generics_method_target_fail,indent=0]
+----
+
+A spread expression such as `files*.name` makes a new list, so it takes its element type from the target
+in the same way:
+
+[source,groovy]
+----
+include::../test/typing/TypeCheckingTest.groovy[tags=stc_generics_spread_target,indent=0]
+----
+<1> each name is a `String`, which is a `CharSequence`
+
+A list that already has a type is not converted:
+
+[source,groovy]
+----
+include::../test/typing/TypeCheckingTest.groovy[tags=stc_generics_spread_target_fail,indent=0]
+----
+
 [[stc-generics-class]]
 ===== `Class` and its type argument
 
@@ -2047,6 +2100,65 @@ include::../test/typing/TypeCheckingTest.groovy[tags=stc_generics_class,indent=0
 ----
 include::../test/typing/TypeCheckingTest.groovy[tags=stc_generics_class_fail,indent=0]
 ----
+
+A value that is not a `Class` can be <<_type_checking_assignments,assigned to a `Class`>> whether or not the `Class` has a
+type argument. This holds for a variable, a field or property initializer and a property assignment.
+The value is converted when the assignment runs, and the type argument is not checked:
+
+[source,groovy]
+----
+include::../test/typing/TypeCheckingTest.groovy[tags=stc_generics_class_conversion,indent=0]
+----
+<1> the class is looked up by name
+<2> the value is converted to a `Class`
+
+The conversion is the same as for a `Class` with no type argument, so two things can go wrong when the assignment runs:
+
+* A value that is already a `Class` is kept as it is. If `value` is `String.class`, then `numberType` returns `String.class`,
+although `String` is not a `Number`.
+* A value that cannot be converted fails with a `GroovyCastException`. A `java.lang.reflect.ParameterizedType` such as
+`List<String>` is one example: it is a `Type` but not a `Class`.
+
+A value whose static type is `Class` is not converted, so its type argument is checked. A `Class<?>`, as
+`Class.forName` returns, is not accepted for a `Class` with a bound:
+
+[source,groovy]
+----
+include::../test/typing/TypeCheckingTest.groovy[tags=stc_generics_class_unknown_fail,indent=0]
+----
+
+Use `asSubclass`, which checks the class when the code runs:
+
+[source,groovy]
+----
+include::../test/typing/TypeCheckingTest.groovy[tags=stc_generics_class_assubclass,indent=0]
+----
+
+The class of a value, `value.getClass()` or `value.class`, has the type `Class<? extends T>`, where `T` is the type
+of the value without its type arguments:
+
+[source,groovy]
+----
+include::../test/typing/TypeCheckingTest.groovy[tags=stc_generics_getclass,indent=0]
+----
+<1> the class of a `Number` is a `Class<? extends Number>`
+<2> the class of a `List<String>` is a `Class<? extends List>`
+
+It is not a `Class<T>`, because the value may be an instance of a subclass:
+
+[source,groovy]
+----
+include::../test/typing/TypeCheckingTest.groovy[tags=stc_generics_getclass_fail,indent=0]
+----
+
+The type of the value is the one the type checker has inferred for it, so the class follows
+<<_instanceof_inference,`instanceof` inference>> like any other member:
+
+[source,groovy]
+----
+include::../test/typing/TypeCheckingTest.groovy[tags=stc_generics_getclass_instanceof,indent=0]
+----
+<1> `value` is a `CharSequence` here, so its class is a `Class<? extends CharSequence>`
 
 [[type-inference]]
 ==== Type inference
