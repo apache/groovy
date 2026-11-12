@@ -4516,6 +4516,38 @@ final class GenericsJavaCompatibilityTest {
     }
 
     /**
+     * JLS 4.8: the type of a member of a raw type is the erasure of its type, so assigning it to
+     * a parameterized type is an unchecked conversion.
+     */
+    @Test
+    void testMemberOfRawTypeHasErasureOfItsType() {
+        final String className = 'gls.generics.test.RawMemberErasure'
+        final String javaSrc = '''
+            package gls.generics.test;
+            import java.util.*;
+            public class RawMemberErasure {
+                static class Holder<T extends List> {
+                    Class<? extends T> type;
+                    List<T> items = new ArrayList<>();
+                    Class<? extends T> get() { return type; }
+                }
+                @SuppressWarnings({"unchecked", "rawtypes"})
+                static Class<? extends List<String>> field(Holder holder) { return holder.type; }
+                @SuppressWarnings({"unchecked", "rawtypes"})
+                static Class<? extends List<String>> method(Holder holder) { return holder.get(); }
+                @SuppressWarnings({"unchecked", "rawtypes"})
+                static List<String> items(Holder holder) { return holder.items; }
+                @SuppressWarnings("rawtypes")
+                public static String test() {
+                    Holder holder = new Holder();
+                    return String.valueOf(field(holder)) + ":" + method(holder) + ":" + items(holder);
+                }
+            }
+        '''
+        assertPositive(className, javaSrc, 'null:null:[]')
+    }
+
+    /**
      * JLS 18.5.2: the target type does not widen a type argument beyond what the arguments allow.
      */
     @Test
