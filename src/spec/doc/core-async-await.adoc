@@ -161,6 +161,11 @@ empty result. `any` and `first` require at least one source (and reject `null`
 elements), throwing `IllegalArgumentException` otherwise — a "race" or "first
 success" with no participants has no meaningful result.
 
+TIP: Each combinator also takes a single list of sources, the shape of
+JavaScript's `Promise.all(iterable)`: `await Awaitable.all(tasks)` where
+`tasks` was built with `collect`. The spread form, `Awaitable.all(*tasks)`,
+works as well.
+
 [[async-generators]]
 == Generators and Streaming
 

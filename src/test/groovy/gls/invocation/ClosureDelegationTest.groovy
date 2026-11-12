@@ -21,6 +21,7 @@ package gls.invocation
 import org.junit.jupiter.api.Test
 
 import static groovy.test.GroovyAssert.assertScript
+import static groovy.test.GroovyAssert.shouldFail
 
 final class ClosureDelegationTest {
 
@@ -155,6 +156,267 @@ final class ClosureDelegationTest {
             assert array.contains('a')
             assert array.contains('b')
             assert array.contains('c')
+        '''
+    }
+
+    // GROOVY-12578
+    @Test
+    void testClosureMethodWhenNeitherDelegateNorOwnerHasIt() {
+        assertScript '''
+            import groovy.transform.CompileStatic
+
+            class C {
+                Closure<Integer> withCount() { { -> int n = 0; with { n++ }; n } }
+                Closure<Integer> tapCount() { { -> int n = 0; tap { n++ }; n } }
+                Closure<Object> hash() { { -> hashCode() } }
+            }
+            @CompileStatic
+            class D {
+                static Object call(Closure<?> closure) { closure() }
+            }
+
+            for (String name : ['withCount', 'tapCount']) {
+                Closure<Integer> noOwner = new C()."$name"().rehydrate(null, null, null)
+                noOwner.resolveStrategy = Closure.OWNER_ONLY
+                assert noOwner() == 1
+                assert D.call(noOwner) == 1
+
+                Closure<Integer> noDelegate = new C()."$name"()
+                noDelegate.resolveStrategy = Closure.DELEGATE_ONLY
+                noDelegate.delegate = null
+                assert noDelegate() == 1
+            }
+
+            Closure<Object> hash = new C().hash().rehydrate(null, null, null)
+            hash.resolveStrategy = Closure.OWNER_ONLY
+            assert hash() == hash.hashCode()
+            assert hash.metaClass.invokeMethod(C, hash, 'hashCode', [] as Object[], false, false) == hash.hashCode()
+        '''
+    }
+
+    // GROOVY-12664
+    @Test
+    void testClosureExtensionCalledOnceWhenDelegateAndOwnerUnavailable() {
+        assertScript '''
+            int count = 0
+            def c = { -> with { ++count } }
+            c.resolveStrategy = Closure.DELEGATE_ONLY
+            c.delegate = null
+            assert c() == 1
+            assert count == 1
+
+            count = 0
+            c = { -> with { ++count } }
+            c.resolveStrategy = Closure.DELEGATE_ONLY
+            c.delegate = c
+            assert c() == 1
+            assert count == 1
+
+            count = 0
+            c = { -> with { ++count } }.dehydrate()
+            c.resolveStrategy = Closure.DELEGATE_ONLY
+            assert c() == 1
+            assert count == 1
+
+            count = 0
+            c = { -> with { ++count } }.rehydrate(null, null, null)
+            c.resolveStrategy = Closure.OWNER_ONLY
+            assert c() == 1
+            assert count == 1
+        '''
+    }
+
+    // GROOVY-12664
+    @Test
+    void testClosureExtensionCalledOnceWhenDelegateAndOwnerUnavailableTypeChecked() {
+        assertScript '''
+            @groovy.transform.TypeChecked
+            def test() {
+                int count = 0
+                Closure c = { -> with { ++count } }
+                c.resolveStrategy = Closure.DELEGATE_ONLY
+                c.delegate = null
+                assert c() == 1
+                assert count == 1
+            }
+            test()
+        '''
+    }
+
+    // GROOVY-12664
+    @Test
+    void testClosureExtensionResultReturnedByMetaClass() {
+        assertScript '''
+            def c = { -> }
+            c.resolveStrategy = Closure.DELEGATE_ONLY
+            c.delegate = null
+            def result = c.metaClass.invokeMethod(this.getClass(), c, 'sprintf', ['%d', 42] as Object[], false, true)
+            assert result == '42'
+        '''
+    }
+
+    // GROOVY-12667
+    @Test
+    void testDelegateFirstWithNullDelegate() {
+        assertScript '''
+            class C {
+                def foo() { 'owner' }
+                String toString() { 'C' }
+                def test() {
+                    def c = { -> [foo(), toString(), is(this)] }
+                    c.resolveStrategy = Closure.DELEGATE_FIRST
+                    c.delegate = null
+                    c()
+                }
+            }
+
+            assert new C().test() == ['owner', 'C', true]
+        '''
+    }
+
+    // GROOVY-12667
+    @Test
+    void testDelegateFirstWithNullDelegateStaticContext() {
+        assertScript '''
+            class C {
+                static foo() { 'owner' }
+                static test() {
+                    def c = { -> foo() }
+                    c.resolveStrategy = Closure.DELEGATE_FIRST
+                    c.delegate = null
+                    c()
+                }
+            }
+
+            assert C.test() == 'owner'
+        '''
+    }
+
+    // GROOVY-12667
+    @Test
+    void testDelegateFirstWithNullDelegateTypeChecked() {
+        assertScript '''
+            @groovy.transform.TypeChecked
+            class C {
+                def foo() { 'owner' }
+                def test() {
+                    def c = { -> foo() }
+                    c.resolveStrategy = Closure.DELEGATE_FIRST
+                    c.delegate = null
+                    c()
+                }
+            }
+
+            assert new C().test() == 'owner'
+        '''
+    }
+
+    // GROOVY-12667
+    @Test
+    void testOwnerFirstWithNullOwner() {
+        assertScript '''
+            class D {
+                def bar() { 'delegate' }
+            }
+            class C {
+                def test() {
+                    def c = { -> bar() }.rehydrate(new D(), null, this)
+                    c.resolveStrategy = Closure.OWNER_FIRST
+                    c()
+                }
+            }
+
+            assert new C().test() == 'delegate'
+        '''
+    }
+
+    // GROOVY-12667
+    @Test
+    void testMissingMethodWithNullDelegate() {
+        for (strategy in ['OWNER_FIRST', 'DELEGATE_FIRST']) {
+            def err = shouldFail MissingMethodException, """
+                class C {
+                    def test() {
+                        def c = { -> nope() }
+                        c.resolveStrategy = Closure.$strategy
+                        c.delegate = null
+                        c()
+                    }
+                }
+
+                new C().test()
+            """
+            assert err.method == 'nope'
+        }
+    }
+
+    // GROOVY-12667
+    @Test
+    void testDehydratedClosureMissingMethod() {
+        for (strategy in ['OWNER_FIRST', 'DELEGATE_FIRST']) {
+            def err = shouldFail MissingMethodException, """
+                class C {
+                    def foo() { 'owner' }
+                    def test() {
+                        def c = { -> foo() }.dehydrate()
+                        c.resolveStrategy = Closure.$strategy
+                        c()
+                    }
+                }
+
+                new C().test()
+            """
+            assert err.method == 'foo'
+        }
+    }
+
+    // GROOVY-12667, GROOVY-12578: a closure whose metaclass is an ExpandoMetaClass dispatches
+    // through MetaClassImpl, which skips a null owner or delegate as ClosureMetaClass does
+    @Test
+    void testNullOwnerOrDelegateWithEitherClosureDispatch() {
+        assertScript '''
+            import org.codehaus.groovy.runtime.InvokerHelper
+            import org.codehaus.groovy.runtime.metaclass.ClosureMetaClass
+            import static groovy.test.GroovyAssert.shouldFail
+
+            class D { def foo() { 'delegate' } }
+            class C {
+                def foo() { 'owner' }
+                Closure callsFoo() { { -> foo() } }
+                Closure callsToString() { { -> toString() } }
+                Closure callsWith() { { -> int n = 0; with { n++ }; n } }
+            }
+
+            def run = { Closure closure, Object delegate, Object owner, int strategy, boolean expando ->
+                Closure c = closure.rehydrate(delegate, owner, owner)
+                c.resolveStrategy = strategy
+                if (expando) {
+                    def emc = new ExpandoMetaClass(c.getClass(), false, true)
+                    emc.initialize()
+                    c.setMetaClass(emc)
+                }
+                assert (InvokerHelper.getMetaClass(c) instanceof ClosureMetaClass) == !expando
+                c()
+            }
+
+            for (expando in [false, true]) {
+                // the other candidate answers
+                assert run(new C().callsFoo(), new D(), null, Closure.OWNER_FIRST, expando) == 'delegate'
+                assert run(new C().callsFoo(), null, new C(), Closure.DELEGATE_FIRST, expando) == 'owner'
+
+                for (strategy in [Closure.OWNER_FIRST, Closure.DELEGATE_FIRST, Closure.OWNER_ONLY]) {
+                    // with no candidate, a method of the closure itself is called once on the closure
+                    Closure c = new C().callsToString()
+                    assert run(c, null, null, strategy, expando).startsWith(c.getClass().name + '@')
+                    assert run(new C().callsWith(), null, null, strategy, expando) == 1
+
+                    // and any other method is missing
+                    def err = shouldFail(MissingMethodException) {
+                        run(new C().callsFoo(), null, null, strategy, expando)
+                    }
+                    assert err.method == 'foo'
+                }
+            }
         '''
     }
 }

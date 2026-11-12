@@ -66,11 +66,23 @@ def moduleDirsProvider = providers.provider {
     out
 }
 
+// The compiled output those class dirs come from. moduleClassDirs passes the dirs as plain
+// "name=path" strings, which carry no task dependency, so without this the scan reads whatever
+// is on disk: a stale build makes generate silently miss new elements and sync pass against old
+// classes. Each main source set's classesDirs knows the tasks that build it; resolved lazily, when
+// the task graph is built, so every project has been configured by then.
+def moduleClassesDirs = {
+    rootProject.allprojects.findResults { p ->
+        p.extensions.findByName('sourceSets')?.findByName('main')?.output?.classesDirs
+    }
+}
+
 tasks.register('generateGroovyABIRegistry', GroovyABICheckTask) { t ->
     t.group = 'verification'
     t.description = 'Regenerate compatibility/groovy-abi-surface.json from the compiled @GroovyABI classes.'
     t.mode = 'generate'
     t.moduleClassDirs.set(moduleDirsProvider)
+    t.dependsOn(moduleClassesDirs)
     t.trackedModules.set(abiTrackedModules)
     t.ignoredModules.set(abiIgnoredModules)
     t.registryFile.set(abiRegistry)
@@ -84,6 +96,7 @@ tasks.register('checkGroovyABISync', GroovyABICheckTask) { t ->
     t.mode = 'sync'
     t.trackedModules.set(abiTrackedModules)
     t.moduleClassDirs.set(moduleDirsProvider)
+    t.dependsOn(moduleClassesDirs)
     t.ignoredModules.set(abiIgnoredModules)
     t.registryFile.set(abiRegistry)
     t.schemaFile.set(abiSchema)
