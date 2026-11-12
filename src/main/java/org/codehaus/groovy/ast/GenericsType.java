@@ -448,6 +448,38 @@ public class GenericsType extends ASTNode {
     }
 
     /**
+     * JLS 4.10: {@code specific} is a subtype of {@code general}. When both are
+     * parameterizations of the same generic type, type arguments must be contained
+     * (JLS 4.5.1). A non-generic {@code general} does not skip the subtype test.
+     */
+    private static boolean containedByBound(final ClassNode specific, final ClassNode general) {
+        if (specific == null || general == null) return false;
+        if (specific.equals(general)) {
+            return compareGenericsWithBound(specific, general);
+        }
+        if (!implementsInterfaceOrIsSubclassOf(specific, general)) return false;
+        if (general.getGenericsTypes() == null) {
+            ClassNode redirect = general.redirect();
+            if (redirect == null || redirect == general || redirect.getGenericsTypes() == null) {
+                return true;
+            }
+        }
+        return compareGenericsWithBound(specific, general);
+    }
+
+    /**
+     * Subtype test that includes type arguments when both types are parameterized
+     * and falls back to a raw subtype test otherwise.
+     */
+    private static boolean genericSubtype(final ClassNode specific, final ClassNode general) {
+        if (specific != null && general != null
+                && specific.getGenericsTypes() != null && general.getGenericsTypes() != null) {
+            return containedByBound(specific, general);
+        }
+        return implementsInterfaceOrIsSubclassOf(specific, general);
+    }
+
+    /**
      * Given a parameterized type (List&lt;String&gt; for example), checks that its
      * generic types are compatible with those from a bound.
      * @param classNode the classnode from which we will compare generics types
@@ -567,15 +599,30 @@ public class GenericsType extends ASTNode {
                                         if (argument != null && !argument.isWildcard()) gt = argument;
                                     }
                                     // GROOVY-6095, GROOVY-9338
+                                    // JLS 4.5.1: "? super A <= ? super S" iff S <: A.
+                                    // "? extends ..." and unbounded "?" are not contained in "? super S".
                                     if (classNodeType.isWildcard()) {
-                                        if (classNodeType.getLowerBound() != null
-                                                || classNodeType.getUpperBounds() != null) {
+                                        if (gt.isPlaceholder()) {
+                                            if (classNodeType.getLowerBound() != null
+                                                    || classNodeType.getUpperBounds() != null) {
+                                                match = classNodeType.checkGenerics(gt.getType());
+                                            } else {
+                                                match = false; // "?" (from Comparable<?>) does not satisfy anything
+                                            }
+                                        } else if (classNodeType.getLowerBound() != null
+                                                && !classNodeType.getLowerBound().isGenericsPlaceHolder()) {
+                                            // "? super A <= ? super S" iff S <: A
+                                            match = containedByBound(gt.getType(), classNodeType.getLowerBound());
+                                        } else if (classNodeType.getLowerBound() != null) {
                                             match = classNodeType.checkGenerics(gt.getType());
                                         } else {
-                                            match = false; // "?" (from Comparable<?>) does not satisfy anything
+                                            // "? extends ..." and unbounded "?" are not contained in "? super S"
+                                            match = false;
                                         }
                                     } else {
-                                        match = implementsInterfaceOrIsSubclassOf(gt.getType(), classNodeType.getType());
+                                        // "T <= ? super S" iff S <: T. Raw types stay on the
+                                        // historical subtype test so diamond inference is unchanged.
+                                        match = genericSubtype(gt.getType(), classNodeType.getType());
                                     }
                                 } else if (redirectBoundType.getUpperBounds() != null) {
                                     // ex: class Comparable<Integer> <=> bound Comparable<? extends T & I>
@@ -588,16 +635,40 @@ public class GenericsType extends ASTNode {
                                             if (argument != null && !argument.isWildcard()) gt = argument;
                                         }
                                         // GROOVY-6095, GROOVY-9338
-                                        if (classNodeType.isWildcard()) {
-                                            if (classNodeType.getLowerBound() != null) {
-                                                match = gt.checkGenerics(classNodeType.getLowerBound());
+                                        // JLS 4.5.1: "? extends Object" contains every type argument.
+                                        // "? extends A <= ? extends B" iff A <: B.
+                                        // "? super A <= ? extends B" only when B is Object.
+                                        if (!gt.isPlaceholder() && !gt.isWildcard() && isObjectType(gt.getType())) {
+                                            match = true;
+                                        } else if (classNodeType.isWildcard()) {
+                                            if (gt.isPlaceholder()) {
+                                                if (classNodeType.getLowerBound() != null) {
+                                                    match = gt.checkGenerics(classNodeType.getLowerBound());
+                                                } else if (classNodeType.getUpperBounds() != null) {
+                                                    match = gt.checkGenerics(classNodeType.getUpperBounds()[0]);
+                                                } else { // GROOVY-10576: "?" vs "? extends Object" (citation required) or no match
+                                                    match = false;
+                                                }
+                                            } else if (classNodeType.getLowerBound() != null) {
+                                                match = false;
+                                            } else if (classNodeType.getUpperBounds() != null
+                                                    && !classNodeType.getUpperBounds()[0].isGenericsPlaceHolder()) {
+                                                // "? extends A <= ? extends B" iff A <: B.
+                                                match = containedByBound(classNodeType.getUpperBounds()[0], gt.getType());
                                             } else if (classNodeType.getUpperBounds() != null) {
+                                                // A type variable is witnessed through its own bounds.
+                                                // Substituting it here would reject a diamond that is still "? extends T".
                                                 match = gt.checkGenerics(classNodeType.getUpperBounds()[0]);
-                                            } else { // GROOVY-10576: "?" vs "? extends Object" (citation required) or no match
-                                                match = (!gt.isPlaceholder() && !gt.isWildcard() && isObjectType(gt.getType()));
+                                            } else {
+                                                // GROOVY-9338: unbounded "?" is "? extends Object".
+                                                // It is contained in "? extends B" only when B is Object,
+                                                // which is handled above. "? extends B" does not contain "?".
+                                                match = false;
                                             }
                                         } else {
-                                            match = implementsInterfaceOrIsSubclassOf(classNodeType.getType(), gt.getType());
+                                            // "T <= ? extends B" iff T <: B. Raw types stay on the
+                                            // historical subtype test so diamond inference is unchanged.
+                                            match = genericSubtype(classNodeType.getType(), gt.getType());
                                         }
                                         if (!match) break;
                                     }

@@ -20,29 +20,64 @@
 import org.apache.groovy.gradle.ConcurrentExecutionControlBuildService
 import org.apache.groovy.gradle.SharedConfiguration
 
-// Minimal OSGi integration test using embedded Apache Felix.
-// Installs the Groovy bundle and verifies resolution + class loading.
+// OSGi integration tests using embedded frameworks. The same tests run on
+// Apache Felix (test) and Eclipse Equinox (testEquinox), and each module
+// scenario runs both with and without a ServiceLoader Mediator (Aries SPI Fly).
 
 plugins {
     id 'java'
     id 'org.apache.groovy-common'
 }
 
+configurations {
+    // Bundles installed into the framework by the tests, never put on the test classpath.
+    osgiSpifly {
+        canBeConsumed = false
+        resolutionStrategy.eachDependency {
+            if (it.requested.group == 'org.ow2.asm') it.useVersion(versions.asm)
+        }
+    }
+    osgiReactor { canBeConsumed = false }
+    // Swapped in for Felix on the testEquinox classpath.
+    osgiEquinox {
+        canBeConsumed = false
+        transitive = false
+    }
+}
+
 dependencies {
-    testImplementation 'org.apache.felix:org.apache.felix.framework:8.0.0'
+    testImplementation "org.apache.felix:org.apache.felix.framework:${versions.felix}"
     testImplementation "org.junit.jupiter:junit-jupiter:${rootProject.versions.junit5}"
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+    // For the test-only FastStringService provider, which is installed as a fragment.
+    testCompileOnly projects.groovyJson
+    osgiSpifly "org.apache.aries.spifly:org.apache.aries.spifly.dynamic.bundle:${versions.spifly}"
+    osgiReactor "io.projectreactor:reactor-core:${versions.reactor}"
+    osgiEquinox "org.eclipse.platform:org.eclipse.osgi:${versions.equinox}"
 }
 
 def v = rootProject.version
 def groovyJar = rootProject.file("build/libs/groovy-${v}.jar")
 def jsonJar = project(':groovy-json').file("build/libs/groovy-json-${v}.jar")
+def reactorJar = project(':groovy-reactor').file("build/libs/groovy-reactor-${v}.jar")
+def spiflyBundles = configurations.osgiSpifly
+def reactorBundles = configurations.osgiReactor
 
-test {
+tasks.withType(Test).configureEach {
     useJUnitPlatform()
-    dependsOn ':repackageJar', ':groovy-json:jar'
+    // repackageJar, not jar: it produces the published jar with the OSGi manifest
+    dependsOn ':repackageJar', ':groovy-json:repackageJar', ':groovy-reactor:repackageJar'
     systemProperty 'groovy.bundle.path', groovyJar.absolutePath
     systemProperty 'groovy.json.bundle.path', jsonJar.absolutePath
+    systemProperty 'groovy.reactor.bundle.path', reactorJar.absolutePath
+    // Packaged into a generated fragment by the tests; not loadable on the test classpath.
+    exclude 'org/apache/groovy/osgi/provider/**'
+    inputs.files(spiflyBundles).withPropertyName('spiflyBundles').withNormalizer(ClasspathNormalizer)
+    inputs.files(reactorBundles).withPropertyName('reactorBundles').withNormalizer(ClasspathNormalizer)
+    jvmArgumentProviders.add({
+        ["-Dosgi.spifly.bundles=${spiflyBundles.asPath}".toString(),
+         "-Dosgi.reactor.bundles=${reactorBundles.asPath}".toString()]
+    } as CommandLineArgumentProvider)
     // Not groovy-tested: without this it is a third Test lane with an
     // ergonomic heap (1/4 RAM) next to the global cap of 2.
     minHeapSize = '64m'
@@ -50,4 +85,17 @@ test {
     jvmArgs "-XX:ActiveProcessorCount=${sharedConfiguration.testActiveProcessorCount}"
     usesService(ConcurrentExecutionControlBuildService.restrict(Test, gradle,
         SharedConfiguration.TEST_MAX_CONCURRENT_TASKS))
+}
+
+def testEquinox = tasks.register('testEquinox', Test) {
+    description = 'Runs the OSGi tests on Eclipse Equinox instead of Apache Felix.'
+    group = LifecycleBasePlugin.VERIFICATION_GROUP
+    testClassesDirs = sourceSets.test.output.classesDirs
+    classpath = configurations.osgiEquinox + sourceSets.test.runtimeClasspath.filter {
+        !it.name.startsWith('org.apache.felix.framework')
+    }
+}
+
+tasks.named('check') {
+    dependsOn testEquinox
 }
