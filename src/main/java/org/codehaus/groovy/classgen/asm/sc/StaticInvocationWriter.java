@@ -408,7 +408,8 @@ public class StaticInvocationWriter extends InvocationWriter {
             if (theReceiver != null && !target.isStatic() && !isSuperExpression(receiver) && !isClassWithSuper(receiver)
                     && currentCall.getNodeMetaData(StaticTypesMarker.IMPLICIT_RECEIVER) == null) {
                 // call CHECKCAST in order to avoid calls to castToType (aka dynamic behaviour)
-                ClassNode storedType = storedTypeIfWiderThanInferred(theReceiver, receiverType);
+                // an array clone must be called on the array type, never on a wider stored type (GROOVY-12595)
+                ClassNode storedType = isArrayClone(receiverType, theTarget) ? null : storedTypeIfWiderThanInferred(theReceiver, receiverType);
                 MethodNode storedTypeTarget = storedType != null ? findSameMethodOf(storedType, theTarget) : null;
                 if (storedTypeTarget != null) theTarget = storedTypeTarget;
                 CheckcastReceiverExpression checkcastReceiver = new CheckcastReceiverExpression(theReceiver, theTarget);
@@ -450,9 +451,14 @@ public class StaticInvocationWriter extends InvocationWriter {
      * type to the narrower type that declares {@code target}. Like javac, the call
      * is then bound to the type the receiver is held as; virtual dispatch selects
      * the same implementation.
+     * <p>
+     * A protected target is never matched: from another package, the verifier
+     * only allows a protected call on a receiver of the calling class (or a
+     * subclass), which the wider type need not be, e.g. {@code ArrayList#removeRange}
+     * on a subclass instance held as {@code ArrayList}.
      */
     static MethodNode findSameMethodOf(final ClassNode type, final MethodNode target) {
-        if (target.isStatic() || target.isPrivate() || target instanceof ExtensionMethodNode) return null;
+        if (target.isStatic() || target.isPrivate() || target.isProtected() || target instanceof ExtensionMethodNode) return null;
         if (StaticTypeCheckingSupport.implementsInterfaceOrIsSubclassOf(type, target.getDeclaringClass())) return target;
 
         String descriptor = BytecodeHelper.getMethodDescriptor(target.getReturnType(), target.getParameters());
@@ -1033,13 +1039,13 @@ public class StaticInvocationWriter extends InvocationWriter {
             }
             return type;
         }
+    }
 
-        /**
-         * Array clone is modelled as protected {@code Object#clone()}, so the
-         * verifier requires the receiver to be typed as the array.
-         */
-        private static boolean isArrayClone(final ClassNode type, final MethodNode target) {
-            return type.isArray() && "clone".equals(target.getName()) && target.getParameters().length == 0;
-        }
+    /**
+     * Array clone is called as {@code Object#clone()}, which is protected, so the
+     * verifier requires the receiver to be typed as the array.
+     */
+    private static boolean isArrayClone(final ClassNode type, final MethodNode target) {
+        return type.isArray() && "clone".equals(target.getName()) && target.getParameters().length == 0;
     }
 }

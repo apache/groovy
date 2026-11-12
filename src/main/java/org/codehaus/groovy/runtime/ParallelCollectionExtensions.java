@@ -106,6 +106,41 @@ public class ParallelCollectionExtensions {
         return (Collector) TO_LIST;
     }
 
+    // Groovy truth, as the IDENTITY closure applies it in sequential findAll(), find(), grep(),
+    // any() and every().
+    private static final Predicate<Object> TRUTHY = DefaultTypeTransformation::castToBoolean;
+
+    // Adds as sequential sum() does: plus is dispatched through the left operand's metaclass.
+    private static final BinaryOperator<Object> PLUS =
+            (left, right) -> InvokerHelper.getMetaClass(left).invokeMethod(left, "plus", new Object[]{right});
+
+    // Natural ordering as sequential min() and max() apply it: nulls are skipped, values compare as
+    // Groovy's < and > do, and a tie keeps the earlier element.
+    private static final BinaryOperator<Object> NATURAL_MIN = (left, right) -> natural(left, right, true);
+    private static final BinaryOperator<Object> NATURAL_MAX = (left, right) -> natural(left, right, false);
+
+    @SuppressWarnings("unchecked")
+    private static <T> Predicate<T> truthy() {
+        return (Predicate<T>) TRUTHY;
+    }
+
+    @SuppressWarnings("unchecked")
+    private static <T> BinaryOperator<T> operator(BinaryOperator<Object> operator) {
+        return (BinaryOperator<T>) operator;
+    }
+
+    private static Object natural(Object left, Object right, boolean min) {
+        if (right == null) {
+            return left;
+        }
+        if (left == null) {
+            return right;
+        }
+        boolean replace = min ? ScriptBytecodeAdapter.compareLessThan(right, left)
+                : ScriptBytecodeAdapter.compareGreaterThan(right, left);
+        return replace ? right : left;
+    }
+
     // ---- Iteration ------------------------------------------------------
 
     /**
@@ -136,6 +171,22 @@ public class ParallelCollectionExtensions {
         );
     }
 
+    /**
+     * Flattens a collection of collections into a list, in parallel, as sequential
+     * {@code collectMany()} does. Outer encounter order is preserved, as is the order inside
+     * each element collection. An element that is not a collection fails as it does
+     * sequentially.
+     * <pre class="language-groovy groovyTestCase">
+     * assert [[1, 2], [3], []].collectManyParallel() == [1, 2, 3]
+     * </pre>
+     *
+     * @since 6.0.1
+     */
+    @SuppressWarnings("unchecked")
+    public static <T, E> List<T> collectManyParallel(Collection<E> self) {
+        return collectManyParallel(self, element -> (Collection<T>) element);
+    }
+
     // ---- Filtering ------------------------------------------------------
 
     /**
@@ -147,6 +198,19 @@ public class ParallelCollectionExtensions {
                 (pool, fjp) -> fjp.submit(() -> self.parallelStream().filter(filter).collect(toListCollector())).join(),
                 pool -> ParallelExecutorTasks.filter(pool, self, filter)
         );
+    }
+
+    /**
+     * Returns the elements that are true according to Groovy truth, in parallel, as sequential
+     * {@code findAll()} does. Encounter order is preserved.
+     * <pre class="language-groovy groovyTestCase">
+     * assert [1, 0, null, 'a', '', [2], []].findAllParallel() == [1, 'a', [2]]
+     * </pre>
+     *
+     * @since 6.0.1
+     */
+    public static <T> List<T> findAllParallel(Collection<T> self) {
+        return findAllParallel(self, truthy());
     }
 
     /**
@@ -162,6 +226,19 @@ public class ParallelCollectionExtensions {
                 (pool, fjp) -> findMatch(fjp, self, filter, true),
                 pool -> ParallelExecutorTasks.findFirst(pool, self, filter)
         );
+    }
+
+    /**
+     * Finds the first element that is true according to Groovy truth, in encounter order, as
+     * sequential {@code find()} does. No match returns {@code null}.
+     * <pre class="language-groovy groovyTestCase">
+     * assert [null, 0, '', 42, 43].findParallel() == 42
+     * </pre>
+     *
+     * @since 6.0.1
+     */
+    public static <T> T findParallel(Collection<T> self) {
+        return findParallel(self, truthy());
     }
 
     /**
@@ -191,6 +268,20 @@ public class ParallelCollectionExtensions {
     }
 
     /**
+     * Returns {@code true} if any element is true according to Groovy truth, as sequential
+     * {@code any()} does.
+     * <pre class="language-groovy groovyTestCase">
+     * assert [0, null, 'a'].anyParallel()
+     * assert ![0, null, ''].anyParallel()
+     * </pre>
+     *
+     * @since 6.0.1
+     */
+    public static <T> boolean anyParallel(Collection<T> self) {
+        return anyParallel(self, truthy());
+    }
+
+    /**
      * Returns {@code true} if all elements match the predicate.
      */
     public static <T> boolean everyParallel(Collection<T> self, Predicate<T> predicate) {
@@ -199,6 +290,20 @@ public class ParallelCollectionExtensions {
                 (pool, fjp) -> fjp.submit(() -> self.parallelStream().allMatch(predicate)).join(),
                 pool -> ParallelExecutorTasks.allMatch(pool, self, predicate)
         );
+    }
+
+    /**
+     * Returns {@code true} if every element is true according to Groovy truth, as sequential
+     * {@code every()} does. An empty collection returns {@code true}.
+     * <pre class="language-groovy groovyTestCase">
+     * assert [1, 'a', [2]].everyParallel()
+     * assert ![1, 0].everyParallel()
+     * </pre>
+     *
+     * @since 6.0.1
+     */
+    public static <T> boolean everyParallel(Collection<T> self) {
+        return everyParallel(self, truthy());
     }
 
     /**
@@ -213,6 +318,22 @@ public class ParallelCollectionExtensions {
     }
 
     // ---- Aggregation ----------------------------------------------------
+
+    /**
+     * Finds the minimum element by natural ordering, as sequential {@code min()} does:
+     * null elements are skipped, elements compare as Groovy's {@code <} does (so numbers of
+     * different types compare by value), and the earliest of equal elements is returned.
+     * An empty collection, or one of only nulls, returns {@code null}.
+     * <pre class="language-groovy groovyTestCase">
+     * assert [4, null, 2.5, 3G].minParallel() == 2.5
+     * </pre>
+     *
+     * @since 6.0.1
+     */
+    public static <T> T minParallel(Collection<T> self) {
+        Objects.requireNonNull(self, "self must not be null");
+        return reduce(self, operator(NATURAL_MIN));
+    }
 
     /**
      * Finds the minimum element using the given comparator.
@@ -231,6 +352,44 @@ public class ParallelCollectionExtensions {
                 (pool, fjp) -> fold(fjp, self, (left, right) -> ParallelExecutorTasks.pick(comparator, left, right, true)),
                 pool -> ParallelExecutorTasks.min(pool, self, comparator)
         );
+    }
+
+    /**
+     * Finds the element with the minimum key, as sequential {@code min} does with a
+     * one-parameter closure. Keys compare as Groovy's {@code <} does, and a {@code null} key
+     * is the least. When several elements have the minimum key, the earliest in encounter
+     * order is returned. Each key is computed once. An empty collection returns {@code null}.
+     * <p>
+     * A closure or lambda with one parameter selects this method and one with two parameters
+     * selects {@link #minParallel(Collection, Comparator)}, as does a method reference by the
+     * number of arguments its method takes.
+     * <pre class="language-groovy groovyTestCase">
+     * assert ['hello', 'hi', 'hey'].minParallel { it.size() } == 'hi'
+     * assert ['hello', 'hi', 'hey'].minParallel(String::size) == 'hi'
+     * </pre>
+     *
+     * @param keyExtractor computes the key an element is compared by
+     * @since 7.0.0
+     */
+    public static <T> T minParallel(Collection<T> self, Function<? super T, ?> keyExtractor) {
+        require(self, keyExtractor);
+        return extremeByKey(self, keyExtractor, true);
+    }
+
+    /**
+     * Finds the maximum element by natural ordering, as sequential {@code max()} does:
+     * null elements are skipped, elements compare as Groovy's {@code >} does (so numbers of
+     * different types compare by value), and the earliest of equal elements is returned.
+     * An empty collection, or one of only nulls, returns {@code null}.
+     * <pre class="language-groovy groovyTestCase">
+     * assert [4, null, 2.5, 3G].maxParallel() == 4
+     * </pre>
+     *
+     * @since 6.0.1
+     */
+    public static <T> T maxParallel(Collection<T> self) {
+        Objects.requireNonNull(self, "self must not be null");
+        return reduce(self, operator(NATURAL_MAX));
     }
 
     /**
@@ -254,6 +413,29 @@ public class ParallelCollectionExtensions {
     }
 
     /**
+     * Finds the element with the maximum key, as sequential {@code max} does with a
+     * one-parameter closure. Keys compare as Groovy's {@code >} does, and a {@code null} key
+     * is the least, so it is chosen only when every key is {@code null}. When several elements
+     * have the maximum key, the earliest in encounter order is returned. Each key is computed
+     * once. An empty collection returns {@code null}.
+     * <p>
+     * A closure or lambda with one parameter selects this method and one with two parameters
+     * selects {@link #maxParallel(Collection, Comparator)}, as does a method reference by the
+     * number of arguments its method takes.
+     * <pre class="language-groovy groovyTestCase">
+     * assert ['hello', 'hi', 'hey'].maxParallel { it.size() } == 'hello'
+     * assert ['hello', 'hi', 'hey'].maxParallel(String::size) == 'hello'
+     * </pre>
+     *
+     * @param keyExtractor computes the key an element is compared by
+     * @since 7.0.0
+     */
+    public static <T> T maxParallel(Collection<T> self, Function<? super T, ?> keyExtractor) {
+        require(self, keyExtractor);
+        return extremeByKey(self, keyExtractor, false);
+    }
+
+    /**
      * Reduces the collection in parallel using the given operator.
      * The operator must be associative. An empty collection returns {@code null}.
      * A one-element collection returns that element, including {@code null},
@@ -262,10 +444,54 @@ public class ParallelCollectionExtensions {
      */
     public static <T> T sumParallel(Collection<T> self, BinaryOperator<T> accumulator) {
         require(self, accumulator);
-        return withPool(
-                (pool, fjp) -> fold(fjp, self, accumulator),
-                pool -> ParallelExecutorTasks.reduce(pool, self, accumulator)
-        );
+        return reduce(self, accumulator);
+    }
+
+    /**
+     * Adds the elements together in parallel, as sequential {@code sum()} does: each addition
+     * calls {@code plus} on the left operand. An empty collection returns {@code null}, and a
+     * one-element collection returns that element without calling {@code plus}.
+     * <p>
+     * The result matches {@code sum()} only when {@code plus} is associative for the elements.
+     * It is for integers, big decimals, strings and lists, but floating-point addition rounds,
+     * so a parallel sum of {@code float} or {@code double} values can differ from
+     * {@code sum()} in the last digits.
+     * <pre class="language-groovy groovyTestCase">
+     * assert [1, 2, 3, 4].sumParallel() == 10
+     * assert ['a', 'b', 'c'].sumParallel() == 'abc'
+     * </pre>
+     *
+     * @since 6.0.1
+     */
+    @SuppressWarnings("unchecked")
+    public static Object sumParallel(Collection<?> self) {
+        Objects.requireNonNull(self, "self must not be null");
+        return reduce((Collection<Object>) self, PLUS);
+    }
+
+    /**
+     * Adds the results of applying {@code transform} to each element, in parallel, as
+     * sequential {@code sum} does with a closure: each addition calls {@code plus} on the left
+     * operand. The elements are transformed and added in one pass. An empty collection returns
+     * {@code null}, and a one-element collection returns its transformed value without calling
+     * {@code plus}. As for {@link #sumParallel(Collection)}, the result matches the sequential
+     * sum only when {@code plus} is associative for the transformed values.
+     * <p>
+     * A closure or lambda with one parameter selects this method and one with two parameters
+     * selects {@link #sumParallel(Collection, BinaryOperator)}, as does a method reference by
+     * the number of arguments its method takes.
+     * <pre class="language-groovy groovyTestCase">
+     * assert ['a', 'bb', 'ccc'].sumParallel { it.size() } == 6
+     * assert ['a', 'bb', 'ccc'].sumParallel(String::size) == 6
+     * assert [1, 2, 3].sumParallel { a, b -&gt; a * b } == 6
+     * </pre>
+     *
+     * @param transform computes the value added for each element
+     * @since 7.0.0
+     */
+    public static <T> Object sumParallel(Collection<T> self, Function<? super T, ?> transform) {
+        require(self, transform);
+        return mapReduce(self, transform, PLUS);
     }
 
     /**
@@ -382,11 +608,56 @@ public class ParallelCollectionExtensions {
         );
     }
 
+    /**
+     * Returns the elements that are true according to Groovy truth, in parallel, as sequential
+     * {@code grep()} does. Encounter order is preserved.
+     * <pre class="language-groovy groovyTestCase">
+     * assert [1, 0, null, 'a', ''].grepParallel() == [1, 'a']
+     * </pre>
+     *
+     * @since 6.0.1
+     */
+    public static <T> List<T> grepParallel(Collection<T> self) {
+        return findAllParallel(self, truthy());
+    }
+
     // ---- Internal -------------------------------------------------------
 
     private static void require(Collection<?> self, Object callback) {
         Objects.requireNonNull(self, "self must not be null");
         Objects.requireNonNull(callback, "callback must not be null");
+    }
+
+    /** An ordered, null-preserving reduction on the current pool. */
+    private static <T> T reduce(Collection<T> self, BinaryOperator<T> operator) {
+        return withPool(
+                (pool, fjp) -> fold(fjp, self, operator),
+                pool -> ParallelExecutorTasks.reduce(pool, self, operator)
+        );
+    }
+
+    /** Maps each element and reduces the results in one ordered, null-preserving pass on the current pool. */
+    private static <T, R> R mapReduce(Collection<T> self, Function<? super T, ? extends R> fn, BinaryOperator<R> operator) {
+        return withPool(
+                (pool, fjp) -> fjp.submit(() -> self.parallelStream().<R>map(fn).collect(
+                        Fold<R>::new,
+                        (fold, element) -> fold.absorb(element, operator),
+                        (left, right) -> left.combine(right, operator)
+                ).finish()).join(),
+                pool -> ParallelExecutorTasks.mapReduce(pool, self, fn, operator)
+        );
+    }
+
+    /**
+     * The element with the least ({@code min}) or greatest key, comparing keys as sequential
+     * {@code min} and {@code max} with a one-parameter closure do. Replacing only on a strict
+     * comparison keeps the earliest of equal keys in an encounter-order reduction.
+     */
+    private static <T> T extremeByKey(Collection<T> self, Function<? super T, ?> keyExtractor, boolean min) {
+        Keyed<T> found = mapReduce(self, element -> new Keyed<>(element, keyExtractor.apply(element)),
+                (left, right) -> (min ? ScriptBytecodeAdapter.compareLessThan(right.key, left.key)
+                        : ScriptBytecodeAdapter.compareLessThan(left.key, right.key)) ? right : left);
+        return found == null ? null : found.element;
     }
 
     /**
@@ -446,6 +717,17 @@ public class ParallelCollectionExtensions {
                 (fold, element) -> fold.absorb(element, operator),
                 (left, right) -> left.combine(right, operator)
         ).finish()).join();
+    }
+
+    /** An element with its computed key. */
+    private static final class Keyed<T> {
+        private final T element;
+        private final Object key;
+
+        private Keyed(T element, Object key) {
+            this.element = element;
+            this.key = key;
+        }
     }
 
     /** A non-null holder so a matching null element survives {@code Optional.of}. */
