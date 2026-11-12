@@ -21,7 +21,11 @@ package org.codehaus.groovy.ast.tools
 import org.junit.jupiter.api.Test
 
 import org.codehaus.groovy.ast.ClassNode
+import org.codehaus.groovy.ast.GenericsType
 import org.codehaus.groovy.ast.GenericsTestCase
+import org.codehaus.groovy.classgen.asm.BytecodeHelper
+
+import java.util.IdentityHashMap
 
 import static org.codehaus.groovy.ast.ClassHelper.*
 import static org.codehaus.groovy.ast.tools.WideningCategories.*
@@ -412,6 +416,55 @@ final class WideningCategoriesTest extends GenericsTestCase {
         assert type.upperBounds[0] instanceof LowestUpperBoundClassNode
         assert type.upperBounds[0].interfaces.contains(COMPARABLE_TYPE)
         assert type.upperBounds[0].interfaces.contains(SERIALIZABLE_TYPE)
+        assertNoZeroArityParameterization(superType)
+    }
+
+    @Test
+    void testLubOfStringAndIntegerIsNotAParameterizedSerializable() {
+        ClassNode lub = lowestUpperBound(STRING_TYPE, Integer_TYPE)
+        assertNoZeroArityParameterization(lub)
+        String signature = BytecodeHelper.getGenericsBounds(lub)
+        assert signature == null || !signature.contains('Serializable<')
+    }
+
+    private static void assertNoZeroArityParameterization(ClassNode type) {
+        assertNoZeroArityParameterization(type, new IdentityHashMap<ClassNode, Boolean>())
+    }
+
+    private static void assertNoZeroArityParameterization(ClassNode type, IdentityHashMap<ClassNode, Boolean> seen) {
+        if (type == null || seen.put(type, Boolean.TRUE) != null) return
+        GenericsType[] arguments = type.genericsTypes
+        if (arguments != null && arguments.length > 0 && declaresNoTypeParameters(type)) {
+            assert false : "parameterized ${type.name} with ${arguments.length} type argument(s)"
+        }
+        if (arguments != null) {
+            for (GenericsType argument : arguments) {
+                assertNoZeroArityParameterization(argument.type, seen)
+                if (argument.upperBounds != null) {
+                    for (ClassNode bound : argument.upperBounds) {
+                        assertNoZeroArityParameterization(bound, seen)
+                    }
+                }
+                assertNoZeroArityParameterization(argument.lowerBound, seen)
+            }
+        }
+        if (type instanceof LowestUpperBoundClassNode) {
+            assertNoZeroArityParameterization(type.unresolvedSuperClass, seen)
+            for (ClassNode face : type.interfaces) {
+                assertNoZeroArityParameterization(face, seen)
+            }
+        }
+    }
+
+    private static boolean declaresNoTypeParameters(ClassNode type) {
+        ClassNode declared = type.redirect()
+        if (declared instanceof LowestUpperBoundClassNode) {
+            ClassNode named = make(type.name)
+            if (!named.redirect().resolved || named.redirect().array) return false
+            return named.redirect().typeClass.typeParameters.length == 0
+        }
+        if (!declared.resolved || declared.array) return false
+        return declared.typeClass.typeParameters.length == 0
     }
 
     @Test

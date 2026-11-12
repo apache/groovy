@@ -297,7 +297,41 @@ public class WideningCategories {
                 lubGTs[i] = basicType.asGenericsType();
             }
         }
+        int declared = declaredTypeParameterCount(lub);
+        if (declared == 0) {
+            GenericsType[] existing = lub.getGenericsTypes();
+            if (existing != null && existing.length > 0) {
+                return lub.getPlainNodeReference();
+            }
+            return lub;
+        }
+        if (declared > 0 && declared != n) {
+            return lub.getPlainNodeReference();
+        }
         return GenericsUtils.makeClassSafe0(lub, lubGTs);
+    }
+
+    /**
+     * Number of type parameters {@code type}'s declaration has, or {@code -1}
+     * when that declaration is not known. A lowest upper bound is not a
+     * generic class of its own.
+     */
+    private static int declaredTypeParameterCount(final ClassNode type) {
+        if (type == null || type.isGenericsPlaceHolder() || type.isArray()) return -1;
+        if (type instanceof LowestUpperBoundClassNode) return -1;
+        ClassNode declared = type.redirect();
+        if (declared instanceof LowestUpperBoundClassNode || declared.isArray()) return -1;
+        if (declared.isPrimaryClassNode()) {
+            if (declared.getModule() == null) return -1;
+            GenericsType[] formals = declared.getGenericsTypes();
+            return formals == null ? 0 : formals.length;
+        }
+        if (!declared.isResolved()) return -1;
+        if (declared != type) {
+            GenericsType[] formals = declared.getGenericsTypes();
+            if (formals != null) return formals.length;
+        }
+        return declared.getTypeClass().getTypeParameters().length;
     }
 
     /**
@@ -618,15 +652,14 @@ public class WideningCategories {
             for (ClassNode i: interfaces) sj.add(i.getText());
             text = sj.toString();
 
-            if (isUsingGenerics()) {
-                List<GenericsType> generics = new ArrayList<>();
-                if (upper.getGenericsTypes() != null)
-                    Collections.addAll(generics, upper.getGenericsTypes());
-                for (ClassNode i : interfaces) {
-                    if (i.getGenericsTypes() != null)
-                        Collections.addAll(generics, i.getGenericsTypes());
-                }
-                setGenericsTypes(generics.toArray(GenericsType.EMPTY_ARRAY));
+            // Arguments belong to the class this node is written as. Copying
+            // every interface's arguments would parameterize a class that
+            // declares none when getName() reports that class (Serializable
+            // sorted ahead of Comparable).
+            GenericsType[] representative = compileTimeClassNode.getGenericsTypes();
+            if (representative != null && representative.length > 0
+                    && representative.length == declaredTypeParameterCount(compileTimeClassNode)) {
+                setGenericsTypes(representative);
             }
         }
 
