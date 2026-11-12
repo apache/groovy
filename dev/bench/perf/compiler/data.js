@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1794380477400,
+  "lastUpdate": 1794466917453,
   "repoUrl": "https://github.com/apache/groovy",
   "entries": {
     "Compiler Performance": [
@@ -9532,6 +9532,63 @@ window.BENCHMARK_DATA = {
             "name": "compile@groovy-6",
             "value": 482.41666666666663,
             "range": "±22.43",
+            "unit": "ms",
+            "extra": "6.0.0"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "Paul King",
+            "username": "paulk-asert",
+            "email": "paulk@asert.com.au"
+          },
+          "committer": {
+            "name": "Paul King",
+            "username": "paulk-asert",
+            "email": "paulk@asert.com.au"
+          },
+          "id": "df7a3b2d81751c8fe257aad187f60cddb5d5f51e",
+          "message": "docs: clarification of semantics around generics with STC",
+          "timestamp": "2026-11-12T06:58:07Z",
+          "url": "https://github.com/apache/groovy/commit/df7a3b2d81751c8fe257aad187f60cddb5d5f51e"
+        },
+        "date": 1794466909413,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "compile@current",
+            "value": 528.4533333333334,
+            "range": "±24.35",
+            "unit": "ms",
+            "extra": "current"
+          },
+          {
+            "name": "compile@groovy-3",
+            "value": 666.5766666666667,
+            "range": "±217.43",
+            "unit": "ms",
+            "extra": "3.0.25"
+          },
+          {
+            "name": "compile@groovy-4",
+            "value": 594.33,
+            "range": "±156.8",
+            "unit": "ms",
+            "extra": "4.0.33"
+          },
+          {
+            "name": "compile@groovy-5",
+            "value": 489.88,
+            "range": "±21.77",
+            "unit": "ms",
+            "extra": "5.1.3"
+          },
+          {
+            "name": "compile@groovy-6",
+            "value": 476.2133333333333,
+            "range": "±21.08",
             "unit": "ms",
             "extra": "6.0.0"
           }
