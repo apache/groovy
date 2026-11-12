@@ -990,7 +990,7 @@ include::../test/CoercionTest.groovy[tags=method_call_with_implicit_coercion,ind
 As you can see, this has the advantage of letting you use the closure syntax for method calls, that is to say put the
 closure outside the parenthesis, improving the readability of your code.
 
-==== Closures for a type parameter
+==== Closures, lambdas and method references for a type parameter
 
 A method may declare the parameter a closure is passed for with a type parameter, such as `E` of `List.add(E)` or `V`
 of `Map.put(K, V)`, whose erasure is `Object`. When statically compiled code binds that type parameter to a SAM
