@@ -1647,6 +1647,32 @@ public abstract class StaticTypeCheckingSupport {
     }
 
     /**
+     * JLS 4.5.1: a type argument that is a type variable, as {@code T} in {@code Class<T>},
+     * contains only that type variable, so a wildcard such as the {@code ?} of
+     * {@code Class<? extends Object>} is not within it, nor within {@code ? extends T}. An
+     * inference variable ({@code #T}) may still take a wildcard.
+     */
+    static boolean typeVariableArgumentGetsWildcard(final ClassNode left, final ClassNode right) {
+        if (left == null || right == null || !left.equals(right)) return false;
+        GenericsType[] leftArgs = left.getGenericsTypes();
+        GenericsType[] rightArgs = right.getGenericsTypes();
+        if (leftArgs == null || rightArgs == null || leftArgs.length != rightArgs.length) return false;
+        for (int i = 0; i < leftArgs.length; i += 1) {
+            if (isUnboundedWildcard(rightArgs[i]) && leftArgs[i].isWildcard() && leftArgs[i].getLowerBound() == null) {
+                // "?" is not within "? extends T"
+                ClassNode bound = firstBound(leftArgs[i].getUpperBounds());
+                if (bound != null && bound.isGenericsPlaceHolder() && !isInferencePlaceholder(bound)) return true;
+                continue;
+            }
+            if (!leftArgs[i].isPlaceholder() || leftArgs[i].getName().startsWith("#") || !rightArgs[i].isWildcard()) continue;
+            if (rightArgs[i].getLowerBound() != null && isInferencePlaceholder(rightArgs[i].getLowerBound())) continue;
+            if (rightArgs[i].getUpperBounds() != null && Arrays.stream(rightArgs[i].getUpperBounds()).anyMatch(StaticTypeCheckingSupport::isInferencePlaceholder)) continue;
+            return true;
+        }
+        return false;
+    }
+
+    /**
      * True when {@code target} has a concrete type argument in a position where
      * {@code source} has a wildcard, so {@code source} is not a subtype of {@code target}.
      */
@@ -2058,6 +2084,16 @@ public abstract class StaticTypeCheckingSupport {
                         || upperBoundEscapes(parameterType, argumentType))) {
                 failure = true;
             }
+            // a parameter typed by type variables in scope, not by the method's own, is checked as an assignment;
+            // take its type before the argument is used to infer anything
+            if (!failure && !skipBecauseOfInnerClassNotReceiver && !isRawReceiver(receiver)
+                    && !mentionsTypeParameterOf(parameterType, candidateMethod)) {
+                ClassNode resolvedType = applyGenericsContext(candidateGenerics, parameterType);
+                if (GenericsUtils.hasUnresolvedGenerics(resolvedType) && !GenericsUtils.hasUnresolvedGenerics(argumentType)
+                        && (upperBoundEscapes(resolvedType, argumentType) || typeVariableArgumentGetsWildcard(resolvedType, argumentType))) {
+                    failure = true;
+                }
+            }
             failure |= inferenceCheck(fixedPlaceHolders, candidateGenerics, parameterType, argumentType, i >= lastParamIndex);
 
             if (i == 0 && isExtensionMethod) { // re-load fixed names for extension
@@ -2065,6 +2101,41 @@ public abstract class StaticTypeCheckingSupport {
             }
         }
         return !failure;
+    }
+
+    private static boolean isRawReceiver(final ClassNode receiver) {
+        return receiver.getGenericsTypes() == null && receiver.redirect().getGenericsTypes() != null && !receiver.isGenericsPlaceHolder();
+    }
+
+    private static boolean mentionsTypeParameterOf(final ClassNode type, final MethodNode method) {
+        GenericsType[] typeParameters = method.getGenericsTypes();
+        if (typeParameters == null || typeParameters.length == 0) return false;
+        Set<String> used = new HashSet<>();
+        collectTypeVariableNames(type, used);
+        for (GenericsType tp : typeParameters) {
+            if (used.contains(tp.getName())) return true;
+        }
+        return false;
+    }
+
+    private static void collectTypeVariableNames(final ClassNode type, final Set<String> names) {
+        if (type == null) return;
+        if (type.isArray()) {
+            collectTypeVariableNames(type.getComponentType(), names);
+        } else if (type.isGenericsPlaceHolder()) {
+            names.add(type.getUnresolvedName());
+        } else if (type.getGenericsTypes() != null) {
+            for (GenericsType gt : type.getGenericsTypes()) {
+                if (gt.isPlaceholder()) {
+                    names.add(gt.getName());
+                } else if (gt.isWildcard()) {
+                    collectTypeVariableNames(gt.getLowerBound(), names);
+                    if (gt.getUpperBounds() != null) for (ClassNode bound : gt.getUpperBounds()) collectTypeVariableNames(bound, names);
+                } else {
+                    collectTypeVariableNames(gt.getType(), names);
+                }
+            }
+        }
     }
 
     private static Set<GenericsTypeName> extractResolvedPlaceHolders(final Map<GenericsTypeName, GenericsType> resolvedMethodGenerics) {

@@ -3275,6 +3275,51 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-12755
+    @Test
+    void testClassOfValueOfTypeVariableIsNotClassOfTypeVariable() {
+        for (decl in ['<T> Class<T> typeOf(T t) { t.getClass() }', '<T> void typeOf(T t) { Class<T> c = t.getClass() }']) {
+            shouldFailWithMessages decl,
+                'Incompatible generic argument types. Cannot assign java.lang.Class<?> to: java.lang.Class<T>'
+        }
+
+        shouldFailWithMessages '''
+            class Box<T> {
+                void accept(Class<? extends T> type) { }
+                void test(T t) {
+                    accept(t.getClass())
+                }
+            }
+        ''',
+            'Cannot call Box#accept(java.lang.Class<?>) with arguments [java.lang.Class<?>]'
+
+        shouldFailWithMessages '''
+            class Box<T> {
+                Map<Class<? extends T>, T> byType = [:]
+                void test(T t) {
+                    byType.put(t.getClass(), t)
+                }
+            }
+        ''',
+            'Cannot call java.util.Map#put(java.lang.Class<? extends T>, T) with arguments [java.lang.Class<?>, T]'
+
+        assertScript '''
+            class Box<T extends Number> {
+                Map<Class<? extends T>, T> byType = [:]
+                Class<? extends Number> typeOf(T t) { t.getClass() }
+                void accept(Class<? extends T> type) { }
+                void test(T t, Class<? extends T> type) {
+                    accept(type)
+                    byType.put(type, t)
+                }
+            }
+            def box = new Box<Integer>()
+            box.test(1, Integer)
+            assert box.typeOf(1) == Integer
+            assert box.byType == [(Integer): 1]
+        '''
+    }
+
     // GROOVY-8961, GROOVY-9915
     @Test
     void testShouldUseMethodGenericType3() {
