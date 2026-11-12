@@ -2376,4 +2376,45 @@ import static groovy.test.GroovyAssert.shouldFail
             assert log == ['make', 'pick', 'sys']
         '''
     }
+
+    // GROOVY-12761
+    @Test
+    void testInstanceInitializerSelectsLikeConstructor() {
+        assertScript '''
+            class Kind {
+                String kind
+                Kind(Object o) { kind = 'Object' }
+                Kind(String s) { kind = 'String' }
+                static Object obj() { 'x' }
+                static String m(Object o) { 'Object' }
+                static String m(String s) { 'String' }
+            }
+            class Defaulted {
+                String s
+                Defaulted(String a, String b = 'b') { s = a + b }
+            }
+            interface Greeter { String greet() }
+
+            class Holder {
+                List<String> fromBlock = [], fromCtor = [];
+                {
+                    fromBlock << Kind.m(Kind.obj())
+                    fromBlock << new Kind(Kind.obj()).kind
+                    fromBlock << new Greeter() { String greet() { new Kind(Kind.obj()).kind + Kind.m(Kind.obj()) } }.greet()
+                    fromBlock << new Defaulted('a').s
+                    fromBlock << { -> new Kind(Kind.obj()).kind + Kind.m(Kind.obj()) }()
+                }
+                Holder() {
+                    fromCtor << Kind.m(Kind.obj())
+                    fromCtor << new Kind(Kind.obj()).kind
+                    fromCtor << new Greeter() { String greet() { new Kind(Kind.obj()).kind + Kind.m(Kind.obj()) } }.greet()
+                    fromCtor << new Defaulted('a').s
+                    fromCtor << { -> new Kind(Kind.obj()).kind + Kind.m(Kind.obj()) }()
+                }
+            }
+
+            def h = new Holder()
+            assert h.fromBlock == h.fromCtor
+        '''
+    }
 }

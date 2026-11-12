@@ -872,6 +872,28 @@ which follows `Double.compare` for primitives and objects alike. Classes
 compiled by an earlier release keep the old comparison until they are
 recompiled.
 
+### Groovy 6.0.1 — instance initializer blocks of `@CompileStatic` classes are statically compiled (GROOVY-12761)
+
+Since Groovy 5.0, method calls in an instance initializer block of a
+`@CompileStatic` class were type checked but then dispatched dynamically,
+unlike the same calls in a constructor or a field initializer. In 6.0.0 an
+anonymous inner class created in such a block was also compiled dynamically
+as a whole. Both are statically compiled again, as in Groovy 4. A closure in
+the block that calls a method of a delegate that is not a Groovy object, such
+as `new StringBuilder('a').with { append('b') }`, no longer throws
+`IncompatibleClassChangeError` (GROOVY-12581).
+
+**Who is affected.** Code in an instance initializer block of a
+`@CompileStatic` class, or in an anonymous inner class created there, that
+calls an overloaded method with an argument whose static type is wider than
+its value. The overload is now chosen from the static type, as in a
+constructor, rather than from the run-time type. Meta-class and category
+changes no longer apply to those calls.
+
+**What is unchanged.** Constructor calls written directly in the block,
+static initializer blocks, field initializers, constructors, and classes that
+are not statically compiled. There are no API changes.
+
 ### Groovy 7 — Groovy Console smart highlighter and the language host
 
 `SmartDocumentFilter.getLatestTokenList()` now returns delimiter spans
