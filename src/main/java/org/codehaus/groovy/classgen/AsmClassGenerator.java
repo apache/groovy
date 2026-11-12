@@ -20,6 +20,7 @@ package org.codehaus.groovy.classgen;
 
 import groovy.lang.GroovyClassLoader;
 import groovy.lang.GroovyRuntimeException;
+import org.apache.groovy.ast.pattern.PatternLowering;
 import org.apache.groovy.ast.tools.ExpressionUtils;
 import org.apache.groovy.io.StringBuilderWriter;
 import org.codehaus.groovy.GroovyBugError;
@@ -69,6 +70,7 @@ import org.codehaus.groovy.ast.expr.MethodCallExpression;
 import org.codehaus.groovy.ast.expr.MethodPointerExpression;
 import org.codehaus.groovy.ast.expr.MethodReferenceExpression;
 import org.codehaus.groovy.ast.expr.NotExpression;
+import org.codehaus.groovy.ast.expr.PatternExpression;
 import org.codehaus.groovy.ast.expr.PostfixExpression;
 import org.codehaus.groovy.ast.expr.PrefixExpression;
 import org.codehaus.groovy.ast.expr.PropertyExpression;
@@ -112,6 +114,7 @@ import org.codehaus.groovy.classgen.asm.OptimizingStatementWriter;
 import org.codehaus.groovy.classgen.asm.PeepholeOptimizingMethodVisitor;
 import org.codehaus.groovy.classgen.asm.WriterController;
 import org.codehaus.groovy.classgen.asm.WriterControllerFactory;
+import org.codehaus.groovy.classgen.asm.sc.RuntimePackageCheck;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.runtime.IntersectionCastSupport;
 import org.codehaus.groovy.runtime.ScriptBytecodeAdapter;
@@ -687,10 +690,10 @@ public class AsmClassGenerator extends ClassGenerator {
             if (code != null && cn.getOuterClass() != null) {
                 // GROOVY-4471: if the class is an inner class node, there are chances that
                 // the call to super is already added so we must ensure not to add it twice
-                if (code instanceof BlockStatement) {
-                    hasCallToSuper = ((BlockStatement) code).getStatements().stream()
-                        .map(statement -> statement instanceof ExpressionStatement ? ((ExpressionStatement) statement).getExpression() : null)
-                        .anyMatch(expression -> expression instanceof ConstructorCallExpression && ((ConstructorCallExpression) expression).isSuperCall());
+                if (code instanceof BlockStatement block) {
+                    hasCallToSuper = block.getStatements().stream()
+                        .map(statement -> statement instanceof ExpressionStatement es ? es.getExpression() : null)
+                        .anyMatch(expression -> expression instanceof ConstructorCallExpression cce && cce.isSuperCall());
                 }
             }
             if (!hasCallToSuper) {
@@ -708,6 +711,8 @@ public class AsmClassGenerator extends ClassGenerator {
                 }
                 // add call to "super()"
                 mv.visitVarInsn(ALOAD, 0);
+                ConstructorNode superCtor = controller.getClassNode().getSuperClass().getDeclaredConstructor(Parameter.EMPTY_ARRAY);
+                if (superCtor != null) RuntimePackageCheck.checkConstructor(controller, superCtor, true, node.getLineNumber() > 0 ? node : cn);
                 mv.visitMethodInsn(INVOKESPECIAL, controller.getInternalBaseClassName(), "<init>", "()V", false);
             }
         }
@@ -717,8 +722,12 @@ public class AsmClassGenerator extends ClassGenerator {
         }
 
         if (code == null || maybeFallsThrough(code)) {
-            if (code != null) { // GROOVY-7647, GROOVY-9373
-                controller.visitLineNumber(code.getLastLineNumber());
+            if (code != null) {
+                int line = code.getLastLineNumber(); // GROOVY-7647, GROOVY-9373
+                if (line < 1 && code instanceof BlockStatement block && !block.isEmpty()) { // GROOVY-12752
+                    line = block.getStatements().get(block.getStatements().size() - 1).getLastLineNumber();
+                }
+                controller.visitLineNumber(line);
             }
             if (node.isVoidMethod()) {
                 mv.visitInsn(RETURN);
@@ -1014,6 +1023,19 @@ public class AsmClassGenerator extends ClassGenerator {
     public void visitSwitchExpression(final SwitchExpression expression) {
         controller.getSwitchExpressionWriter().writeSwitchExpression(expression);
         doPostVisit(expression);
+    }
+
+    /**
+     * Generates bytecode for a pattern match (GEP-19) from the code that
+     * {@link PatternLowering} derived for it.
+     */
+    @Override
+    public void visitPatternExpression(final PatternExpression expression) {
+        if (expression.getLowered() == null) {
+            throw new GroovyBugError("The pattern `" + expression.getText() + "` was not lowered before class generation;"
+                    + " a transform that creates a pattern from instruction selection on lowers it with PatternLowering.lower(ClassNode, SourceUnit)");
+        }
+        expression.getLowered().visit(this);
     }
 
     /**
@@ -1657,6 +1679,7 @@ public class AsmClassGenerator extends ClassGenerator {
      */
     @Override
     public void visitFieldExpression(final FieldExpression expression) {
+        RuntimePackageCheck.checkField(controller, expression.getField(), null, expression);
         if (expression.getField().isStatic()) {
             if (controller.getCompileStack().isLHS()) {
                 storeStaticField(expression);

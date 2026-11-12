@@ -132,7 +132,7 @@ final class ClassTagSupport {
         }
         List<MethodNode> candidates = new ArrayList<>();
         // gate: skip the extension candidate scan unless some extension overload of this name
-        // actually declares preempt intent (out of the box only withDefault does), so ordinary
+        // actually declares preempt intent (out of the box only withDefault and putAt do), so ordinary
         // DGM-heavy code - each/collect/... - pays a single set lookup, not a full scan+filter
         ClassLoader loader = visitor.getSourceUnit().getClassLoader();
         if (!extensionOwners.isEmpty() && ExtensionMethodCache.INSTANCE.getPreemptiveNames(loader).contains(name)) {
