@@ -47,9 +47,7 @@ public final class TomlConverter {
      */
     public static String convertTomlToJson(Reader tomlReader) {
         try {
-            Object toml = TOML_MAPPER.readValue(tomlReader, Object.class);
-
-            return JSON_MAPPER.writeValueAsString(toml);
+            return JSON_MAPPER.writeValueAsString(TomlRootValues.read(TOML_MAPPER, tomlReader));
         } catch (JacksonException e) {
             throw new TomlRuntimeException(e);
         }
@@ -64,8 +62,7 @@ public final class TomlConverter {
     public static String convertJsonToToml(Reader jsonReader) {
         try {
             JsonNode json = JSON_MAPPER.readTree(jsonReader);
-
-            return TOML_MAPPER.writeValueAsString(json);
+            return TomlRootValues.write(TOML_MAPPER, json);
         } catch (JacksonException e) {
             throw new TomlRuntimeException(e);
         }
