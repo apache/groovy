@@ -5132,6 +5132,56 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
 
     // GROOVY-12754
     @Test
+    void testUpperBoundedWildcardArgumentForBoundThatNamesAnotherTypeParameter() {
+        assertScript '''
+            public <T extends Number, U extends T> U first(List<U> list) { list.get(0) }
+            public <T extends Number, U extends List<T>> String named(Class<U> type) { type.simpleName }
+            public <K extends Number, V, U extends Map<K, V>> String keyed(Class<U> type) { type.simpleName }
+
+            void test(List<? extends Integer> ints, Class<? extends ArrayList<Integer>> lists, Class<? extends HashMap<Integer, String>> maps) {
+                Number n = first(ints)
+                assert n == 4
+                assert named(lists) == 'ArrayList'
+                assert keyed(maps) == 'HashMap'
+            }
+            test([4, 2], ArrayList, HashMap)
+        '''
+
+        shouldFailWithMessages '''
+            public <T extends Number, U extends T> U first(List<U> list) { list.get(0) }
+            void test(List<? extends String> list) {
+                Number n = first(list)
+            }
+        ''',
+            '#first(java.util.List<U>) with arguments [java.util.List<? extends java.lang.String>]'
+
+        shouldFailWithMessages '''
+            public <T extends Integer, U extends T> U first(List<U> list) { list.get(0) }
+            void test(List<? extends Number> list) {
+                first(list)
+            }
+        ''',
+            '#first(java.util.List<U>) with arguments [java.util.List<? extends java.lang.Number>]'
+
+        shouldFailWithMessages '''
+            public <T extends Number, U extends List<T>> int count(Class<U> type) { 1 }
+            void test(Class<? extends ArrayList<String>> type) {
+                count(type)
+            }
+        ''',
+            '#count(java.lang.Class<U>) with arguments [java.lang.Class<? extends java.util.ArrayList<java.lang.String>>]'
+
+        shouldFailWithMessages '''
+            public <K extends Number, V, U extends Map<K, V>> int count(Class<U> type) { 1 }
+            void test(Class<? extends HashMap<String, Integer>> type) {
+                count(type)
+            }
+        ''',
+            '#count(java.lang.Class<U>) with arguments [java.lang.Class<? extends java.util.HashMap<java.lang.String, java.lang.Integer>>]'
+    }
+
+    // GROOVY-12754
+    @Test
     void testUpperBoundedWildcardArgumentIsCapturedOnceAndNotWhenNested() {
         shouldFailWithMessages '''
             public <T extends Number> void take(Map<T, T> map) { }

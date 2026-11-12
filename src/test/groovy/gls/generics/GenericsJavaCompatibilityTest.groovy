@@ -806,6 +806,65 @@ final class GenericsJavaCompatibilityTest {
     }
 
     /**
+     * JLS 18.3.1, 18.5.1: a bound that names another type parameter, such as {@code T} in
+     * {@code <T extends Number, U extends T>} or {@code List<T>} in
+     * {@code <T extends Number, U extends List<T>>}, constrains that type parameter too, so the
+     * capture of the wildcard must fit within the bounds of {@code T}.
+     */
+    @Test
+    void testUpperBoundedWildcardArgumentForBoundThatNamesAnotherTypeParameter() {
+        final String className = 'gls.generics.test.ExtendsWildcardArgumentOtherTypeParameter'
+        final String javaSrc = '''
+            package gls.generics.test;
+            import java.util.*;
+            public class ExtendsWildcardArgumentOtherTypeParameter {
+                static <T extends Number, U extends T> U first(List<U> list) { return list.get(0); }
+                static <T extends Number, U extends List<T>> String named(Class<U> type) { return type.getSimpleName(); }
+                static String check(List<? extends Integer> ints, Class<? extends ArrayList<Integer>> lists) {
+                    Number n = first(ints);
+                    return n + ":" + named(lists);
+                }
+                @SuppressWarnings("unchecked")
+                public static String test() {
+                    return check(Arrays.asList(4, 2), (Class<? extends ArrayList<Integer>>) (Class<?>) ArrayList.class);
+                }
+            }
+        '''
+        assertPositive(className, javaSrc, '4:ArrayList')
+    }
+
+    /**
+     * JLS 18.3.1, 18.5.1: the capture of {@code ? extends String} is not within
+     * {@code T extends Number} for {@code U extends T}, and {@code ArrayList<String>} gives a
+     * {@code T} of {@code String} for {@code U extends List<T>}.
+     */
+    @Test
+    void testNegativeUpperBoundedWildcardArgumentOutsideBoundOfAnotherTypeParameter() {
+        [
+            OtherTypeParameter: '''
+                static <T extends Number, U extends T> U first(List<U> list) { return list.get(0); }
+                static Object check(List<? extends String> list) { Number n = first(list); return n; }
+            ''',
+            NarrowerOtherTypeParameter: '''
+                static <T extends Integer, U extends T> U first(List<U> list) { return list.get(0); }
+                static Object check(List<? extends Number> list) { return first(list); }
+            ''',
+            OtherTypeParameterArgument: '''
+                static <T extends Number, U extends List<T>> int count(Class<U> type) { return 1; }
+                static int check(Class<? extends ArrayList<String>> type) { return count(type); }
+            '''
+        ].each { String name, String members ->
+            assertNegativeCompile("gls.generics.test.$name", """
+                package gls.generics.test;
+                import java.util.*;
+                public class $name {
+                    $members
+                }
+            """, 'incompatible', 'Cannot call <T extends')
+        }
+    }
+
+    /**
      * JLS 5.1.10, 18.5.1: the capture of {@code ? extends E} is bounded by the bound of the
      * type variable {@code E}, so it is not within a bound that {@code E} is not within.
      */
