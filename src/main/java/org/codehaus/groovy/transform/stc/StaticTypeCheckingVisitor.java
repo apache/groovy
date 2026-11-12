@@ -1248,6 +1248,9 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
                 ClassNode originType = getOriginalDeclarationType(leftExpression);
                 typeCheckAssignment(expression, leftExpression, originType, rightExpression, resultType);
+                // a generic call or spread expression typed by its target gives the variable that type
+                ClassNode targetTyped = rightExpression.getNodeMetaData(TARGET_TYPED);
+                if (targetTyped != null) resultType = targetTyped;
                 // GROOVY-12535: a property or subscript write to a map stores the value as is, through
                 // Map.put(Object, Object). A value accepted for the map's value type but not of that type,
                 // such as a GString for String, is converted to it, as putAt(Map, Object, Object, Class) does.
@@ -2238,6 +2241,8 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
         }
     }
 
+    private static final String TARGET_TYPED = "_TARGET_TYPED";
+
     private void checkTypeGenerics(final ClassNode leftExpressionType, final ClassNode rightExpressionType, final Expression rightExpression) {
         if (!leftExpressionType.isUsingGenerics()
                 || rightExpression instanceof ClosureExpression // GROOVY-10277
@@ -2257,9 +2262,38 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
         boolean typeVariableEscapes = unresolved && (typeVariableBoundEscapes(leftExpressionType, right)
                 || concreteArgumentContainsWildcard(leftExpressionType, right)
                 || upperBoundEscapes(leftExpressionType, right));
-        if ((incompatible || typeVariableEscapes) && !isApplicableForTargetType(leftExpressionType, rightExpression)) {
-            addStaticTypeError("Incompatible generic argument types. Cannot assign " + prettyPrintType(rightExpressionType) + " to: " + prettyPrintType(leftExpressionType), rightExpression);
+        if (incompatible || typeVariableEscapes) {
+            if (isApplicableForTargetType(leftExpressionType, rightExpression)
+                    || isSpreadApplicableForTargetType(leftExpressionType, right, rightExpression)) {
+                rightExpression.setNodeMetaData(TARGET_TYPED, leftExpressionType); // the expression has the type of its target
+            } else {
+                addStaticTypeError("Incompatible generic argument types. Cannot assign " + prettyPrintType(rightExpressionType) + " to: " + prettyPrintType(leftExpressionType), rightExpression);
+            }
         }
+    }
+
+    /**
+     * A spread expression such as {@code list*.getClass()} or {@code list*.name} makes a new
+     * list, so in an assignment or return context its element type is taken from the target,
+     * as it is for {@code list.collect { it.getClass() }}. The expression is accepted when the
+     * type of its elements fits the type argument of the target.
+     */
+    private boolean isSpreadApplicableForTargetType(final ClassNode targetType, final ClassNode spreadType, final Expression expression) {
+        boolean spread = expression instanceof MethodCallExpression ? ((MethodCallExpression) expression).isSpreadSafe()
+                : expression instanceof PropertyExpression && ((PropertyExpression) expression).isSpreadSafe();
+        if (!spread || !LIST_TYPE.equals(spreadType)) return false;
+        GenericsType[] elementTypes = spreadType.getGenericsTypes();
+        if (elementTypes == null || elementTypes.length != 1 || elementTypes[0].isWildcard() || elementTypes[0].isPlaceholder()) return false;
+        if (!LIST_TYPE.equals(targetType) && !implementsInterfaceOrIsSubclassOf(LIST_TYPE, targetType)) return false;
+
+        ClassNode declared = LIST_TYPE.redirect();
+        ClassNode viewed = LIST_TYPE.equals(targetType) ? declared : GenericsUtils.parameterizeType(declared, targetType);
+        Map<GenericsTypeName, GenericsType> connections = new HashMap<>();
+        extractGenericsConnections(connections, targetType, viewed);
+        GenericsType expected = connections.get(new GenericsTypeName(declared.getGenericsTypes()[0].getName()));
+        if (expected == null || expected.isWildcard() || expected.isPlaceholder()) return false;
+
+        return typeCheckMethodArgumentWithGenerics(expected.getType(), wrapTypeIfNecessary(elementTypes[0].getType()), false);
     }
 
     /**
@@ -2352,7 +2386,10 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
             if (GenericsUtils.hasUnresolvedGenerics(parameterType)) {
                 // a type parameter that the target does not determine was inferred from the arguments
                 if (!isAssignableTo(argumentType, parameterType)) return false;
-            } else if (!typeCheckMethodArgumentWithGenerics(parameterType, argumentType, lastArg)) {
+            } else if (!typeCheckMethodArgumentWithGenerics(parameterType, argumentType, lastArg)
+                    // a wildcard is not within the type argument that the target gives the parameter
+                    || (!GenericsUtils.hasUnresolvedGenerics(argumentType)
+                        && (concreteArgumentContainsWildcard(parameterType, argumentType) || upperBoundEscapes(parameterType, argumentType)))) {
                 return false;
             }
         }

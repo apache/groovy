@@ -3164,12 +3164,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
     // GROOVY-12755
     @Test
     void testValueOfGenericTypeDoesNotTakeTypeArgumentsFromTargetType() {
-        // only a call of a generic method is inferred from its target
-        shouldFailWithMessages '''
-            List<Class<?>> test(List<String> strings) { strings*.getClass() }
-        ''',
-            'Incompatible generic argument types. Cannot assign java.util.List<java.lang.Class<? extends java.lang.String>> to: java.util.List<java.lang.Class<?>>'
-
+        // a value that already has a type is not inferred from its target
         shouldFailWithMessages '''
             List<Class<?>> test(List<Class<? extends String>> classes) { classes }
         ''',
@@ -5831,6 +5826,67 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
             }
             test(new NumBox<Integer>(value: 1), new NumBox<Number>(value: 2), EnumSet.of(Thread.State.NEW), ['x'])
         '''
+    }
+
+    // GROOVY-12755
+    @Test
+    void testVariableDeclaredWithTargetTypedCallHasDeclaredType() {
+        assertScript '''
+            List<Class<?>> classes(String x) {
+                List<Class<?>> list = Collections.singletonList(x.getClass())
+                list
+            }
+            List<Number> numbers() {
+                List<Number> list = Arrays.asList(1, 2)
+                list.set(0, 1.5d)
+                list
+            }
+            assert classes('x') == [String]
+            assert numbers() == [1.5d, 2]
+        '''
+    }
+
+    // GROOVY-12755
+    @Test
+    void testTargetTypeDoesNotAdmitWildcardArgumentForItsTypeArgument() {
+        shouldFailWithMessages '''
+            public <T extends Number> List<T> same(List<T> list) { list }
+            List<Number> test(List<? extends Number> list) { same(list) }
+        ''',
+            'Incompatible generic argument types. Cannot assign java.util.List<? extends java.lang.Number> to: java.util.List<java.lang.Number>'
+    }
+
+    // GROOVY-12755
+    @Test
+    void testSpreadTakesElementTypeFromTarget() {
+        assertScript '''
+            class Person { String name; Integer age }
+            List<Class<?>> classes(List<String> list) { list*.getClass() }
+            Collection<Class<?>> types(List<String> list) { list*.class }
+            List<CharSequence> names(List<Person> people) { people*.name }
+            Iterable<Number> ages(List<Person> people) {
+                List<Number> ages = people*.age
+                ages.add(1.5d)
+                ages
+            }
+            assert classes(['x']) == [String]
+            assert types(['x']) == [String]
+            assert names([new Person(name: 'n')]) == ['n']
+            assert ages([new Person(age: 3)]) == [3, 1.5d]
+        '''
+
+        shouldFailWithMessages '''
+            List<Class<? extends Number>> classes(List<String> list) { list*.getClass() }
+        ''',
+            'Incompatible generic argument types. Cannot assign java.util.List<java.lang.Class<? extends java.lang.String>> to: java.util.List<java.lang.Class<? extends java.lang.Number>>'
+
+        shouldFailWithMessages '''
+            List<Class<?>> classes(List<String> list) {
+                def classes = list*.getClass()
+                classes
+            }
+        ''',
+            'Incompatible generic argument types. Cannot assign java.util.List<java.lang.Class<? extends java.lang.String>> to: java.util.List<java.lang.Class<?>>'
     }
 
     // GROOVY-12754

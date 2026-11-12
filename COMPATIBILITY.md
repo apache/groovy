@@ -1753,9 +1753,13 @@ type of `e`, as in Java: `Class<? extends String>` for a `String` and
   `Arrays.asList(a.getClass(), b.getClass())`, `Optional.of(x.getClass())` and
   `list.collect { it.getClass() }` compile, and so does
   `List<Number> l = Collections.singletonList(1)`, which was a compile error. A
-  value that is not such a call is not converted: `list*.getClass()` is a
-  `List<Class<? extends String>>`, and assigning it or a variable of that type
-  to a `List<Class<?>>` is a compile error, as it is in Java.
+  spread expression makes a new list, so it takes its element type from the
+  target in the same way: `list*.getClass()` and `list*.class` compile for a
+  `List<Class<?>>`, and `people*.name` for a `List<CharSequence>`. A variable
+  declared with such a target has the declared type. A value that already has
+  a type is not converted: assigning a variable of type
+  `List<Class<? extends String>>` to a `List<Class<?>>` is a compile error, as
+  it is in Java.
 - **A raw bound is not within a parameterized one, and a type is not within a
   type variable.** For an assignment, a return and a declared parameter,
   `? extends A` is no longer accepted for `? extends B` when `B` is
