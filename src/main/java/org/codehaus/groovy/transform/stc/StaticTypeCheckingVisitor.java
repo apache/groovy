@@ -977,6 +977,11 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 if (temporaryType != null && !isObjectType(temporaryType)) {
                     expression.putNodeMetaData(INFERRED_TYPE, temporaryType);
                 }
+                if ("class".equals(expression.getPropertyAsString()) && !expression.isSpreadSafe()
+                        && isClassType(getType(expression))) { // "x.class" has the type of "x.getClass()"
+                    ClassNode staticType = typeWithoutInstanceOfNarrowing(expression.getObjectExpression());
+                    if (staticType != null) expression.putNodeMetaData(INFERRED_TYPE, getClassType(staticType));
+                }
             }
             return; // resolved or excused
         }
@@ -5829,6 +5834,10 @@ out:                if (mn.size() != 1) {
                             ClassNode irtg = inferReturnTypeGenerics(chosenReceiver.getType(), targetMethod, callArguments, call.getGenericsTypes());
                             if (irtg != null && (returnType.isGenericsPlaceHolder() || implementsInterfaceOrIsSubclassOf(irtg, returnType)))
                                 returnType = irtg;
+                            if (isObjectGetClass(targetMethod)) {
+                                ClassNode staticType = typeWithoutInstanceOfNarrowing(call.getObjectExpression());
+                                if (staticType != null) returnType = getClassType(staticType);
+                            }
                         }
                         // GROOVY-7106, GROOVY-7274, GROOVY-8909, GROOVY-8961, GROOVY-9734, GROOVY-9844, GROOVY-9915, et al.
                         Parameter[] parameters = targetMethod.getParameters();
@@ -8507,6 +8516,25 @@ trying: for (ClassNode[] signature : signatures) {
         returnType = applyGenericsContext(extractGenericsParameterMapOfThis(typeCheckingContext), returnType);
 
         return returnType;
+    }
+
+    /**
+     * JLS 4.3.2 types {@code e.getClass()} by the static type of {@code e}. For a variable that an
+     * {@code instanceof} test narrows, that is the type the variable has without the test;
+     * returns {@code null} for any other expression.
+     */
+    private ClassNode typeWithoutInstanceOfNarrowing(final Expression expression) {
+        if (!(expression instanceof VariableExpression) || ((VariableExpression) expression).isThisExpression()
+                || ((VariableExpression) expression).isSuperExpression()
+                || typeCheckingContext.temporaryIfBranchTypeInformation.isEmpty()
+                || getTemporaryTypesForExpression(expression).isEmpty()) {
+            return null;
+        }
+        Variable variable = ((VariableExpression) expression).getAccessedVariable();
+        ClassNode type = null;
+        if (variable instanceof ASTNode) type = ((ASTNode) variable).getNodeMetaData(INFERRED_TYPE);
+        if (type == null && variable != null) type = variable.getOriginType();
+        return type;
     }
 
     private static boolean isObjectGetClass(final MethodNode method) {

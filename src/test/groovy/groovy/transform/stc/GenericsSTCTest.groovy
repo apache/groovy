@@ -2905,12 +2905,13 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
     // GROOVY-12755
     @Test
     void testGetClassIsClassOfReceiverErasure7() {
+        // the static type of a variable that instanceof narrows is its type without the test
         assertScript '''
-            Class<? extends String> typeOf(Object value) {
+            Class<?> typeOf(Object value) {
                 if (value instanceof String) {
                     assert value.substring(1) == 'y' // the receiver is a String here
                     @ASTTest(phase=INSTRUCTION_SELECTION, value={
-                        assert node.getNodeMetaData(INFERRED_TYPE).toString(false) == 'java.lang.Class<? extends java.lang.String>'
+                        assert node.getNodeMetaData(INFERRED_TYPE).toString(false) == 'java.lang.Class<? extends java.lang.Object>'
                     })
                     def type = value.getClass()
                     return type
@@ -2920,14 +2921,33 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
             assert typeOf('xy') == String
         '''
 
-        shouldFailWithMessages '''
-            Class<? extends String> typeOf(Object value) {
-                if (value instanceof String) {
+        for (expr in ['value.getClass()', 'value.class']) {
+            shouldFailWithMessages """
+                Class<? extends String> typeOf(Object value) {
+                    if (value instanceof String) {
+                        return $expr
+                    }
+                    String
                 }
-                value.getClass()
+            """,
+                'Incompatible generic argument types. Cannot assign java.lang.Class<?> to: java.lang.Class<? extends java.lang.String>'
+        }
+
+        // a pattern variable, a cast and a new variable have the narrower type
+        assertScript '''
+            Class<? extends String> pattern(Object value) { value instanceof String s ? s.getClass() : String }
+            Class<? extends String> cast(Object value) { value instanceof String ? ((String) value).getClass() : String }
+            Class<? extends String> local(Object value) {
+                if (value instanceof String) {
+                    String string = value
+                    return string.getClass()
+                }
+                String
             }
-        ''',
-            'Incompatible generic argument types. Cannot assign java.lang.Class<?> to: java.lang.Class<? extends java.lang.String>'
+            assert pattern('x') == String
+            assert cast('x') == String
+            assert local('x') == String
+        '''
     }
 
     // GROOVY-12755
