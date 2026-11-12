@@ -326,6 +326,24 @@ final class NamedVariantTransformTest {
         '''
     }
 
+    @Test // GROOVY-10498
+    void testFalsyPositionalArgumentOverridesDefaultValue() {
+        assertScript shell, '''
+            @ToString(includeNames=true)
+            class Color {
+                int r, g, b
+            }
+
+            @NamedVariant
+            String m(@NamedDelegate Color color, Number alpha = 4.5) {
+                return "$color $alpha"
+            }
+
+            assert m(r:1, g:2, b:3, 0.0) == 'Color(r:1, g:2, b:3) 0.0'
+            assert m(r:1, g:2, b:3, 9) == 'Color(r:1, g:2, b:3) 9'
+        '''
+    }
+
     @Test // GROOVY-9183, GROOVY-10500
     void testNamedDelegateWithPropertyDefault() {
         assertScript shell, '''
