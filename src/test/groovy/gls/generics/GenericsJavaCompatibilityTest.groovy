@@ -4573,6 +4573,40 @@ final class GenericsJavaCompatibilityTest {
     }
 
     /**
+     * JLS 4.3.2, 4.5.1: for a value {@code t} of a type variable {@code T}, {@code t.getClass()}
+     * is a {@code Class<? extends Object>}, which is neither a {@code Class<T>} nor within
+     * {@code ? extends T}.
+     */
+    @Test
+    void testNegativeClassOfValueOfTypeVariable() {
+        [
+            ClassOfTypeVariable: '''
+                static <T> Class<T> typeOf(T t) { return t.getClass(); }
+            ''',
+            ClassOfTypeVariableArgument: '''
+                static class Box<T> {
+                    void accept(Class<? extends T> type) {}
+                    void test(T t) { accept(t.getClass()); }
+                }
+            ''',
+            ClassOfTypeVariableKey: '''
+                static class Box<T> {
+                    Map<Class<? extends T>, T> byType = new HashMap<>();
+                    void test(T t) { byType.put(t.getClass(), t); }
+                }
+            '''
+        ].each { String name, String members ->
+            assertNegativeCompile("gls.generics.test.$name", """
+                package gls.generics.test;
+                import java.util.*;
+                public class $name {
+                    $members
+                }
+            """, 'incompatible types', 'Cannot')
+        }
+    }
+
+    /**
      * JLS 18.5.2: the target type does not widen a type argument beyond what the arguments allow.
      */
     @Test
