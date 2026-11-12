@@ -71,6 +71,11 @@ final class Groovy11916 {
                 class Collision {}
             '''
         ])
+        // Lock the access flags the later tests assume. A missed
+        // @PackageScope, or an inner class whose flag is not the one named
+        // below, would make those tests pass or fail for the wrong reason.
+        // Outer is not public and its member Inner is; Protector.Secret is
+        // protected; Priv.Secret is private.
         assert !Modifier.isPublic(types.loadClass('p.Hidden').modifiers)
         assert !Modifier.isPublic(types.loadClass('p.Collision').modifiers)
         assert Modifier.isPublic(types.loadClass('p.Visible').modifiers)
@@ -205,6 +210,15 @@ class Use {
 
     @Test
     void testExplicitReferenceToPackagePrivateTypeStillResolves() {
+        // An explicit import is still resolved, and this script runs.
+        // TimSort is package-private, so the class expression is not an
+        // ldc of the class (that linkage throws IllegalAccessError). It is
+        // loaded with Class.forName, and ".name" is Class.getName().
+        // Class.forName does not access-check the class. A non-null
+        // instanceof or cast, and a constructor, do. null instanceof
+        // TimSort does not: the JVM does not resolve the type for a null
+        // operand. The star-import filter stops a simple name from being
+        // compiled into one of the linkages that fail.
         assertScript '''
             import java.util.TimSort
             assert TimSort.name == 'java.util.TimSort'
@@ -353,6 +367,142 @@ class Use {
     }
 
     @Test
+    void testOnDemandImportBindsStaticMemberTypeOnly() {
+        def nest = compile(Groovy11916.classLoader, [
+            'p/Nest': '''
+                package p
+                class Nest {
+                    class Room {}
+                    static class Hall {}
+                }
+            '''
+        ])
+        assert !Modifier.isStatic(nest.loadClass('p.Nest$Room').modifiers)
+        assert Modifier.isStatic(nest.loadClass('p.Nest$Hall').modifiers)
+
+        def err = shouldFail {
+            compile(nest, [
+                'q/RoomUser': '''
+                    package q
+                    import p.Nest.*
+                    class RoomUser {
+                        Room r
+                    }
+                '''
+            ])
+        }
+        assert err.message.contains('unable to resolve class Room')
+
+        err = shouldFail {
+            compile(nest, [
+                'q/RoomStatic': '''
+                    package q
+                    import static p.Nest.*
+                    class RoomStatic {
+                        Room r
+                    }
+                '''
+            ])
+        }
+        assert err.message.contains('unable to resolve class Room')
+
+        compile(nest, [
+            'q/HallUser': '''
+                package q
+                import p.Nest.*
+                class HallUser {
+                    Hall h
+                }
+            '''
+        ])
+        compile(nest, [
+            'q/HallStatic': '''
+                package q
+                import static p.Nest.*
+                class HallStatic {
+                    Hall h
+                }
+            '''
+        ])
+    }
+
+    @Test
+    void testPackageScopeInSameCompilationUnitIsNotPublicYet() {
+        // @PackageScope clears the synthetic public flag after resolve.
+        // A star import in the same compilation unit must still skip the type.
+        def err = shouldFail {
+            compile(Groovy11916.classLoader, [
+                'p/Hidden': '''
+                    package p
+                    @groovy.transform.PackageScope
+                    class Hidden {}
+                ''',
+                'q/User': '''
+                    package q
+                    import p.*
+                    class User {
+                        Hidden h
+                    }
+                '''
+            ])
+        }
+        assert err.message.contains('unable to resolve class Hidden')
+
+        compile(Groovy11916.classLoader, [
+            'p/Hidden': '''
+                package p
+                @groovy.transform.PackageScope
+                class Hidden {}
+            ''',
+            'p/Peer': '''
+                package p
+                import p.*
+                class Peer {
+                    Hidden h
+                }
+            '''
+        ])
+
+        err = shouldFail {
+            compile(Groovy11916.classLoader, [
+                'p/Outer': '''
+                    package p
+                    @groovy.transform.PackageScope
+                    class Outer {
+                        public static class Inner {}
+                    }
+                ''',
+                'q/InnerUser': '''
+                    package q
+                    import p.Outer.*
+                    class InnerUser {
+                        Inner i
+                    }
+                '''
+            ])
+        }
+        assert err.message.contains('unable to resolve class Inner')
+
+        // Targeting fields does not make the class package-private.
+        compile(Groovy11916.classLoader, [
+            'p/Fields': '''
+                package p
+                @groovy.transform.PackageScope(groovy.transform.PackageScopeTarget.FIELDS)
+                class Fields {
+                    String name
+                }
+            ''',
+            'q/FieldsUser': '''
+                package q
+                import p.*
+                class FieldsUser {
+                    Fields f
+                }
+            '''
+        ])
+    }
+
+    @Test
     void testInaccessibleStarImportDoesNotHideLaterPublicType() {
         def loader = compile(types, [
             'q/Collision': '''
@@ -371,6 +521,17 @@ class Use {
         assert loader.loadClass('r.User').getDeclaredMethod('which').invoke(null).name == 'q.Collision'
     }
 
+    /**
+     * Two or more source star imports bind the first accessible type.
+     * They do not tie, and an inaccessible type does not hide a later one.
+     * <p>
+     * pa.X, pb.X and pc.X are each missing ({@code m}), public ({@code p}),
+     * or package-private ({@code k}). The use class is in another package
+     * and imports {@code pa.*}, {@code pb.*}, {@code pc.*} in that order.
+     * The expected type is the first public X. With no public X the name
+     * stays unresolved. A repeated {@code import pa.*} still binds pa.X,
+     * and the reversed list binds pc.X.
+     */
     // GROOVY-11916
     @Test
     void testStarImportsBindFirstAccessibleType() {
@@ -412,6 +573,16 @@ class Use {
         assert failures.isEmpty() : failures.join('\n')
     }
 
+    /**
+     * A type declared in the same package is chosen before any on-demand
+     * import, including a star of that same package.
+     * <p>
+     * The use class is {@code pa.Use}, with the same {@code m}/{@code p}/{@code k}
+     * matrix as {@code testStarImportsBindFirstAccessibleType}. When pa.X
+     * exists it wins whether it is public or package-private, even if pb.X
+     * or pc.X is public. When pa.X is missing, the first accessible star
+     * import is used.
+     */
     // GROOVY-11916
     @Test
     void testSamePackageTypeShadowsOnDemandImports() {
@@ -435,6 +606,17 @@ class Use {
         assert failures.isEmpty() : failures.join('\n')
     }
 
+    /**
+     * A source star import shadows the language defaults, including
+     * {@code java.lang}. The use class names {@code String}. pb.String and
+     * pc.String are missing, public, or package-private. The first public
+     * one is bound; a package-private one is skipped, and with none the
+     * name is {@code java.lang.String}.
+     * <p>
+     * An explicit {@code import java.lang.*} is a source star too. Written
+     * before {@code pb.*} it keeps {@code java.lang.String}; written after
+     * a public pb.String it loses.
+     */
     // GROOVY-11916
     @Test
     void testDeclaredStarShadowsLanguageDefaults() {

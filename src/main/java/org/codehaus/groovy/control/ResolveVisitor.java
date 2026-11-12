@@ -827,6 +827,13 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
     private boolean bindOnDemand(final ClassNode type, final String name, final ImportNode importNode) {
         ClassNode outer = importNode.getType();
         if (outer != null) {
+            // The star named a type: "import static Type.*" (the parser sets
+            // the type) or "import Type.*" (visitClass sets it when the name
+            // resolves to a class). Both import member types of that type,
+            // and only a static member type is in scope, the same rule as a
+            // single static import. A non-static inner class is not.
+            // A member type of an interface is implicitly static, so
+            // Map.Entry still matches.
             ClassNode tmp = new ConstructedNestedClass(outer, name);
             if (resolve(tmp, false, false, true) && Modifier.isStatic(tmp.getModifiers())
                     && isStarImportAccessible(tmp, outer)) {
@@ -847,22 +854,28 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
 
     /**
      * Source on-demand imports in source order, then customizer on-demand
-     * imports. Computed once per module; import lists are fixed before resolve.
+     * imports. Recomputed when needed: the lists are small, and storing them
+     * as module metadata would keep them for the rest of compilation.
+     * <p>
+     * {@code import module} expands to one star per exported package, but only
+     * the last of those nodes carries the statement's line and column. The
+     * packages before it have no position of their own and must inherit that
+     * position, in export order. Sorting the nodes by the line numbers they
+     * actually store would place those packages, and every customizer import
+     * (line &lt;= 0), ahead of the source imports. {@code List.sort} is stable,
+     * so nodes that share a position keep the order they were added and no
+     * separate sequence key is required.
      */
     private static OnDemandImports onDemandImports(final ModuleNode module) {
-        OnDemandImports cached = module.getNodeMetaData(OnDemandImports.class);
-        if (cached != null) return cached;
-
         List<PositionedImport> positioned = new ArrayList<>();
-        int sequence = 0;
         for (ImportNode node : module.getStaticStarImports().values()) {
             if (node.getLineNumber() > 0) {
-                positioned.add(new PositionedImport(node.getLineNumber(), node.getColumnNumber(), sequence++, node));
+                positioned.add(new PositionedImport(node.getLineNumber(), node.getColumnNumber(), node));
             }
         }
         for (ImportNode node : module.getStarImports()) {
             if (node.getLineNumber() > 0) {
-                positioned.add(new PositionedImport(node.getLineNumber(), node.getColumnNumber(), sequence++, node));
+                positioned.add(new PositionedImport(node.getLineNumber(), node.getColumnNumber(), node));
             }
         }
         List<ImportNode> pendingModule = new ArrayList<>();
@@ -872,7 +885,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
                 int line = node.getLineNumber();
                 int column = node.getColumnNumber();
                 for (ImportNode part : pendingModule) {
-                    positioned.add(new PositionedImport(line, column, sequence++, part));
+                    positioned.add(new PositionedImport(line, column, part));
                 }
                 pendingModule.clear();
             }
@@ -880,9 +893,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
         positioned.sort((a, b) -> {
             int byLine = Integer.compare(a.line, b.line);
             if (byLine != 0) return byLine;
-            int byColumn = Integer.compare(a.column, b.column);
-            if (byColumn != 0) return byColumn;
-            return Integer.compare(a.sequence, b.sequence);
+            return Integer.compare(a.column, b.column);
         });
 
         List<ImportNode> declared = new ArrayList<>(positioned.size());
@@ -898,9 +909,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
         }
         customizer.addAll(pendingModule);
 
-        OnDemandImports order = new OnDemandImports(declared, customizer);
-        module.putNodeMetaData(OnDemandImports.class, order);
-        return order;
+        return new OnDemandImports(declared, customizer);
     }
 
     private static final class OnDemandImports {
@@ -916,13 +925,11 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
     private static final class PositionedImport {
         final int line;
         final int column;
-        final int sequence;
         final ImportNode node;
 
-        PositionedImport(final int line, final int column, final int sequence, final ImportNode node) {
+        PositionedImport(final int line, final int column, final ImportNode node) {
             this.line = line;
             this.column = column;
-            this.sequence = sequence;
             this.node = node;
         }
     }
@@ -1305,12 +1312,17 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
      * already apply an access check ({@link StaticImportVisitor}, since Groovy 5).
      *
      * @param type a resolved candidate
-     * @param knownOuter the type named by {@code import some.Type.*} when
-     *                   {@code type} is a binary member type that does not expose
-     *                   {@link ClassNode#getOuterClass()}
+     * @param knownOuter the type named by {@code import some.Type.*} or
+     *                   {@code import static some.Type.*}. Null for a package
+     *                   star, a default import, and the recursive walk. Binary
+     *                   member types are not {@link InnerClassNode}, so
+     *                   {@link ClassNode#getOuterClass()} is null for them and
+     *                   this argument is what names the enclosing type.
      * @return {@code true} if the star import may bind {@code type}
      */
     private boolean isStarImportAccessible(final ClassNode type, final ClassNode knownOuter) {
+        // getOuterClass() is non-null only for a source InnerClassNode. A
+        // member type read from bytecode does not carry that link.
         ClassNode outer = type.getOuterClass();
         if (outer == null) {
             outer = knownOuter;
@@ -1318,12 +1330,18 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
         if (outer == null) {
             outer = binaryEnclosing(type);
         }
+        // The enclosing node is not a ClassHelper.make placeholder. A source
+        // outer is the enclosing class from the parse. A binary outer is the
+        // resolved import type or the class the resolver returned, so its
+        // access flags come from the class file. isResolved() may still be
+        // false for a source class and for a decompiled class; that does not
+        // mean the modifier is the public default of an unresolved name.
         if (outer != null && outer != type && !isStarImportAccessible(outer, null)) {
             return false;
         }
         ClassNode owner = outer != null ? outer : type;
         int modifiers = type.getModifiers();
-        if (Modifier.isPublic(modifiers)) {
+        if (effectivelyPublic(type)) {
             return true;
         }
         if (currentClass == null) {
@@ -1339,8 +1357,65 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
     }
 
     /**
+     * Whether {@code type} is public to a star import.
+     * <p>
+     * A class written without an access modifier is public, and
+     * {@code @PackageScope} clears that flag. The transform runs later in
+     * semantic analysis than this visitor, so a source class is still public
+     * here. The synthetic-public flag plus the annotation is the visibility
+     * the class will have. A class loaded from bytecode already has the flag
+     * removed; its modifier is the one in the class file.
+     */
+    private static boolean effectivelyPublic(final ClassNode type) {
+        ClassNode node = type.redirect();
+        if (!Modifier.isPublic(node.getModifiers())) {
+            return false;
+        }
+        return !node.isSyntheticPublic() || !packageScopeOnClass(node);
+    }
+
+    /**
+     * {@code @PackageScope} with no argument, or with an argument that
+     * includes {@code CLASS}, makes the class package-private.
+     * {@code FIELDS}, {@code METHODS} and {@code CONSTRUCTORS} do not.
+     * The simple name is the form seen before the annotation type is resolved.
+     */
+    private static boolean packageScopeOnClass(final ClassNode type) {
+        for (AnnotationNode annotation : type.getAnnotations()) {
+            String name = annotation.getClassNode().getName();
+            if (!"groovy.transform.PackageScope".equals(name) && !"PackageScope".equals(name)) {
+                continue;
+            }
+            Expression value = annotation.getMember("value");
+            if (value == null) {
+                return true;
+            }
+            return targetsClass(value);
+        }
+        return false;
+    }
+
+    private static boolean targetsClass(final Expression value) {
+        if (value instanceof PropertyExpression property) {
+            return "CLASS".equals(property.getPropertyAsString());
+        }
+        if (value instanceof ListExpression list) {
+            for (Expression element : list.getExpressions()) {
+                if (element instanceof PropertyExpression property && "CLASS".equals(property.getPropertyAsString())) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    /**
      * Enclosing binary type of a member type whose {@link ClassNode#getOuterClass()}
-     * is unset. Source inner classes carry that link; classes read from bytecode do not.
+     * is unset. Source inner classes are {@link InnerClassNode} and carry that
+     * link. Classes read from bytecode are ordinary class nodes and do not, so
+     * the enclosing type is recovered from the {@code $} in the binary name
+     * rather than by reclassing every loaded member type as an
+     * {@link InnerClassNode}.
      */
     private ClassNode binaryEnclosing(final ClassNode type) {
         String name = type.getName();
