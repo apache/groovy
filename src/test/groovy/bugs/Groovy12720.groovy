@@ -20,6 +20,8 @@ package bugs
 
 import org.junit.jupiter.api.Test
 
+import java.beans.Transient
+
 import static groovy.test.GroovyAssert.shouldFail
 
 final class Groovy12720 {
@@ -88,8 +90,8 @@ final class Groovy12720 {
         def loader = new GroovyClassLoader()
         ['void main() {}', 'static void main(String[] args) {}'].each { main ->
             def c = loader.parseClass("@java.beans.Transient\n$main")
-            assert !c.isAnnotationPresent(java.beans.Transient)
-            assert c.declaredMethods.find { it.name == 'main' }.isAnnotationPresent(java.beans.Transient)
+            assert !c.isAnnotationPresent(Transient)
+            assert c.declaredMethods.find { it.name == 'main' }.isAnnotationPresent(Transient)
         }
     }
 
