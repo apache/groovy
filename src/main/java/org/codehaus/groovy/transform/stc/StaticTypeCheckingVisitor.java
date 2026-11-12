@@ -3976,6 +3976,7 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
     protected void visitObjectInitializerStatements(final ClassNode node) {
         // GROOVY-5450: create fake constructor node so final field analysis can allow write within non-static initializer block(s)
         ConstructorNode init = new ConstructorNode(0, null, null, new BlockStatement(node.getObjectInitializerStatements(), null));
+        init.setDeclaringClass(node); // GROOVY-12761: so SC sees the class of the initializer blocks
         typeCheckingContext.pushEnclosingMethod(init);
         typeCheckingContext.pushTemporaryTypeInfo(); // GROOVY-12166: member scope
         super.visitObjectInitializerStatements(node);
