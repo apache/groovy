@@ -4548,6 +4548,31 @@ final class GenericsJavaCompatibilityTest {
     }
 
     /**
+     * JLS 6.5.5.1, 8.1.3: within {@code Outer<T>}, the simple name {@code Inner} is
+     * {@code Outer<T>.Inner}, which is a different type argument than the raw {@code Outer.Inner}.
+     */
+    @Test
+    void testNegativeSimpleNameOfInnerClassIsNotRawAsTypeArgument() {
+        [
+            InnerTypeArgument: 'List<Inner> a = raw;',
+            InnerWildcardBound: 'List<? extends Inner> b = raw;',
+            InnerMapValue: 'Map<String, Inner> c = rawMap;'
+        ].each { String name, String assignment ->
+            assertNegativeCompile("gls.generics.test.$name", """
+                package gls.generics.test;
+                import java.util.*;
+                public class $name<T> {
+                    class Inner {}
+                    @SuppressWarnings("rawtypes")
+                    void f(List<${name}.Inner> raw, Map<String, ${name}.Inner> rawMap) {
+                        $assignment
+                    }
+                }
+            """, 'incompatible types', 'Incompatible generic argument types')
+        }
+    }
+
+    /**
      * JLS 18.5.2: the target type does not widen a type argument beyond what the arguments allow.
      */
     @Test
