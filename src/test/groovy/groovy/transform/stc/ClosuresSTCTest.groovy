@@ -1006,6 +1006,41 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-10714: a closure or lambda with declared parameters implements only an interface it can be called as
+    @Test
+    void testSAMsInMethodSelection10() {
+        assertScript '''
+            import java.util.function.Consumer
+            class Try<T> {
+                final T value
+                Try(T value) { this.value = value }
+                String andThenTry(Consumer<? super T> consumer) { consumer.accept(value); 'Consumer' }
+                String andThenTry(Runnable runnable) { runnable.run(); 'Runnable' }
+            }
+
+            def attempt = new Try<String>('x')
+            assert attempt.andThenTry { String s -> assert s == 'x' } == 'Consumer'
+            assert attempt.andThenTry((String s) -> { assert s == 'x' }) == 'Consumer'
+            assert attempt.andThenTry { -> } == 'Runnable'
+            assert attempt.andThenTry { it } == 'Runnable'
+        '''
+    }
+
+    // GROOVY-10714
+    @Test
+    void testSAMsInMethodSelection11() {
+        assertScript '''
+            import java.util.concurrent.Callable
+            import java.util.function.Function
+
+            String fc(Function<String, ?> f) { 'Function' }
+            String fc(Callable<?> c) { 'Callable' }
+
+            assert fc { String s -> s } == 'Function'
+            assert fc { -> 1 } == 'Callable'
+        '''
+    }
+
     // GROOVY-6238
     @Test
     void testDirectMethodCallOnClosureExpression() {

@@ -426,6 +426,178 @@ final class ClosuresSpecTest {
     }
 
     @Test
+    void testResolutionOfLocalsAndClosureMembers() {
+        assertScript '''
+            // tag::resolution_locals_and_closure_members[]
+            class Report {
+                String title = 'from the owner'
+                String delegate = 'a property of the owner'
+
+                def run() {
+                    String title = 'from a local variable'
+                    def cl = { [title, delegate] }
+                    cl.delegate = [title: 'from the delegate']
+                    cl()
+                }
+            }
+
+            def (title, delegate) = new Report().run()
+            assert title == 'from a local variable'             // <1>
+            assert delegate == [title: 'from the delegate']     // <2>
+            // end::resolution_locals_and_closure_members[]
+        '''
+    }
+
+    @Test
+    void testResolutionOfClosureMethods() {
+        assertScript '''
+            // tag::resolution_closure_methods[]
+            class Calculator {
+                def curry(int n) { "the owner's curry" }
+
+                def run() {
+                    def add = { int a, int b -> a + b }
+                    def cl = { int a, int b -> curry(1) }
+                    cl.delegate = add
+                    cl(0, 0)
+                }
+            }
+
+            def result = new Calculator().run()
+            assert result instanceof Closure                    // <1>
+            assert result.maximumNumberOfParameters == 1
+            // end::resolution_closure_methods[]
+        '''
+    }
+
+    @Test
+    void testResolutionOfReadOnlyClosureProperty() {
+        assertScript '''
+            // tag::resolution_closure_readonly_property[]
+            class Holder {
+                String owner = 'initial'
+
+                def run() {
+                    def cl = { ->
+                        owner = 'changed'
+                        owner
+                    }
+                    cl()
+                }
+            }
+
+            def holder = new Holder()
+            assert holder.run().is(holder)                      // <1>
+            assert holder.owner == 'changed'                    // <2>
+            // end::resolution_closure_readonly_property[]
+        '''
+    }
+
+    @Test
+    void testResolutionOfCurryWithDelegateOnly() {
+        assertScript '''
+            // tag::resolution_delegate_only_curry[]
+            class Recipe {
+                def curry(String spice) { "curry with $spice" }
+            }
+
+            def cl = { String unused -> curry('cumin') }
+            cl.delegate = new Recipe()
+
+            cl.resolveStrategy = Closure.DELEGATE_FIRST
+            assert cl('x') instanceof Closure                   // <1>
+
+            cl.resolveStrategy = Closure.DELEGATE_ONLY
+            assert cl('x') == 'curry with cumin'                // <2>
+            // end::resolution_delegate_only_curry[]
+        '''
+    }
+
+    @Test
+    void testResolutionThroughNestedClosures() {
+        assertScript '''
+            // tag::resolution_nested[]
+            class Thing {
+                String name = 'thing'
+            }
+
+            def outer = { ->
+                def inner = { -> name }                         // <1>
+                inner()
+            }
+            outer.delegate = new Thing()                        // <2>
+            assert outer() == 'thing'
+            // end::resolution_nested[]
+        '''
+    }
+
+    @Test
+    void testResolutionWithNullOwner() {
+        assertScript '''
+            // tag::resolution_null_owner[]
+            class Greeter {
+                String name = 'Groovy'
+                String greet(String who) { "Hello, $who" }
+            }
+
+            def cl = { -> greet(name) }.dehydrate()             // <1>
+            assert cl.owner == null && cl.delegate == null
+
+            cl.delegate = new Greeter()
+            assert cl() == 'Hello, Groovy'                      // <2>
+
+            cl.resolveStrategy = Closure.OWNER_ONLY
+            try {
+                cl()                                            // <3>
+                assert false
+            } catch (MissingPropertyException ex) {
+                assert ex.property == 'name'
+            }
+            // end::resolution_null_owner[]
+        '''
+    }
+
+    @Test
+    void testResolutionFallsBackToTheClosure() {
+        assertScript '''
+            // tag::resolution_closure_fallback[]
+            def describe = { -> toString() }
+            assert describe() == this.toString()                // <1>
+
+            def detached = describe.dehydrate()
+            assert detached() == detached.toString()            // <2>
+
+            def unknown = { -> shout('hi') }.dehydrate()
+            try {
+                unknown()                                       // <3>
+                assert false
+            } catch (MissingMethodException ex) {
+                assert ex.method == 'shout'
+            }
+            // end::resolution_closure_fallback[]
+        '''
+    }
+
+    @Test
+    void testResolutionToSelf() {
+        assertScript '''
+            // tag::resolution_to_self[]
+            def cl = { -> name }
+            cl.delegate = [name: 'from the delegate']
+            assert cl() == 'from the delegate'
+
+            cl.resolveStrategy = Closure.TO_SELF
+            try {
+                cl()                                            // <1>
+                assert false
+            } catch (MissingPropertyException ex) {
+                assert ex.property == 'name'
+            }
+            // end::resolution_to_self[]
+        '''
+    }
+
+    @Test
     void testGStringEager() {
         // tag::gstring_eager_intro[]
         def x = 1

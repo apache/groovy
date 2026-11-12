@@ -51,6 +51,7 @@ import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.function.ToIntFunction;
 
@@ -403,6 +404,9 @@ public class StaticTypesMethodReferenceExpressionWriter extends MethodReferenceE
             addFatalError("Cannot access method: " + methodName + " of class: " + methodNode.getDeclaringClass().getText(), methodReference); // GROOVY-11365
         } else if (samParameters.length > 0 && isTypeReferringInstanceMethod(typeOrTargetRef, methodNode) && !isAssignableTo(samParameters[0].getType(), targetType)) {
             throw new RuntimeParserException("Invalid receiver type: " + samParameters[0].getType().getText() + " is not compatible with " + targetType.getText(), methodReference.getExpression());
+        } else {
+            boolean isReceiverArgument = samParameters.length > 0 && isTypeReferringInstanceMethod(typeOrTargetRef, methodNode); // type::instanceMethod
+            RuntimePackageCheck.checkMethod(controller, methodNode, isSuperExpression(typeOrTargetRef) ? null : isReceiverArgument ? samParameters[0].getType() : targetType, methodReference);
         }
     }
 
@@ -994,5 +998,23 @@ public class StaticTypesMethodReferenceExpressionWriter extends MethodReferenceE
      * the metafactory should see.
      */
     private record Adaptation(MethodNode method, Parameter[] instantiatedParameters) {
+        @Override
+        public boolean equals(final Object obj) {
+            if (!(obj instanceof Adaptation other)) return false;
+            return Objects.equals(method, other.method)
+                    && Arrays.equals(instantiatedParameters, other.instantiatedParameters);
+        }
+
+        @Override
+        public int hashCode() {
+            int result = Objects.hashCode(method);
+            result = 31 * result + Arrays.hashCode(instantiatedParameters);
+            return result;
+        }
+
+        @Override
+        public String toString() {
+            return "Adaptation[method=" + method + ", instantiatedParameters=" + Arrays.toString(instantiatedParameters) + "]";
+        }
     }
 }

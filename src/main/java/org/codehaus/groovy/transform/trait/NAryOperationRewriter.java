@@ -23,6 +23,7 @@ import org.codehaus.groovy.ast.FieldNode;
 import org.codehaus.groovy.ast.Variable;
 import org.codehaus.groovy.ast.expr.BinaryExpression;
 import org.codehaus.groovy.ast.expr.ClosureExpression;
+import org.codehaus.groovy.ast.expr.ElvisOperatorExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.PostfixExpression;
 import org.codehaus.groovy.ast.expr.PrefixExpression;
@@ -35,12 +36,14 @@ import org.codehaus.groovy.syntax.TokenUtil;
 
 import java.util.Collection;
 
+import static org.codehaus.groovy.syntax.Types.ELVIS_EQUAL;
 import static org.codehaus.groovy.syntax.Types.EQUAL;
+import static org.codehaus.groovy.syntax.Types.NULL_COALESCE_EQUAL;
 
 
 /**
  * Rewrites some expressions found in traits so that they are compatible. For example, if x is a trait field, x += y
- * will be rewritten into x = x + y, and x++ is rejected
+ * will be rewritten into x = x + y, x ?= y into x = x ?: y, and x++ is rejected
  */
 class NAryOperationRewriter extends ClassCodeExpressionTransformer {
     private final SourceUnit sourceUnit;
@@ -129,7 +132,8 @@ class NAryOperationRewriter extends ClassCodeExpressionTransformer {
     private Expression transformBinaryExpression(final BinaryExpression exp) {
         final int op = exp.getOperation().getType();
         int token = TokenUtil.removeAssignment(op);
-        if (token == op) {
+        boolean elvis = (op == ELVIS_EQUAL || op == NULL_COALESCE_EQUAL);
+        if (token == op && !elvis) {
             // no transform needed
             return super.transform(exp);
         }
@@ -137,11 +141,13 @@ class NAryOperationRewriter extends ClassCodeExpressionTransformer {
             // GROOVY-12613: only a trait field needs the rewrite; others keep single evaluation of the target
             return super.transform(exp);
         }
-        BinaryExpression operation = new BinaryExpression(
-                exp.getLeftExpression(),
-                Token.newSymbol(token, -1, -1),
-                transform(exp.getRightExpression()) // GROOVY-12615: rewrite nested compound assignments too
-        );
+        Expression right = transform(exp.getRightExpression()); // GROOVY-12615: rewrite nested compound assignments too
+        Expression operation;
+        if (elvis) { // GROOVY-12638: x ?= y is x = x ?: y and x ??= y is x = x ?? y
+            operation = new ElvisOperatorExpression(exp.getLeftExpression(), right, op == NULL_COALESCE_EQUAL);
+        } else {
+            operation = new BinaryExpression(exp.getLeftExpression(), Token.newSymbol(token, -1, -1), right);
+        }
         operation.setSourcePosition(exp);
         BinaryExpression result = new BinaryExpression(
                 exp.getLeftExpression(),

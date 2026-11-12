@@ -4075,4 +4075,96 @@ final class ParserNegativeSyntaxTest {
             TestUtils.parseModule(source)
         }
     }
+
+    // GROOVY-12641
+    @Test
+    void 'pattern case label requires the arrow form'() {
+        expectParseError '''\
+            |// GEP-19: pattern case labels require the arrow form
+            |def result = switch (42) {
+            |    case Integer i: yield i + 1
+            |    default: yield 0
+            |}
+            |'''.stripMargin(), '''\
+            |`case` with a pattern label supports only the arrow form (`->`) @ line 3, column 10.
+            |       case Integer i: yield i + 1
+            |            ^
+            |
+            |1 error
+            |'''.stripMargin()
+    }
+
+    // GROOVY-12641
+    @Test
+    void 'record pattern cannot deconstruct a primitive type'() {
+        expectParseError '''\
+            |// GEP-19: a record pattern cannot deconstruct a primitive type
+            |def result = switch (42) {
+            |    case int(var i) -> i + 1
+            |    default -> 0
+            |}
+            |'''.stripMargin(), '''\
+            |a record pattern cannot deconstruct a primitive type @ line 3, column 10.
+            |       case int(var i) -> i + 1
+            |            ^
+            |
+            |1 error
+            |'''.stripMargin()
+    }
+
+    // GROOVY-12641
+    @Test
+    void 'record pattern case label requires the arrow form'() {
+        expectParseError '''\
+            |// GEP-19: record pattern case labels require the arrow form
+            |record Point(int x, int y) {}
+            |def result = switch (new Point(1, 2)) {
+            |    case Point(int x, int y): yield x + y
+            |    default: yield 0
+            |}
+            |'''.stripMargin(), '''\
+            |`case` with a pattern label supports only the arrow form (`->`) @ line 4, column 10.
+            |       case Point(int x, int y): yield x + y
+            |            ^
+            |
+            |1 error
+            |'''.stripMargin()
+    }
+
+    // GROOVY-12641
+    @Test
+    void 'list pattern allows at most one rest binding'() {
+        expectParseError '''\
+            |// GEP-19: a list pattern supports at most one rest binding
+            |def result = switch ([1, 2, 3]) {
+            |    case [var... front, var... back] -> 'ambiguous'
+            |    default                          -> 'no'
+            |}
+            |'''.stripMargin(), '''\
+            |a list pattern supports at most one rest binding @ line 3, column 25.
+            |       case [var... front, var... back] -> 'ambiguous'
+            |                           ^
+            |
+            |1 error
+            |'''.stripMargin()
+    }
+
+    // GROOVY-12641
+    @Test
+    void 'map pattern keys must be constants'() {
+        expectParseError '''\
+            |// GEP-19: map pattern keys must be constants
+            |def k = 'name'
+            |def result = switch ([name: 'sam']) {
+            |    case [("$k"): var n] -> n
+            |    default              -> 'other'
+            |}
+            |'''.stripMargin(), '''\
+            |map pattern keys must be constants @ line 4, column 11.
+            |       case [("$k"): var n] -> n
+            |             ^
+            |
+            |1 error
+            |'''.stripMargin()
+    }
 }
