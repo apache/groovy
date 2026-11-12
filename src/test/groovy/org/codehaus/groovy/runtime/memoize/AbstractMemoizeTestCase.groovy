@@ -212,7 +212,7 @@ abstract class AbstractMemoizeTestCase {
 
         Closure copy = mem.dehydrate()
         assert copy.owner == null
-        shouldFail(NullPointerException) {
+        shouldFail(MissingMethodException) {
             copy(1)
         }
         assert copy.rehydrate(null, p, p)(1) == 'p1'

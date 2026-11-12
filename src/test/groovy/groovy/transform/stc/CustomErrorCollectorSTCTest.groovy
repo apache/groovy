@@ -19,6 +19,11 @@
 package groovy.transform.stc
 
 import org.codehaus.groovy.ast.ClassNode
+import org.codehaus.groovy.ast.expr.ConstantExpression
+import org.codehaus.groovy.ast.stmt.CaseStatement
+import org.codehaus.groovy.ast.stmt.EmptyStatement
+import org.codehaus.groovy.ast.stmt.ExpressionStatement
+import org.codehaus.groovy.ast.stmt.SwitchStatement
 import org.codehaus.groovy.classgen.GeneratorContext
 import org.codehaus.groovy.control.CompilePhase
 import org.codehaus.groovy.control.CompilerConfiguration
@@ -82,5 +87,54 @@ final class CustomErrorCollectorSTCTest {
         shouldFail(MultipleCompilationErrorsException) {
             shell.evaluate('int x = new Object()')
         }
+    }
+
+    @Test
+    void testPatternDominanceWarningAfterPoppingLastCollector() {
+        CompilerConfiguration c = new CompilerConfiguration()
+        List warnings = []
+        c.addCompilationCustomizers(new CompilationCustomizer(CompilePhase.CANONICALIZATION) {
+            @Override
+            void call(SourceUnit source, GeneratorContext context, ClassNode classNode) {
+                def visitor = new StaticTypeCheckingVisitor(source, classNode)
+                visitor.typeCheckingContext.popErrorCollector()
+                visitor.visitClass(classNode)
+                if (source.errorCollector.warnings != null) warnings.addAll(source.errorCollector.warnings)
+            }
+        })
+        new GroovyShell(c).evaluate('''
+            def m(Object o) {
+                switch (o) {
+                    case Number n  -> 'number'
+                    case Integer i -> 'integer'
+                    default        -> 'other'
+                }
+            }
+            assert m(1) == 'number'
+        ''')
+        assert warnings.any { it.message.contains('dominated by a preceding case label') }
+    }
+
+    @Test
+    void testFallThroughWhenSwitchSelectorNoLongerMatchesAndNoSwitchExpression() {
+        CompilerConfiguration c = new CompilerConfiguration()
+        c.addCompilationCustomizers(new CompilationCustomizer(CompilePhase.CANONICALIZATION) {
+            @Override
+            void call(SourceUnit source, GeneratorContext context, ClassNode classNode) {
+                def visitor = new StaticTypeCheckingVisitor(source, classNode)
+                def selector = new ConstantExpression('text')
+                def first = new CaseStatement(new ConstantExpression('text'), new ExpressionStatement(new ConstantExpression(1)))
+                def second = new CaseStatement(new ConstantExpression('integer'), new ExpressionStatement(new ConstantExpression(2)))
+                def statement = new SwitchStatement(selector, [first, second], EmptyStatement.INSTANCE)
+                visitor.typeCheckingContext.pushEnclosingSwitchStatement(statement)
+                // the statement no longer owns the selector that was pushed, and no
+                // switch expression is enclosing the case
+                statement.expression = new ConstantExpression('replaced')
+                assert visitor.typeCheckingContext.enclosingSwitchExpression == null
+                visitor.visitCaseStatement(first)
+                visitor.typeCheckingContext.popEnclosingSwitchStatement()
+            }
+        })
+        new GroovyShell(c).evaluate('true')
     }
 }

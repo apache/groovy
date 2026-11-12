@@ -419,4 +419,29 @@ final class ClosurePackCapabilityTest {
             '''))
         }
     }
+
+    @Test
+    void directCallsLetABodyThrownInvokerInvocationExceptionThrough() {
+        // no reflective step lies between the call lanes and a hoisted body, so there is nothing to
+        // unwrap: like Closure.call's cached-handle path on a generated class, an
+        // InvokerInvocationException the body itself throws reaches a direct caller as-is, on both
+        // the call(Object) lane and the call(Object...) lane
+        String src = '''import groovy.transform.CompileStatic
+            import org.codehaus.groovy.runtime.InvokerInvocationException
+            @CompileStatic
+            class Thrower {
+                List<String> go() {
+                    Closure one = { Object x -> throw new InvokerInvocationException(new IOException('one')) }
+                    Closure two = { Object x, Object y -> throw new InvokerInvocationException(new IOException('two')) }
+                    [one.getClass().simpleName, two.getClass().simpleName,
+                     kind { one.call((Object) 1) }, kind { two.call(1, 2) }]
+                }
+                private static String kind(Closure work) {
+                    try { work.call(); 'none' } catch (Throwable t) { t.getClass().simpleName }
+                }
+            }'''
+        def thrown = ['InvokerInvocationException', 'InvokerInvocationException']
+        assertEquals(['_go_closure1', '_go_closure2'] + thrown, eval(src, 'new Thrower().go()', false))
+        assertEquals(['Fixed1', 'Fixed2'] + thrown, eval(src, 'new Thrower().go()', true))
+    }
 }

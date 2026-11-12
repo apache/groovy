@@ -31,5 +31,14 @@ public enum PackStrategy {
     FULL_CLASS,
 
     /** S1 — hoist the body to a method on the enclosing class behind a shared {@code PackedClosure} adapter. */
-    PACKED_ADAPTER
+    PACKED_ADAPTER,
+
+    /**
+     * GEP-27 open closure ({@code groovy.closure.open}): hoist the body with its free-name uses
+     * rewritten into calls on a leading {@code OpenClosure.Resolver} parameter, and create a
+     * {@code PackedClosure} whose {@code ClassicResolver} restores the full
+     * owner/delegate/resolveStrategy contract — packing the free-name closures ordinary packing
+     * must decline, still without a per-closure class.
+     */
+    OPEN_ADAPTER
 }
