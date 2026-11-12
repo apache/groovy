@@ -7476,6 +7476,9 @@ trying: for (ClassNode[] signature : signatures) {
                         && !(isClassType(initialType) && initialType.isUsingGenerics() && isClassType(right))) {
                     return initialType;
                 }
+            } else if (isClassType(left) && left.isUsingGenerics() && !isClassType(right)) {
+                // a field initializer or a property write: a value that is not a Class is converted at run time
+                return left;
             }
 
             if (!isObjectType(leftRedirect)) {
