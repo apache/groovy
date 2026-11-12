@@ -420,6 +420,8 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     private static final Object RETURN_TYPES = new Object();
     /** Metadata key for the return type of a method inferred from the values its body returns. */
     private static final Object BODY_RETURN_TYPE = new Object();
+    /** Metadata key marking an untyped closure or lambda parameter declared with the type its functional interface gives it. */
+    private static final Object FUNCTIONAL_PARAMETER_TYPE = new Object();
     /** Cached {@code Closure#getDelegate()} method. */
     protected static final MethodNode GET_DELEGATE = CLOSURE_TYPE.getGetterMethod("getDelegate");
     /** Cached {@code Closure#getOwner()} method. */
@@ -1466,6 +1468,9 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
                     if (!expectedTypes[i].isGenericsPlaceHolder())
                         type.setGenericsTypes(expectedTypes[i].getGenericsTypes());
                     parameter.setType(type); // GROOVY-11083, GROOVY-11085, et al.
+                    if (!hasImplicitParameter(rhsExpression)) { // an implicit "it" is still declared Object
+                        parameter.putNodeMetaData(FUNCTIONAL_PARAMETER_TYPE, Boolean.TRUE);
+                    }
                 } else {
                     checkParamType(parameter, expectedTypes[i], i == n-1, rhsExpression instanceof LambdaExpression);
                 }
@@ -1613,6 +1618,9 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
             var = ((FieldExpression) lhs).getField();
         } else if (lhs instanceof VariableExpression) {
             var = findTargetVariable((VariableExpression) lhs);
+        }
+        if (var instanceof Parameter && ((Parameter) var).getNodeMetaData(FUNCTIONAL_PARAMETER_TYPE) != null) {
+            return var.getType(); // GROOVY-12747: the parameter is declared with its inferred type, so a value is cast to it
         }
         return var != null && !(var instanceof DynamicVariable) ? var.getOriginType() : getType(lhs);
     }
@@ -5032,6 +5040,21 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
                             for (GenericsType tp : typeParameters) {
                                 if (tp.getName().equals(key.getName())) {
                                     context.putIfAbsent(key, gt); // TODO: merge
+                                    break;
+                                }
+                            }
+                        });
+                    }
+
+                    // an extension method's receiver is its self argument, which is not in arguments
+                    if (method instanceof ExtensionMethodNode extension && !extension.isStaticExtension()) {
+                        Map<GenericsTypeName, GenericsType> gc = new HashMap<>();
+                        extractGenericsConnections(gc, wrapTypeIfNecessary(receiver),
+                                extension.getExtensionMethodNode().getParameters()[0].getType());
+                        gc.forEach((key, gt) -> {
+                            for (GenericsType tp : typeParameters) {
+                                if (tp.getName().equals(key.getName())) {
+                                    context.putIfAbsent(key, gt);
                                     break;
                                 }
                             }
