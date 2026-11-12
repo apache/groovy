@@ -23,6 +23,9 @@ import org.codehaus.groovy.control.ModuleImportHelper
 import org.codehaus.groovy.control.ResolveVisitor
 import org.junit.jupiter.api.Test
 
+import java.lang.module.ModuleFinder
+import java.lang.reflect.Modifier
+
 import static groovy.test.GroovyAssert.assertScript
 import static groovy.test.GroovyAssert.shouldFail
 
@@ -281,7 +284,7 @@ final class ImportTest {
     // single-type import is how a program picks a different one.
     @Test
     void testImportModuleUsesFirstExportedPackage() {
-        def finder = java.lang.module.ModuleFinder.ofSystem()
+        def finder = ModuleFinder.ofSystem()
         def names = []
         ModuleImportHelper.collectModuleExports(
                 finder.find('java.desktop').orElseThrow(), finder, names, new LinkedHashSet<>())
@@ -290,7 +293,7 @@ final class ImportTest {
             if (ResolveVisitor.DEFAULT_IMPORTS.contains(pkg + '.')) continue
             try {
                 def type = Class.forName(pkg + '.Element')
-                if (java.lang.reflect.Modifier.isPublic(type.modifiers)) {
+                if (Modifier.isPublic(type.modifiers)) {
                     expected = type.name
                     break
                 }
