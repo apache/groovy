@@ -2088,7 +2088,7 @@ public abstract class StaticTypeCheckingSupport {
             if (resolved.isPlaceholder() && hasNonTrivialBounds(resolved)) {
                 int index = indexOfCapturedWildcard(wrappedArgument, candidate);
                 if (index >= 0) {
-                    if (compatibleCapture(resolved, type, wrappedArgument, index, lastArg)) continue;
+                    if (compatibleCapture(resolved, type, wrappedArgument, index, lastArg, resolvedMethodGenerics)) continue;
                     return true; // incompatible
                 }
             }
@@ -2232,9 +2232,10 @@ public abstract class StaticTypeCheckingSupport {
      * for {@code typeParameter}. The capture is a fresh type variable whose upper bounds are the
      * upper bound of the wildcard, if it has one, and the bounds declared for that type argument
      * (JLS 5.1.10). It must be within every bound of the type parameter, where the bound may
-     * mention the type parameter itself, and the captured argument must fit the parameter (JLS 18.5.1).
+     * mention the type parameter itself or another one, and the captured argument must fit the
+     * parameter (JLS 18.5.1).
      */
-    private static boolean compatibleCapture(final GenericsType typeParameter, final ClassNode parameterType, final ClassNode argumentType, final int index, final boolean lastArg) {
+    private static boolean compatibleCapture(final GenericsType typeParameter, final ClassNode parameterType, final ClassNode argumentType, final int index, final boolean lastArg, final Map<GenericsTypeName, GenericsType> resolvedMethodGenerics) {
         GenericsType[] typeArguments = argumentType.getGenericsTypes();
         GenericsType wildcard = typeArguments[index];
         ClassNode capture = new ClassNode("capture-of " + wildcard, 0, OBJECT_TYPE);
@@ -2268,8 +2269,7 @@ public abstract class StaticTypeCheckingSupport {
 
         Map<GenericsTypeName, GenericsType> spec = Collections.singletonMap(new GenericsTypeName(typeParameter.getName()), witness);
         for (ClassNode bound : typeParameter.getUpperBounds()) {
-            if (bound.isGenericsPlaceHolder()) continue; // another type parameter
-            if (!captureWithinBound(captureBounds, applyGenericsContext(spec, bound))) return false;
+            if (!captureWithinBound(captureBounds, wildcard, applyGenericsContext(spec, bound), resolvedMethodGenerics, new HashSet<>())) return false;
         }
 
         ClassNode capturedType = argumentType.getPlainNodeReference();
@@ -2282,12 +2282,53 @@ public abstract class StaticTypeCheckingSupport {
     /**
      * The capture is a subtype of {@code bound} when one of its upper bounds is. The first
      * upper bound that derives from the class of {@code bound} decides, type arguments included.
+     * A bound that is or mentions another type parameter, such as {@code T} or {@code List<T>}
+     * for {@code U} in {@code <T extends Number, U extends T>} or {@code <T extends Number,
+     * U extends List<T>>}, is checked through the bounds of that type parameter.
      */
-    private static boolean captureWithinBound(final List<ClassNode> captureBounds, final ClassNode bound) {
+    private static boolean captureWithinBound(final List<ClassNode> captureBounds, final GenericsType wildcard, final ClassNode bound,
+            final Map<GenericsTypeName, GenericsType> resolvedMethodGenerics, final Set<String> visiting) {
         if (isUnboundedUpper(bound)) return true;
+        if (bound.isGenericsPlaceHolder()) {
+            String name = bound.getUnresolvedName();
+            if (wildcard != null && wildcard.getUpperBounds() != null) {
+                for (ClassNode upper : wildcard.getUpperBounds()) { // "? extends T" is within T
+                    if (upper.isGenericsPlaceHolder() && name.equals(upper.getUnresolvedName())) return true;
+                }
+            }
+            if (!visiting.add(name)) return true;
+            // another argument may widen the type parameter, so its bounds are the constraint
+            GenericsType other = resolvedMethodGenerics.get(new GenericsTypeName(name));
+            GenericsType declared = other != null && other.isPlaceholder() ? other : bound.asGenericsType();
+            ClassNode[] upperBounds = declared.getUpperBounds();
+            if (upperBounds != null) {
+                for (ClassNode upper : upperBounds) {
+                    if (upper == bound) continue;
+                    if (!captureWithinBound(captureBounds, wildcard, upper, resolvedMethodGenerics, visiting)) return false;
+                }
+            }
+            return true;
+        }
         for (ClassNode captureBound : captureBounds) {
             if (implementsInterfaceOrIsSubclassOf(captureBound, bound)) {
-                return GenericsUtils.buildWildcardType(bound).isCompatibleWith(captureBound);
+                ClassNode target = bound;
+                if (GenericsUtils.hasUnresolvedGenerics(bound)) {
+                    // infer the type parameters that the bound mentions from the capture's bound
+                    Map<GenericsTypeName, GenericsType> connections = new HashMap<>();
+                    extractGenericsConnections(connections, captureBound, bound);
+                    for (Map.Entry<GenericsTypeName, GenericsType> entry : connections.entrySet()) {
+                        GenericsType value = entry.getValue();
+                        if (value.isWildcard() || value.isPlaceholder()) continue;
+                        ClassNode placeholder = make(entry.getKey().getName());
+                        placeholder.setGenericsPlaceHolder(true);
+                        if (!captureWithinBound(Collections.singletonList(typeVariableBound(value.getType())), null,
+                                placeholder, resolvedMethodGenerics, visiting)) {
+                            return false;
+                        }
+                    }
+                    target = applyGenericsContext(connections, bound);
+                }
+                return GenericsUtils.buildWildcardType(target).isCompatibleWith(captureBound);
             }
         }
         return false;
