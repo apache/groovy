@@ -43,21 +43,21 @@ final class TypeSignatureWriter {
             writeParameterizedClass(ret, owner);
             ret.append('.');
             ret.append(innerClassSimpleName(printType, owner));
-            BytecodeHelper.addSubTypes(ret, printType.getGenericsTypes(), "<", ">");
+            BytecodeHelper.addSubTypes(ret, signatureArguments(printType), "<", ">");
             return;
         }
         ret.append(BytecodeHelper.getTypeDescription(printType, false));
-        BytecodeHelper.addSubTypes(ret, typeArguments(printType), "<", ">");
+        BytecodeHelper.addSubTypes(ret, signatureArguments(printType), "<", ">");
     }
 
     /**
-     * Type arguments written for {@code printType}. Last resort for JVMS
-     * 4.7.9.1: if a use site still names arguments a class does not declare,
-     * write the raw type javac would emit for the legal type. The type
-     * checker is what must keep {@code Serializable<T>} and {@code Queryable<int>}
-     * out of the AST.
+     * Type arguments safe to write for a resolved declaration. A signature
+     * cannot name arguments a class does not declare. Source use sites are
+     * corrected by {@code ResolveVisitor}; a type built later (a lowest upper
+     * bound, for example) may still carry them, and an unresolved name is
+     * left unchanged.
      */
-    private static GenericsType[] typeArguments(final ClassNode printType) {
+    private static GenericsType[] signatureArguments(final ClassNode printType) {
         GenericsType[] useSite = printType.getGenericsTypes();
         if (useSite == null || useSite.length == 0) {
             return useSite;
@@ -70,24 +70,26 @@ final class TypeSignatureWriter {
     }
 
     /**
-     * Number of type parameters the class actually declares, or {@code -1}
-     * when that is not known yet. An unresolved {@code java.*} name is loaded
-     * so a use site cannot attach arguments to {@code Serializable}.
+     * Number of type parameters the class declares, or {@code -1} when this
+     * writer does not know. Unresolved names are not loaded here. A primary
+     * node with no module is not a source class, so generics on it are not
+     * a declaration.
      */
     private static int declaredTypeParameters(final ClassNode printType) {
-        ClassNode resolved = printType.isResolved() ? printType : printType.redirect();
-        if (resolved != null && resolved.isResolved() && !resolved.isArray()) {
-            return resolved.getTypeClass().getTypeParameters().length;
+        if (printType.isGenericsPlaceHolder()) return -1;
+        ClassNode declared = printType.redirect();
+        if (declared.isArray()) return -1;
+        if (declared.isPrimaryClassNode()) {
+            if (declared.getModule() == null) return 0;
+            GenericsType[] formals = declared.getGenericsTypes();
+            return formals == null ? 0 : formals.length;
         }
-        String name = printType.getName();
-        if (name != null && (name.startsWith("java.") || name.startsWith("javax.") || name.startsWith("groovy."))) {
-            try {
-                return Class.forName(name, false, TypeSignatureWriter.class.getClassLoader()).getTypeParameters().length;
-            } catch (ClassNotFoundException ignored) {
-                return -1;
-            }
+        if (!declared.isResolved()) return -1;
+        if (declared != printType) {
+            GenericsType[] formals = declared.getGenericsTypes();
+            if (formals != null) return formals.length;
         }
-        return -1;
+        return declared.getTypeClass().getTypeParameters().length;
     }
 
     /**

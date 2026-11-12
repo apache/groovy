@@ -192,7 +192,7 @@ final class GinqCompileStaticTest {
                 groupby n % 2 as k
                 select total(n)
             }.toList()
-            assert result.toSet() == [new BigDecimal('4'), new BigDecimal('2')].toSet()
+            assert result.toSet() == [4.0, 2.0].toSet()
         '''
     }
 

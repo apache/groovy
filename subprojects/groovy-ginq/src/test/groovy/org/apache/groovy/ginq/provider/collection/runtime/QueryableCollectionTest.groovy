@@ -1029,6 +1029,30 @@ class QueryableCollectionTest {
         assert result
     }
 
+    @Test
+    void replayServesSharedElementsUnderConcurrentReaders() {
+        Queryable<Integer> once = from(Stream.of(1, null, 2, 3))
+        List<List<Integer>> results = [new ArrayList<Integer>(), new ArrayList<Integer>()]
+        Thread[] threads = new Thread[2]
+        for (int i = 0; i < threads.length; i++) {
+            int index = i
+            threads[i] = new Thread(new Runnable() {
+                @Override
+                void run() {
+                    results[index].addAll(once.stream().collect(Collectors.toList()))
+                }
+            })
+        }
+        for (Thread thread : threads) {
+            thread.start()
+        }
+        for (Thread thread : threads) {
+            thread.join()
+        }
+        assert results[0] == [1, null, 2, 3]
+        assert results[1] == [1, null, 2, 3]
+    }
+
     @ToString
     @EqualsAndHashCode
     static class Person {

@@ -115,7 +115,12 @@ class QueryableHelper {
      * Runs one clause body on the shared pool. The declared type is {@code Object}
      * so static inference never sees {@code CompletableFuture}: a parallel row
      * was being typed as that future, and the generated bridge then cast the row.
-     * The value returned to the runtime is still the future {@code select} unwraps.
+     * The value returned to the runtime is still the future {@code select} unwraps
+     * with {@code CompletableFuture.get}.
+     * <p>
+     * {@code async} is not used. It schedules on the runtime async executor
+     * rather than this helper's pool, and it returns an {@code Awaitable}.
+     * {@code select} casts the row to {@code CompletableFuture}.
      *
      * @param supplier the clause body
      * @return the asynchronous result
@@ -129,7 +134,8 @@ class QueryableHelper {
     /**
      * Runs one clause body on the shared pool. The function types and the
      * declared result are {@code Object}, so a row number is not inferred as
-     * {@code CompletableFuture}.
+     * {@code CompletableFuture}. The pool and the returned future are the same
+     * as {@link #supplyClause(Supplier)}.
      *
      * @param function the clause body
      * @param param the row number, or another value the body reads

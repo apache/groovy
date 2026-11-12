@@ -551,10 +551,14 @@ public interface Queryable<T> {
     }
 
     /**
-     * Coerces this query. {@link Queryable}, {@link List}, {@link Collection} and
-     * {@link Iterable} are answered here. Every other target is delegated to
-     * {@link DefaultGroovyMethods#asType(Object, Class)}, which throws
-     * {@link GroovyCastException} when the value is not compatible with the target.
+     * Coerces this query. {@link List} is {@link #toList()}. {@link Collection},
+     * {@link Iterable} and any other collection type are that list passed to
+     * {@link DefaultGroovyMethods#asType(Collection, Class)}: this query does
+     * not implement those types, so {@link DefaultGroovyMethods#asType(Object, Class)}
+     * cannot walk its elements. Every other target, including {@link Queryable},
+     * is delegated to {@link DefaultGroovyMethods#asType(Object, Class)}, which
+     * throws {@link GroovyCastException} when the value is not compatible with
+     * the target.
      *
      * @param type the requested type
      * @return the coerced value
@@ -565,11 +569,11 @@ public interface Queryable<T> {
         if (type == null) {
             throw new GroovyCastException("Cannot cast '" + getClass().getName() + "' to null");
         }
-        if (type == Queryable.class) {
-            return this;
-        }
-        if (List.class == type || Collection.class == type || Iterable.class == type) {
+        if (type == List.class) {
             return toList();
+        }
+        if (type == Iterable.class || Collection.class.isAssignableFrom(type)) {
+            return DefaultGroovyMethods.asType(toList(), type);
         }
         return DefaultGroovyMethods.asType((Object) this, type);
     }
