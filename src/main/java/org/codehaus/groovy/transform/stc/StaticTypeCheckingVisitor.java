@@ -2255,8 +2255,125 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
         boolean typeVariableEscapes = unresolved && (typeVariableBoundEscapes(leftExpressionType, right)
                 || concreteArgumentContainsWildcard(leftExpressionType, right)
                 || upperBoundEscapes(leftExpressionType, right));
-        if (incompatible || typeVariableEscapes) {
+        if ((incompatible || typeVariableEscapes) && !isApplicableForTargetType(leftExpressionType, rightExpression)) {
             addStaticTypeError("Incompatible generic argument types. Cannot assign " + prettyPrintType(rightExpressionType) + " to: " + prettyPrintType(leftExpressionType), rightExpression);
+        }
+    }
+
+    /**
+     * A call of a generic method in an assignment or return context takes its type arguments
+     * from the target type as well as from the arguments (JLS 18.5.2), so that
+     * {@code List<Class<?>> list = Collections.singletonList(x.getClass())} is accepted although
+     * the arguments alone give {@code List<Class<? extends String>>}. The call is accepted when
+     * the type parameters that the target determines keep their bounds and every argument fits
+     * its parameter with them.
+     */
+    private boolean isApplicableForTargetType(final ClassNode targetType, final Expression call) {
+        if (!(call instanceof MethodCall) || (call instanceof MethodCallExpression && ((MethodCallExpression) call).isUsingGenerics())) return false;
+        MethodNode method = call.getNodeMetaData(DIRECT_METHOD_CALL_TARGET);
+        if (method == null) return false;
+        List<ClassNode> argumentTypes = new ArrayList<>();
+        List<Expression> arguments = new ArrayList<>(InvocationWriter.makeArgumentList(((MethodCall) call).getArguments()).getExpressions());
+        if (method instanceof ExtensionMethodNode) {
+            if (!(call instanceof MethodCallExpression)) return false;
+            Expression receiver = ((MethodCallExpression) call).getObjectExpression();
+            method = ((ExtensionMethodNode) method).getExtensionMethodNode();
+            arguments.add(0, receiver);
+        }
+        GenericsType[] typeParameters = method.getGenericsTypes();
+        ClassNode returnType = method.getReturnType();
+        if (typeParameters == null || typeParameters.length == 0 || !GenericsUtils.hasUnresolvedGenerics(returnType)) return false;
+        Set<String> names = new HashSet<>();
+        for (GenericsType tp : typeParameters) names.add(tp.getName());
+        // only the type parameters of the method may take their type from the target
+        Set<String> used = new HashSet<>();
+        collectTypeVariableNames(returnType, used);
+        if (!names.containsAll(used)) return false;
+
+        ClassNode viewed = returnType;
+        if (!returnType.equals(targetType)) {
+            if (!implementsInterfaceOrIsSubclassOf(returnType, targetType)) return false;
+            viewed = GenericsUtils.parameterizeType(returnType, targetType);
+        }
+        Map<GenericsTypeName, GenericsType> connections = new HashMap<>();
+        extractGenericsConnections(connections, targetType, viewed);
+        connections.keySet().removeIf(name -> !names.contains(name.getName()));
+        for (Map.Entry<GenericsTypeName, GenericsType> entry : connections.entrySet()) {
+            GenericsType value = entry.getValue();
+            if (value.isWildcard()) { // take "? extends B" or "? super B" as B
+                ClassNode bound = value.getLowerBound() != null ? value.getLowerBound()
+                        : value.getUpperBounds() != null ? value.getUpperBounds()[0] : OBJECT_TYPE;
+                entry.setValue(bound.asGenericsType());
+            }
+        }
+        if (connections.isEmpty()) return false;
+
+        for (GenericsType tp : typeParameters) { // the target must keep each type parameter within its bounds
+            GenericsType value = connections.get(new GenericsTypeName(tp.getName()));
+            if (value == null || tp.getUpperBounds() == null) continue;
+            for (ClassNode bound : applyGenericsContext(connections, tp.getUpperBounds())) {
+                if (GenericsUtils.hasUnresolvedGenerics(bound) ? !isAssignableTo(value.getType(), bound)
+                        : !typeCheckMethodArgumentWithGenerics(bound, value.getType(), false)) return false;
+            }
+        }
+
+        Parameter[] parameters = method.getParameters();
+        int n = arguments.size();
+        if (parameters.length == 0 || (n != parameters.length && !isVargs(parameters))) return false;
+        for (int i = 0; i < n; i += 1) {
+            Expression argument = arguments.get(i);
+            ClassNode parameterType = parameters[Math.min(i, parameters.length - 1)].getOriginType();
+            if (!GenericsUtils.hasUnresolvedGenerics(parameterType)) continue;
+            boolean lastArg = i >= parameters.length - 1;
+            if (lastArg && parameterType.isArray() && (n != parameters.length || !getType(argument).isArray())) {
+                parameterType = parameterType.getComponentType();
+            }
+            parameterType = applyGenericsContext(connections, parameterType);
+            if (isNullConstant(argument)) continue;
+            if (argument instanceof ClosureExpression || argument instanceof LambdaExpression || argument instanceof MethodPointerExpression) {
+                // a closure or lambda must return what the parameterized target expects
+                ClassNode expected = null;
+                if (CLOSURE_TYPE.equals(parameterType)) {
+                    GenericsType[] gts = parameterType.getGenericsTypes();
+                    if (gts != null && gts.length == 1) expected = getCombinedBoundType(gts[0]);
+                } else if (isSAMType(parameterType)) {
+                    expected = GenericsUtils.parameterizeSAM(parameterType).getV2();
+                }
+                ClassNode actual = getInferredReturnType(argument);
+                if (expected == null || actual == null || GenericsUtils.hasUnresolvedGenerics(expected)) continue;
+                actual = wrapTypeIfNecessary(actual);
+                if (!isAssignableTo(actual, wrapTypeIfNecessary(expected))
+                        || (expected.isUsingGenerics() && !GenericsUtils.buildWildcardType(expected).isCompatibleWith(actual))) return false;
+                continue;
+            }
+            ClassNode argumentType = wrapTypeIfNecessary(getType(argument));
+            if (GenericsUtils.hasUnresolvedGenerics(parameterType)) {
+                // a type parameter that the target does not determine was inferred from the arguments
+                if (!isAssignableTo(argumentType, parameterType)) return false;
+            } else if (!typeCheckMethodArgumentWithGenerics(parameterType, argumentType, lastArg)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private static void collectTypeVariableNames(final ClassNode type, final Set<String> names) {
+        if (type == null) return;
+        if (type.isArray()) {
+            collectTypeVariableNames(type.getComponentType(), names);
+        } else if (type.isGenericsPlaceHolder()) {
+            names.add(type.getUnresolvedName());
+        } else if (type.getGenericsTypes() != null) {
+            for (GenericsType gt : type.getGenericsTypes()) {
+                if (gt.isPlaceholder()) {
+                    names.add(gt.getName());
+                } else if (gt.isWildcard()) {
+                    collectTypeVariableNames(gt.getLowerBound(), names);
+                    if (gt.getUpperBounds() != null) for (ClassNode bound : gt.getUpperBounds()) collectTypeVariableNames(bound, names);
+                } else {
+                    collectTypeVariableNames(gt.getType(), names);
+                }
+            }
         }
     }
 

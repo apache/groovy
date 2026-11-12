@@ -3125,6 +3125,57 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-12755
+    @Test
+    void testGenericCallTakesTypeArgumentsFromTargetType() {
+        assertScript '''
+            List<Class<?>> single(String x) { Collections.singletonList(x.getClass()) }
+            Optional<Class<?>> optional(String x) { Optional.of(x.getClass()) }
+            Map<String, Class<?>> keyed(String x) { Collections.singletonMap('k', x.getClass()) }
+            List<Class<?>> collected(List<String> strings) { strings.collect { it.getClass() } }
+            List<Number> numbers() { Arrays.asList(1, 2) }
+
+            List<Class<?>> list = Arrays.asList('a'.getClass(), 1.getClass())
+            assert list == [String, Integer]
+            assert single('x') == [String]
+            assert optional('x').get() == String
+            assert keyed('x') == [k: String]
+            assert collected(['a', 'b']) == [String, String]
+            assert numbers() == [1, 2]
+        '''
+
+        shouldFailWithMessages '''
+            List<Class<? extends Number>> test(String x) { Collections.singletonList(x.getClass()) }
+        ''',
+            'Incompatible generic argument types. Cannot assign java.util.List<java.lang.Class<? extends java.lang.String>> to: java.util.List<java.lang.Class<? extends java.lang.Number>>'
+
+        shouldFailWithMessages '''
+            List<Integer> test(List<String> strings) { strings.collect { it.toUpperCase() } }
+        ''',
+            'Incompatible generic argument types. Cannot assign java.util.List<java.lang.String> to: java.util.List<java.lang.Integer>'
+
+        shouldFailWithMessages '''
+            <T extends Number> List<T> numbers(T t) { [t] }
+            List<Object> test() { numbers(1) }
+        ''',
+            'Incompatible generic argument types. Cannot assign java.util.List<java.lang.Integer> to: java.util.List<java.lang.Object>'
+    }
+
+    // GROOVY-12755
+    @Test
+    void testValueOfGenericTypeDoesNotTakeTypeArgumentsFromTargetType() {
+        // only a call of a generic method is inferred from its target
+        shouldFailWithMessages '''
+            List<Class<?>> test(List<String> strings) { strings*.getClass() }
+        ''',
+            'Incompatible generic argument types. Cannot assign java.util.List<java.lang.Class<? extends java.lang.String>> to: java.util.List<java.lang.Class<?>>'
+
+        shouldFailWithMessages '''
+            List<Class<?>> test(List<Class<? extends String>> classes) { classes }
+        ''',
+            'Incompatible generic argument types. Cannot assign java.util.List<java.lang.Class<? extends java.lang.String>> to: java.util.List<java.lang.Class<?>>'
+    }
+
     // GROOVY-8961, GROOVY-9915
     @Test
     void testShouldUseMethodGenericType3() {
