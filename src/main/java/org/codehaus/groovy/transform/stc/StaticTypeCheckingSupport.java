@@ -1676,6 +1676,12 @@ public abstract class StaticTypeCheckingSupport {
                     && sameTypeArgument(left.getComponentType(), right.getComponentType());
         }
         if (!left.equals(right)) return false;
+        // Outer<T>.Inner and Outer.Inner are different types; the enclosing type of a member's
+        // type is not substituted from the receiver, so Outer<T>.Inner may be Outer<String>.Inner
+        ClassNode leftOuter = left.getOuterClassType(), rightOuter = right.getOuterClassType();
+        if (isParameterized(leftOuter) != isParameterized(rightOuter)) return false;
+        if (isParameterized(leftOuter) && !GenericsUtils.hasUnresolvedGenerics(leftOuter)
+                && !GenericsUtils.hasUnresolvedGenerics(rightOuter) && !sameTypeArgument(leftOuter, rightOuter)) return false;
         GenericsType[] leftArgs = left.getGenericsTypes();
         GenericsType[] rightArgs = right.getGenericsTypes();
         // Null or empty arguments are a raw type or an uninferred diamond.
@@ -1804,6 +1810,10 @@ public abstract class StaticTypeCheckingSupport {
             ClassNode sourceBound = soleUpperBound(sourceArgs[i]);
             if (targetBound != null && sourceBound != null) {
                 if (upperBoundNotWithin(sourceBound, targetBound)) return true;
+            } else if (targetBound != null && !sourceArgs[i].isWildcard() && !sourceArgs[i].isPlaceholder()
+                    && isParameterized(targetBound.getOuterClassType()) && targetBound.equals(sourceArgs[i].getType())
+                    && !isParameterized(sourceArgs[i].getType().getOuterClassType())) {
+                return true; // Outer.Inner is not within "? extends Outer<T>.Inner"
             } else if (withinBound && rawTypeArgument(sourceArgs[i], targetArgs[i])) {
                 return true;
             }
