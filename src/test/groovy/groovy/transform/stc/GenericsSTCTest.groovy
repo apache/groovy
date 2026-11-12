@@ -3224,6 +3224,57 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
             'Incompatible generic argument types. Cannot assign java.lang.Class<? extends java.util.ArrayList> to: java.lang.Class<? extends java.util.List<java.lang.String>>'
     }
 
+    // GROOVY-12755
+    @Test
+    void testSimpleNameOfInnerClassIsNotRawAsTypeArgument() {
+        for (assignment in ['List<Inner> a = raw', 'List<? extends Inner> b = raw', 'Map<String, Inner> c = rawMap']) {
+            shouldFailWithMessages """
+                class Outer<T> {
+                    class Inner {
+                    }
+                    void test(List<Outer.Inner> raw, Map<String, Outer.Inner> rawMap) {
+                        $assignment
+                    }
+                }
+            """,
+                'Incompatible generic argument types. Cannot assign java.util.'
+        }
+
+        shouldFailWithMessages '''
+            class Outer<T> {
+                class Inner {
+                }
+                void test(List<Inner> inner) {
+                    List<Outer.Inner> raw = inner
+                }
+            }
+        ''',
+            'Incompatible generic argument types. Cannot assign java.util.List<Outer<T>.Inner> to: java.util.List<Outer.Inner>'
+
+        assertScript '''
+            class Outer<T> {
+                class Inner {
+                    T value
+                }
+                List<Inner> list = []
+                List<Inner> copy() {
+                    List<Inner> copy = new ArrayList<>(list)
+                    copy.addAll(list.findAll { true })
+                    copy
+                }
+            }
+            class Sub extends Outer<String> {
+                List<Outer<String>.Inner> spelled() { list }
+            }
+            List<Outer<String>.Inner> viaReceiver(Outer<String> outer) { outer.list }
+
+            def sub = new Sub()
+            assert sub.copy() == []
+            assert sub.spelled() == []
+            assert viaReceiver(sub) == []
+        '''
+    }
+
     // GROOVY-8961, GROOVY-9915
     @Test
     void testShouldUseMethodGenericType3() {
