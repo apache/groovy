@@ -2043,7 +2043,10 @@ public abstract class StaticTypeCheckingSupport {
         // for that receiver; for now we skip receiver-based checks in that case
         boolean skipBecauseOfInnerClassNotReceiver = !implementsInterfaceOrIsSubclassOf(receiver, candidateMethod.getDeclaringClass());
         if (!skipBecauseOfInnerClassNotReceiver) {
-            if (candidateMethod instanceof ConstructorNode) {
+            if (candidateMethod instanceof ConstructorNode && isDiamondReceiver(receiver)) {
+                // "new C<>(...)": the type parameters of C are inferred from the arguments, like those of a generic method
+                GenericsUtils.extractPlaceholders(GenericsUtils.makeClassSafe0(OBJECT_TYPE, candidateMethod.getDeclaringClass().getGenericsTypes()), candidateGenerics);
+            } else if (candidateMethod instanceof ConstructorNode) {
                 candidateGenerics = GenericsUtils.extractPlaceholders(receiver);
                 fixedPlaceHolders = new HashSet<>(candidateGenerics.keySet());
             } else {
@@ -2086,7 +2089,7 @@ public abstract class StaticTypeCheckingSupport {
             }
             // a parameter typed by type variables in scope, not by the method's own, is checked as an assignment;
             // take its type before the argument is used to infer anything
-            if (!failure && !skipBecauseOfInnerClassNotReceiver && !isRawReceiver(receiver)
+            if (!failure && !skipBecauseOfInnerClassNotReceiver && !isRawReceiver(receiver) && !isDiamondReceiver(receiver)
                     && !mentionsTypeParameterOf(parameterType, candidateMethod)) {
                 ClassNode resolvedType = applyGenericsContext(candidateGenerics, parameterType);
                 if (GenericsUtils.hasUnresolvedGenerics(resolvedType) && !GenericsUtils.hasUnresolvedGenerics(argumentType)
@@ -2105,6 +2108,13 @@ public abstract class StaticTypeCheckingSupport {
 
     private static boolean isRawReceiver(final ClassNode receiver) {
         return receiver.getGenericsTypes() == null && receiver.redirect().getGenericsTypes() != null && !receiver.isGenericsPlaceHolder();
+    }
+
+    /**
+     * For {@code new C<>(...)} the type parameters of {@code C} are inferred from the arguments.
+     */
+    private static boolean isDiamondReceiver(final ClassNode receiver) {
+        return receiver.getGenericsTypes() != null && receiver.getGenericsTypes().length == 0;
     }
 
     private static boolean mentionsTypeParameterOf(final ClassNode type, final MethodNode method) {

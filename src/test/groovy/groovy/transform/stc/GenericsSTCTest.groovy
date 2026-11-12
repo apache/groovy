@@ -5833,6 +5833,38 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-12755
+    @Test
+    void testWildcardArgumentForDiamondConstructor() {
+        assertScript '''
+            class Holder<T extends Number> {
+                T value
+                Holder(List<T> list) { value = list.get(0) }
+            }
+            class Any<T> {
+                T value
+                Any(List<T> list) { value = list.get(0) }
+            }
+            def test(List<? extends Integer> list) {
+                Number n = new Holder<>(list).value
+                assert n == 4
+                assert new Any<>(list).value == 4
+            }
+            test([4])
+        '''
+
+        shouldFailWithMessages '''
+            class Holder<T extends Number> {
+                T value
+                Holder(List<T> list) { value = list.get(0) }
+            }
+            def test(List<? extends String> list) {
+                new Holder<>(list).value
+            }
+        ''',
+            'Holder#<init>(java.util.List<'
+    }
+
     // GROOVY-5885
     @Test
     void testMethodLevelGenericsForMethodCall2() {
