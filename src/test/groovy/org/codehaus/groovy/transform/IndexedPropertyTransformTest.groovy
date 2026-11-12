@@ -96,4 +96,40 @@ class IndexedPropertyTransformTest extends GroovyShellTestCase {
         '''
     }
 
+    // GROOVY-12730
+    void testRecordProperty() {
+        assertScript '''
+            import groovy.transform.*
+            import static groovy.test.GroovyAssert.shouldFail
+
+            record Demo1(@IndexedProperty List<Integer> foo) {}
+            @RecordType
+            class Demo2 {
+                @IndexedProperty List<Integer> foo
+            }
+            @RecordBase
+            @TupleConstructor
+            class Demo3 {
+                @IndexedProperty Integer[] foo
+            }
+
+            assert Demo1.getMethod('getFoo', int)
+            shouldFail(NoSuchMethodException) {
+                Demo1.getMethod('setFoo', int, Integer)
+            }
+            assert Demo2.getMethod('getFoo', int)
+            shouldFail(NoSuchMethodException) {
+                Demo2.getMethod('setFoo', int, Integer)
+            }
+            assert Demo3.getMethod('getFoo', int)
+            shouldFail(NoSuchMethodException) {
+                Demo3.getMethod('setFoo', int, Integer)
+            }
+
+            assert new Demo1([1, 2]).getFoo(1) == 2
+            assert new Demo2([1, 2]).getFoo(1) == 2
+            assert new Demo3([1, 2] as Integer[]).getFoo(1) == 2
+        '''
+    }
+
 }

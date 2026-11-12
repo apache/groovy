@@ -85,6 +85,10 @@ else (no)
 endif
 ....
 
+A method call or property access without an explicit receiver inside a closure first selects its receiver from the
+closure's owner and delegate, as described in the
+link:core-closures.html#closure-resolution-rules[closure resolution rules]. The steps above then apply to that receiver.
+
 === GroovyObject interface
 
 gapi:groovy.lang.GroovyObject[] is the main interface in Groovy as the `Object` class is in Java. `GroovyObject` has a default implementation in the gapi:groovy.lang.GroovyObjectSupport[] class and it is responsible to transfer invocation to the gapi:groovy.lang.MetaClass[] object. The `GroovyObject` source looks like this:

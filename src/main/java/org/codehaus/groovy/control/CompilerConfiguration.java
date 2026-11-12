@@ -104,7 +104,7 @@ public class CompilerConfiguration {
      * {@link #getOptimizationOptions()} or the {@code groovy.runtime.package.check}
      * system property.
      *
-     * @since 7.0.0
+     * @since 6.0.1
      */
     @Incubating
     public static final String RUNTIME_PACKAGE_CHECK = "runtimePackageCheck";
@@ -628,6 +628,7 @@ public class CompilerConfiguration {
      *   <tr><td><code>groovy.attach.groovydoc</code></td><td>{@link #getOptimizationOptions}</td></tr>
      *   <tr><td><code>groovy.attach.runtime.groovydoc</code></td><td>{@link #getOptimizationOptions}</td></tr>
      *   <tr><td><code>groovy.parser.error.recovery</code></td><td>{@link #getOptimizationOptions} / {@link #isErrorRecoveryEnabled}</td></tr>
+     *   <tr><td><code>groovy.runtime.package.check</code></td><td>{@link #getOptimizationOptions}</td></tr>
      * </table>
      * </blockquote>
      * Additional language-compatibility system properties (not optimization options):
