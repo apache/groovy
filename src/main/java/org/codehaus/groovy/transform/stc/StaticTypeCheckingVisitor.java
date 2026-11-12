@@ -351,6 +351,7 @@ import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.pretty
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.resolveClassNodeGenerics;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.toMethodParametersString;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.typeCheckMethodArgumentWithGenerics;
+import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.typeVariableArgumentGetsWildcard;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.typeCheckMethodsWithGenerics;
 import static org.codehaus.groovy.transform.stc.StaticTypesMarker.CLOSURE_ARGUMENTS;
 import static org.codehaus.groovy.transform.stc.StaticTypesMarker.COMPOUND_ASSIGN_TARGET;
@@ -2167,6 +2168,7 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
         boolean incompatible = !unresolved && (
                 !GenericsUtils.buildWildcardType(leftExpressionType).isCompatibleWith(right)
                 || concreteArgumentContainsWildcard(leftExpressionType, right)
+                || typeVariableArgumentGetsWildcard(leftExpressionType, right)
                 || upperBoundEscapes(leftExpressionType, right));
         // a type variable that is not in scope is a type parameter of a called method that the
         // arguments left open; it has no type yet to check against the target

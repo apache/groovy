@@ -4611,6 +4611,63 @@ final class GenericsJavaCompatibilityTest {
     }
 
     /**
+     * JLS 4.3.2, 4.5.1: for a value {@code t} of a type variable {@code T}, {@code t.getClass()}
+     * is a {@code Class<? extends Object>}, which is neither a {@code Class<T>} nor within
+     * {@code ? extends T}.
+     */
+    @Test
+    void testNegativeClassOfValueOfTypeVariable() {
+        [
+            ClassOfTypeVariable: '''
+                static <T> Class<T> typeOf(T t) { return t.getClass(); }
+            ''',
+            ClassOfTypeVariableArgument: '''
+                static class Box<T> {
+                    void accept(Class<? extends T> type) {}
+                    void test(T t) { accept(t.getClass()); }
+                }
+            ''',
+            ClassOfTypeVariableKey: '''
+                static class Box<T> {
+                    Map<Class<? extends T>, T> byType = new HashMap<>();
+                    void test(T t) { byType.put(t.getClass(), t); }
+                }
+            '''
+        ].each { String name, String members ->
+            assertNegativeCompile("gls.generics.test.$name", """
+                package gls.generics.test;
+                import java.util.*;
+                public class $name {
+                    $members
+                }
+            """, 'incompatible types', 'Cannot')
+        }
+    }
+
+    /**
+     * JLS 15.12.2.5: with {@code x.getClass()} typed {@code Class<? extends StringBuilder>}, a
+     * value made from it is a {@code StringBuilder}, which selects the most specific overload.
+     */
+    @Test
+    void testClassOfReceiverSelectsOverloadForItsType() {
+        final String className = 'gls.generics.test.GetClassOverload'
+        final String javaSrc = '''
+            package gls.generics.test;
+            public class GetClassOverload {
+                static String f(Object o) { return "object"; }
+                static String f(CharSequence o) { return "char sequence"; }
+                static String f(StringBuilder o) { return "string builder"; }
+                public static String test() throws Exception {
+                    StringBuilder x = new StringBuilder();
+                    Object o = new StringBuilder();
+                    return f(x.getClass().cast(o)) + ":" + f(x.getClass().getDeclaredConstructor().newInstance());
+                }
+            }
+        '''
+        assertPositive(className, javaSrc, 'string builder:string builder')
+    }
+
+    /**
      * JLS 18.5.2: the target type does not widen a type argument beyond what the arguments allow.
      */
     @Test
