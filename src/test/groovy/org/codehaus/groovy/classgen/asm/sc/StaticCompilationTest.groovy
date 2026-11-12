@@ -250,7 +250,8 @@ final class StaticCompilationTest extends AbstractBytecodeTestCase {
     }
 
     // GROOVY-11288
-    // GROOVY-12097: receiver and index are evaluated before the right-hand side
+    // GROOVY-12097: receiver, index, then right-hand side
+    // GROOVY-10657: those operands are the store arguments; no temporary is allocated
     @Test
     void testSubscriptAssignment1() {
         assert compile(method: 'm', '''@groovy.transform.CompileStatic
@@ -261,18 +262,70 @@ final class StaticCompilationTest extends AbstractBytecodeTestCase {
                 'L0',
                 'LINENUMBER 3',
                 'ALOAD 1',
-                'ASTORE 2',
                 'ICONST_0',
-                'ISTORE 3',
                 'ICONST_1',
-                'ISTORE 4',
-                'ALOAD 2',
-                'ILOAD 3',
-                'ILOAD 4',
                 'INVOKESTATIC org/codehaus/groovy/runtime/BytecodeInterface8.intArraySet ([III)V',
                 'L1',
                 'LINENUMBER 4',
                 'RETURN'
+            ])
+    }
+
+    // GROOVY-10657: a reference right-hand side must not be kept in a local
+    @Test
+    void testSubscriptAssignmentReference() {
+        assert compile(method: 'm', '''@groovy.transform.CompileStatic
+            void m(Object[] a, Object v) {
+                a[0] = v
+            }
+        ''').hasStrictSequence([
+                'L0',
+                'LINENUMBER 3',
+                'ALOAD 1',
+                'ICONST_0',
+                'ALOAD 2',
+                'INVOKESTATIC org/codehaus/groovy/runtime/BytecodeInterface8.objectArraySet ([Ljava/lang/Object;ILjava/lang/Object;)V',
+                'L1',
+                'LINENUMBER 4',
+                'RETURN'
+            ])
+    }
+
+    // GROOVY-10657: the assignment value is the right-hand side, duplicated under the store operands
+    @Test
+    void testSubscriptAssignmentValue() {
+        assert compile(method: 'm', '''@groovy.transform.CompileStatic
+            Object m(Object[] a, Object v) {
+                return (a[0] = v)
+            }
+        ''').hasStrictSequence([
+                'L0',
+                'LINENUMBER 3',
+                'ALOAD 1',
+                'ICONST_0',
+                'ALOAD 2',
+                'DUP_X2',
+                'INVOKESTATIC org/codehaus/groovy/runtime/BytecodeInterface8.objectArraySet ([Ljava/lang/Object;ILjava/lang/Object;)V',
+                'ARETURN'
+            ])
+    }
+
+    // GROOVY-10657: a category-2 value uses DUP2_X2 so the copy keeps both words
+    @Test
+    void testSubscriptAssignmentLongValue() {
+        assert compile(method: 'm', '''@groovy.transform.CompileStatic
+            long m(long[] a) {
+                return (a[0] = 1L)
+            }
+        ''').hasStrictSequence([
+                'L0',
+                'LINENUMBER 3',
+                'ALOAD 1',
+                'ICONST_0',
+                'LCONST_1',
+                'DUP2_X2',
+                'INVOKESTATIC org/codehaus/groovy/runtime/BytecodeInterface8.lArraySet ([JIJ)V',
+                'LRETURN'
             ])
     }
 

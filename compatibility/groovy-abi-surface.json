@@ -1447,6 +1447,42 @@
                 },
                 {
                     "kind": "method",
+                    "name": "dispatch",
+                    "descriptor": "(I[Ljava/lang/Object;)Ljava/lang/Object;",
+                    "since": "6.0.0",
+                    "deprecated-since": null,
+                    "tombstone": null,
+                    "type": "org.codehaus.groovy.runtime.GeneratedDispatcher"
+                },
+                {
+                    "kind": "method",
+                    "name": "dispatch1",
+                    "descriptor": "(ILjava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;",
+                    "since": "6.0.0",
+                    "deprecated-since": null,
+                    "tombstone": null,
+                    "type": "org.codehaus.groovy.runtime.GeneratedDispatcher$Arity1"
+                },
+                {
+                    "kind": "method",
+                    "name": "dispatch2",
+                    "descriptor": "(ILjava/lang/Object;Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;",
+                    "since": "6.0.0",
+                    "deprecated-since": null,
+                    "tombstone": null,
+                    "type": "org.codehaus.groovy.runtime.GeneratedDispatcher$Arity2"
+                },
+                {
+                    "kind": "method",
+                    "name": "<init>",
+                    "descriptor": "(Lorg/codehaus/groovy/runtime/GeneratedDispatcher;Lorg/codehaus/groovy/runtime/GeneratedDispatcher$Arity1;Lorg/codehaus/groovy/runtime/GeneratedDispatcher$Arity2;)V",
+                    "since": "6.0.0",
+                    "deprecated-since": null,
+                    "tombstone": null,
+                    "type": "org.codehaus.groovy.runtime.GeneratedDispatcher$Bundle"
+                },
+                {
+                    "kind": "method",
                     "name": "getGroovyObjectProperty",
                     "descriptor": "(Lgroovy/lang/GroovyObject;Ljava/lang/String;)Ljava/lang/Object;",
                     "since": "1.0.0",
@@ -2188,6 +2224,15 @@
                     "name": "matchRegex",
                     "descriptor": "(Ljava/lang/Object;Ljava/lang/Object;)Z",
                     "since": "1.0.0",
+                    "deprecated-since": null,
+                    "tombstone": null,
+                    "type": "org.codehaus.groovy.runtime.ScriptBytecodeAdapter"
+                },
+                {
+                    "kind": "method",
+                    "name": "openClosure",
+                    "descriptor": "(Ljava/lang/Object;Ljava/lang/Object;ILjava/lang/String;[Ljava/lang/Object;[Ljava/lang/Class;ZZ)Lgroovy/lang/Closure;",
+                    "since": "7.0.0",
                     "deprecated-since": null,
                     "tombstone": null,
                     "type": "org.codehaus.groovy.runtime.ScriptBytecodeAdapter"
@@ -2961,6 +3006,15 @@
                     "kind": "method",
                     "name": "packedDispatchers",
                     "descriptor": "(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;)Ljava/lang/invoke/CallSite;",
+                    "since": "6.0.0",
+                    "deprecated-since": null,
+                    "tombstone": null,
+                    "type": "org.codehaus.groovy.vmplugin.v8.IndyInterface"
+                },
+                {
+                    "kind": "method",
+                    "name": "packedDispatchers",
+                    "descriptor": "(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;Ljava/lang/invoke/MethodHandle;)Ljava/lang/invoke/CallSite;",
                     "since": "6.0.0",
                     "deprecated-since": null,
                     "tombstone": null,
