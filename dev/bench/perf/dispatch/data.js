@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1794380494601,
+  "lastUpdate": 1794466937383,
   "repoUrl": "https://github.com/apache/groovy",
   "entries": {
     "Dispatch Metrics": [
@@ -6749,6 +6749,58 @@ window.BENCHMARK_DATA = {
           {
             "name": "classes.groovyRuntime",
             "value": 1567,
+            "unit": "classes"
+          },
+          {
+            "name": "bytecode.corpus.bytes",
+            "value": 193866,
+            "unit": "bytes"
+          },
+          {
+            "name": "bytecode.corpus.classes",
+            "value": 57,
+            "unit": "classes"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "Paul King",
+            "username": "paulk-asert",
+            "email": "paulk@asert.com.au"
+          },
+          "committer": {
+            "name": "Paul King",
+            "username": "paulk-asert",
+            "email": "paulk@asert.com.au"
+          },
+          "id": "df7a3b2d81751c8fe257aad187f60cddb5d5f51e",
+          "message": "docs: clarification of semantics around generics with STC",
+          "timestamp": "2026-11-12T06:58:07Z",
+          "url": "https://github.com/apache/groovy/commit/df7a3b2d81751c8fe257aad187f60cddb5d5f51e"
+        },
+        "date": 1794466936568,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "classes.loaded.total",
+            "value": 4065,
+            "unit": "classes"
+          },
+          {
+            "name": "classes.lambdaForms",
+            "value": 441,
+            "unit": "classes"
+          },
+          {
+            "name": "classes.hidden",
+            "value": 870,
+            "unit": "classes"
+          },
+          {
+            "name": "classes.groovyRuntime",
+            "value": 1568,
             "unit": "classes"
           },
           {
