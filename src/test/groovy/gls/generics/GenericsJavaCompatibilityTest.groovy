@@ -4452,6 +4452,47 @@ final class GenericsJavaCompatibilityTest {
     }
 
     /**
+     * JLS 18.5.2: a generic method invocation in an assignment or return context takes its type
+     * arguments from the target type as well, so {@code Collections.singletonList(x.getClass())}
+     * is a {@code List<Class<?>>} when that is the target.
+     */
+    @Test
+    void testGenericCallOfGetClassTakesTypeArgumentsFromTargetType() {
+        final String className = 'gls.generics.test.GetClassTargetTyped'
+        final String javaSrc = '''
+            package gls.generics.test;
+            import java.util.*;
+            public class GetClassTargetTyped {
+                static List<Class<?>> single(String x) { return Collections.singletonList(x.getClass()); }
+                static Optional<Class<?>> optional(String x) { return Optional.of(x.getClass()); }
+                static List<Number> numbers() { return Arrays.asList(1, 2); }
+                public static String test() {
+                    List<Class<?>> list = Arrays.asList("a".getClass(), Integer.valueOf(1).getClass());
+                    String name = optional("x").get().getSimpleName();
+                    return list.size() + ":" + single("x").get(0).getSimpleName() + ":" + name + ":" + numbers();
+                }
+            }
+        '''
+        assertPositive(className, javaSrc, '2:String:String:[1, 2]')
+    }
+
+    /**
+     * JLS 18.5.2: the target type does not widen a type argument beyond what the arguments allow.
+     */
+    @Test
+    void testNegativeGenericCallOfGetClassOutsideTargetType() {
+        final String className = 'gls.generics.test.GetClassTargetTypedNegative'
+        final String javaSrc = '''
+            package gls.generics.test;
+            import java.util.*;
+            public class GetClassTargetTypedNegative {
+                static List<Class<? extends Number>> single(String x) { return Collections.singletonList(x.getClass()); }
+            }
+        '''
+        assertNegativeCompile(className, javaSrc, 'incompatible types', 'Incompatible generic argument types')
+    }
+
+    /**
      * JLS 4.5.1, 4.10.2: {@code ? extends A} is contained by {@code ? extends B} only when
      * {@code A} is a subtype of {@code B}, and a type that is not a type variable is not a
      * subtype of one. So {@code Class<? extends Number>} is not a {@code Class<? extends T>}.
