@@ -316,7 +316,7 @@ public class GenericsUtils {
                 cn = ClassHelper.getNextSuperClass(cn, hint);
                 if (hasUnresolvedGenerics(cn)) {
                     gt = createGenericsSpec(hint);
-                    extractSuperClassGenerics(hint, cn, gt);
+                    extractSuperClassGenerics(hint, cn, gt, true);
                     cn = correctToGenericsSpecRecurse(gt, cn);
                 }
             } while (!cn.equals(hint));
@@ -327,7 +327,7 @@ public class GenericsUtils {
         cn = target.redirect();
         gt = createGenericsSpec(hint);
         gt = createGenericsSpec(cn, gt);
-        extractSuperClassGenerics(hint, cn, gt);
+        extractSuperClassGenerics(hint, cn, gt, true); // GROOVY-11521
         return correctToGenericsSpecRecurse(gt, cn);
     }
 
@@ -472,6 +472,15 @@ public class GenericsUtils {
         if (type.isGenericsPlaceHolder() && !exclusions.contains(name)) {
             exclusions = plus(exclusions, name); // GROOVY-7722
             type = genericsSpec.get(name);
+            if (type != null) {
+                // A placeholder used as a type denotes its bound. The wildcard
+                // itself is restored only when that placeholder is a type argument.
+                GenericsType wildcard = preservedWildcard(type);
+                if (wildcard != null) {
+                    ClassNode[] upper = wildcard.getUpperBounds();
+                    type = (upper != null && upper.length > 0) ? upper[0] : wildcard.getType();
+                }
+            }
             if (type != null && type.isGenericsPlaceHolder()) {
                 if (type.getGenericsTypes() == null) {
                     ClassNode placeholder = ClassHelper.makeWithoutCaching(type.getUnresolvedName());
@@ -490,27 +499,26 @@ public class GenericsUtils {
             for (int i = 0; i < newgTypes.length; i++) {
                 GenericsType oldgType = oldgTypes[i];
                 if (oldgType.isWildcard()) {
-                    ClassNode[] oldUpper = oldgType.getUpperBounds();
-                    ClassNode[] upper = null;
-                    if (oldUpper != null) {
-                        // correct "? extends T" or "? extends T & I"
-                        upper = new ClassNode[oldUpper.length];
-                        for (int j = 0; j < oldUpper.length; j++) {
-                            upper[j] = correctToGenericsSpecRecurse(genericsSpec, oldUpper[j], exclusions);
-                        }
-                    }
-                    ClassNode oldLower = oldgType.getLowerBound();
-                    ClassNode lower = null;
-                    if (oldLower != null) {
-                        // correct "? super T"
-                        lower = correctToGenericsSpecRecurse(genericsSpec, oldLower, exclusions);
-                    }
-                    GenericsType fixed = new GenericsType(oldgType.getType(), upper, lower);
-                    fixed.setWildcard(true);
-                    newgTypes[i] = fixed;
+                    newgTypes[i] = reapplyWildcard(genericsSpec, oldgType, exclusions);
                 } else if (oldgType.isPlaceholder()) {
                     // correct "T"
-                    newgTypes[i] = genericsSpec.containsKey(oldgType.getName())? new GenericsType(genericsSpec.get(oldgType.getName())): erasure(oldgType);
+                    String placeholderName = oldgType.getName();
+                    if (genericsSpec.containsKey(placeholderName)) {
+                        ClassNode resolved = genericsSpec.get(placeholderName);
+                        GenericsType wildcard = preservedWildcard(resolved);
+                        if (wildcard != null && !exclusions.contains(placeholderName)) {
+                            // A bound may mention this placeholder (F-bounded or
+                            // self-referential). Record it so that nested correction
+                            // does not reapply the same wildcard.
+                            newgTypes[i] = reapplyWildcard(genericsSpec, wildcard, plus(exclusions, placeholderName));
+                        } else if (wildcard != null) {
+                            newgTypes[i] = new GenericsType(oldgType.getType(), oldgType.getUpperBounds(), oldgType.getLowerBound());
+                        } else {
+                            newgTypes[i] = new GenericsType(resolved);
+                        }
+                    } else {
+                        newgTypes[i] = erasure(oldgType);
+                    }
                 } else {
                     // correct "List<T>", etc.
                     newgTypes[i] = new GenericsType(correctToGenericsSpecRecurse(genericsSpec, correctToGenericsSpec(genericsSpec, oldgType), exclusions));
@@ -518,6 +526,53 @@ public class GenericsUtils {
             }
         }
         return makeClassSafeWithGenerics(type, newgTypes);
+    }
+
+    /**
+     * Corrects the bounds of a wildcard and returns a new wildcard type argument.
+     */
+    private static GenericsType reapplyWildcard(final Map<String, ClassNode> genericsSpec, final GenericsType wildcard, final List<String> exclusions) {
+        ClassNode[] oldUpper = wildcard.getUpperBounds();
+        ClassNode[] upper = null;
+        if (oldUpper != null) {
+            // correct "? extends T" or "? extends T & I"
+            upper = new ClassNode[oldUpper.length];
+            for (int j = 0; j < oldUpper.length; j++) {
+                upper[j] = correctToGenericsSpecRecurse(genericsSpec, oldUpper[j], exclusions);
+            }
+        }
+        ClassNode oldLower = wildcard.getLowerBound();
+        ClassNode lower = null;
+        if (oldLower != null) {
+            // correct "? super T"
+            lower = correctToGenericsSpecRecurse(genericsSpec, oldLower, exclusions);
+        }
+        GenericsType fixed = new GenericsType(wildcard.getType(), upper, lower);
+        fixed.setWildcard(true);
+        return fixed;
+    }
+
+    /**
+     * The generics spec is {@code Map<String, ClassNode>}, which has no wildcard
+     * flag. A bounded wildcard is carried as {@code Object} with one wildcard
+     * type argument so {@code ? extends} / {@code ? super} survive substitution.
+     * Unbounded {@code ?} is not carried; callers keep the declared bound.
+     */
+    private static ClassNode wildcardCarrier(final GenericsType wildcard) {
+        ClassNode carrier = ClassHelper.makeWithoutCaching(Object.class, false);
+        GenericsType copy = new GenericsType(wildcard.getType(), wildcard.getUpperBounds(), wildcard.getLowerBound());
+        copy.setWildcard(true);
+        carrier.setGenericsTypes(new GenericsType[]{copy});
+        return carrier;
+    }
+
+    private static GenericsType preservedWildcard(final ClassNode type) {
+        if (type == null || !ClassHelper.isObjectType(type)) return null;
+        GenericsType[] genericsTypes = type.getGenericsTypes();
+        if (genericsTypes == null || genericsTypes.length != 1 || !genericsTypes[0].isWildcard()) return null;
+        ClassNode base = genericsTypes[0].getType();
+        if (base == null || !"?".equals(base.getUnresolvedName())) return null;
+        return genericsTypes[0];
     }
 
     /**
@@ -764,16 +819,25 @@ public class GenericsUtils {
      * @since 2.3.1
      */
     public static void extractSuperClassGenerics(final ClassNode type, final ClassNode target, final Map<String, ClassNode> spec) {
+        extractSuperClassGenerics(type, target, spec, false);
+    }
+
+    /**
+     * @param preserveWildcards when {@code true}, a bounded wildcard type argument
+     *        ({@code ? extends X} / {@code ? super X}) is recorded as a carrier
+     *        instead of its bound. Unbounded {@code ?} still uses the declared bound.
+     */
+    private static void extractSuperClassGenerics(final ClassNode type, final ClassNode target, final Map<String, ClassNode> spec, final boolean preserveWildcards) {
     // TODO: this is very similar to StaticTypesCheckingSupport#extractGenericsConnections, using ClassNode instead of GenericsType
         if (target == null || target == type) return;
         if (target.isGenericsPlaceHolder()) {
             spec.put(target.getUnresolvedName(), type);
         } else if (type.isArray() && target.isArray()) {
-            extractSuperClassGenerics(type.getComponentType(), target.getComponentType(), spec);
+            extractSuperClassGenerics(type.getComponentType(), target.getComponentType(), spec, preserveWildcards);
         } else if (type.isArray() && target.getName().equals(JAVA_LANG_OBJECT)) {
             // Object is the superclass of an array, but no generics are involved
         } else if (type.equals(target) || !implementsInterfaceOrIsSubclassOf(type, target)) {
-            extractSuperClassGenerics(type.getGenericsTypes(), target.getGenericsTypes(), spec);
+            extractSuperClassGenerics(type.getGenericsTypes(), target.getGenericsTypes(), spec, preserveWildcards);
         } else {
             ClassNode superClass = getSuperClass(type, target);
             if (superClass != null) {
@@ -790,14 +854,19 @@ public class GenericsUtils {
                                 cn = gt.getUpperBounds() != null ? gt.getUpperBounds()[0] : gt.getType().redirect();
                             } else {
                                 GenericsType gt = ta[i];
-                                cn = gt.isWildcard() && gt.getUpperBounds() != null ? gt.getUpperBounds()[0] : gt.getType();
+                                // Unbounded wildcards took the branch above, so a wildcard here is bounded.
+                                if (preserveWildcards && gt.isWildcard()) {
+                                    cn = wildcardCarrier(gt); // GROOVY-11521
+                                } else {
+                                    cn = gt.isWildcard() && gt.getUpperBounds() != null ? gt.getUpperBounds()[0] : gt.getType();
+                                }
                             }
                             genericsSpec.put(tp[i].getName(), cn);
                         }
                         superClass = correctToGenericsSpecRecurse(genericsSpec, superClass);
                     }
                 }
-                extractSuperClassGenerics(superClass, target, spec);
+                extractSuperClassGenerics(superClass, target, spec, preserveWildcards);
             } else {
                 // if we reach here, we have an unhandled case
                 throw new GroovyBugError("The type " + type + " seems not to normally extend " + target + ". Sorry, I cannot handle this.");
@@ -812,7 +881,7 @@ public class GenericsUtils {
         return ClassHelper.getNextSuperClass(ClassHelper.isPrimitiveType(type) ? ClassHelper.getWrapper(type) : type, target);
     }
 
-    private static void extractSuperClassGenerics(final GenericsType[] usage, final GenericsType[] declaration, final Map<String, ClassNode> spec) {
+    private static void extractSuperClassGenerics(final GenericsType[] usage, final GenericsType[] declaration, final Map<String, ClassNode> spec, final boolean preserveWildcards) {
         // if declaration does not provide generics, there is no connection to make
         if (declaration == null || declaration.length == 0) return;
 
@@ -836,28 +905,32 @@ public class GenericsUtils {
             GenericsType ui = usage[i];
             GenericsType di = declaration[i];
             if (di.isPlaceholder()) {
-                spec.put(di.getName(), ui.getType());
+                ClassNode connected = ui.getType();
+                if (preserveWildcards && ui.isWildcard() && !isUnboundedWildcard(ui)) {
+                    connected = wildcardCarrier(ui); // GROOVY-11521
+                }
+                spec.put(di.getName(), connected);
             } else if (di.isWildcard()) {
                 if (ui.isWildcard()) {
-                    extractSuperClassGenerics(ui.getLowerBound(), di.getLowerBound(), spec);
-                    extractSuperClassGenerics(ui.getUpperBounds(), di.getUpperBounds(), spec);
+                    extractSuperClassGenerics(ui.getLowerBound(), di.getLowerBound(), spec, preserveWildcards);
+                    extractSuperClassGenerics(ui.getUpperBounds(), di.getUpperBounds(), spec, preserveWildcards);
                 } else {
                     ClassNode cu = ui.getType();
-                    extractSuperClassGenerics(cu, di.getLowerBound(), spec);
+                    extractSuperClassGenerics(cu, di.getLowerBound(), spec, preserveWildcards);
                     ClassNode[] upperBounds = di.getUpperBounds();
                     if (upperBounds != null) {
                         for (ClassNode cn : upperBounds) {
-                            extractSuperClassGenerics(cu, cn, spec);
+                            extractSuperClassGenerics(cu, cn, spec, preserveWildcards);
                         }
                     }
                 }
             } else {
-                extractSuperClassGenerics(ui.getType(), di.getType(), spec);
+                extractSuperClassGenerics(ui.getType(), di.getType(), spec, preserveWildcards);
             }
         }
     }
 
-    private static void extractSuperClassGenerics(final ClassNode[] usage, final ClassNode[] declaration, final Map<String, ClassNode> spec) {
+    private static void extractSuperClassGenerics(final ClassNode[] usage, final ClassNode[] declaration, final Map<String, ClassNode> spec, final boolean preserveWildcards) {
         if (usage == null || declaration == null || declaration.length == 0) return;
         // both have generics
         for (int i = 0; i < usage.length; i++) {
@@ -866,7 +939,7 @@ public class GenericsUtils {
             if (di.isGenericsPlaceHolder()) {
                 spec.put(di.getGenericsTypes()[0].getName(), di);
             } else if (di.isUsingGenerics()) {
-                extractSuperClassGenerics(ui.getGenericsTypes(), di.getGenericsTypes(), spec);
+                extractSuperClassGenerics(ui.getGenericsTypes(), di.getGenericsTypes(), spec, preserveWildcards);
             }
         }
     }

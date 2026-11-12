@@ -18,7 +18,9 @@
  */
 package org.codehaus.groovy.classgen;
 
+import groovy.lang.GroovyClassLoader;
 import groovy.lang.GroovyRuntimeException;
+import org.apache.groovy.ast.pattern.PatternLowering;
 import org.apache.groovy.ast.tools.ExpressionUtils;
 import org.apache.groovy.io.StringBuilderWriter;
 import org.codehaus.groovy.GroovyBugError;
@@ -41,6 +43,7 @@ import org.codehaus.groovy.ast.PackageNode;
 import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.PropertyNode;
 import org.codehaus.groovy.ast.RecordComponentNode;
+import org.codehaus.groovy.ast.decompiled.DecompiledClassNode;
 import org.codehaus.groovy.ast.expr.AnnotationConstantExpression;
 import org.codehaus.groovy.ast.expr.ArgumentListExpression;
 import org.codehaus.groovy.ast.expr.ArrayExpression;
@@ -67,6 +70,7 @@ import org.codehaus.groovy.ast.expr.MethodCallExpression;
 import org.codehaus.groovy.ast.expr.MethodPointerExpression;
 import org.codehaus.groovy.ast.expr.MethodReferenceExpression;
 import org.codehaus.groovy.ast.expr.NotExpression;
+import org.codehaus.groovy.ast.expr.PatternExpression;
 import org.codehaus.groovy.ast.expr.PostfixExpression;
 import org.codehaus.groovy.ast.expr.PrefixExpression;
 import org.codehaus.groovy.ast.expr.PropertyExpression;
@@ -110,6 +114,7 @@ import org.codehaus.groovy.classgen.asm.OptimizingStatementWriter;
 import org.codehaus.groovy.classgen.asm.PeepholeOptimizingMethodVisitor;
 import org.codehaus.groovy.classgen.asm.WriterController;
 import org.codehaus.groovy.classgen.asm.WriterControllerFactory;
+import org.codehaus.groovy.classgen.asm.sc.RuntimePackageCheck;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.runtime.IntersectionCastSupport;
 import org.codehaus.groovy.runtime.ScriptBytecodeAdapter;
@@ -357,6 +362,7 @@ public class AsmClassGenerator extends ClassGenerator {
      */
     @Override
     public void visitClass(final ClassNode classNode) {
+        if (classNode.isEnum()) EnumConstantInit.substitute(classNode); // before any visitor reads the static initializer
         referencedClasses.clear();
 
         WriterControllerFactory factory = classNode.getNodeMetaData(WriterControllerFactory.class);
@@ -488,7 +494,21 @@ public class AsmClassGenerator extends ClassGenerator {
     }
 
     private void maybeInnerClassEntry(final ClassNode classNode) {
-        if (classNode.getOuterClass() != null) makeInnerClassEntry(classNode);
+        if (classNode.getOuterClass() != null) {
+            makeInnerClassEntry(classNode);
+        } else if (classNode.redirect() instanceof DecompiledClassNode decompiled) { // GROOVY-12544
+            decompiled.visitInnerClassEntries(classVisitor);
+        } else if (!classNode.isPrimaryClassNode() && !classNode.isArray() && classNode.isResolved()) {
+            makeInnerClassEntry(classNode.getTypeClass());
+        }
+    }
+
+    private void makeInnerClassEntry(final Class<?> innerClass) {
+        Class<?> outerClass = innerClass.getDeclaringClass();
+        if (outerClass == null) return; // top-level, local or anonymous
+        makeInnerClassEntry(outerClass);
+        classVisitor.visitInnerClass(BytecodeHelper.getClassInternalName(innerClass),
+                BytecodeHelper.getClassInternalName(outerClass), innerClass.getSimpleName(), innerClass.getModifiers());
     }
 
     private void makeInnerClassEntry(final ClassNode innerClass) {
@@ -670,10 +690,10 @@ public class AsmClassGenerator extends ClassGenerator {
             if (code != null && cn.getOuterClass() != null) {
                 // GROOVY-4471: if the class is an inner class node, there are chances that
                 // the call to super is already added so we must ensure not to add it twice
-                if (code instanceof BlockStatement) {
-                    hasCallToSuper = ((BlockStatement) code).getStatements().stream()
-                        .map(statement -> statement instanceof ExpressionStatement ? ((ExpressionStatement) statement).getExpression() : null)
-                        .anyMatch(expression -> expression instanceof ConstructorCallExpression && ((ConstructorCallExpression) expression).isSuperCall());
+                if (code instanceof BlockStatement block) {
+                    hasCallToSuper = block.getStatements().stream()
+                        .map(statement -> statement instanceof ExpressionStatement es ? es.getExpression() : null)
+                        .anyMatch(expression -> expression instanceof ConstructorCallExpression cce && cce.isSuperCall());
                 }
             }
             if (!hasCallToSuper) {
@@ -691,6 +711,8 @@ public class AsmClassGenerator extends ClassGenerator {
                 }
                 // add call to "super()"
                 mv.visitVarInsn(ALOAD, 0);
+                ConstructorNode superCtor = controller.getClassNode().getSuperClass().getDeclaredConstructor(Parameter.EMPTY_ARRAY);
+                if (superCtor != null) RuntimePackageCheck.checkConstructor(controller, superCtor, true, node.getLineNumber() > 0 ? node : cn);
                 mv.visitMethodInsn(INVOKESPECIAL, controller.getInternalBaseClassName(), "<init>", "()V", false);
             }
         }
@@ -700,8 +722,12 @@ public class AsmClassGenerator extends ClassGenerator {
         }
 
         if (code == null || maybeFallsThrough(code)) {
-            if (code != null) { // GROOVY-7647, GROOVY-9373
-                controller.visitLineNumber(code.getLastLineNumber());
+            if (code != null) {
+                int line = code.getLastLineNumber(); // GROOVY-7647, GROOVY-9373
+                if (line < 1 && code instanceof BlockStatement block && !block.isEmpty()) { // GROOVY-12752
+                    line = block.getStatements().get(block.getStatements().size() - 1).getLastLineNumber();
+                }
+                controller.visitLineNumber(line);
             }
             if (node.isVoidMethod()) {
                 mv.visitInsn(RETURN);
@@ -997,6 +1023,19 @@ public class AsmClassGenerator extends ClassGenerator {
     public void visitSwitchExpression(final SwitchExpression expression) {
         controller.getSwitchExpressionWriter().writeSwitchExpression(expression);
         doPostVisit(expression);
+    }
+
+    /**
+     * Generates bytecode for a pattern match (GEP-19) from the code that
+     * {@link PatternLowering} derived for it.
+     */
+    @Override
+    public void visitPatternExpression(final PatternExpression expression) {
+        if (expression.getLowered() == null) {
+            throw new GroovyBugError("The pattern `" + expression.getText() + "` was not lowered before class generation;"
+                    + " a transform that creates a pattern from instruction selection on lowers it with PatternLowering.lower(ClassNode, SourceUnit)");
+        }
+        expression.getLowered().visit(this);
     }
 
     /**
@@ -1313,6 +1352,41 @@ public class AsmClassGenerator extends ClassGenerator {
     }
 
     /**
+     * Determines if the bytecode of the accessing class can rely on being in
+     * the run-time package of the declaring class, which is the package name
+     * and the class loader. The JVM allows access to a protected or
+     * package-private member only within the same run-time package, apart from
+     * the subclass rule for a protected member.
+     * <p>
+     * A GroovyClassLoader defines the classes of each compilation, like a
+     * {@code GroovyShell} script, in memory with a class loader of their own,
+     * so a class compiled before, by another compilation, is in another
+     * run-time package although its package name is the same. Classes that
+     * are compiled to class files are expected to be loaded by one class
+     * loader with the classes they use from the same package, as javac
+     * expects.
+     * <p>
+     * {@code isPrimaryClassNode()} is used here as "defined by the class
+     * loader of the accessing class", since the classes of one compilation are
+     * defined together; it does not stand for "compiled from source".
+     *
+     * @param declaringClass the class declaring the member
+     * @param accessingClass the class attempting access
+     * @return {@code true} if both classes have the same package name and are
+     *         not known to be defined by different class loaders
+     */
+    public static boolean isInSameRuntimePackage(final ClassNode declaringClass, final ClassNode accessingClass) {
+        if (!Objects.equals(declaringClass.getPackageName(), accessingClass.getPackageName())) return false;
+        if (declaringClass.isPrimaryClassNode()) return true; // compiled and defined with the accessing class
+        CompileUnit unit = null;
+        for (ClassNode cn = accessingClass; unit == null && cn != null; cn = cn.getOuterClass()) {
+            unit = cn.getCompileUnit();
+        }
+        // see GroovyClassLoader: the classes of this compilation are defined by an InnerLoader of their own
+        return unit == null || !Boolean.TRUE.equals(unit.getNodeMetaData(GroovyClassLoader.InnerLoader.class));
+    }
+
+    /**
      * Determines whether a member with the supplied modifiers is directly accessible to a class.
      *
      * @param modifiers the member modifiers
@@ -1526,10 +1600,26 @@ public class AsmClassGenerator extends ClassGenerator {
             String name = expression.getPropertyAsString();
             if (name != null) {
                 ClassNode classNode = controller.getClassNode();
-                FieldNode fieldNode = getDeclaredFieldOfCurrentClassOrAccessibleFieldOfSuper(classNode, classNode, name, isSuperExpression(objectExpression));
+                // GROOVY-12533: inside a closure or lambda, this/super is the enclosing
+                // instance. Search that class, but judge accessibility from the closure
+                // (the class that emits the bytecode).
+                boolean generated = controller.isInGeneratedFunction();
+                ClassNode current = generated ? controller.getThisType() : classNode;
+                FieldNode fieldNode = getDeclaredFieldOfCurrentClassOrAccessibleFieldOfSuper(classNode, current, name, isSuperExpression(objectExpression));
                 if (fieldNode != null && (fieldNode.isStatic() || !isStatic(objectExpression))) {
-                    fieldX(fieldNode).visit(this);
-                    visited = true;
+                    // A private field of a superclass is dropped from the subclass meta-class
+                    // index, so the closure's runtime attribute lookup cannot see it. Direct
+                    // access is legal for a nestmate (a nested subclass). Other fields stay on
+                    // the meta-class path.
+                    boolean privateSuperField = generated && fieldNode.isPrivate() && !fieldNode.getDeclaringClass().equals(current);
+                    if (!generated || privateSuperField) {
+                        if (privateSuperField && !fieldNode.isStatic()) {
+                            visitPrivateEnclosingInstanceField(fieldNode);
+                        } else {
+                            fieldX(fieldNode).visit(this);
+                        }
+                        visited = true;
+                    }
                 }
             }
         }
@@ -1552,10 +1642,44 @@ public class AsmClassGenerator extends ClassGenerator {
     }
 
     /**
+     * Reads or writes a private instance field of the enclosing class from a
+     * closure or lambda. The receiver is the enclosing instance
+     * ({@code getThisObject()}), not the closure.
+     */
+    private void visitPrivateEnclosingInstanceField(final FieldNode field) {
+        MethodVisitor mv = controller.getMethodVisitor();
+        OperandStack operandStack = controller.getOperandStack();
+        ClassNode owner = field.getOwner();
+        String ownerName = getFieldOwnerName(field);
+        String descriptor = BytecodeHelper.getTypeDescription(field.getType());
+        if (controller.getCompileStack().isLHS()) {
+            operandStack.doGroovyCast(field.getOriginType());
+            loadThisObject();
+            BytecodeHelper.doCast(mv, owner);
+            operandStack.push(owner);
+            operandStack.swap();
+            mv.visitFieldInsn(PUTFIELD, ownerName, field.getName(), descriptor);
+            operandStack.remove(2);
+        } else {
+            loadThisObject();
+            BytecodeHelper.doCast(mv, owner);
+            mv.visitFieldInsn(GETFIELD, ownerName, field.getName(), descriptor);
+            operandStack.push(field.getType());
+        }
+    }
+
+    private void loadThisObject() {
+        MethodVisitor mv = controller.getMethodVisitor();
+        mv.visitVarInsn(ALOAD, 0);
+        mv.visitMethodInsn(INVOKEVIRTUAL, "groovy/lang/Closure", "getThisObject", "()Ljava/lang/Object;", false);
+    }
+
+    /**
      * {@inheritDoc}
      */
     @Override
     public void visitFieldExpression(final FieldExpression expression) {
+        RuntimePackageCheck.checkField(controller, expression.getField(), null, expression);
         if (expression.getField().isStatic()) {
             if (controller.getCompileStack().isLHS()) {
                 storeStaticField(expression);

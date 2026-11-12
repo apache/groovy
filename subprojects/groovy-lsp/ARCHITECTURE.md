@@ -43,9 +43,9 @@ A **Groovy language core** that editors and AI tools can share:
   client, Vim, …) get diagnostics, completion, hover, navigation and
   conservative rename on `.groovy` sources.
 - AI agents get the same snapshot: structure, types where the compiler
-  knows them, and edits that refuse to guess. A later `groovy-mcp`
-  module is expected to wrap the same in-process engine so a model can
-  ask “what is this identifier?” without re-implementing the compiler.
+  knows them, and edits that refuse to guess. `groovy-mcp` wraps this
+  in-process engine so a model can ask “what is this identifier?”
+  without re-implementing the compiler.
 
 It is intended for **direct use by an IDE or editor as an LSP
 server**, as the **semantic backend** for Groovy-aware AI, and as an
@@ -115,7 +115,7 @@ identity (owner + name + descriptor), not the unqualified identifier.
 
 ### AI / MCP
 
-A model using this server (directly over LSP, or later through
+A model using this server (directly over LSP, or through
 `groovy-mcp`) can trust: document symbols, diagnostics, hover, and
 definition candidates. On `@TypeChecked` / `@CompileStatic` members
 it can also trust STC-bound calls and `INFERRED_TYPE` metadata.

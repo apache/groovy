@@ -20,11 +20,15 @@ package org.codehaus.groovy.runtime.memoize;
 
 import groovy.lang.Closure;
 
+import java.io.IOException;
+import java.io.ObjectInputStream;
 import java.io.ObjectStreamException;
 import java.io.Serial;
+import java.io.Serializable;
 import java.lang.ref.ReferenceQueue;
 import java.lang.ref.SoftReference;
 import java.util.Collections;
+import java.util.function.Supplier;
 
 import static java.util.Arrays.asList;
 import static java.util.Arrays.copyOf;
@@ -47,6 +51,8 @@ public abstract class Memoize {
      * on the cache size or implement cache eviction strategy.
      * The LRUCache, for example, allows to set the maximum cache size constraint and implements
      * the LRU (Last Recently Used) eviction strategy.
+     * A copy made by {@code dehydrate} or {@code rehydrate} calls the dehydrated or rehydrated closure and shares
+     * the supplied cache.
      *
      * @param cache A map to hold memoized return values
      * @param closure The closure to memoize
@@ -54,7 +60,25 @@ public abstract class Memoize {
      * @return A new memoized closure
      */
     public static <V> Closure<V> buildMemoizeFunction(final MemoizeCache<Object, Object> cache, final Closure<V> closure) {
-        return new MemoizeFunction<V>(cache, closure);
+        return new MemoizeFunction<V>(cache, null, closure);
+    }
+
+    /**
+     * Creates a new closure delegating to the supplied one and memoizing all return values by the arguments.
+     *
+     * The supplied factory creates the cache that stores the memoized values, and it is the cache's responsibility
+     * to put limits on the cache size or implement cache eviction strategy.
+     * A copy made by {@code dehydrate} or {@code rehydrate} calls the dehydrated or rehydrated closure and starts
+     * with an empty cache created by the same factory, as the cached values were computed against the old owner,
+     * delegate and this object. The factory has to be serializable for the memoized closure to be serializable.
+     *
+     * @param cacheFactory Creates the map to hold memoized return values
+     * @param closure The closure to memoize
+     * @param <V> The closure's return type
+     * @return A new memoized closure
+     */
+    public static <V> Closure<V> buildMemoizeFunction(final Supplier<? extends MemoizeCache<Object, Object>> cacheFactory, final Closure<V> closure) {
+        return new MemoizeFunction<V>(cacheFactory.get(), cacheFactory, closure);
     }
 
     /**
@@ -69,6 +93,10 @@ public abstract class Memoize {
      *
      * If the protectedCacheSize argument is greater than 0 an optional LRU (Last Recently Used) cache of hard references
      * is maintained to protect recently touched memoized values against eviction by the garbage collector.
+     * A copy made by {@code dehydrate} or {@code rehydrate} calls the dehydrated or rehydrated closure and shares
+     * the supplied cache.
+     * The memoized values are not serialized with the memoizing closure, which is deserialized with the cache
+     * emptied of them.
      *
      * @param protectedCacheSize The number of hard references to keep in order to prevent some (LRU) memoized return values from eviction
      * @param cache A map to hold memoized return values
@@ -77,13 +105,31 @@ public abstract class Memoize {
      * @return A new memoized closure
      */
     public static <V> Closure<V> buildSoftReferenceMemoizeFunction(final int protectedCacheSize, final MemoizeCache<Object, SoftReference<Object>> cache, final Closure<V> closure) {
-        final ProtectionStorage lruProtectionStorage = protectedCacheSize > 0 ?
-                new LRUProtectionStorage(protectedCacheSize) :
-                new NullProtectionStorage(); // Nothing should be done when no elements need protection against eviction
+        return new SoftReferenceMemoizeFunction<V>(cache, null, closure, protectedCacheSize);
+    }
 
-        final ReferenceQueue queue = new ReferenceQueue();
-
-        return new SoftReferenceMemoizeFunction<V>(cache, closure, lruProtectionStorage, queue);
+    /**
+     * Creates a new closure delegating to the supplied one and memoizing all return values by the arguments.
+     * The memoizing closure will use SoftReferences to remember the return values allowing the garbage collector
+     * to reclaim the memory, if needed.
+     *
+     * The supplied factory creates the cache that stores the memoized values, and it is the cache's responsibility
+     * to put limits on the cache size or implement cache eviction strategy.
+     * A copy made by {@code dehydrate} or {@code rehydrate} calls the dehydrated or rehydrated closure and starts
+     * with an empty cache created by the same factory and the same protected cache size, as the cached values were
+     * computed against the old owner, delegate and this object.
+     *
+     * If the protectedCacheSize argument is greater than 0 an optional LRU (Last Recently Used) cache of hard references
+     * is maintained to protect recently touched memoized values against eviction by the garbage collector.
+     *
+     * @param protectedCacheSize The number of hard references to keep in order to prevent some (LRU) memoized return values from eviction
+     * @param cacheFactory Creates the map to hold memoized return values
+     * @param closure The closure to memoize
+     * @param <V> The closure's return type
+     * @return A new memoized closure
+     */
+    public static <V> Closure<V> buildSoftReferenceMemoizeFunction(final int protectedCacheSize, final Supplier<? extends MemoizeCache<Object, SoftReference<Object>>> cacheFactory, final Closure<V> closure) {
+        return new SoftReferenceMemoizeFunction<V>(cacheFactory.get(), cacheFactory, closure, protectedCacheSize);
     }
 
     /**
@@ -102,7 +148,9 @@ public abstract class Memoize {
     /**
      * A place-holder for cached null values
      */
-    private static class MemoizeNullValue {
+    private static class MemoizeNullValue implements Serializable {
+        @Serial
+        private static final long serialVersionUID = -4169021506238179930L;
 
         @Override
         public boolean equals(final Object obj) {
@@ -113,17 +161,32 @@ public abstract class Memoize {
         public int hashCode() {
             return "MemoizeNullValue".hashCode();
         }
+
+        /**
+         * Resolves to the shared place-holder, which the memoizing closures compare cached values
+         * against by identity.
+         */
+        @Serial
+        private Object readResolve() throws ObjectStreamException {
+            return MEMOIZE_NULL;
+        }
     }
 
     private static class MemoizeFunction<V> extends Closure<V> {
         @Serial
         private static final long serialVersionUID = -2780003153676993093L;
         final MemoizeCache<Object, Object> cache;
-        final Closure<V> closure;
+        /**
+         * Creates the cache of a dehydrated or rehydrated copy; {@code null} when the memoized closure was
+         * built from a cache instance, in which case the copy shares that cache.
+         */
+        final Supplier<? extends MemoizeCache<Object, ?>> cacheFactory;
+        Closure<V> closure;
 
-        MemoizeFunction(final MemoizeCache<Object, ?> cache, Closure<V> closure) {
-            super(closure.getOwner());
+        MemoizeFunction(final MemoizeCache<Object, ?> cache, final Supplier<? extends MemoizeCache<Object, ?>> cacheFactory, Closure<V> closure) {
+            super(closure.getOwner(), closure.getThisObject());
             this.cache = coerce(cache);
+            this.cacheFactory = cacheFactory;
             this.closure = closure;
             parameterTypes = closure.getParameterTypes();
             maximumNumberOfParameters = closure.getMaximumNumberOfParameters();
@@ -149,6 +212,65 @@ public abstract class Memoize {
             return call(args);
         }
 
+        @Override
+        public Object getDelegate() {
+            return closure.getDelegate();
+        }
+
+        @Override
+        public void setDelegate(final Object delegate) {
+            closure.setDelegate(delegate);
+        }
+
+        @Override
+        public int getResolveStrategy() {
+            return closure.getResolveStrategy();
+        }
+
+        @Override
+        public void setResolveStrategy(final int resolveStrategy) {
+            closure.setResolveStrategy(resolveStrategy);
+        }
+
+        /**
+         * Clones the memoized closure too, so that setting the delegate or resolve strategy of the
+         * copy leaves this function alone. The copy shares the cache.
+         */
+        @Override
+        @SuppressWarnings("unchecked")
+        public Object clone() {
+            MemoizeFunction<V> result = (MemoizeFunction<V>) super.clone();
+            result.closure = (Closure<V>) closure.clone();
+            return result;
+        }
+
+        /**
+         * Dehydrates the memoized closure and memoizes the copy, since calls go through the memoized closure.
+         * The copy starts with an empty cache of the same kind and limits.
+         */
+        @Override
+        public Closure<V> dehydrate() {
+            return memoizeCopy(closure.dehydrate());
+        }
+
+        /**
+         * Rehydrates the memoized closure and memoizes the copy, since calls go through the memoized closure.
+         * The copy starts with an empty cache of the same kind and limits, as the cached values were computed
+         * against the old owner, delegate and this object.
+         */
+        @Override
+        public Closure<V> rehydrate(final Object delegate, final Object owner, final Object thisObject) {
+            return memoizeCopy(closure.rehydrate(delegate, owner, thisObject));
+        }
+
+        Closure<V> memoizeCopy(final Closure<V> copy) {
+            return new MemoizeFunction<V>(newCache(), cacheFactory, copy);
+        }
+
+        MemoizeCache<Object, ?> newCache() {
+            return cacheFactory != null ? cacheFactory.get() : cache;
+        }
+
         /**
          * Exposes the memoized closure, which {@code call} dispatches to but which is held outside the
          * {@code owner}/{@code delegate}/{@code thisObject} references the cycle check walks by default.
@@ -169,17 +291,75 @@ public abstract class Memoize {
         }
     }
 
+    /**
+     * A soft reference to a memoized value which serializes as a cleared reference: a {@link SoftReference} is not
+     * serializable, and the garbage collector may clear it at any time, so the cache entry holding it is dropped.
+     */
+    private static final class MemoizedValueReference extends SoftReference<Object> implements Serializable {
+        @Serial
+        private static final long serialVersionUID = -6513385424356211474L;
+
+        MemoizedValueReference(final Object value, final ReferenceQueue<Object> queue) {
+            super(value, queue);
+        }
+
+        @Serial
+        private Object writeReplace() throws ObjectStreamException {
+            return new ClearedReference();
+        }
+    }
+
+    /**
+     * The serialized form of a {@link MemoizedValueReference}.
+     */
+    private static final class ClearedReference implements Serializable {
+        @Serial
+        private static final long serialVersionUID = 2464318405930846528L;
+
+        @Serial
+        private Object readResolve() throws ObjectStreamException {
+            return new SoftReference<Object>(null);
+        }
+    }
+
     private static class SoftReferenceMemoizeFunction<V> extends MemoizeFunction<V> {
         @Serial
         private static final long serialVersionUID = -1338206227167457991L;
-        final ProtectionStorage lruProtectionStorage;
-        final ReferenceQueue queue;
+        final int protectedCacheSize;
+        transient ProtectionStorage lruProtectionStorage;
+        transient ReferenceQueue<Object> queue;
 
-        SoftReferenceMemoizeFunction(final MemoizeCache<Object, SoftReference<Object>> cache, Closure<V> closure,
-                ProtectionStorage lruProtectionStorage, ReferenceQueue queue) {
-            super(cache, closure);
+        SoftReferenceMemoizeFunction(final MemoizeCache<Object, ?> cache, final Supplier<? extends MemoizeCache<Object, ?>> cacheFactory,
+                Closure<V> closure, final int protectedCacheSize) {
+            super(cache, cacheFactory, closure);
+            this.protectedCacheSize = protectedCacheSize;
+            initTransientFields();
+        }
+
+        private SoftReferenceMemoizeFunction(final MemoizeCache<Object, ?> cache, final Supplier<? extends MemoizeCache<Object, ?>> cacheFactory,
+                Closure<V> closure, final int protectedCacheSize, ProtectionStorage lruProtectionStorage, ReferenceQueue<Object> queue) {
+            super(cache, cacheFactory, closure);
+            this.protectedCacheSize = protectedCacheSize;
             this.lruProtectionStorage = lruProtectionStorage;
             this.queue = queue;
+        }
+
+        private void initTransientFields() {
+            lruProtectionStorage = protectedCacheSize > 0 ?
+                    new LRUProtectionStorage(protectedCacheSize) :
+                    new NullProtectionStorage(); // Nothing should be done when no elements need protection against eviction
+            queue = new ReferenceQueue<Object>();
+        }
+
+        /**
+         * Memoizes the copy with an empty cache, protection storage and reference queue, or, when the memoized
+         * closure was built from a cache instance, with the same ones.
+         */
+        @Override
+        Closure<V> memoizeCopy(final Closure<V> copy) {
+            return cacheFactory != null
+                    ? new SoftReferenceMemoizeFunction<V>(newCache(), cacheFactory, copy, protectedCacheSize)
+                    : new SoftReferenceMemoizeFunction<V>(cache, null, copy, protectedCacheSize, lruProtectionStorage, queue);
         }
 
         @Override
@@ -190,7 +370,7 @@ public abstract class Memoize {
             SoftReference reference = (SoftReference) cache.getAndPut(key, k -> {
                 Object r = closure.call(args);
 
-                return null != r ? new SoftReference<Object>(r, queue) : new SoftReference<Object>(MEMOIZE_NULL);
+                return null != r ? new MemoizedValueReference(r, queue) : new MemoizedValueReference(MEMOIZE_NULL, null);
             });
 
             Object result = reference.get();
@@ -206,6 +386,17 @@ public abstract class Memoize {
          */
         private static void cleanUpNullReferences(final MemoizeCache<Object, Object> cache, final ReferenceQueue queue) {
             while(queue.poll() != null) {}  //empty the reference queue
+            cache.cleanUpNullReferences();
+        }
+
+        /**
+         * Starts with empty protection storage and reference queue and drops the cache entries, which were
+         * serialized as cleared references.
+         */
+        @Serial
+        private void readObject(final ObjectInputStream in) throws IOException, ClassNotFoundException {
+            in.defaultReadObject();
+            initTransientFields();
             cache.cleanUpNullReferences();
         }
 

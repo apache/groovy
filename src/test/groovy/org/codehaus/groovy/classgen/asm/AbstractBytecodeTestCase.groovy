@@ -111,6 +111,8 @@ abstract class AbstractBytecodeTestCase {
 
     /**
      * Compiles a script into bytecode and returns the instructions for a class.
+     * Options include {@code method}, {@code classNamePattern}, and {@code indy}
+     * ({@code true} or {@code false} selects that backend; omitted keeps the default).
      *
      * @param scriptText the script to compile
      * @return the decompiled <code>InstructionSequence</code>
@@ -120,7 +122,14 @@ abstract class AbstractBytecodeTestCase {
         sequence = null
         clazz = null
         classBytes = null
-        def cu = new CompilationUnit()
+        def cu
+        if (options.containsKey('indy')) {
+            def configuration = new CompilerConfiguration()
+            configuration.optimizationOptions.indy = options.indy
+            cu = new CompilationUnit(configuration)
+        } else {
+            cu = new CompilationUnit()
+        }
         def su = cu.addSource('script', scriptText)
         cu.compile(Phases.CONVERSION)
         if (options.conversionAction != null) {
@@ -192,6 +201,61 @@ abstract class AbstractBytecodeTestCase {
 
         new ClassReader(bytes).accept(tcv, 0)
         new InstructionSequence(instructions: out.toString().split('\n')*.trim())
+    }
+
+    /**
+     * Extracts the instructions of one method from raw class bytes, without the
+     * selection markers that {@link #extractSequence} puts around them.
+     *
+     * @param bytes the raw class bytecode to analyze
+     * @param method the name of the method
+     * @return an InstructionSequence containing only the instructions of the method
+     */
+    protected InstructionSequence extractMethodSequence(final byte[] bytes, final String method) {
+        selectMethod(method, extractSequence(bytes, [method: method]))
+    }
+
+    /**
+     * Selects the instructions between the selection markers of a sequence that
+     * {@link #extractSequence} extracted for one method.
+     *
+     * @param method the name of the method, for the failure message
+     * @param sequence the extracted sequence
+     * @return an InstructionSequence containing only the instructions of the method
+     */
+    protected static InstructionSequence selectMethod(final String method, final InstructionSequence sequence) {
+        List<String> instructions = sequence.instructions
+        int begin = instructions.indexOf('--BEGIN--'), end = instructions.indexOf('--END--')
+        assert begin >= 0 && end > begin : "method $method not found"
+        new InstructionSequence(instructions: instructions[(begin + 1)..<end])
+    }
+
+    /**
+     * Compiles a script against the classes of a library, which an earlier parse
+     * of the same GroovyClassLoader compiles, and returns the instructions of one
+     * method. GroovyClassLoader defines the classes of each parse with a class
+     * loader of their own, so the library classes are in another run-time
+     * package than the script classes, even with the same package name.
+     *
+     * @param library the source of the library classes
+     * @param className the name of the class, compiled from the script, that declares the method
+     * @param method the name of the method
+     * @param script the source compiled against the library
+     * @return an InstructionSequence containing only the instructions of the method
+     */
+    protected InstructionSequence compileAgainstLibrary(final String library, final String className, final String method, final String script) {
+        CompilationUnit unit = null
+        def loader = new GroovyClassLoader() {
+            @Override
+            protected CompilationUnit createCompilationUnit(final CompilerConfiguration config, final CodeSource source) {
+                unit = super.createCompilationUnit(config, source)
+            }
+        }
+        loader.parseClass(library)
+        loader.parseClass(script)
+        def generated = unit.classes.find { it.name == className }
+        assert generated != null : "class $className not found"
+        extractMethodSequence(generated.bytes, method)
     }
 
     /**

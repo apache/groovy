@@ -18,14 +18,13 @@
  */
 package org.apache.groovy.toml.util;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.dataformat.toml.TomlFactory;
-import com.fasterxml.jackson.dataformat.toml.TomlMapper;
 import groovy.toml.TomlRuntimeException;
 import org.apache.groovy.lang.annotation.Incubating;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.json.JsonMapper;
+import tools.jackson.dataformat.toml.TomlMapper;
 
-import java.io.IOException;
 import java.io.Reader;
 
 /**
@@ -35,6 +34,11 @@ import java.io.Reader;
  */
 @Incubating
 public final class TomlConverter {
+    // Jackson 2's defaults keep the conversion producing what it did before Jackson 3;
+    // both mappers are thread-safe once built, so they are shared
+    private static final JsonMapper JSON_MAPPER = JsonMapper.builderWithJackson2Defaults().build();
+    private static final TomlMapper TOML_MAPPER = TomlMapper.builder().configureForJackson2().build();
+
     /**
      * Converts TOML content from the supplied reader into JSON text.
      *
@@ -43,10 +47,8 @@ public final class TomlConverter {
      */
     public static String convertTomlToJson(Reader tomlReader) {
         try {
-            Object toml = new ObjectMapper(new TomlFactory()).readValue(tomlReader, Object.class);
-
-            return new ObjectMapper().writeValueAsString(toml);
-        } catch (IOException e) {
+            return JSON_MAPPER.writeValueAsString(TomlRootValues.read(TOML_MAPPER, tomlReader));
+        } catch (JacksonException e) {
             throw new TomlRuntimeException(e);
         }
     }
@@ -59,10 +61,9 @@ public final class TomlConverter {
      */
     public static String convertJsonToToml(Reader jsonReader) {
         try {
-            JsonNode json = new ObjectMapper().readTree(jsonReader);
-
-            return new TomlMapper().writeValueAsString(json);
-        } catch (IOException e) {
+            JsonNode json = JSON_MAPPER.readTree(jsonReader);
+            return TomlRootValues.write(TOML_MAPPER, json);
+        } catch (JacksonException e) {
             throw new TomlRuntimeException(e);
         }
     }

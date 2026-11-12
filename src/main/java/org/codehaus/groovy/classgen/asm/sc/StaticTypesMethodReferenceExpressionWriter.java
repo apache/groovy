@@ -21,6 +21,7 @@ package org.codehaus.groovy.classgen.asm.sc;
 import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
+import org.codehaus.groovy.ast.ConstructorNode;
 import org.codehaus.groovy.ast.GenericsType;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.Parameter;
@@ -30,6 +31,7 @@ import org.codehaus.groovy.ast.expr.ClassExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.MethodCallExpression;
 import org.codehaus.groovy.ast.expr.MethodReferenceExpression;
+import org.codehaus.groovy.ast.stmt.Statement;
 import org.codehaus.groovy.ast.tools.GeneralUtils;
 import org.codehaus.groovy.classgen.AsmClassGenerator;
 import org.codehaus.groovy.classgen.BytecodeInstruction;
@@ -49,17 +51,22 @@ import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.function.ToIntFunction;
 
 import static java.util.Comparator.comparingInt;
 import static java.util.stream.Collectors.joining;
+import static org.apache.groovy.ast.tools.ExpressionUtils.isSuperExpression;
+import static org.apache.groovy.ast.tools.ExpressionUtils.isThisExpression;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.block;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.callX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.classX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.ctorX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.getInterfacesAndSuperInterfaces;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.nullX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.returnS;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.stmt;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
 import static org.codehaus.groovy.ast.tools.GenericsUtils.extractPlaceholders;
 import static org.codehaus.groovy.ast.tools.GenericsUtils.makeClassSafe0;
@@ -69,10 +76,12 @@ import static org.codehaus.groovy.classgen.asm.BytecodeHelper.getClassInternalNa
 import static org.codehaus.groovy.classgen.asm.sc.StaticTypesFunctionalInterfaceMetadataKey.METHOD_REFERENCE_DESERIALIZE_METHOD_NAME;
 import static org.codehaus.groovy.runtime.ArrayGroovyMethods.last;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.allParametersAndArgumentsMatch;
+import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.chooseBestMethod;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.filterMethodsByVisibility;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.findDGMMethodsForClassNode;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.implementsInterfaceOrIsSubclassOf;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.isAssignableTo;
+import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.isClassClassNodeWrappingConcreteType;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.resolveClassNodeGenerics;
 import static org.objectweb.asm.Opcodes.ACC_PRIVATE;
 import static org.objectweb.asm.Opcodes.ACC_STATIC;
@@ -108,16 +117,23 @@ public class StaticTypesMethodReferenceExpressionWriter extends MethodReferenceE
 
         MethodReferenceTarget referenceTarget = resolveMethodReferenceTarget(methodReferenceExpression);
         ResolvedMethodReference resolvedMethodReference = resolveMethodReference(methodReferenceExpression, functionalInterface, referenceTarget);
-        validate(methodReferenceExpression, referenceTarget.type(), resolvedMethodReference.methodName(),
+        validate(methodReferenceExpression, referenceTarget.expression(), referenceTarget.type(), resolvedMethodReference.methodName(),
             resolvedMethodReference.implementationMethod(), functionalInterface.parametersWithExactType(),
             resolveClassNodeGenerics(extractPlaceholders(functionalInterface.functionalType()), null, functionalInterface.abstractMethod().getReturnType()));
 
         ResolvedMethodReference adaptedMethodReference = adaptMethodReference(functionalInterface, resolvedMethodReference);
         ResolvedMethodReference invocationReadyMethodReference = prepareInvocationTarget(methodReferenceExpression, adaptedMethodReference);
         MethodReferenceInvocation invocation = createMethodReferenceInvocation(functionalInterface.functionalType(), invocationReadyMethodReference);
+        Parameter[] instantiatedParameters = functionalInterface.parametersWithExactType();
+        Adaptation adaptation = adaptParametersAndReturnType(functionalInterface, invocationReadyMethodReference, methodReferenceExpression);
+        if (adaptation != null) {
+            invocationReadyMethodReference = invocationReadyMethodReference.with(invocationReadyMethodReference.referenceTarget(), adaptation.method());
+            invocation = new MethodReferenceInvocation(Opcodes.H_INVOKESTATIC, invocation.invokedTypeDescriptor(), invocation.capturing());
+            instantiatedParameters = adaptation.instantiatedParameters();
+        }
 
         if (functionalInterface.serializable()) {
-            ensureDeserializeLambdaSupport(methodReferenceExpression, functionalInterface, invocationReadyMethodReference, invocation);
+            ensureDeserializeLambdaSupport(methodReferenceExpression, functionalInterface, invocationReadyMethodReference, invocation, instantiatedParameters);
         }
 
         writeFunctionalInterfaceIndy(
@@ -128,7 +144,7 @@ public class StaticTypesMethodReferenceExpressionWriter extends MethodReferenceE
             invocation.implMethodKind(),
             invocationReadyMethodReference.implementationMethod().getDeclaringClass(),
             invocationReadyMethodReference.implementationMethod(),
-            functionalInterface.parametersWithExactType(),
+            instantiatedParameters,
             functionalInterface.serializable(),
             functionalInterface.markers()
         );
@@ -184,6 +200,12 @@ public class StaticTypesMethodReferenceExpressionWriter extends MethodReferenceE
 
         if (ClassHelper.isPrimitiveType(targetType)) { // GROOVY-11353
             targetType = ClassHelper.getWrapper(targetType);
+        } else if (!classExpression && isThisExpression(typeOrTargetRef) && isClassClassNodeWrappingConcreteType(targetType)) {
+            // "this" in a static context is the class itself: this::name is resolved like Type::name
+            targetType = targetType.getGenericsTypes()[0].getType();
+            typeOrTargetRef = classX(targetType);
+            typeOrTargetRef.setSourcePosition(methodReferenceExpression.getExpression());
+            classExpression = true;
         }
 
         return new MethodReferenceTarget(typeOrTargetRef, targetType, classExpression, false);
@@ -361,10 +383,10 @@ public class StaticTypesMethodReferenceExpressionWriter extends MethodReferenceE
         }
     }
 
-    private void validate(final MethodReferenceExpression methodReference, final ClassNode targetType, final String methodName, final MethodNode methodNode, final Parameter[] samParameters, final ClassNode samReturnType) {
+    private void validate(final MethodReferenceExpression methodReference, final Expression typeOrTargetRef, final ClassNode targetType, final String methodName, final MethodNode methodNode, final Parameter[] samParameters, final ClassNode samReturnType) {
         if (methodNode == null) {
             String error;
-            if (!(methodReference.getExpression() instanceof ClassExpression)) {
+            if (!(typeOrTargetRef instanceof ClassExpression)) {
                 error = "Failed to find method '%s(%s)'";
             } else {
                 error = "Failed to find class method '%s(%s)'";
@@ -377,8 +399,11 @@ public class StaticTypesMethodReferenceExpressionWriter extends MethodReferenceE
             addFatalError("Invalid return type: void is not convertible to " + samReturnType.getText(), methodReference);
         } else if (!AsmClassGenerator.isMemberDirectlyAccessible(methodNode.getModifiers(), methodNode.getDeclaringClass(), controller.getClassNode())) {
             addFatalError("Cannot access method: " + methodName + " of class: " + methodNode.getDeclaringClass().getText(), methodReference); // GROOVY-11365
-        } else if (samParameters.length > 0 && isTypeReferringInstanceMethod(methodReference.getExpression(), methodNode) && !isAssignableTo(samParameters[0].getType(), targetType)) {
+        } else if (samParameters.length > 0 && isTypeReferringInstanceMethod(typeOrTargetRef, methodNode) && !isAssignableTo(samParameters[0].getType(), targetType)) {
             throw new RuntimeParserException("Invalid receiver type: " + samParameters[0].getType().getText() + " is not compatible with " + targetType.getText(), methodReference.getExpression());
+        } else {
+            boolean isReceiverArgument = samParameters.length > 0 && isTypeReferringInstanceMethod(typeOrTargetRef, methodNode); // type::instanceMethod
+            RuntimePackageCheck.checkMethod(controller, methodNode, isSuperExpression(typeOrTargetRef) ? null : isReceiverArgument ? samParameters[0].getType() : targetType, methodReference);
         }
     }
 
@@ -460,26 +485,63 @@ public class StaticTypesMethodReferenceExpressionWriter extends MethodReferenceE
         ArgumentListExpression ctorArgs = new ArgumentListExpression(parametersWithExactType);
 
         Expression returnValue;
-        if (returnType.isArray()) {
+        boolean staticCompile = false;
+        if (returnType.isArray()) { // like new T[n]
             returnValue = new ArrayExpression(
                     returnType.getComponentType(),
                     null, ctorArgs.getExpressions());
+            staticCompile = true;
         } else {
             returnValue = ctorX(returnType, ctorArgs);
+            ConstructorNode ctor = findConstructorReferenceTarget(returnType, parametersWithExactType);
+            if (ctor != null) {
+                returnValue.putNodeMetaData(StaticTypesMarker.DIRECT_METHOD_CALL_TARGET, ctor);
+                staticCompile = true;
+            }
         }
 
         MethodNode delegateMethod = addSyntheticMethod(methodName, returnType, returnValue, parametersWithExactType, ClassNode.EMPTY_ARRAY);
-        // TODO: if StaticTypesMarker.DIRECT_METHOD_CALL_TARGET or
-        // OptimizingStatementWriter.StatementMeta.class metadatas
-        // can bet set for the ctorX above, then this can be TRUE:
-        delegateMethod.putNodeMetaData(StaticCompilationMetadataKeys.STATIC_COMPILE_NODE, Boolean.FALSE);
+        // without a target constructor, the constructor is selected at run time
+        delegateMethod.putNodeMetaData(StaticCompilationMetadataKeys.STATIC_COMPILE_NODE, staticCompile);
         return delegateMethod;
     }
 
+    /**
+     * Selects the constructor of {@code type} that accepts the parameter types
+     * of the functional interface, among the constructors visible from the
+     * enclosing class, as the type checker selects the constructor of a
+     * constructor call.
+     * <p>
+     * A returned constructor is called directly, like the constructor of a
+     * statically compiled {@code new}, so the meta-class does not see the call:
+     * a constructor added or overridden through the meta-class, for example
+     * with {@code ExpandoMetaClass}, is not used.
+     *
+     * @return the constructor, or {@code null} if no single constructor matches
+     *         or the matching constructor cannot be called directly
+     */
+    private ConstructorNode findConstructorReferenceTarget(final ClassNode type, final Parameter[] samParameters) {
+        // the type checker rejects an abstract class or interface, unless a type checking extension suppresses the error;
+        // an enum, which Java code cannot instantiate at all, is left to the meta-class
+        if (type.isInterface() || type.isAbstract() || type.isEnum()) return null;
+
+        ClassNode[] argumentTypes = Arrays.stream(samParameters).map(Parameter::getType).toArray(ClassNode[]::new);
+        // in a closure or lambda, visibility is checked for the enclosing class, as the type checker does
+        List<MethodNode> visible = filterMethodsByVisibility(new ArrayList<>(type.getDeclaredConstructors()), controller.getThisType());
+        List<MethodNode> ctors = chooseBestMethod(type, visible, argumentTypes);
+        if (ctors.size() == 1 && ctors.get(0) instanceof ConstructorNode ctor
+                && StaticInvocationWriter.isDirectlyAccessible(ctor, controller.getClassNode())) {
+            return ctor;
+        }
+        return null;
+    }
+
     private MethodNode addSyntheticMethod(final String methodName, final ClassNode returnType, final Expression returnValue, final Parameter[] parameters, final ClassNode[] exceptions) {
-        return controller.getClassNode().addSyntheticMethod(
+        ClassNode classNode = controller.getClassNode();
+        return classNode.addSyntheticMethod(
             methodName,
-            Opcodes.ACC_PRIVATE | Opcodes.ACC_STATIC | Opcodes.ACC_FINAL,
+            // the JVM rejects ACC_FINAL on any method of an interface (JVMS 4.6), so no helper method is final there
+            Opcodes.ACC_PRIVATE | Opcodes.ACC_STATIC | (classNode.isInterface() ? 0 : Opcodes.ACC_FINAL),
             returnType,
             parameters,
             exceptions,
@@ -604,10 +666,148 @@ public class StaticTypesMethodReferenceExpressionWriter extends MethodReferenceE
         throw new MultipleCompilationErrorsException(controller.getSourceUnit().getErrorCollector());
     }
 
+    /**
+     * When a method reference is applied to a {@code String} that came from a type variable,
+     * route it through a synthetic method that accepts the erased type and converts a
+     * {@code GString} before the referenced method sees the value. Likewise, when the
+     * functional interface returns a primitive type that {@code LambdaMetafactory} cannot
+     * convert the referenced method's return value to, or the referenced method returns a type
+     * parameter that stands for such a type, the synthetic method returns the primitive type and
+     * converts the value as a statically compiled cast does; for example, {@code boolean} by
+     * Groovy truth.
+     */
+    private Adaptation adaptParametersAndReturnType(final FunctionalInterfaceContext functionalInterface,
+                                                    final ResolvedMethodReference resolved,
+                                                    final MethodReferenceExpression source) {
+        Parameter[] exact = functionalInterface.parametersWithExactType();
+        Parameter[] sam = functionalInterface.abstractMethod().getParameters();
+        MethodNode impl = resolved.implementationMethod();
+        if (exact.length != sam.length || impl == null) return null;
+
+        ClassNode[] erasures = new ClassNode[exact.length];
+        boolean any = false;
+        for (int i = 0, n = exact.length; i < n; i += 1) {
+            ClassNode erased = StaticInvocationWriter.gstringBridgeErasure(exact[i].getType(), sam[i].getType());
+            if (erased != null) {
+                erasures[i] = erased;
+                any = true;
+            }
+        }
+
+        boolean capturing = resolved.referenceTarget().isCapturing();
+        boolean virtual = !impl.isStatic();
+        int samCount = exact.length;
+        int implCount = impl.getParameters().length;
+        if (virtual && capturing && implCount != samCount) return null;
+        if (virtual && !capturing && (samCount < 1 || implCount != samCount - 1)) return null;
+        if (!virtual && capturing && implCount != samCount + 1) return null;
+        if (!virtual && !capturing && implCount != samCount) return null;
+
+        ClassNode samReturnType = functionalInterface.abstractMethod().getReturnType();
+        ClassNode returnType = impl.getReturnType();
+        boolean erased = returnType.isGenericsPlaceHolder();
+        if (erased) { // GROOVY-12623: the type checker resolves the type argument
+            ClassNode inferred = source.getNodeMetaData(StaticTypesMarker.INFERRED_TYPE);
+            GenericsType[] gts = inferred != null ? inferred.getGenericsTypes() : null;
+            returnType = gts != null && gts.length == 1 && !gts[0].getType().isGenericsPlaceHolder() ? gts[0].getType() : null;
+        }
+        boolean convertReturn = returnType != null && isReturnConversionRequired(returnType, erased, samReturnType); // GROOVY-12617
+        if (!any && !convertReturn) return null;
+
+        Parameter[] samParams = new Parameter[samCount];
+        for (int i = 0; i < samCount; i += 1) {
+            if (erasures[i] != null) {
+                samParams[i] = StaticInvocationWriter.newGStringBridgeParameter("p" + i, erasures[i]);
+            } else {
+                samParams[i] = new Parameter(exact[i].getType(), "p" + i);
+                samParams[i].setOriginType(exact[i].getOriginType());
+            }
+        }
+
+        Parameter self = capturing ? new Parameter(resolved.referenceTarget().type(), "self") : null;
+        Parameter[] adapterParams;
+        Expression receiver;
+        Parameter[] arguments;
+        if (virtual && !capturing) {
+            adapterParams = samParams;
+            receiver = varX(samParams[0]);
+            arguments = Arrays.copyOfRange(samParams, 1, samCount);
+        } else if (virtual) {
+            adapterParams = prependParameter(self, samParams);
+            receiver = varX(self);
+            arguments = samParams;
+        } else if (capturing) {
+            adapterParams = prependParameter(self, samParams);
+            receiver = classX(impl.getDeclaringClass());
+            arguments = adapterParams;
+        } else {
+            adapterParams = samParams;
+            receiver = classX(impl.getDeclaringClass());
+            arguments = samParams;
+        }
+
+        MethodCallExpression call = callX(receiver, impl.getName(), new ArgumentListExpression(arguments));
+        call.setImplicitThis(false);
+        call.setMethodTarget(impl);
+        call.putNodeMetaData(StaticTypesMarker.DIRECT_METHOD_CALL_TARGET, impl);
+        call.setSourcePosition(source);
+
+        Statement invocation = impl.isVoidMethod() ? stmt(call) : returnS(call);
+        Statement body = any ? block(StaticInvocationWriter.gstringBridgePrologue(controller, samParams), invocation) : invocation;
+        ClassNode[] exceptions = impl.getExceptions() == null ? ClassNode.EMPTY_ARRAY : impl.getExceptions();
+        ClassNode classNode = controller.getClassNode();
+        MethodNode adapter = classNode.addSyntheticMethod(
+            createSyntheticMethodName(any ? "gstring" : "adapt", impl.getDeclaringClass(), impl.getName()),
+            // the JVM rejects ACC_FINAL on any method of an interface (JVMS 4.6)
+            Opcodes.ACC_PRIVATE | Opcodes.ACC_STATIC | (classNode.isInterface() ? 0 : Opcodes.ACC_FINAL),
+            convertReturn ? samReturnType : impl.getReturnType(),
+            adapterParams,
+            exceptions,
+            body);
+        adapter.putNodeMetaData(StaticCompilationMetadataKeys.STATIC_COMPILE_NODE, Boolean.TRUE);
+        adapter.setSourcePosition(source);
+        return new Adaptation(adapter, samParams);
+    }
+
+    /**
+     * Determines if a value of {@code returnType} must be converted to the primitive return type
+     * of the functional interface by Groovy, because {@code LambdaMetafactory} cannot convert it.
+     * For a declared return type, the metafactory unboxes and applies widening primitive
+     * conversion. For a type parameter (erased to {@code Object}), it casts to the wrapper type
+     * of {@code boolean} or {@code char}, or to {@code Number} for a numeric type, and unboxes.
+     * Which conversions are allowed at all is decided by the type checker.
+     *
+     * @param returnType the declared return type, or the type argument for an erased one
+     * @param erased     whether the referenced method returns a type parameter
+     */
+    private static boolean isReturnConversionRequired(final ClassNode returnType, final boolean erased, final ClassNode samReturnType) {
+        if (!ClassHelper.isPrimitiveType(samReturnType) || ClassHelper.isPrimitiveVoid(samReturnType)
+                || ClassHelper.isPrimitiveVoid(returnType)) {
+            return false;
+        }
+        ClassNode type = ClassHelper.getUnwrapper(returnType);
+        // must precede the erased test: it keeps a Boolean or Character type argument on the
+        // metafactory, which unboxes it as Java does, so that null is not converted by Groovy
+        if (type.equals(samReturnType)) return false;
+        if (erased) {
+            return ClassHelper.isPrimitiveBoolean(samReturnType) || ClassHelper.isPrimitiveChar(samReturnType)
+                    || !implementsInterfaceOrIsSubclassOf(ClassHelper.getWrapper(returnType), ClassHelper.Number_TYPE);
+        }
+        return !(ClassHelper.isNumberType(type) && ClassHelper.isNumberType(samReturnType) && isAssignableTo(type, samReturnType));
+    }
+
+    private static Parameter[] prependParameter(final Parameter first, final Parameter[] rest) {
+        Parameter[] all = new Parameter[rest.length + 1];
+        all[0] = first;
+        System.arraycopy(rest, 0, all, 1, rest.length);
+        return all;
+    }
+
     private void ensureDeserializeLambdaSupport(final MethodReferenceExpression methodReferenceExpression,
                                                 final FunctionalInterfaceContext functionalInterface,
                                                 final ResolvedMethodReference resolvedMethodReference,
-                                                final MethodReferenceInvocation invocation) {
+                                                final MethodReferenceInvocation invocation,
+                                                final Parameter[] instantiatedParameters) {
         String helperName = getOrCreateDeserializeLambdaMethodName(methodReferenceExpression);
         Parameter[] parameters = createDeserializeMethodParameters();
         if (controller.getClassNode().hasMethod(helperName, parameters)) {
@@ -620,7 +820,7 @@ public class StaticTypesMethodReferenceExpressionWriter extends MethodReferenceE
             helperName,
             functionalInterface.abstractMethod(),
             methodRefMethod,
-            functionalInterface.parametersWithExactType(),
+            instantiatedParameters,
             invocation.implMethodKind(),
             invocation.capturing(),
             referenceTarget.type(),
@@ -630,7 +830,7 @@ public class StaticTypesMethodReferenceExpressionWriter extends MethodReferenceE
         addDeserializeDispatcherEntry(controller, parameters,
             createSerializedLambdaFingerprint(functionalInterface.samMethodDescriptor(), controller.getClassNode(), invocation.implMethodKind(),
                 methodRefMethod.getDeclaringClass(), methodRefMethod,
-                functionalInterface.parametersWithExactType(), functionalInterface.functionalType(),
+                instantiatedParameters, functionalInterface.functionalType(),
                 functionalInterface.abstractMethod(), invocation.capturing() ? 1 : 0),
             helperMethod);
     }
@@ -771,5 +971,30 @@ public class StaticTypesMethodReferenceExpressionWriter extends MethodReferenceE
      * Bytecode-level invocation details derived from the resolved method reference.
      */
     private record MethodReferenceInvocation(int implMethodKind, String invokedTypeDescriptor, boolean capturing) {
+    }
+
+    /**
+     * Synthetic adapter that converts parameters or the return value, and the SAM parameters
+     * the metafactory should see.
+     */
+    private record Adaptation(MethodNode method, Parameter[] instantiatedParameters) {
+        @Override
+        public boolean equals(final Object obj) {
+            if (!(obj instanceof Adaptation other)) return false;
+            return Objects.equals(method, other.method)
+                    && Arrays.equals(instantiatedParameters, other.instantiatedParameters);
+        }
+
+        @Override
+        public int hashCode() {
+            int result = Objects.hashCode(method);
+            result = 31 * result + Arrays.hashCode(instantiatedParameters);
+            return result;
+        }
+
+        @Override
+        public String toString() {
+            return "Adaptation[method=" + method + ", instantiatedParameters=" + Arrays.toString(instantiatedParameters) + "]";
+        }
     }
 }

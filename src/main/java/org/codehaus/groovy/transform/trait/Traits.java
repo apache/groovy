@@ -29,6 +29,7 @@ import org.codehaus.groovy.ast.FieldNode;
 import org.codehaus.groovy.ast.GenericsType;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.Parameter;
+import org.codehaus.groovy.ast.decompiled.DecompiledClassNode;
 import org.codehaus.groovy.ast.expr.ClassExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.ListExpression;
@@ -302,7 +303,16 @@ public abstract class Traits {
                     staticFieldHelperClassNode = icn;
                 }
             }
-        } else { // pre-compiled trait
+        } else if (trait.redirect() instanceof DecompiledClassNode decompiled) { // GROOVY-10932: pre-compiled trait read from bytecode
+            helperClassNode = decompiled.resolveClassNullable(Traits.helperClassName(trait));
+            if (helperClassNode == null) {
+                throw new GroovyBugError("Couldn't find trait helper classes on compile classpath!");
+            }
+            fieldHelperClassNode = decompiled.resolveClassNullable(Traits.fieldHelperClassName(trait));
+            if (fieldHelperClassNode != null) {
+                staticFieldHelperClassNode = decompiled.resolveClassNullable(Traits.staticFieldHelperClassName(trait));
+            }
+        } else { // pre-compiled trait loaded as a class
             try {
                 ClassLoader classLoader = trait.getTypeClass().getClassLoader();
                 helperClassNode = ClassHelper.make(classLoader.loadClass(Traits.helperClassName(trait)));

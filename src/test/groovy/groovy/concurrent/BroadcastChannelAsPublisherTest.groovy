@@ -25,7 +25,6 @@ import java.util.concurrent.Flow
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicReference
 
-import static groovy.test.GroovyAssert.assertScript
 import static org.junit.jupiter.api.Assertions.assertThrows
 
 final class BroadcastChannelAsPublisherTest {
@@ -201,24 +200,21 @@ final class BroadcastChannelAsPublisherTest {
     @Test
     void forAwaitOverPublisher() {
         // End-to-end via the FlowPublisherAdapter
-        assertScript '''
-            import groovy.concurrent.BroadcastChannel
-
-            def broadcast = BroadcastChannel.create()
-            def publisher = broadcast.asPublisher()
-
-            async {
-                Thread.sleep(50)  // let consumer subscribe
-                ['x', 'y', 'z'].each { broadcast.send(it) }
-                broadcast.close()
+        def broadcast = BroadcastChannel.create()
+        def publisher = broadcast.asPublisher()
+        async {
+            // the consumer must be subscribed before the first send, or it misses values
+            waitUntil { broadcast.subscriberCount > 0 }
+            for (item in ['x', 'y', 'z']) {
+                await broadcast.send(item)
             }
-
-            def collected = []
-            for await (item in publisher) {
-                collected << item
-            }
-            assert collected == ['x', 'y', 'z']
-        '''
+            broadcast.close()
+        }
+        def collected = []
+        for await (item in publisher) {
+            collected << item
+        }
+        assert collected == ['x', 'y', 'z']
     }
 
     @Test

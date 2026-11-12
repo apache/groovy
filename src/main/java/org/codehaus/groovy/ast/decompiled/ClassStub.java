@@ -124,6 +124,12 @@ public class ClassStub extends MemberStub {
     int innerClassModifiers = -1;
 
     /**
+     * The INNERCLASS entries of a member class and of its enclosing member classes, outermost
+     * first, as recorded in the class file. {@code null} for a top-level, local or anonymous class.
+     */
+    List<InnerClassStub> innerClassEntries;
+
+    /**
      * Creates a ClassStub from bytecode class metadata.
      *
      * @param className the fully qualified class name (dot notation)
@@ -496,4 +502,15 @@ class RecordComponentStub extends MemberStub {
         this.descriptor = descriptor;
         this.signature = signature;
     }
+}
+
+/**
+ * Bytecode stub for an INNERCLASS entry (JVMS 4.7.6) of a member class.
+ *
+ * @param name the internal name of the member class
+ * @param outerName the internal name of the enclosing class
+ * @param innerName the simple name of the member class
+ * @param access the access flags of the member class
+ */
+record InnerClassStub(String name, String outerName, String innerName, int access) {
 }

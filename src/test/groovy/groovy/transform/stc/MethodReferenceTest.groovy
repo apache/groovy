@@ -19,10 +19,16 @@
 package groovy.transform.stc
 
 import org.codehaus.groovy.classgen.asm.AbstractBytecodeTestCase
+import org.codehaus.groovy.classgen.asm.InstructionSequence
+import org.codehaus.groovy.control.CompilationUnit
+import org.codehaus.groovy.control.CompilerConfiguration
+import org.codehaus.groovy.control.Phases
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.ValueSource
+
+import java.util.regex.Pattern
 
 import static groovy.test.GroovyAssert.assertScript
 import static groovy.test.GroovyAssert.shouldFail
@@ -735,6 +741,190 @@ final class MethodReferenceTest {
         '''
     }
 
+    // GROOVY-12623
+    @ParameterizedTest
+    @ValueSource(strings=['@CompileDynamic','@TypeChecked','@CompileStatic'])
+    void testPrimitiveSAMFromTypeParameterReturnType(String tag) {
+        assertScript shell, """
+            @FunctionalInterface interface ToChar<T> { char apply(T t) }
+
+            $tag
+            class C {
+                static class Box<T> {
+                    T value
+                    T get() { value }
+                }
+                static <T> T id(T t) { t }
+                static <T> T first(T... ts) { ts[0] }
+                def <T> T me(T t) { t }
+                static void test() {
+                    Predicate<String> p = C::id
+                    assert [p.test(''), p.test('x')] == [false, true]
+                    p = new C()::me
+                    assert [p.test(''), p.test('x')] == [false, true]
+                    p = C::first
+                    assert [p.test(''), p.test('x')] == [false, true]
+                    Map<String, String> m = [a: 'x', b: '']
+                    p = m::get
+                    assert [p.test('a'), p.test('b'), p.test('z')] == [true, false, false]
+
+                    BiPredicate<C, String> bp = C::me
+                    assert [bp.test(new C(), ''), bp.test(new C(), 'x')] == [false, true]
+                    BiPredicate<Map<String, String>, String> mp = Map::get
+                    assert [mp.test(m, 'a'), mp.test(m, 'b'), mp.test(m, 'z')] == [true, false, false]
+                    Predicate<List<String>> lp = List::first
+                    assert [lp.test(['']), lp.test(['x'])] == [false, true]
+                    Predicate<Box<String>> xp = Box::get
+                    assert [xp.test(new Box<String>(value: '')), xp.test(new Box<String>(value: 'x'))] == [false, true]
+                    Predicate<Integer> ip = C::id
+                    assert [ip.test(0), ip.test(1)] == [false, true]
+                    Predicate<Object> op = C::id
+                    assert [op.test(null), op.test(''), op.test([]), op.test([1]), op.test(true)] == [false, false, false, true, true]
+                    IntPredicate i = C::id
+                    assert [i.test(0), i.test(1)] == [false, true]
+                    BooleanSupplier bs = Optional.of('')::get
+                    assert !bs.getAsBoolean()
+                }
+            }
+            C.test()
+        """
+    }
+
+    // GROOVY-12623: the type argument is checked as the return type of a method would be
+    @Test
+    void testPrimitiveSAMFromTypeParameterReturnTypeIncompatible() {
+        for (ref in ['ToIntFunction<Character> f = C::id', 'ToIntFunction<String> f = C::id', 'ToChar<String> f = C::id']) {
+            def err = shouldFail shell, """
+                @FunctionalInterface interface ToChar<T> { char apply(T t) }
+                @CompileStatic
+                class C {
+                    static <T> T id(T t) { t }
+                    static void test() {
+                        $ref
+                    }
+                }
+            """
+            assert err.message =~ /Invalid return type: java.lang.(Character|String) is not convertible to (int|char)/
+        }
+
+        def err = shouldFail shell, '''
+            @CompileStatic
+            class C {
+                static <T> T id(T t) { t }
+                static void test() {
+                    ToIntFunction<Long> f = C::id
+                }
+            }
+        '''
+        assert err.message =~ /Possible loss of precision from java.lang.Long to int/
+    }
+
+    // GROOVY-12623
+    @ParameterizedTest
+    @ValueSource(strings = [
+        'ToIntFunction<Long> f = C.&id',
+        'ToIntFunction<Long> f = new C().&me',
+        'ToIntFunction<List<Long>> f = List.&first',
+        'use(C.&id)',
+    ])
+    void testMethodPointerFromTypeParameterReturnTypeIncompatible(String ref) {
+        def err = shouldFail shell, """
+            @CompileStatic
+            class C {
+                static <T> T id(T t) { t }
+                def <T> T me(T t) { t }
+                static int use(ToIntFunction<Long> f) { f.applyAsInt(5L) }
+                static void test() {
+                    $ref
+                }
+            }
+        """
+        assert err.message =~ /Possible loss of precision from java.lang.Long to int/
+    }
+
+    // GROOVY-12623: a method pointer still selects its method at run time
+    @Test
+    void testMethodPointerFromTypeParameterReturnType() {
+        assertScript shell, '''
+            @CompileStatic
+            class C {
+                static <T> T id(T t) { t }
+                static void test() {
+                    ToLongFunction<Integer> f = C.&id
+                    assert f.applyAsLong(5) == 5L
+                    Predicate<String> p = C.&id
+                    assert !p.test('') && p.test('x')
+                    ToIntFunction<Integer> g = C.&id.memoize()
+                    assert g.applyAsInt(5) == 5
+                }
+            }
+            C.test()
+        '''
+
+        def err = shouldFail shell, '''
+            @CompileStatic
+            class C {
+                static int f(Object o) { 1 }
+                static long f(Long l) { 2L }
+                static void test() {
+                    ToIntFunction<Object> g = C.&f // f(Long) may be called
+                }
+            }
+        '''
+        assert err.message =~ /Possible loss of precision from long to int/
+    }
+
+    // GROOVY-12623
+    @Test
+    void testPrimitiveSAMFromTypeParameterReturnTypeSerializable() {
+        assertScript shell, '''
+            @CompileStatic
+            class C {
+                interface SerPred<T> extends Serializable, Predicate<T> {}
+
+                static <T> T id(T t) { t }
+                static void test() {
+                    SerPred<String> p = C::id
+                    assert !p.test('') && p.test('x')
+
+                    def out = new ByteArrayOutputStream()
+                    out.withObjectOutputStream { it.writeObject(p) }
+                    def q = new ByteArrayInputStream(out.toByteArray()).withObjectInputStream(C.classLoader) { (SerPred<String>) it.readObject() }
+                    assert !q.test('') && q.test('x')
+                }
+            }
+            C.test()
+        '''
+    }
+
+    // GROOVY-12623: a type argument that LambdaMetafactory converts is not converted by Groovy truth or cast
+    @Test
+    void testPrimitiveSAMFromTypeParameterReturnTypeNoConversion() {
+        assertScript shell, '''
+            @CompileStatic
+            class C {
+                static <T> T id(T t) { t }
+                static void test() {
+                    Map<String, Boolean> m = [a: true, b: false]
+                    Predicate<String> p = m::get
+                    assert p.test('a') && !p.test('b')
+                    groovy.test.GroovyAssert.shouldFail(NullPointerException) { p.test('z') }
+
+                    Predicate<Boolean> bp = C::id
+                    assert !bp.test(false) && bp.test(true)
+                    groovy.test.GroovyAssert.shouldFail(NullPointerException) { bp.test(null) }
+
+                    ToLongFunction<Integer> g = C::id
+                    assert g.applyAsLong(5) == 5L
+                    groovy.test.GroovyAssert.shouldFail(NullPointerException) { g.applyAsLong(null) }
+                    ToDoubleFunction<BigDecimal> h = C::id
+                    assert h.applyAsDouble(1.5G) == 1.5d
+                }
+            }
+            C.test()
+        '''
+    }
+
     // GROOVY-11026
     @Test // instance::instanceMethod
     void testBiFunctionII() {
@@ -1146,6 +1336,501 @@ final class MethodReferenceTest {
         assert err.message =~ /Cannot call java.lang.Integer\[\]#<init>\(int\) with arguments /
     }
 
+    // GROOVY-12488
+    @Test // class::new
+    void testFunctionCN10() {
+        assertScript shell, '''
+            class Over {
+                final String how
+                Over(String s) { how = 'String' }
+                Over(Integer i) { how = 'Integer' }
+                Over(long l) { how = 'long' }
+                Over(int i, long j) { how = 'int,long' }
+            }
+
+            @CompileStatic
+            void test() {
+                Function<String, Over> s = Over::new
+                assert s.apply('x').how == 'String'
+                Function<Integer, Over> i = Over::new
+                assert i.apply(1).how == 'Integer'
+                IntFunction<Over> p = Over::new // like new Over(int)
+                assert p.apply(1).how == 'Integer'
+                LongFunction<Over> l = Over::new
+                assert l.apply(1L).how == 'long'
+                BiFunction<Integer, Integer, Over> b = Over::new
+                assert b.apply(1, 2).how == 'int,long'
+            }
+
+            test()
+        '''
+    }
+
+    // GROOVY-12488
+    @Test // class::new
+    void testFunctionCN11() {
+        assertScript shell, '''
+            class Var {
+                final List<String> values
+                Var(String... values) { this.values = values.toList() }
+            }
+
+            @CompileStatic
+            void test() {
+                Supplier<Var> none = Var::new
+                assert none.get().values == []
+                Function<String, Var> one = Var::new
+                assert one.apply('a').values == ['a']
+                BiFunction<String, String, Var> two = Var::new
+                assert two.apply('a', 'b').values == ['a', 'b']
+                Function<String[], Var> array = Var::new
+                assert array.apply(['a', 'b', 'c'] as String[]).values == ['a', 'b', 'c']
+            }
+
+            test()
+        '''
+    }
+
+    // GROOVY-12488
+    @Test // class::new
+    void testFunctionCN12() {
+        assertScript shell, '''
+            class Pair<A, B> {
+                final A a
+                final B b
+                Pair(A a, B b) { this.a = a; this.b = b }
+            }
+
+            @CompileStatic
+            void test() {
+                BiFunction<String, Integer, Pair<String, Integer>> f = Pair::new
+                Pair<String, Integer> pair = f.apply('x', 1)
+                assert pair.a == 'x' && pair.b == 1
+
+                Function<Integer, List<String>> g = ArrayList::new // ArrayList(int)
+                assert g.apply(10).isEmpty()
+                Function<Collection<String>, List<String>> h = ArrayList::new // ArrayList(Collection)
+                assert h.apply(['y']) == ['y']
+            }
+
+            test()
+        '''
+    }
+
+    // GROOVY-12488
+    @Test // class::new
+    void testFunctionCN13() {
+        assertScript shell, '''
+            @CompileStatic
+            class C {
+                private final String value
+                private C(String value) { this.value = value }
+
+                static class Box {
+                    private final String value
+                    private Box(String value) { this.value = value }
+                    static Function<String, C> outer() { C::new }
+                }
+
+                static Function<String, Box> inner() { Box::new }
+                static Function<String, Box> inClosure() {
+                    def make = { -> Function<String, Box> f = Box::new; f }
+                    make()
+                }
+                static Function<String, Box> inLambda() {
+                    Supplier<Function<String, Box>> make = () -> { Function<String, Box> f = Box::new; f }
+                    make.get()
+                }
+            }
+
+            assert C.inner().apply('i').value == 'i'
+            assert C.Box.outer().apply('o').value == 'o'
+            assert C.inClosure().apply('c').value == 'c'
+            assert C.inLambda().apply('l').value == 'l'
+        '''
+    }
+
+    // GROOVY-12488
+    @Test // class::new
+    void testFunctionCN14() {
+        assertScript shell, '''
+            class Outer {
+                class Inner {
+                    final Outer outer
+                    Inner() { outer = Outer.this }
+                }
+            }
+
+            @CompileStatic
+            void test() {
+                Function<Outer, Outer.Inner> f = Outer.Inner::new
+                def outer = new Outer()
+                assert f.apply(outer).outer.is(outer)
+            }
+
+            test()
+        '''
+    }
+
+    // GROOVY-12488
+    @Test // class::new
+    void testFunctionCN15() {
+        assertScript shell, '''
+            class Dflt {
+                final String value
+                Dflt(String a, String b = 'b') { value = a + b }
+            }
+
+            @CompileStatic
+            void test() {
+                Function<String, Dflt> f = Dflt::new
+                assert f.apply('a').value == 'ab'
+                BiFunction<String, String, Dflt> g = Dflt::new
+                assert g.apply('a', 'c').value == 'ac'
+            }
+
+            test()
+        '''
+    }
+
+    // GROOVY-10971, GROOVY-12488
+    @Test // class::new
+    void testFunctionCN16() {
+        assertScript shell, '''
+            class Foo {
+                final String value
+                Foo(String s) { value = s }
+            }
+
+            @CompileStatic
+            void test() {
+                Function<Object, Foo> f = Foo::new // no Foo(Object); selected at run time
+                assert f.apply('x').value == 'x'
+            }
+
+            test()
+        '''
+    }
+
+    // GROOVY-12488
+    @Test // class::new
+    void testFunctionCN17() {
+        assertScript shell, '''package p
+            class A {
+                final String value
+                protected A(String value) { this.value = value }
+            }
+
+            true
+        '''
+        assertScript shell, '''
+            @CompileStatic
+            class C extends p.A {
+                C() { super('C') }
+                static Function<String, p.A> create() {
+                    p.A::new // protected constructor of another package
+                }
+            }
+
+            assert C.create().apply('x').value == 'x'
+        '''
+    }
+
+    // GROOVY-12488
+    @Test // class::new
+    void testFunctionCN18() {
+        assertScript shell, '''
+            class X {
+                final String how
+                X(CharSequence cs) { how = 'CharSequence' }
+                X(String s) { how = 'String' }
+            }
+
+            @CompileStatic
+            void test() {
+                Function<CharSequence, X> f = X::new // selected by parameter type of Function#apply, as in Java
+                assert f.apply('x').how == 'CharSequence'
+            }
+
+            test()
+        '''
+    }
+
+    // GROOVY-12488
+    @Test // class::new
+    void testFunctionCN19() {
+        assertScript shell, '''
+            class Foo {
+                final String how
+                private Foo(String s) { how = 'private String' }
+                Foo(Object o) { how = 'public Object' }
+            }
+
+            @CompileStatic
+            void test() {
+                Function<String, Foo> f = Foo::new // like new Foo(s): Foo(String) is not visible
+                assert f.apply('x').how == 'public Object'
+                assert new Foo('x').how == 'public Object'
+            }
+
+            test()
+        '''
+    }
+
+    // GROOVY-12488
+    @Test // class::new
+    void testFunctionCN20() {
+        assertScript shell, '''package p
+            class A {
+                final String how
+                @PackageScope A(String s) { how = 'package-private String' }
+                A(Object o) { how = 'public Object' }
+            }
+
+            true
+        '''
+        assertScript shell, '''
+            @CompileStatic
+            void test() {
+                Function<String, p.A> f = p.A::new // like new p.A(s): A(String) is not visible
+                assert f.apply('x').how == 'public Object'
+                assert new p.A('x').how == 'public Object'
+            }
+
+            test()
+        '''
+    }
+
+    // GROOVY-12488
+    @Test // class::new
+    void testFunctionCN21() {
+        assertScript shell, '''
+            class IL {
+                final String how
+                IL(Object o) { how = 'Object' }
+                IL(long l) { how = 'long' }
+            }
+
+            @CompileStatic
+            void test() {
+                Function<Integer, IL> f = IL::new // like new IL(i) for Integer i
+                assert f.apply(1).how == 'Object'
+                Integer i = 1
+                assert new IL(i).how == 'Object'
+            }
+
+            test()
+        '''
+    }
+
+    // GROOVY-12488
+    @Test // class::new
+    void testFunctionCN22() {
+        assertScript shell, '''package p
+            class A {
+                final String value
+                protected A(String value) { this.value = 'prot:' + value }
+                @PackageScope A(Integer i) { this.value = 'pkg:' + i }
+            }
+
+            @CompileStatic
+            class C {
+                static Function<String, A> prot() { A::new }
+                static Function<Integer, A> pkg() { A::new }
+            }
+
+            assert C.prot().apply('x').value == 'prot:x'
+            assert C.pkg().apply(1).value == 'pkg:1'
+        '''
+    }
+
+    // GROOVY-12488
+    @Test // class::new
+    void testFunctionCN23() {
+        assertScript shell, '''package p
+            class A {
+                final String value
+                protected A(String value) { this.value = 'prot:' + value }
+                @PackageScope A(Integer i) { this.value = 'pkg:' + i }
+            }
+
+            true
+        '''
+        assertScript shell, '''package p
+            @CompileStatic
+            class C { // same package name as A, but another class loader
+                static Function<String, A> prot() { A::new }
+                static Function<Integer, A> pkg() { A::new }
+            }
+
+            assert C.prot().apply('x').value == 'prot:x'
+            assert C.pkg().apply(1).value == 'pkg:1'
+        '''
+    }
+
+    // GROOVY-12488
+    @Test // class::new
+    void testFunctionCN24() {
+        assertScript shell, '''
+            class Foo {
+                final String how
+                Foo(String s) { how = 'real:' + s }
+            }
+
+            @CompileStatic
+            String test() {
+                Function<String, Foo> f = Foo::new // calls the constructor directly, like new Foo(s)
+                f.apply('x').how
+            }
+
+            Foo.metaClass.constructor = { String s -> Foo.getDeclaredConstructor(String).newInstance('emc-' + s) }
+            try {
+                assert new Foo('x').how == 'real:emc-x'
+                assert test() == 'real:x'
+            } finally {
+                GroovySystem.metaClassRegistry.removeMetaClass(Foo)
+            }
+        '''
+    }
+
+    // GROOVY-12488
+    @Test // class::new
+    void testFunctionCN25() {
+        assertScript shell, '''
+            class A {
+                String name
+            }
+
+            @CompileStatic
+            List<String> test(Map map) {
+                Function<Map, A> f = A::new // map-style construction, like new A(map)
+                [f.apply(map).name, new A(map).name]
+            }
+
+            assert test([name: 'x']) == ['x', 'x']
+        '''
+    }
+
+    // GROOVY-12488
+    @Test // class::new
+    void testFunctionCN26() {
+        assertScript shell, '''
+            class Lib {
+                final String value
+                Lib(String a, String b = 'b') { value = a + b }
+            }
+
+            true
+        '''
+        assertScript shell, '''
+            @CompileStatic
+            class C {
+                static List<String> test() {
+                    Function<String, Dflt> one = Dflt::new // the constructor generated for the default argument
+                    Supplier<All> none = All::new
+                    Function<String, Pkg> pkg = Pkg::new
+                    Function<String, Lib> lib = Lib::new // compiled by the parse before
+                    [one.apply('a').value, none.get().value, pkg.apply('p').value, lib.apply('l').value]
+                }
+            }
+            class Dflt { // declared after C
+                final String value
+                Dflt(String a, String b = 'b') { value = a + b }
+            }
+            class All {
+                final String value
+                All(String a = 'a', String b = 'b') { value = a + b }
+            }
+            class Pkg {
+                final String value
+                @PackageScope Pkg(String a, Integer i = 1) { value = a + i }
+            }
+
+            assert C.test() == ['ab', 'ab', 'p1', 'lb']
+        '''
+    }
+
+    // GROOVY-11385, GROOVY-12488
+    @Test // class::new
+    void testFunctionCN27() {
+        assertScript shell, '''package p
+            abstract class A {
+                final String value
+                protected A(String value) { this.value = value }
+            }
+            class B {
+                final String value
+                protected B(String value) { this.value = value }
+            }
+
+            true
+        '''
+        def err = shouldFail shell, '''
+            @CompileStatic
+            def test() {
+                def a = new p.A('x') {
+                    Function<String, p.A> make() { p.A::new }
+                }
+                a.make()
+            }
+
+            test()
+        '''
+        assert err.message =~ /Cannot instantiate the type p.A/
+
+        assertScript shell, '''
+            @CompileStatic
+            String test() {
+                def b = new p.B('x') {
+                    Function<String, p.B> make() { p.B::new } // protected constructor of another package
+                }
+                b.make().apply('y').value
+            }
+
+            assert test() == 'y'
+        '''
+    }
+
+    // GROOVY-12488
+    @Test
+    void testMethodReferencesInStaticAndDefaultMethodsOfInterface() {
+        assertScript shell, '''
+            class Foo {
+                final String value
+                Foo(String value) { this.value = value }
+            }
+
+            @CompileStatic
+            interface I {
+                static Function<String, Foo> make() { Foo::new }
+                default Function<String, Foo> create() { Foo::new }
+                static Supplier<List> list() { Arrays::asList }
+                default String join(String... parts) { parts.join(',') }
+                default BiFunction<String, String, String> joiner() { this::join }
+                static IntFunction<String[]> array() { String[]::new }
+                default IntFunction<int[][]> matrix() { int[][]::new }
+                static Function<Closure, Thread> daemon() { Thread::startDaemon } // static extension method
+                default Supplier<String> className() { String::getName } // method of Class
+            }
+
+            assert I.make().apply('s').value == 's'
+            assert new I() {}.create().apply('d').value == 'd'
+            assert I.list().get() == []
+            assert new I() {}.joiner().apply('a', 'b') == 'a,b'
+            assert I.array().apply(2).length == 2
+            assert new I() {}.matrix().apply(3).length == 3
+            Thread thread = I.daemon().apply { -> }
+            thread.join()
+            assert thread.daemon
+            assert new I() {}.className().get() == 'java.lang.String'
+
+            // a coverage agent adds its own synthetic $jacocoInit
+            def helpers = I.declaredMethods.findAll { it.synthetic && !it.name.startsWith('$') }
+            assert helpers*.name.collect { it.substring(0, it.indexOf('$')) }.toSet() == ['ctorRef', 'adapt', 'dgsm', 'class', 'gstring'] as Set
+            assert helpers.every { java.lang.reflect.Modifier.isPrivate(it.modifiers) && !java.lang.reflect.Modifier.isFinal(it.modifiers) }
+        '''
+    }
+
     @Test // arrayClass::new
     void testIntFunctionCN() {
         assertScript shell, '''
@@ -1154,6 +1839,48 @@ final class MethodReferenceTest {
                 IntFunction<Integer[]> f = Integer[]::new;
                 def result = [1, 2, 3].stream().toArray(f)
                 assert result == new Integer[] { 1, 2, 3 }
+            }
+
+            test()
+        '''
+    }
+
+    // GROOVY-12488
+    @Test // arrayClass::new
+    void testArrayConstructorReferencesWithEachSizeType() {
+        assertScript shell, '''
+            interface ShortFunction<T> { T apply(short s) }
+            interface ByteFunction<T> { T apply(byte b) }
+
+            @CompileStatic
+            void test() {
+                IntFunction<String[]> i = String[]::new
+                Function<Integer, String[]> boxed = String[]::new
+                Function<Short, String[]> s = String[]::new
+                Function<Byte, String[]> b = String[]::new
+                ShortFunction<long[]> ps = long[]::new
+                ByteFunction<Object[]> pb = Object[]::new
+                IntFunction<int[][]> m = int[][]::new
+                IntFunction<List<String>[]> g = List[]::new
+
+                assert i.apply(1) == new String[1]
+                assert boxed.apply(2) == new String[2]
+                assert s.apply((short) 3) == new String[3]
+                assert b.apply((byte) 4) == new String[4]
+                assert ps.apply((short) 2) == new long[] { 0L, 0L }
+                assert pb.apply((byte) 1).getClass() == Object[]
+                int[][] matrix = m.apply(3)
+                assert matrix.length == 3 && matrix[0] == null
+                assert g.apply(1).getClass() == List[]
+
+                def inClosure = { -> IntFunction<String[]> f = String[]::new; f }
+                Supplier<IntFunction<String[]>> inLambda = () -> { IntFunction<String[]> f = String[]::new; f }
+                assert inClosure().apply(1).length == 1
+                assert inLambda.get().apply(2).length == 2
+
+                try { i.apply(-1); assert false } catch (NegativeArraySizeException expected) { }
+                try { boxed.apply(null); assert false } catch (NullPointerException expected) { }
+                try { s.apply(null); assert false } catch (org.codehaus.groovy.runtime.typehandling.GroovyCastException expected) { }
             }
 
             test()
@@ -1762,25 +2489,44 @@ final class MethodReferenceTest {
         assert err.message =~ /Argument is a method reference, but parameter type 'java.lang.Object' is not a functional interface/
     }
 
-    // GROOVY-10979
+    // GROOVY-10979, GROOVY-12492
     @Test
     void testNotFunctionalInterface3() {
+        assertScript shell, '''
+            Integer m(String x) {
+                return x.length()
+            }
+            @CompileStatic
+            void test() {
+                BiFunction<Function<String, Integer>, Number, Function<String, Integer>> y = { Function<String, Integer> f, Number n ->
+                    { String s -> f.apply(s) + n.intValue() } as Function<String, Integer>
+                }
+                BinaryOperator<Function<String, Integer>> z = { Function<String, Integer> f, Function<String, Integer> g -> f }
+                // reduce number(s) to string-to-integer functions: U is bound to a functional interface
+                Function<String, Integer> f = [1, 2].stream().<Function<String, Integer>>reduce(this::m, y, z)
+                assert f.apply('abc') == 6
+                f = (Function<String, Integer>) [1, 2].stream().reduce(this::m, y, z)
+                assert f.apply('abc') == 6
+                f = (Function<String, Integer>) [1, 2].stream().reduce((String s) -> 1, y, z)
+                assert f.apply('abc') == 4
+            }
+
+            test()
+        '''
+
         def err = shouldFail shell, '''
             Integer m(String x) {
                 return 1
             }
+            static <T> T id(T t) {
+                return t
+            }
             @CompileStatic
             void test() {
-                java.util.stream.Stream<Number>                                          x = null
-                BiFunction<Function<String, Integer>, Number, Function<String, Integer>> y = null
-                BinaryOperator<Function<String, Integer>>                                z = null
-                // reduce number(s) to string-to-integer functions
-                x.<Function<String, Integer>>reduce(this::m, y, z)
-                x.reduce(this::m, y, z)
-                x.reduce((s) -> 1, y, z)
+                id(this::m)
             }
         '''
-        assert err.message =~ /Argument is a method reference, but parameter type 'U' is not a functional interface/
+        assert err.message =~ /Argument is a method reference, but parameter type 'T' is not a functional interface/
     }
 
     // GROOVY-11254
@@ -2246,6 +2992,130 @@ final class MethodReferenceTest {
         '''
     }
 
+    // GROOVY-12617
+    @ParameterizedTest
+    @ValueSource(strings=['@CompileDynamic','@TypeChecked','@CompileStatic'])
+    void testPrimitiveBooleanSAMFromNonBooleanReturnType(String tag) {
+        assertScript shell, """
+            $tag
+            class C {
+                static String str(String s) { s }
+                static Object obj(String s) { s }
+                static List<String> list(String s) { s ? [s] : [] }
+                static Integer length(String s) { s.length() }
+                static int size(String s) { s.size() }
+                static String join(String... s) { s.join('') }
+                String prefix = ''
+                String prepend(String s) { prefix + s }
+                static void test() {
+                    Predicate<String> p = C::str
+                    assert !p.test('') && p.test('x')
+                    p = C.&str
+                    assert !p.test('') && p.test('x')
+                    p = C::obj
+                    assert !p.test('') && p.test('x')
+                    p = C::list
+                    assert !p.test('') && p.test('x')
+                    p = C::length
+                    assert !p.test('') && p.test('x')
+                    p = C::size
+                    assert !p.test('') && p.test('x')
+                    p = C::join
+                    assert !p.test('') && p.test('x')
+                    p = new C()::prepend
+                    assert !p.test('') && p.test('x')
+                    p = new C(prefix: 'x')::prepend
+                    assert p.test('')
+                    p = String::trim
+                    assert !p.test(' ') && p.test('x')
+                    p = ''::concat
+                    assert !p.test('') && p.test('x')
+                    p = String::reverse
+                    assert !p.test('') && p.test('x')
+                    p = ''::plus
+                    assert !p.test('') && p.test('x')
+                    p = StringBuilder::new
+                    assert !p.test('') && p.test('x')
+
+                    BiPredicate<String, String> bp = String::concat
+                    assert !bp.test('', '') && bp.test('', 'x')
+                    IntPredicate ip = Integer::toString
+                    assert ip.test(0)
+                    BooleanSupplier bs = 'x'::trim
+                    assert bs.getAsBoolean()
+                }
+            }
+            C.test()
+        """
+    }
+
+    // GROOVY-12617
+    @Test
+    void testPrimitiveBooleanSAMFromNonBooleanReturnTypeSerializable() {
+        assertScript shell, '''
+            @CompileStatic
+            class C {
+                interface SerPred<T> extends Serializable, Predicate<T> {}
+
+                static String str(String s) { s }
+                static void test() {
+                    SerPred<String> p = C::str
+                    assert !p.test('') && p.test('x')
+
+                    def out = new ByteArrayOutputStream()
+                    out.withObjectOutputStream { it.writeObject(p) }
+                    def q = new ByteArrayInputStream(out.toByteArray()).withObjectInputStream(C.classLoader) { (SerPred<String>) it.readObject() }
+                    assert !q.test('') && q.test('x')
+                }
+            }
+            C.test()
+        '''
+    }
+
+    // GROOVY-12617
+    @Test
+    void testPrimitiveNumberSAMFromNonWideningReturnType() {
+        assertScript shell, '''
+            @FunctionalInterface interface ToByteFunc<T> { byte apply(T t) }
+            @FunctionalInterface interface ToFloatFunc<T> { float apply(T t) }
+
+            @CompileStatic
+            class C {
+                static BigDecimal decimal(String s) { new BigDecimal(s) }
+                static long longValue(String s) { Long.parseLong(s) }
+                static Long longObject(String s) { Long.valueOf(s) }
+                static double doubleValue(String s) { Double.parseDouble(s) }
+                static void test() {
+                    ToDoubleFunction<String> d = C::decimal
+                    assert d.applyAsDouble('1.5') == 1.5d
+                    ToFloatFunc<String> f = C::decimal
+                    assert f.apply('0.5') == 0.5f
+                }
+            }
+            C.test()
+        '''
+
+        // narrowing is checked as for the return of a method
+        for (ref in ['ToIntFunction<String> f = C::longValue', 'ToIntFunction<String> f = C::longObject',
+                     'ToByteFunc<String> f = C::longValue', 'ToFloatFunc<String> f = C::doubleValue',
+                     'ToLongFunction<String> f = C::doubleValue']) {
+            def err = shouldFail shell, """
+                @FunctionalInterface interface ToByteFunc<T> { byte apply(T t) }
+                @FunctionalInterface interface ToFloatFunc<T> { float apply(T t) }
+                @CompileStatic
+                class C {
+                    static long longValue(String s) { Long.parseLong(s) }
+                    static Long longObject(String s) { Long.valueOf(s) }
+                    static double doubleValue(String s) { Double.parseDouble(s) }
+                    static void test() {
+                        $ref
+                    }
+                }
+            """
+            assert err.message =~ /Possible loss of precision from /
+        }
+    }
+
     @Test
     void testByteReturnSAMMethodReference() {
         assertScript shell, '''
@@ -2598,6 +3468,247 @@ final class MethodReferenceTest {
         '''
     }
 
+    @Test // GROOVY-12481
+    void testThisMethodReferenceInStaticContext() {
+        assertScript shell, '''
+            @CompileStatic
+            class C {
+                static int foo() { 42 }
+                static int bar(int i) { i + 1 }
+                static Supplier<Integer> s
+                static {
+                    s = this::foo
+                }
+                static test() {
+                    Supplier<Integer> s = this::foo
+                    assert s.get() == 42
+                    Function<Integer, Integer> f = this::bar
+                    assert f.apply(41) == 42
+                    assert C.s.get() == 42
+                    Supplier<String> n = this::getSimpleName // method of java.lang.Class
+                    assert n.get() == 'C'
+                    def c = { -> Supplier<Integer> r = this::foo; r.get() }
+                    assert c() == 42
+                }
+            }
+            C.test()
+        '''
+    }
+
+    @Test // GROOVY-12481
+    void testThisMethodReferenceInStaticContextOfNestedClass() {
+        assertScript shell, '''
+            @CompileStatic
+            class Outer {
+                static int foo() { 1 }
+                static class Nested {
+                    static int foo() { 2 }
+                    static test() {
+                        Supplier<Integer> s = this::foo // Nested::foo, not Outer::foo
+                        assert s.get() == 2
+                    }
+                }
+            }
+            Outer.Nested.test()
+        '''
+    }
+
+    @Test // GROOVY-12481
+    void testThisMethodReferenceToInstanceMethodInStaticContext() {
+        assertScript shell, '''
+            @CompileStatic
+            class C {
+                int inst() { 42 }
+                static test() {
+                    Function<C, Integer> f = this::inst // like C::inst
+                    assert f.apply(new C()) == 42
+                }
+            }
+            C.test()
+        '''
+    }
+
+    @Test // GROOVY-12481
+    void testThisMethodReferenceToInstanceMethodInStaticContextNeedsReceiver() {
+        def err = shouldFail shell, '''
+            @CompileStatic
+            class C {
+                int inst() { 42 }
+                static test() {
+                    Supplier<Integer> s = this::inst
+                }
+            }
+        '''
+        assert err.message.contains("Failed to find class method 'inst()' for the type: C")
+    }
+
+
+    // GROOVY-11010: a method reference fits only a functional interface whose abstract method it can be called with
+    @Test
+    void testOverloadSelectedByMethodReferenceArity1() {
+        assertScript shell, '''
+            class Ext {
+                static <T> String red(Collection<T> c, BinaryOperator<T> op) { 'combiner:' + c.stream().reduce(op).get() }
+                static <T, R> String red(Collection<T> c, Function<T, R> f) { 'transform:' + c.collect { f.apply(it) } }
+            }
+            class Calc {
+                Integer add(Integer a, Integer b) { a + b }
+                Integer twice(Integer a) { a * 2 }
+            }
+            @CompileStatic
+            void test() {
+                List<Integer> numbers = [1, 2, 3]
+                List<String> strings = ['a ', ' b']
+                def calc = new Calc()
+                assert Ext.red(numbers, Integer::sum) == 'combiner:6'                  // static method, two parameters
+                assert Ext.red(numbers, Math::negateExact) == 'transform:[-1, -2, -3]' // static method, one parameter
+                assert Ext.red(strings, String::concat) == 'combiner:a  b'             // receiver and one parameter
+                assert Ext.red(strings, String::trim) == 'transform:[a, b]'            // receiver only
+                assert Ext.red(numbers, calc::add) == 'combiner:6'                     // bound receiver, two parameters
+                assert Ext.red(numbers, calc::twice) == 'transform:[2, 4, 6]'          // bound receiver, one parameter
+                assert Ext.red(['1', '2'], Integer::new) == 'transform:[1, 2]'         // constructor
+            }
+
+            test()
+        '''
+    }
+
+    // GROOVY-11010: the same for a method pointer
+    @Test
+    void testOverloadSelectedByMethodReferenceArity2() {
+        assertScript shell, '''
+            class Ext {
+                static <T> String red(Collection<T> c, BinaryOperator<T> op) { 'combiner:' + c.stream().reduce(op).get() }
+                static <T, R> String red(Collection<T> c, Function<T, R> f) { 'transform:' + c.collect { f.apply(it) } }
+            }
+            class Calc {
+                Integer add(Integer a, Integer b) { a + b }
+                Integer twice(Integer a) { a * 2 }
+            }
+            @CompileStatic
+            void test() {
+                List<Integer> numbers = [1, 2, 3]
+                def calc = new Calc()
+                assert Ext.red(numbers, calc.&add) == 'combiner:6'
+                assert Ext.red(numbers, calc.&twice) == 'transform:[2, 4, 6]'
+            }
+
+            test()
+        '''
+    }
+
+    // GROOVY-11010
+    @Test
+    void testOverloadSelectedByMethodReferenceArity3() {
+        assertScript shell, '''
+            class Main {
+                static <K, V> String from(Function<K, V> f) { 'Function' }
+                static <V> String from(Supplier<V> f) { 'Supplier' }
+                static int m(String x) { 1 }
+                static int n() { 2 }
+
+                @CompileStatic
+                static void test() {
+                    assert from(Main::m) == 'Function'
+                    assert from(Main::n) == 'Supplier'
+                }
+            }
+
+            Main.test()
+        '''
+    }
+
+    // GROOVY-10714: Closure implements Runnable, which therefore otherwise wins
+    @Test
+    void testOverloadSelectedByMethodReferenceArity4() {
+        assertScript shell, '''
+            class Req<T> {
+            }
+            class Table<T> {
+                String last
+                void putItem(Req<T> request) { last = 'Req' }
+                void putItem(Consumer<Object> consumer) { last = 'Consumer' }
+                void putItem(T item) { last = 'T' }
+            }
+            class Try<T> {
+                final T value
+                Try(T value) { this.value = value }
+                String andThenTry(Consumer<? super T> consumer) { consumer.accept(value); 'Consumer' }
+                String andThenTry(Runnable runnable) { runnable.run(); 'Runnable' }
+            }
+            class Steps {
+                static void noop() {}
+            }
+
+            @CompileStatic
+            void test() {
+                def table = new Table<Req<String>>()
+                assert new Try<Req<String>>(new Req<String>()).andThenTry(table::putItem) == 'Consumer'
+                assert table.last == 'Req'
+                assert new Try<Req<String>>(new Req<String>()).andThenTry(table.&putItem) == 'Consumer'
+                assert new Try<String>('x').andThenTry(Steps::noop) == 'Runnable'
+            }
+
+            test()
+        '''
+    }
+
+    // GROOVY-10714: interfaces that Closure does not implement
+    @Test
+    void testOverloadSelectedByMethodReferenceArity5() {
+        assertScript shell, '''
+            interface CheckedConsumer<T> { void accept(T t) throws Throwable }
+            interface CheckedRunnable { void run() throws Throwable }
+            class Steps {
+                static String tryIt(CheckedConsumer<String> consumer) { 'CheckedConsumer' }
+                static String tryIt(CheckedRunnable runnable) { 'CheckedRunnable' }
+                static void sink(String s) {}
+                static void noop() {}
+            }
+
+            @CompileStatic
+            void test() {
+                assert Steps.tryIt(Steps::sink) == 'CheckedConsumer'
+                assert Steps.tryIt(Steps::noop) == 'CheckedRunnable'
+            }
+
+            test()
+        '''
+    }
+
+    // GROOVY-11010: interfaces of the same arity are still chosen between as before
+    @Test
+    void testOverloadSelectedByMethodReferenceArity6() {
+        assertScript shell, '''
+            import java.util.concurrent.Callable
+            class Steps {
+                static String pick(Runnable runnable) { 'Runnable' }
+                static String pick(Callable<?> callable) { 'Callable' }
+                static String value() { 'v' }
+            }
+
+            @CompileStatic
+            void test() {
+                assert Steps.pick(Steps::value) == 'Runnable'
+            }
+
+            test()
+        '''
+
+        def err = shouldFail shell, '''
+            class Ext {
+                static <T> String red(Collection<T> c, BinaryOperator<T> op) { 'combiner' }
+                static <T, R> String red(Collection<T> c, Function<T, R> f) { 'transform' }
+            }
+
+            @CompileStatic
+            void test() {
+                Ext.red(['1', '2'], Integer::valueOf) // valueOf(String) and valueOf(String, int)
+            }
+        '''
+        assert err.message.contains('Reference to method is ambiguous')
+    }
+
     @Nested
     class NativeMethodReferenceBytecodeTest extends AbstractBytecodeTestCase {
         @Test
@@ -2615,7 +3726,8 @@ final class MethodReferenceTest {
                 bytecode,
                 'INVOKEDYNAMIC applyAsInt()Ljava/util/function/ToIntFunction;',
                 'java/lang/invoke/LambdaMetafactory.metafactory',
-                'java/lang/String.length()I'
+                // GROOVY-12536: erased parameter, GString converted before String.length
+                'C.gstring$String$length$1(Ljava/lang/Object;)I'
             )
         }
 
@@ -2656,7 +3768,8 @@ final class MethodReferenceTest {
                 bytecode,
                 'INVOKEDYNAMIC applyAsInt()Ljava/util/function/ToIntFunction;',
                 'java/lang/invoke/LambdaMetafactory.metafactory',
-                'java/lang/Integer.parseInt(Ljava/lang/String;)I'
+                // GROOVY-12536: the String argument is erased; the Integer receiver is not captured
+                'C.gstring$Integer$parseInt$1(Ljava/lang/Object;)I'
             )
             assert !bytecode.hasSequence(['INVOKEDYNAMIC applyAsInt(Ljava/lang/Integer;)Ljava/util/function/ToIntFunction;'])
         }
@@ -2698,23 +3811,517 @@ final class MethodReferenceTest {
                 }
             '''
 
-            def helperBytecode = compileStaticBytecode(classNamePattern: 'C', method: 'ctorRef$create$0', script)
+            def helperBytecode = compileStaticMethodBytecode('ctorRef$create$0', script)
             assert helperBytecode.hasSequence([
                 'private final static synthetic ctorRef$create$0(Ljava/lang/String;)LC$Box;',
-                'LDC LC$Box;.class',
-                'INVOKEDYNAMIC init(Ljava/lang/Class;Ljava/lang/String;)Ljava/lang/Object;',
-                '"<init>"',
-                'INVOKEDYNAMIC cast(Ljava/lang/Object;)LC$Box;',
+                'NEW C$Box',
+                'DUP',
+                'ALOAD 0',
+                'INVOKESPECIAL C$Box.<init> (Ljava/lang/String;)V',
                 'ARETURN'
             ])
+            assertNoDynamicConstructorCall(helperBytecode)
 
             def outerBytecode = compileStaticBytecode(classNamePattern: 'C', method: 'create', script)
             assertUsesInvokeDynamicFactory(
                 outerBytecode,
                 'INVOKEDYNAMIC apply()Ljava/util/function/Function;',
                 'java/lang/invoke/LambdaMetafactory.metafactory',
-                'C.ctorRef$create$0(Ljava/lang/String;)LC$Box;'
+                // GROOVY-12536: adapter accepts the erased argument and forwards a String
+                'C.gstring$C$ctorRef$create$0$1(Ljava/lang/Object;)LC$Box;'
             )
+        }
+
+        // GROOVY-12488
+        @Test
+        void testConstructorReferenceCallsNoArgConstructorDirectly() {
+            def helperBytecode = compileStaticMethodBytecode('ctorRef$create$0', '''
+                class Made {
+                    Made() { }
+                }
+                @CompileStatic
+                class C {
+                    static Supplier<Made> create() {
+                        Made::new
+                    }
+                }
+            ''')
+
+            assert helperBytecode.hasStrictSequence([
+                'NEW Made',
+                'DUP',
+                'INVOKESPECIAL Made.<init> ()V',
+                'ARETURN'
+            ])
+            assertNoDynamicConstructorCall(helperBytecode)
+        }
+
+        // GROOVY-12488
+        @Test
+        void testConstructorReferenceSelectsConstructorBySamParameterTypes() {
+            def script = '''
+                class Over {
+                    Over(String s) { }
+                    Over(Integer i) { }
+                    Over(long l) { }
+                    Over(int i, long j) { }
+                }
+                @CompileStatic
+                class C {
+                    static Function<String, Over> string() {
+                        Over::new
+                    }
+                    static Function<Integer, Over> integer() {
+                        Over::new
+                    }
+                    static LongFunction<Over> primitive() {
+                        Over::new
+                    }
+                    static BiFunction<Integer, Integer, Over> unboxAndWiden() {
+                        Over::new
+                    }
+                }
+            '''
+
+            def string = compileStaticMethodBytecode('ctorRef$string$0', script)
+            assert string.hasSequence(['ALOAD 0', 'INVOKESPECIAL Over.<init> (Ljava/lang/String;)V'])
+            assertNoDynamicConstructorCall(string)
+
+            def integer = compileStaticMethodBytecode('ctorRef$integer$1', script)
+            assert integer.hasSequence(['ALOAD 0', 'INVOKESPECIAL Over.<init> (Ljava/lang/Integer;)V'])
+            assertNoDynamicConstructorCall(integer)
+
+            def primitive = compileStaticMethodBytecode('ctorRef$primitive$2', script)
+            assert primitive.hasSequence(['LLOAD 0', 'INVOKESPECIAL Over.<init> (J)V'])
+            assertNoDynamicConstructorCall(primitive)
+
+            def unboxAndWiden = compileStaticMethodBytecode('ctorRef$unboxAndWiden$3', script)
+            assert unboxAndWiden.hasSequence(['ALOAD 0', 'ALOAD 1', 'INVOKESPECIAL Over.<init> (IJ)V'])
+            assertNoDynamicConstructorCall(unboxAndWiden)
+        }
+
+        // GROOVY-12488
+        @Test
+        void testVariadicConstructorReferenceCallsConstructorDirectly() {
+            def script = '''
+                class Var {
+                    Var(String... values) { }
+                }
+                @CompileStatic
+                class C {
+                    static Supplier<Var> none() {
+                        Var::new
+                    }
+                    static Function<String, Var> one() {
+                        Var::new
+                    }
+                    static BiFunction<String, String, Var> two() {
+                        Var::new
+                    }
+                    static Function<String[], Var> array() {
+                        Var::new
+                    }
+                }
+            '''
+
+            ['none', 'one', 'two'].eachWithIndex { name, i ->
+                def bytecode = compileStaticMethodBytecode("ctorRef\$${name}\$${i}", script)
+                assert bytecode.hasSequence(['NEW Var', 'ANEWARRAY java/lang/String', 'INVOKESPECIAL Var.<init> ([Ljava/lang/String;)V'])
+                assertNoDynamicConstructorCall(bytecode)
+            }
+
+            def array = compileStaticMethodBytecode('ctorRef$array$3', script)
+            assert array.hasSequence(['NEW Var', 'ALOAD 0', 'INVOKESPECIAL Var.<init> ([Ljava/lang/String;)V'])
+            assert !array.hasSequence(['ANEWARRAY'])
+            assertNoDynamicConstructorCall(array)
+        }
+
+        // GROOVY-12488
+        @Test
+        void testGenericClassConstructorReferenceCallsConstructorDirectly() {
+            def bytecode = compileStaticMethodBytecode('ctorRef$create$0', '''
+                class Gen<T> {
+                    Gen(T value) { }
+                }
+                @CompileStatic
+                class C {
+                    static Function<String, Gen<String>> create() {
+                        Gen::new
+                    }
+                }
+            ''')
+
+            assert bytecode.hasSequence(['NEW Gen', 'ALOAD 0', 'INVOKESPECIAL Gen.<init> (Ljava/lang/Object;)V'])
+            assertNoDynamicConstructorCall(bytecode)
+        }
+
+        // GROOVY-12488
+        @Test
+        void testPrivateConstructorOfNestmateIsCalledDirectly() {
+            def bytecode = compileStaticMethodBytecode('ctorRef$create$0', '''
+                @CompileStatic
+                class C {
+                    static class Box {
+                        private Box(String value) { }
+                    }
+                    static Function<String, Box> create() {
+                        Box::new
+                    }
+                }
+            ''')
+
+            assert bytecode.hasSequence(['NEW C$Box', 'ALOAD 0', 'INVOKESPECIAL C$Box.<init> (Ljava/lang/String;)V'])
+            assertNoDynamicConstructorCall(bytecode)
+        }
+
+        // GROOVY-12488, GROOVY-12657
+        @Test
+        void testPrivateConstructorOfNestedClassIsCalledDirectlyFromClosureOrLambda() {
+            def script = '''
+                @CompileStatic
+                // keep the closure class this test inspects when groovy.target.closure.pack is set
+                @groovy.transform.PackedClosures(mode = groovy.transform.PackedClosures.PackMode.DISABLED)
+                class C {
+                    static class Box {
+                        private Box(String value) { }
+                    }
+                    static Function<String, Box> inClosure() {
+                        def make = { -> Function<String, Box> f = Box::new; f }
+                        make()
+                    }
+                    static Function<String, Box> inLambda() {
+                        Supplier<Function<String, Box>> make = () -> { Function<String, Box> f = Box::new; f }
+                        make.get()
+                    }
+                }
+            '''
+
+            def closure = compileStaticMethodBytecode('ctorRef$doCall$0', script, 'C$_inClosure_closure1')
+            assert closure.hasSequence(['NEW C$Box', 'ALOAD 0', 'INVOKESPECIAL C$Box.<init> (Ljava/lang/String;)V'])
+            assertNoDynamicConstructorCall(closure)
+
+            def lambda = compileStaticMethodBytecode('ctorRef$doCall$1', script, 'C$_inLambda_lambda2')
+            assert lambda.hasSequence(['NEW C$Box', 'ALOAD 0', 'INVOKESPECIAL C$Box.<init> (Ljava/lang/String;)V'])
+            assertNoDynamicConstructorCall(lambda)
+        }
+
+        // GROOVY-12488, GROOVY-12657
+        @Test
+        void testPrivateConstructorOfNestedClassIsCalledDirectlyFromPackedClosureOrLambda() {
+            def script = '''
+                @CompileStatic
+                // pack the closure into a method of C whatever groovy.target.closure.pack is set to
+                @groovy.transform.PackedClosures(mode = groovy.transform.PackedClosures.PackMode.STRICT)
+                class C {
+                    static class Box {
+                        private Box(String value) { }
+                    }
+                    static Function<String, Box> inClosure() {
+                        def make = { -> Function<String, Box> f = Box::new; f }
+                        make()
+                    }
+                    static Function<String, Box> inLambda() {
+                        Supplier<Function<String, Box>> make = () -> { Function<String, Box> f = Box::new; f }
+                        make.get()
+                    }
+                }
+            '''
+
+            def closure = compileStaticMethodBytecode('ctorRef$$packed$closure$0$0', script)
+            assert closure.hasSequence(['NEW C$Box', 'ALOAD 0', 'INVOKESPECIAL C$Box.<init> (Ljava/lang/String;)V'])
+            assertNoDynamicConstructorCall(closure)
+
+            def lambda = compileStaticMethodBytecode('ctorRef$doCall$1', script, 'C$_inLambda_lambda1')
+            assert lambda.hasSequence(['NEW C$Box', 'ALOAD 0', 'INVOKESPECIAL C$Box.<init> (Ljava/lang/String;)V'])
+            assertNoDynamicConstructorCall(lambda)
+        }
+
+        // GROOVY-12488
+        @Test
+        void testConstructorReferenceSelectsConstructorVisibleFromEnclosingClass() {
+            def bytecode = compileStaticMethodBytecode('ctorRef$create$0', '''
+                class Foo {
+                    private Foo(String s) { }
+                    Foo(Object o) { }
+                }
+                @CompileStatic
+                class C {
+                    static Function<String, Foo> create() {
+                        Foo::new
+                    }
+                }
+            ''')
+
+            assert bytecode.hasSequence(['NEW Foo', 'ALOAD 0', 'INVOKESPECIAL Foo.<init> (Ljava/lang/Object;)V'])
+            assertNoDynamicConstructorCall(bytecode)
+
+            bytecode = compileAgainstLibrary('''package p
+                class A {
+                    @groovy.transform.PackageScope A(String s) { }
+                    A(Object o) { }
+                }
+            ''', 'C', 'ctorRef$create$0', '''
+                import java.util.function.Function
+                @groovy.transform.CompileStatic
+                class C {
+                    static Function<String, p.A> create() {
+                        p.A::new
+                    }
+                }
+            ''')
+
+            assert bytecode.hasSequence(['NEW p/A', 'ALOAD 0', 'INVOKESPECIAL p/A.<init> (Ljava/lang/Object;)V'])
+            assertNoDynamicConstructorCall(bytecode)
+        }
+
+        // GROOVY-10971, GROOVY-12488: no constructor accepts the parameter type of the functional interface
+        @Test
+        void testConstructorReferenceWithoutMatchingConstructorSelectsConstructorAtRuntime() {
+            def bytecode = compileStaticMethodBytecode('ctorRef$create$0', '''
+                class Foo {
+                    Foo(String s) { }
+                }
+                @CompileStatic
+                class C {
+                    static Function<Object, Foo> create() {
+                        Foo::new
+                    }
+                }
+            ''')
+
+            assert bytecode.hasSequence(['INVOKEDYNAMIC init(Ljava/lang/Class;Ljava/lang/Object;)Ljava/lang/Object;'])
+        }
+
+        // GROOVY-12488
+        @Test
+        void testProtectedConstructorOfAnotherPackageIsSelectedAtRuntime() {
+            def bytecode = compileStaticMethodBytecode('ctorRef$create$0', '''
+                @CompileStatic
+                class C extends ObjectInputStream {
+                    C() { super() }
+                    static Supplier<ObjectInputStream> create() {
+                        ObjectInputStream::new // protected ObjectInputStream()
+                    }
+                }
+            ''')
+
+            assert bytecode.hasSequence(['INVOKEDYNAMIC init(Ljava/lang/Class;)Ljava/lang/Object;'])
+        }
+
+        // GROOVY-12488
+        @Test
+        void testProtectedAndPackagePrivateConstructorsOfSamePackageAreCalledDirectly() {
+            def script = '''
+                class A {
+                    protected A(String s) { }
+                    @groovy.transform.PackageScope A(Integer i) { }
+                }
+                @CompileStatic
+                class C {
+                    static Function<String, A> prot() {
+                        A::new
+                    }
+                    static Function<Integer, A> pkg() {
+                        A::new
+                    }
+                }
+            '''
+
+            def prot = compileStaticMethodBytecode('ctorRef$prot$0', script)
+            assert prot.hasSequence(['NEW A', 'ALOAD 0', 'INVOKESPECIAL A.<init> (Ljava/lang/String;)V'])
+            assertNoDynamicConstructorCall(prot)
+
+            def pkg = compileStaticMethodBytecode('ctorRef$pkg$1', script)
+            assert pkg.hasSequence(['NEW A', 'ALOAD 0', 'INVOKESPECIAL A.<init> (Ljava/lang/Integer;)V'])
+            assertNoDynamicConstructorCall(pkg)
+        }
+
+        // GROOVY-12488
+        @Test
+        void testProtectedAndPackagePrivateConstructorsOfClassCompiledBeforeAreSelectedAtRuntime() {
+            def library = '''package p
+                class A {
+                    protected A(String s) { }
+                    @groovy.transform.PackageScope A(Integer i) { }
+                }
+            '''
+            def script = '''package p
+                import java.util.function.Function
+                @groovy.transform.CompileStatic
+                class C {
+                    static Function<String, A> prot() {
+                        A::new
+                    }
+                    static Function<Integer, A> pkg() {
+                        A::new
+                    }
+                }
+            '''
+
+            def prot = compileAgainstLibrary(library, 'p.C', 'ctorRef$prot$0', script)
+            assert prot.hasSequence(['INVOKEDYNAMIC init('])
+            assert !prot.hasSequence(['INVOKESPECIAL p/A.<init>'])
+
+            def pkg = compileAgainstLibrary(library, 'p.C', 'ctorRef$pkg$1', script)
+            assert pkg.hasSequence(['INVOKEDYNAMIC init('])
+            assert !pkg.hasSequence(['INVOKESPECIAL p/A.<init>'])
+        }
+
+        // GROOVY-12488
+        @Test
+        void testProtectedAndPackagePrivateConstructorsOfClassCompiledBeforeToClassFilesAreCalledDirectly() {
+            def dir = File.createTempDir()
+            try {
+                compileToDirectory(dir, 'A.groovy': '''package p
+                    class A {
+                        final String value
+                        protected A(String s) { value = 'prot:' + s }
+                        @groovy.transform.PackageScope A(Integer i) { value = 'pkg:' + i }
+                    }
+                ''')
+                compileToDirectory(dir, 'C.groovy': '''package p
+                    import java.util.function.Function
+                    @groovy.transform.CompileStatic
+                    class C { // compiled by another compilation unit, to class files like groovyc
+                        static Function<String, A> prot() {
+                            A::new
+                        }
+                        static Function<Integer, A> pkg() {
+                            A::new
+                        }
+                    }
+                ''')
+
+                byte[] bytes = new File(dir, 'p/C.class').bytes
+                def prot = extractMethodSequence(bytes, 'ctorRef$prot$0')
+                assert prot.hasSequence(['NEW p/A', 'DUP', 'ALOAD 0', 'INVOKESPECIAL p/A.<init> (Ljava/lang/String;)V'])
+                def pkg = extractMethodSequence(bytes, 'ctorRef$pkg$1')
+                assert pkg.hasSequence(['NEW p/A', 'DUP', 'ALOAD 0', 'INVOKESPECIAL p/A.<init> (Ljava/lang/Integer;)V'])
+
+                // one class loader for all the class files, as javac expects
+                def c = new URLClassLoader([dir.toURI().toURL()] as URL[], this.class.classLoader).loadClass('p.C')
+                assert c.prot().apply('x').value == 'prot:x'
+                assert c.pkg().apply(1).value == 'pkg:1'
+            } finally {
+                dir.deleteDir()
+            }
+        }
+
+        // GROOVY-12488
+        @Test
+        void testConstructorReferenceCallsConstructorGeneratedForDefaultArgumentsDirectly() {
+            def script = '''
+                @CompileStatic
+                class C {
+                    static Function<String, Dflt> one() {
+                        Dflt::new
+                    }
+                    static Supplier<All> none() {
+                        All::new
+                    }
+                    static Function<String, Pkg> pkg() {
+                        Pkg::new
+                    }
+                }
+                class Dflt { // declared after C: every class of the compilation is verified before any is generated
+                    Dflt(String a, String b = 'b') { }
+                }
+                class All {
+                    All(String a = 'a', String b = 'b') { }
+                }
+                class Pkg {
+                    @groovy.transform.PackageScope Pkg(String a, Integer i = 1) { }
+                }
+            '''
+
+            def one = compileStaticMethodBytecode('ctorRef$one$0', script)
+            assert one.hasStrictSequence(['NEW Dflt', 'DUP', 'ALOAD 0', 'INVOKESPECIAL Dflt.<init> (Ljava/lang/String;)V', 'ARETURN'])
+            assertNoDynamicConstructorCall(one)
+
+            def none = compileStaticMethodBytecode('ctorRef$none$1', script)
+            assert none.hasStrictSequence(['NEW All', 'DUP', 'INVOKESPECIAL All.<init> ()V', 'ARETURN'])
+            assertNoDynamicConstructorCall(none)
+
+            def pkg = compileStaticMethodBytecode('ctorRef$pkg$2', script)
+            assert pkg.hasStrictSequence(['NEW Pkg', 'DUP', 'ALOAD 0', 'INVOKESPECIAL Pkg.<init> (Ljava/lang/String;)V', 'ARETURN'])
+            assertNoDynamicConstructorCall(pkg)
+        }
+
+        // GROOVY-12488
+        @Test
+        void testConstructorReferenceToConstructorGeneratedForDefaultArgumentsOfClassCompiledBefore() {
+            def library = '''package p
+                class D {
+                    D(String a, String b = 'b') { }
+                    @groovy.transform.PackageScope D(Integer i, Integer j = 1) { }
+                }
+            '''
+            def script = '''package p
+                import java.util.function.Function
+                @groovy.transform.CompileStatic
+                class C {
+                    static Function<String, D> pub() {
+                        D::new
+                    }
+                    static Function<Integer, D> pkg() {
+                        D::new
+                    }
+                }
+            '''
+
+            def pub = compileAgainstLibrary(library, 'p.C', 'ctorRef$pub$0', script)
+            assert pub.hasSequence(['NEW p/D', 'ALOAD 0', 'INVOKESPECIAL p/D.<init> (Ljava/lang/String;)V'])
+            assertNoDynamicConstructorCall(pub)
+
+            def pkg = compileAgainstLibrary(library, 'p.C', 'ctorRef$pkg$1', script)
+            assert pkg.hasSequence(['INVOKEDYNAMIC init('])
+            assert !pkg.hasSequence(['INVOKESPECIAL p/D.<init>'])
+        }
+
+        // GROOVY-12488
+        @Test
+        void testEnumConstructorReferenceSelectsConstructorAtRuntime() {
+            def bytecode = compileStaticMethodBytecode('ctorRef$create$0', '''
+                interface Make {
+                    E make(String name, int ordinal, String s)
+                }
+                @CompileStatic
+                enum E {
+                    A('a')
+                    E(String s) { }
+                    static Make create() {
+                        E::new // matches the private constructor E(String,int,String) that Groovy generates
+                    }
+                }
+            ''', 'E')
+
+            assert bytecode.hasSequence(['INVOKEDYNAMIC init(Ljava/lang/Class;Ljava/lang/String;ILjava/lang/String;)Ljava/lang/Object;'])
+            assert !bytecode.hasSequence(['INVOKESPECIAL E.<init>'])
+        }
+
+        // GROOVY-12488
+        @Test
+        void testProtectedConstructorOfAnotherPackageIsSelectedAtRuntimeFromAnonymousSubclass() {
+            def bytecode = compileAgainstLibrary('''package p
+                class B {
+                    protected B(String value) { }
+                }
+            ''', 'C$1', 'ctorRef$make$0', '''
+                import java.util.function.Function
+                @groovy.transform.CompileStatic
+                class C {
+                    static Object create() {
+                        new p.B('x') {
+                            Function<String, p.B> make() {
+                                p.B::new
+                            }
+                        }
+                    }
+                }
+            ''')
+
+            assert bytecode.hasSequence(['INVOKEDYNAMIC init('])
+            assert !bytecode.hasSequence(['INVOKESPECIAL p/B.<init>'])
         }
 
         @Test
@@ -2744,6 +4351,55 @@ final class MethodReferenceTest {
             )
         }
 
+        // GROOVY-12488
+        @Test
+        void testArrayConstructorReferenceCreatesArrayLikeStaticallyCompiledNewArray() {
+            def script = '''
+                @CompileStatic
+                class C {
+                    static IntFunction<String[]> ints() {
+                        String[]::new
+                    }
+                    static Function<Integer, String[]> boxed() {
+                        String[]::new
+                    }
+                    static Function<Short, String[]> shorts() {
+                        String[]::new
+                    }
+                    static IntFunction<long[]> primitive() {
+                        long[]::new
+                    }
+                    static IntFunction<int[][]> matrix() {
+                        int[][]::new
+                    }
+                    static String[] newArray(Short s) {
+                        new String[s]
+                    }
+                }
+            '''
+
+            def ints = compileStaticMethodBytecode('ctorRef$ints$0', script)
+            assert ints.hasStrictSequence(['ILOAD 0', 'ANEWARRAY java/lang/String', 'ARETURN'])
+
+            def boxed = compileStaticMethodBytecode('ctorRef$boxed$1', script)
+            assert boxed.hasStrictSequence(['ALOAD 0', 'INVOKEVIRTUAL java/lang/Integer.intValue ()I', 'ANEWARRAY java/lang/String', 'ARETURN'])
+
+            def shortSize = ['ALOAD 0', 'INVOKESTATIC org/codehaus/groovy/runtime/typehandling/DefaultTypeTransformation.intUnbox (Ljava/lang/Object;)I', 'ANEWARRAY java/lang/String', 'ARETURN']
+            def shorts = compileStaticMethodBytecode('ctorRef$shorts$2', script)
+            assert shorts.hasStrictSequence(shortSize)
+            assert compileStaticMethodBytecode('newArray', script).hasStrictSequence(shortSize)
+
+            def primitive = compileStaticMethodBytecode('ctorRef$primitive$3', script)
+            assert primitive.hasStrictSequence(['ILOAD 0', 'NEWARRAY T_LONG', 'ARETURN'])
+
+            def matrix = compileStaticMethodBytecode('ctorRef$matrix$4', script)
+            assert matrix.hasStrictSequence(['ILOAD 0', 'MULTIANEWARRAY [[I 1', 'ARETURN'])
+
+            for (bytecode in [ints, boxed, shorts, primitive, matrix]) {
+                assert !bytecode.hasSequence(['INVOKEDYNAMIC'])
+            }
+        }
+
         @Test
         void testSerializableMethodReferenceUsesAltMetafactoryAndDeserializeDispatcher() {
             def script = '''
@@ -2762,7 +4418,8 @@ final class MethodReferenceTest {
                 createBytecode,
                 'INVOKEDYNAMIC apply()LC$SerFunc;',
                 'java/lang/invoke/LambdaMetafactory.altMetafactory',
-                'java/lang/String.trim()Ljava/lang/String;'
+                // GROOVY-12536: erased parameter, GString converted before String.trim
+                'C.gstring$String$trim$1(Ljava/lang/Object;)Ljava/lang/String;'
             )
             assert createBytecode.hasSequence(['CHECKCAST java/io/Serializable'])
 
@@ -2803,8 +4460,28 @@ final class MethodReferenceTest {
             assert !bytecode.hasSequence(['INVOKESTATIC org/codehaus/groovy/runtime/ScriptBytecodeAdapter.getMethodPointer'])
         }
 
+        private static void assertNoDynamicConstructorCall(final bytecode) {
+            assert !bytecode.hasSequence(['INVOKEDYNAMIC init('])
+            assert !bytecode.hasSequence(['INVOKEDYNAMIC cast('])
+        }
+
         private compileStaticBytecode(final Map options = [:], final String script) {
             compile(options, COMMON_IMPORTS + script)
+        }
+
+        private InstructionSequence compileStaticMethodBytecode(final String method, final String script, final String className = 'C') {
+            selectMethod(method, compileStaticBytecode(classNamePattern: Pattern.quote(className), method: method, script))
+        }
+
+        /**
+         * Compiles the sources to class files in {@code dir}, against the class
+         * files already there, as groovyc does.
+         */
+        private static void compileToDirectory(final Map<String, String> sources, final File dir) {
+            def config = new CompilerConfiguration(targetDirectory: dir, classpathList: [dir.path])
+            def unit = new CompilationUnit(config, null, new GroovyClassLoader(MethodReferenceTest.classLoader, config))
+            sources.each { name, text -> unit.addSource(name, text) }
+            unit.compile(Phases.OUTPUT)
         }
 
         private static final String COMMON_IMPORTS = '''\

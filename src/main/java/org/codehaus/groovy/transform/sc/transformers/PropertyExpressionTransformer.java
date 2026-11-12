@@ -77,6 +77,13 @@ class PropertyExpressionTransformer {
                 ae = new AttributeExpression(classX(field.getDeclaringClass()), pe.getProperty());
             } else if (!isThisExpression(pe.getObjectExpression())) {
                 ae = new AttributeExpression(scTransformer.transform(pe.getObjectExpression()), pe.getProperty(), pe.isSafe());
+            } else if (scTransformer.extendsClass(field.getDeclaringClass())
+                    && (pe instanceof AttributeExpression || !scTransformer.hasEnclosingInstanceOf(field.getDeclaringClass()))) {
+                // GROOVY-12533: this is a subclass of the field's declaring class. this.@name
+                // is the field of this instance. this.name is the field of the enclosing
+                // instance when there is one, as in dynamic code; a static nested subclass
+                // has none, so it is the field of this instance too.
+                ae = new AttributeExpression(pe.getObjectExpression(), pe.getProperty(), pe.isSafe());
             } else {
                 ae = new AttributeExpression(new PropertyExpression(classX(field.getDeclaringClass()), "this"), pe.getProperty(), pe.isSafe());
 

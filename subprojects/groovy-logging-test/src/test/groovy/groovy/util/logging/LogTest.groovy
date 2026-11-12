@@ -22,6 +22,7 @@ import groovy.mock.interceptor.MockFor
 import org.codehaus.groovy.control.MultipleCompilationErrorsException
 import org.junit.jupiter.api.Test
 
+import java.lang.ref.WeakReference
 import java.lang.reflect.Field
 import java.lang.reflect.Modifier
 
@@ -398,12 +399,38 @@ class LogTest {
         assert logFormatterSpy.messageReceived
     }
 
+    @Test
+    void testSpyIsKeptWhenGarbageIsCollectedBeforeTheClassLogs() {
+        Class clazz = new GroovyClassLoader().parseClass("""
+            @groovy.util.logging.Log
+            class CollectedCategory {
+                static loggingMethod() {
+                  log.info("info called")
+                }
+            }""")
+        LogFormatterSpy logFormatterSpy = registerLogFormatterSpy('CollectedCategory')
+        def logger = new WeakReference(Logger.getLogger('CollectedCategory'))
+        for (int i = 0; i < 5 && logger.get() != null; i++) {
+            System.gc()
+            Thread.sleep(10)
+        }
+
+        clazz.newInstance().loggingMethod()
+
+        assert logFormatterSpy.messageReceived
+    }
+
+    // the LogManager holds loggers weakly, so a logger with a spy must be kept
+    // until the class under test has looked it up
+    private final List<Logger> spiedLoggers = []
+
     private LogFormatterSpy registerLogFormatterSpy(String loggerName) {
         Logger logger = Logger.getLogger(loggerName)
         ConsoleHandler handler = new ConsoleHandler()
         LogFormatterSpy loggerNameSpy = new LogFormatterSpy()
         handler.setFormatter(loggerNameSpy)
         logger.addHandler(handler)
+        spiedLoggers << logger
         return loggerNameSpy
     }
 }

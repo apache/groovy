@@ -105,7 +105,8 @@ class MultiExchangeTickerEndToEndTest {
 
         var stateSnapshots = [].asSynchronized()
         var sawSomeUpdates = new CountDownLatch(3)
-        agentChangesSubscriber(stats, stateSnapshots, sawSomeUpdates)
+        var changesDone = new CountDownLatch(1)
+        agentChangesSubscriber(stats, stateSnapshots, sawSomeUpdates, changesDone)
 
         var alertPublisher = alertTopic.asPublisher()
         var alertsViaPublisher = [].asSynchronized()
@@ -120,7 +121,7 @@ class MultiExchangeTickerEndToEndTest {
         // Also iterate the broadcast directly via for await (Iterable view).
         var alertsViaIter = [].asSynchronized()
         var alertChannel = alertTopic.subscribe()
-        Thread.startDaemon('alert-iter') {
+        var alertIter = Thread.startDaemon('alert-iter') {
             for (a in alertChannel) alertsViaIter << a
         }
 
@@ -176,8 +177,12 @@ class MultiExchangeTickerEndToEndTest {
 
         assert sawSomeUpdates.await(5, TimeUnit.SECONDS), 'agent.changes() did not deliver updates'
         assert alertsDone.await(5, TimeUnit.SECONDS), 'alert publisher did not complete'
-        Thread.sleep(100)  // settle
+        // shutdown closes changes() after the queued updates, so its
+        // onComplete comes after the last snapshot
         stats.shutdown()
+        assert changesDone.await(5, TimeUnit.SECONDS), 'agent.changes() did not complete'
+        alertIter.join(5000)
+        assert !alertIter.alive, 'alert iteration did not end'
 
         Map<String, Map> finalStats = stateSnapshots[-1]
         assert finalStats.size() == 3
@@ -198,7 +203,8 @@ class MultiExchangeTickerEndToEndTest {
     }
 
     /** Subscribes to {@code agent.changes()} and records every snapshot. */
-    private void agentChangesSubscriber(Agent<Map<String, Map>> agent, List sink, CountDownLatch firstFew) {
+    private void agentChangesSubscriber(Agent<Map<String, Map>> agent, List sink, CountDownLatch firstFew,
+                                        CountDownLatch done) {
         agent.changes().subscribe(new Flow.Subscriber<Map<String, Map>>() {
             @Override void onSubscribe(Flow.Subscription s) { s.request(Long.MAX_VALUE) }
             @Override void onNext(Map<String, Map> snap) {
@@ -206,7 +212,7 @@ class MultiExchangeTickerEndToEndTest {
                 firstFew.countDown()
             }
             @Override void onError(Throwable t) {}
-            @Override void onComplete() {}
+            @Override void onComplete() { done.countDown() }
         })
     }
 

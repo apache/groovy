@@ -76,6 +76,10 @@ Do not hard-code lexer keywords or default-import packages in
 groovy-lsp. Keywords come from `GroovyLexer.VOCABULARY`;
 default stars from `ResolveVisitor.DEFAULT_IMPORTS`.
 
+`groovy-mcp` is the MCP adapter over `GroovyLanguageEngine`. Do not
+grow a second compiler or a second hover path for it. See
+[`../groovy-mcp/AGENTS.md`](../groovy-mcp/AGENTS.md).
+
 ## References
 
 - [Root `AGENTS.md`](../../AGENTS.md)

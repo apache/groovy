@@ -38,11 +38,11 @@ import org.eclipse.lsp4j.PublishDiagnosticsParams
 import org.eclipse.lsp4j.ResourceOperationKind
 import org.eclipse.lsp4j.ShowMessageRequestParams
 import org.eclipse.lsp4j.TextDocumentClientCapabilities
-import org.eclipse.lsp4j.WorkspaceEditCapabilities
 import org.eclipse.lsp4j.TextDocumentItem
 import org.eclipse.lsp4j.TypeDefinitionCapabilities
 import org.eclipse.lsp4j.WorkDoneProgressCreateParams
 import org.eclipse.lsp4j.WorkspaceClientCapabilities
+import org.eclipse.lsp4j.WorkspaceEditCapabilities
 import org.eclipse.lsp4j.services.LanguageClient
 
 import java.util.concurrent.CompletableFuture
@@ -56,8 +56,13 @@ class LspFixture implements LanguageClient {
 
     final GroovyLanguageServer server
     final Map<String, List<Diagnostic>> diagnostics = new ConcurrentHashMap<>()
-    // the server's compile thread records into these while a test iterates them
+    /**
+     * Publications in arrival order. The compile thread appends while tests
+     * iterate, so this list's iterator is a snapshot and does not throw
+     * {@link ConcurrentModificationException}.
+     */
     final List<PublishDiagnosticsParams> publishedParams = new CopyOnWriteArrayList<>()
+    // the server's compile thread records into these while a test iterates them
     final List<MessageParams> messages = new CopyOnWriteArrayList<>()
     final List<ApplyWorkspaceEditParams> appliedEdits = new CopyOnWriteArrayList<>()
     final List<WorkDoneProgressCreateParams> progressCreates = new CopyOnWriteArrayList<>()

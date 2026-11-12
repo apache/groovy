@@ -26,6 +26,9 @@ import org.codehaus.groovy.ast.AnnotatedNode;
 import org.codehaus.groovy.ast.AnnotationNode;
 import org.codehaus.groovy.ast.ClassCodeExpressionTransformer;
 import org.codehaus.groovy.ast.ClassHelper;
+import org.apache.groovy.ast.pattern.MatchPattern.RecordPattern;
+import org.apache.groovy.ast.pattern.MatchPattern.RestPattern;
+import org.apache.groovy.ast.pattern.MatchPattern.TypePattern;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.CompileUnit;
 import org.codehaus.groovy.ast.DynamicVariable;
@@ -54,6 +57,7 @@ import org.codehaus.groovy.ast.expr.ListExpression;
 import org.codehaus.groovy.ast.expr.MapEntryExpression;
 import org.codehaus.groovy.ast.expr.MapExpression;
 import org.codehaus.groovy.ast.expr.MethodCallExpression;
+import org.codehaus.groovy.ast.expr.PatternExpression;
 import org.codehaus.groovy.ast.expr.PropertyExpression;
 import org.codehaus.groovy.ast.expr.SpreadMapExpression;
 import org.codehaus.groovy.ast.expr.SwitchExpression;
@@ -1036,6 +1040,8 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
         } else if (exp instanceof SwitchExpression se) {
             visitSwitchExpression(se);
             ret = se;
+        } else if (exp instanceof PatternExpression pe) {
+            ret = transformPatternExpression(pe);
         } else if (exp instanceof ConstructorCallExpression) {
             ret = transformConstructorCallExpression((ConstructorCallExpression) exp);
         } else if (exp instanceof AnnotationConstantExpression) {
@@ -1213,12 +1219,39 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
         return currentClass.getUnresolvedSuperClass().equals(trait);
     }
 
+    private static boolean directlyDeclaresInterface(final ClassNode type, final ClassNode candidate) {
+        if (type == null || candidate == null) return false;
+        ClassNode[] interfaces = type.getInterfaces();
+        if (interfaces != null) {
+            for (ClassNode face : interfaces) {
+                if (face.equals(candidate)) return true;
+            }
+        }
+        // "new I() { ... }" still records I as the superclass until InnerClassVisitor
+        // moves an interface superclass onto the interfaces list.
+        if (type instanceof InnerClassNode inner && inner.isAnonymous()) {
+            ClassNode superType = type.getUnresolvedSuperClass(false);
+            return superType != null && superType.isInterface() && superType.equals(candidate);
+        }
+        return false;
+    }
+
     private void checkThisAndSuperAsPropertyAccess(final PropertyExpression expression) {
         if (expression.isImplicitThis()) return;
         String prop = expression.getPropertyAsString();
         if (prop == null || !(prop.equals("this") || prop.equals("super"))) return;
 
         ClassNode type = expression.getObjectExpression().getType();
+        if ("super".equals(prop) && expression.getObjectExpression() instanceof ClassExpression
+                && type.isInterface() && !Traits.isTrait(type)) {
+            // GROOVY-12526: Iface.super needs Iface to be the current type or one of its superinterfaces.
+            // Static compilation further requires a direct superinterface, as javac does; see StaticCompilationVisitor.
+            // Trait.super is left to SuperCallTraitTransformer.
+            if (!directlyDeclaresInterface(currentClass, type) && !currentClass.equals(type) && !currentClass.implementsInterface(type)) {
+                addError("'" + type.getName() + "' is not a direct superinterface of '" + currentClass.getName() + "'", expression);
+            }
+            return;
+        }
         if (expression.getObjectExpression() instanceof ClassExpression && !isSuperCallToDefaultMethod(expression) && !isThisCallToPrivateInterfaceMethod(expression)) {
             if (!(currentClass instanceof InnerClassNode) && !Traits.isTrait(type)) {
                 addError("The usage of 'Class.this' and 'Class.super' is only allowed in nested/inner classes.", expression);
@@ -1475,6 +1508,24 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
         newDeclExpr.copyNodeMetaData(de);
         fixDeclaringClass(newDeclExpr);
         return newDeclExpr;
+    }
+
+    /**
+     * Resolves the types a pattern (GEP-19) names, in place, and then the
+     * expressions written in the match: the matched value, the guard and the
+     * literal elements. The variables the pattern binds share the type nodes
+     * of their type patterns, so they are resolved with them.
+     */
+    protected Expression transformPatternExpression(final PatternExpression pe) {
+        pe.getPattern().forEach(pattern -> {
+            ClassNode type = pattern instanceof TypePattern typed ? typed.type()
+                    : pattern instanceof RecordPattern record ? record.type()
+                    : pattern instanceof RestPattern rest ? rest.type() : null;
+            if (type != null) {
+                resolveOrFail(type, type.getLineNumber() > 0 ? type : pe);
+            }
+        });
+        return pe.transformExpression(this);
     }
 
     // TODO: get normal resolving to set declaring class

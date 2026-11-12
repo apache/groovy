@@ -520,13 +520,19 @@ public class StaticTypesLambdaWriter extends LambdaWriter implements AbstractFun
 
         expression.putNodeMetaData(LAMBDA_SHARED_VARIABLES, localVariableParameters);
 
+        Statement code = expression.getCode();
+        Statement prologue = StaticInvocationWriter.gstringBridgePrologue(controller, parametersWithExactType);
+        if (prologue != null) {
+            code = (code == null) ? prologue : block(prologue, code);
+        }
+
         MethodNode doCallMethod = lambdaClass.addMethod(
             DO_CALL,
             ACC_PUBLIC,
             abstractMethod.getReturnType(),
             parametersWithExactType.clone(),
             ClassNode.EMPTY_ARRAY,
-            expression.getCode()
+            code
         );
         doCallMethod.setSourcePosition(expression);
         if (lambdaAnalyzer.isNonCapturing(doCallMethod, localVariableParameters)) {
@@ -543,7 +549,12 @@ public class StaticTypesLambdaWriter extends LambdaWriter implements AbstractFun
         for (int i = 0, n = lambdaParameters.length; i < n; i += 1) {
             final Parameter lambdaParameter = lambdaParameters[i];
             ClassNode resolvedType = convertParameterType(targetParameters[i].getType(), lambdaParameter.getType(), lambdaParamTypes[i]);
-            lambdaParameter.setType(resolvedType);
+            ClassNode bridge = StaticInvocationWriter.gstringBridgeErasure(resolvedType, targetParameters[i].getType());
+            if (bridge != null) {
+                StaticInvocationWriter.markGStringBridge(lambdaParameter, bridge);
+            } else {
+                lambdaParameter.setType(resolvedType);
+            }
         }
         return lambdaParameters;
     }

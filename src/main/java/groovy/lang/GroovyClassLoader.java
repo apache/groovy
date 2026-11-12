@@ -104,6 +104,7 @@ public class GroovyClassLoader extends URLClassLoader {
     protected final FlexibleCache<String, Class> sourceCache;
 
     private final CompilerConfiguration config;
+    private boolean runtimePackageCheck;
     private final String sourceEncoding;
     private Boolean recompile;
 
@@ -237,6 +238,7 @@ public class GroovyClassLoader extends URLClassLoader {
         }
 
         CompilationUnit unit = createCompilationUnit(config, codeSource);
+        markDefinedInMemory(unit);
         var generatedClasses = new LinkedHashMap<ClassNode, ClassVisitor>();
         ClassCollector collector = createCollector(unit, classNode.getModule().getContext());
         try {
@@ -285,6 +287,14 @@ public class GroovyClassLoader extends URLClassLoader {
                 collector.call(generatedClasses.get(cn), cn);
             }
         }
+    }
+
+    /**
+     * Applies {@link CompilerConfiguration#RUNTIME_PACKAGE_CHECK} to the classes
+     * this class loader compiles, unless the configuration sets the option.
+     */
+    void enableRuntimePackageCheck() {
+        runtimePackageCheck = true;
     }
 
     /**
@@ -364,17 +374,32 @@ public class GroovyClassLoader extends URLClassLoader {
     /**
      * Parses the given code source into a Java class. If there is a class file
      * for the given code source, then no parsing is done, instead the cached class is returned.
+     * <p>
+     * Distinct sources are compiled outside the source-cache lock, so several
+     * threads may call this method on the same loader at once. The cache is
+     * consulted again after compilation and only the first result for a key is kept.
      *
      * @param shouldCacheSource if true then the generated class will be stored in the source cache
      * @return the main class defined in the given script
      */
     public Class parseClass(final GroovyCodeSource codeSource, final boolean shouldCacheSource) throws CompilationFailedException {
-        // it's better to cache class instances by the source code
-        // GCL will load the unique class instance for the same source code
-        // and avoid occupying Permanent Area/Metaspace repeatedly
+        // Cache by source text so the same script is not defined again
+        // and does not occupy Metaspace repeatedly.
         String cacheKey = genSourceCacheKey(codeSource);
+        Class<?> cached = sourceCache.get(cacheKey);
+        if (cached != null) {
+            return cached;
+        }
 
-        return sourceCache.getAndPut(cacheKey, key -> doParseClass(codeSource), shouldCacheSource);
+        // FlexibleCache.getAndPut holds its write lock for the whole provider
+        // call. Compiling there made every parseClass on this loader wait for
+        // every other one, including sources that do not share a cache key.
+        Class<?> parsed = doParseClass(codeSource);
+        if (!shouldCacheSource || parsed == null) {
+            return parsed;
+        }
+        Class<?> published = sourceCache.getAndPut(cacheKey, key -> parsed, true);
+        return published != null ? published : parsed;
     }
 
     /**
@@ -414,6 +439,7 @@ public class GroovyClassLoader extends URLClassLoader {
         validate(codeSource);
         // Was neither already loaded nor compiling, so compile and add to cache.
         CompilationUnit unit = createCompilationUnit(config, codeSource.getCodeSource());
+        markDefinedInMemory(unit);
         if (recompile != null ? recompile : config.getRecompileGroovySource()) {
             unit.addFirstPhaseOperation(TimestampAdder.INSTANCE, CompilePhase.CLASS_GENERATION.getPhaseNumber());
         }
@@ -448,6 +474,23 @@ public class GroovyClassLoader extends URLClassLoader {
         return answer;
     }
 
+    /**
+     * Records that the classes of the compilation unit are defined by an
+     * {@link InnerLoader} of their own, so that the compiler does not assume
+     * that a class of another compilation unit is in the same run-time package.
+     * <p>
+     * Every compilation of {@code parseClass} is marked, whatever its
+     * {@link ClassCollector} does with the classes. A subclass whose collector
+     * defines them with this class loader itself, rather than with an
+     * {@code InnerLoader}, therefore reaches the non-public members of classes
+     * of its other compilations through the meta-class where a direct access
+     * would also work; that is slower, but not wrong.
+     */
+    private void markDefinedInMemory(final CompilationUnit unit) {
+        unit.getAST().putNodeMetaData(InnerLoader.class, Boolean.TRUE);
+        if (runtimePackageCheck) unit.getAST().putNodeMetaData(CompilerConfiguration.RUNTIME_PACKAGE_CHECK, Boolean.TRUE);
+    }
+
     private static void validate(final GroovyCodeSource codeSource) {
         if (codeSource.getFile() == null) {
             if (codeSource.getScriptText() == null) {
@@ -458,11 +501,19 @@ public class GroovyClassLoader extends URLClassLoader {
 
     private void definePackageInternal(final String className) {
         int i = className.lastIndexOf('.');
-        if (i != -1) {
-            String packageName = className.substring(0, i);
-            Package packageDef = getDefinedPackage(packageName);
-            if (packageDef == null) {
-                definePackage(packageName, null, null, null, null, null, null, null);
+        if (i == -1) {
+            return;
+        }
+        String packageName = className.substring(0, i);
+        if (getDefinedPackage(packageName) != null) {
+            return;
+        }
+        try {
+            definePackage(packageName, null, null, null, null, null, null, null);
+        } catch (IllegalArgumentException alreadyDefined) {
+            // Concurrent parseClass calls can define the same package.
+            if (getDefinedPackage(packageName) == null) {
+                throw alreadyDefined;
             }
         }
     }

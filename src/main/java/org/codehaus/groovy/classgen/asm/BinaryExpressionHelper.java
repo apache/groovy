@@ -23,14 +23,15 @@ import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.CodeVisitorSupport;
 import org.codehaus.groovy.ast.MultipleAssignmentMetadata;
+import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.Variable;
 import org.codehaus.groovy.ast.expr.ArgumentListExpression;
 import org.codehaus.groovy.ast.expr.ArrayExpression;
 import org.codehaus.groovy.ast.expr.BinaryExpression;
-import org.codehaus.groovy.ast.expr.ClosureExpression;
-import org.codehaus.groovy.ast.expr.DeclarationExpression;
 import org.codehaus.groovy.ast.expr.ClassExpression;
+import org.codehaus.groovy.ast.expr.ClosureExpression;
 import org.codehaus.groovy.ast.expr.ConstantExpression;
+import org.codehaus.groovy.ast.expr.DeclarationExpression;
 import org.codehaus.groovy.ast.expr.ElvisOperatorExpression;
 import org.codehaus.groovy.ast.expr.EmptyExpression;
 import org.codehaus.groovy.ast.expr.Expression;
@@ -53,6 +54,8 @@ import org.codehaus.groovy.classgen.VariableScopeVisitor.InstanceofFlowBindings;
 import org.codehaus.groovy.runtime.MultipleAssignmentSupport;
 import org.codehaus.groovy.runtime.ScriptBytecodeAdapter;
 import org.codehaus.groovy.syntax.Token;
+import org.codehaus.groovy.syntax.Types;
+import org.codehaus.groovy.transform.stc.StaticTypesMarker;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
 
@@ -62,6 +65,7 @@ import java.util.Map;
 import java.util.Set;
 
 import static org.apache.groovy.ast.tools.ExpressionUtils.isNullConstant;
+import static org.apache.groovy.ast.tools.ExpressionUtils.isQualifiedThisOrSuper;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.args;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.binX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.boolX;
@@ -127,6 +131,7 @@ import static org.codehaus.groovy.syntax.Types.RIGHT_SHIFT_UNSIGNED;
 import static org.codehaus.groovy.syntax.Types.RIGHT_SHIFT_UNSIGNED_EQUAL;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.implementsInterfaceOrIsSubclassOf;
 import static org.codehaus.groovy.transform.stc.StaticTypesMarker.COMPOUND_ASSIGN_TARGET;
+import static org.objectweb.asm.Opcodes.ACONST_NULL;
 import static org.objectweb.asm.Opcodes.ALOAD;
 import static org.objectweb.asm.Opcodes.ASTORE;
 import static org.objectweb.asm.Opcodes.CHECKCAST;
@@ -222,6 +227,8 @@ public class BinaryExpressionHelper {
      * @param expression the expression to compile
      */
     public void eval(final BinaryExpression expression) {
+        if (evaluateCompoundAssignmentWithReceiverOnce(expression)) return;
+
         switch (expression.getOperation().getType()) {
         case EQUAL: // = (aka assignment)
             evaluateEqual(expression, false);
@@ -435,29 +442,138 @@ public class BinaryExpressionHelper {
     }
 
     /**
+     * For a compound assignment to a property such as {@code obj().v += 2}, evaluates
+     * the receiver once and stores it, so that the read and the write of the property
+     * reuse the value instead of evaluating the receiver expression twice.
+     */
+    private boolean evaluateCompoundAssignmentWithReceiverOnce(final BinaryExpression expression) {
+        int op = expression.getOperation().getType();
+        if (op == EQUAL || op == ELVIS_EQUAL || op == NULL_COALESCE_EQUAL || !Types.isAssignment(op)) return false;
+        if (!(expression.getLeftExpression() instanceof PropertyExpression pexp) || !hasReceiverToEvaluateOnce(pexp)) return false;
+
+        VariableSlotLoader receiver = evaluateIntoTemporary(pexp.getObjectExpression(), "$receiver");
+        BinaryExpression rewrite = binX(withReceiver(pexp, receiver), expression.getOperation(), expression.getRightExpression());
+        rewrite.copyNodeMetaData(expression);
+        rewrite.setSourcePosition(expression);
+        eval(rewrite);
+        controller.getCompileStack().removeVar(receiver.getIndex());
+        return true;
+    }
+
+    /**
+     * Determines if the receiver of a property that is read and then written, as in
+     * {@code obj().v += 2} or {@code obj().v++}, must be evaluated into a temporary.
+     * A local variable, parameter, {@code this}, {@code super}, class, constant or
+     * qualified {@code Outer.this} receiver has no side effect and is left in place.
+     * Any other name, such as a dynamic variable or a property read through the
+     * meta-class, may call a getter and is evaluated into the temporary.
+     */
+    private static boolean hasReceiverToEvaluateOnce(final PropertyExpression pexp) {
+        if (pexp.isSpreadSafe() || pexp.isImplicitThis()) return false;
+        Expression receiver = pexp.getObjectExpression();
+        if (receiver instanceof VariableExpression ve) {
+            Variable accessed = ve.getAccessedVariable();
+            return !ve.isThisExpression() && !ve.isSuperExpression()
+                    && !(accessed instanceof VariableExpression) && !(accessed instanceof Parameter);
+        }
+        return !(receiver instanceof ClassExpression || receiver instanceof ConstantExpression
+                || receiver instanceof BytecodeExpression || isQualifiedThisOrSuper(receiver));
+    }
+
+    private static PropertyExpression withReceiver(final PropertyExpression pexp, final Expression receiver) {
+        Expression objectExpression = pexp.getObjectExpression();
+        return (PropertyExpression) pexp.transformExpression(exp -> exp == objectExpression ? receiver : exp);
+    }
+
+    /**
      * Emits an array-style assignment using the dynamic {@code putAt} protocol.
+     * The receiver, the index and the right-hand side are evaluated in that order.
+     * When the assignment value is required, it is left on the operand stack.
+     * A right-hand side that is not already a slot is kept in one temporary
+     * across the call, and that temporary is cleared before this method returns.
+     * See {@link #preserveSubscriptRhs} for why a stack duplicate is not used here.
      *
      * @param parent the original assignment expression
      * @param receiver the array or indexable receiver
      * @param index the subscript expression
-     * @param rhsValueLoader an expression that reloads the right-hand value
+     * @param rhsValueLoader the right-hand side, or a loader that reloads it
      * @param safe whether the receiver access is null-safe
      */
     protected void assignToArray(final Expression parent, final Expression receiver, final Expression index, final Expression rhsValueLoader, final boolean safe) {
         // let's replace this assignment to a subscript operator with a method call
         // e.g. x[5] = 10 --> ScriptBytecodeAdapter.invokeMethod(senderClass, x, "putAt", [5, 10])
-        controller.getInvocationWriter().makeCall(parent, receiver, constX("putAt"), args(index, rhsValueLoader), InvocationWriter.invokeMethod, safe, false, false);
+        boolean keepValue = !Boolean.TRUE.equals(parent.getNodeMetaData(AsmClassGenerator.ELIDE_EXPRESSION_VALUE));
+        int[] slot = { -1 };
+        ClassNode[] keptType = { null };
+        Expression argument = preserveSubscriptRhs(rhsValueLoader, keepValue, slot, keptType);
+        controller.getInvocationWriter().makeCall(parent, receiver, constX("putAt"), args(index, argument), InvocationWriter.invokeMethod, safe, false, false);
         controller.getOperandStack().pop(); // method return value
+        finishPreservedRhs(rhsValueLoader, keepValue, slot, keptType);
+    }
 
-        if (!Boolean.TRUE.equals(parent.getNodeMetaData(AsmClassGenerator.ELIDE_EXPRESSION_VALUE)))
-            rhsValueLoader.visit(controller.getAcg()); // assignment expression value
+    /**
+     * Returns the expression to pass as the {@code putAt} value. When the
+     * assignment value is required and the right-hand side is not already a
+     * slot, the wrapper evaluates it once and stores a temporary.
+     * <p>
+     * An array store can duplicate that value under its two operands
+     * ({@link OperandStack#dupUnderTwo}). A {@code putAt} call cannot share
+     * that duplicate. The classic call site pushes a {@code CallSite} under
+     * the receiver and the index, three words below the value, and there is
+     * no {@code DUP_X3}. A copy inserted only under the receiver and the index
+     * would become the {@code invokeinterface} receiver. The invokedynamic
+     * backend has no call-site operand, but the copy would have to be emitted
+     * inside that backend after the arguments are on the stack. One reference
+     * temporary, cleared by {@link #finishPreservedRhs}, is the path shared
+     * by both backends.
+     */
+    protected Expression preserveSubscriptRhs(final Expression rhs, final boolean keepValue, final int[] slot, final ClassNode[] keptType) {
+        if (!keepValue || rhs instanceof VariableSlotLoader) return rhs;
+        ClassNode hinted = controller.getTypeChooser().resolveType(rhs, controller.getClassNode());
+        BytecodeExpression captured = new BytecodeExpression(hinted) {
+            /**
+             * Evaluates the right-hand side once, stores a copy, and leaves the
+             * original value as this argument. {@code visitBytecodeExpression}
+             * pushes {@link #getType()} afterwards, so the tracked stack must
+             * not already contain that value when this method returns.
+             */
+            @Override
+            public void visit(final MethodVisitor mv) {
+                rhs.visit(controller.getAcg());
+                OperandStack operandStack = controller.getOperandStack();
+                ClassNode actual = operandStack.getTopOperand();
+                setType(actual);
+                keptType[0] = actual;
+                operandStack.dup();
+                slot[0] = controller.getCompileStack().defineTemporaryVariable("$rhs", actual, true);
+                operandStack.remove(1);
+            }
+        };
+        captured.copyNodeMetaData(rhs);
+        if (captured.getNodeMetaData(StaticTypesMarker.INFERRED_TYPE) == null) {
+            captured.putNodeMetaData(StaticTypesMarker.INFERRED_TYPE, hinted);
+        }
+        return captured;
+    }
+
+    /**
+     * Leaves the assignment value on the operand stack when {@code keepValue}
+     * is set, and clears a temporary allocated by {@link #preserveSubscriptRhs}.
+     */
+    protected void finishPreservedRhs(final Expression rhs, final boolean keepValue, final int[] slot, final ClassNode[] keptType) {
+        if (!keepValue) return;
+        if (rhs instanceof VariableSlotLoader || slot[0] < 0) {
+            rhs.visit(controller.getAcg());
+            return;
+        }
+        controller.getOperandStack().load(keptType[0], slot[0]);
+        releaseTemporary(keptType[0], slot[0]);
     }
 
     /**
      * Evaluates the given expression and stores its value in a fresh temporary
-     * variable, returning a loader for that variable. Used to evaluate the
-     * receiver and index of a subscript assignment ahead of the right-hand side
-     * (GROOVY-12097) while leaving the operand stack clean.
+     * variable, returning a loader for that variable. Used when a receiver is
+     * read and then written, so the operand stack is clean for the next operand.
      */
     private VariableSlotLoader evaluateIntoTemporary(final Expression expression, final String name) {
         AsmClassGenerator acg = controller.getAcg();
@@ -523,9 +639,9 @@ public class BinaryExpressionHelper {
             assignment.copyNodeMetaData(expression);
             evaluateEqual(assignment, false);
 
-            CompileStack compileStack = controller.getCompileStack();
-            compileStack.removeVar(subscript.getIndex());
-            compileStack.removeVar(receiver.getIndex());
+            // Receiver and index were used for both the read and the write.
+            releaseTemporary(subscript.getType(), subscript.getIndex());
+            releaseTemporary(receiver.getType(), receiver.getIndex());
             return;
         }
 
@@ -554,6 +670,73 @@ public class BinaryExpressionHelper {
     }
 
     /**
+     * Emits a subscript assignment {@code receiver[index] = rhs}.
+     * <p>
+     * {@code putAt} and the primitive array stores consume the receiver, the
+     * index and the value in that order, which is also the evaluation order, so
+     * a plain assignment does not allocate a temporary for them. A safe subscript
+     * keeps its existing order: the right-hand side is evaluated before the
+     * null check, and the index is still skipped when the receiver is null.
+     * A synthetic assignment whose right-hand side re-reads the subscript
+     * ({@code a[i] op= b}, {@code a[i] ?= b}) has already evaluated the receiver
+     * and index and is handled the same way. A reference temporary used by those
+     * paths is cleared after the write.
+     */
+    private void evaluateSubscriptAssignment(final BinaryExpression expression, final BinaryExpression leftBinExpr, final ClassNode lhsType) {
+        Expression rightExpression = expression.getRightExpression();
+        boolean safe = leftBinExpr.isSafe();
+        boolean plain = !safe
+                && expression.getNodeMetaData("classgen.callback") == null
+                && !(rightExpression instanceof EmptyExpression)
+                && !isReferencedWithin(rightExpression, leftBinExpr);
+
+        if (plain) {
+            assignToArray(expression, leftBinExpr.getLeftExpression(), leftBinExpr.getRightExpression(),
+                    adaptSubscriptRhs(lhsType, rightExpression), false);
+            return;
+        }
+
+        AsmClassGenerator acg = controller.getAcg();
+        MethodVisitor mv = controller.getMethodVisitor();
+        OperandStack operandStack = controller.getOperandStack();
+        CompileStack compileStack = controller.getCompileStack();
+        evaluateRightHandSide(lhsType, rightExpression, acg, mv, operandStack);
+        ClassNode rhsType = operandStack.getTopOperand();
+        int rhsValueId = compileStack.defineTemporaryVariable("$rhs", rhsType, true);
+        Expression rhsValueLoader = new VariableSlotLoader(rhsType, rhsValueId, operandStack);
+        assignToArray(expression, leftBinExpr.getLeftExpression(), leftBinExpr.getRightExpression(), rhsValueLoader, safe);
+        releaseTemporary(rhsType, rhsValueId);
+    }
+
+    /**
+     * Rewrites a list literal assigned to an array-typed subscript into an
+     * array expression, matching {@link #evaluateRightHandSide}.
+     */
+    private static Expression adaptSubscriptRhs(final ClassNode lhsType, final Expression rightExpression) {
+        if (lhsType.isArray() && rightExpression instanceof ListExpression list) {
+            Expression array = new ArrayExpression(lhsType.getComponentType(), list.getExpressions());
+            array.setSourcePosition(rightExpression);
+            array.setType(lhsType);
+            return array;
+        }
+        return rightExpression;
+    }
+
+    /**
+     * Drops a temporary. A reference slot is cleared first so the value does
+     * not stay reachable after {@code removeVar}, which only forgets the slot.
+     * Primitive slots are not null stores; they do not keep a heap object live.
+     */
+    protected void releaseTemporary(final ClassNode type, final int index) {
+        if (!ClassHelper.isPrimitiveType(type)) {
+            MethodVisitor mv = controller.getMethodVisitor();
+            mv.visitInsn(ACONST_NULL);
+            mv.visitVarInsn(ASTORE, index);
+        }
+        controller.getCompileStack().removeVar(index);
+    }
+
+    /**
      * Evaluates an assignment expression.
      *
      * @param expression the assignment expression
@@ -577,25 +760,6 @@ public class BinaryExpressionHelper {
             BytecodeVariable v = compileStack.defineVariable((Variable) leftExpression, lhsType, false);
             if (returnRightValue) operandStack.loadOrStoreVariable(v, false);
             return;
-        }
-
-        // GROOVY-12097: for a subscript assignment such as "a[i] = v", evaluate the
-        // receiver and the index before the right-hand side so that the expression
-        // keeps Java's left-to-right evaluation order. (GROOVY-2556 reversed this by
-        // hoisting the RHS evaluation ahead of the receiver and index.) We skip this
-        // when the receiver or index could be re-read while evaluating the RHS: safe
-        // subscripts (a?[i] = v) keep their short-circuit behaviour, and synthetic
-        // assignments whose RHS reuses the left-hand side -- "a[i] op= b" (compound)
-        // and "a[i] ?= b" (Elvis) -- already evaluate the receiver and index first as
-        // part of the RHS and manage their own temporaries.
-        VariableSlotLoader subscriptObject = null, subscriptIndex = null;
-        if (leftExpression instanceof BinaryExpression subscript
-                && subscript.getOperation().getType() == LEFT_SQUARE_BRACKET
-                && !subscript.isSafe()
-                && expression.getNodeMetaData("classgen.callback") == null // compound/safe rewrite already orders receiver and index
-                && !isReferencedWithin(rightExpression, subscript)) {
-            subscriptObject = evaluateIntoTemporary(subscript.getLeftExpression(), "$object");
-            subscriptIndex = evaluateIntoTemporary(subscript.getRightExpression(), "$index");
         }
 
         // evaluate RHS and store its value
@@ -645,6 +809,12 @@ public class BinaryExpressionHelper {
             return;
         }
 
+        if (leftExpression instanceof BinaryExpression leftBinExpr
+                && leftBinExpr.getOperation().getType() == LEFT_SQUARE_BRACKET) {
+            evaluateSubscriptAssignment(expression, leftBinExpr, lhsType);
+            return;
+        }
+
         evaluateRightHandSide(lhsType, rightExpression, acg, mv, operandStack);
         ClassNode rhsType = operandStack.getTopOperand();
 
@@ -678,17 +848,9 @@ public class BinaryExpressionHelper {
         // TODO: if RHS is already a VariableSlotLoader, then skip creating a new one
         Expression rhsValueLoader = new VariableSlotLoader(rhsType, rhsValueId, operandStack);
 
-        // subscript assignment
-        if (leftExpression instanceof BinaryExpression leftBinExpr) {
-            if (leftBinExpr.getOperation().getType() == LEFT_SQUARE_BRACKET) {
-                Expression receiver = subscriptObject != null ? subscriptObject : leftBinExpr.getLeftExpression();
-                Expression index = subscriptIndex != null ? subscriptIndex : leftBinExpr.getRightExpression();
-                assignToArray(expression, receiver, index, rhsValueLoader, leftBinExpr.isSafe());
-            }
+        // non-subscript binary LHS: the value was staged in $rhs and is not stored
+        if (leftExpression instanceof BinaryExpression) {
             compileStack.removeVar(rhsValueId);
-            // remove the receiver/index temporaries in reverse order of definition (LIFO)
-            if (subscriptIndex != null) compileStack.removeVar(subscriptIndex.getIndex());
-            if (subscriptObject != null) compileStack.removeVar(subscriptObject.getIndex());
             return;
         }
 
@@ -1065,6 +1227,8 @@ public class BinaryExpressionHelper {
         // -> subscript=a, receiver=x, receiver#putAt(subscript, receiver#getAt(subscript)#plus(b))
         // the result of x[a] += b is x[a]+b, thus:
         // -> subscript=a, receiver=x, receiver#putAt(subscript, ret=receiver#getAt(subscript)#plus(b)), ret
+        // Each temporary is used twice, so a stack duplicate cannot replace it.
+        // Reference slots are cleared once the result has been reloaded.
         ExpressionAsVariableSlot subscript = new ExpressionAsVariableSlot(controller, leftBinExpr.getRightExpression(), "subscript");
         ExpressionAsVariableSlot receiver  = new ExpressionAsVariableSlot(controller, leftBinExpr.getLeftExpression(), "receiver");
         MethodCallExpression getAt = callX(receiver, "getAt", args(subscript));
@@ -1073,16 +1237,15 @@ public class BinaryExpressionHelper {
         MethodCallExpression putAt = callX(receiver, "putAt", args(subscript, ret));
 
         AsmClassGenerator acg = controller.getAcg();
-        CompileStack compileStack = controller.getCompileStack();
         OperandStack operandStack = controller.getOperandStack();
 
         putAt.visit(acg);
         operandStack.pop();
         operandStack.load(ret.getType(), ret.getIndex());
 
-        compileStack.removeVar(ret.getIndex());
-        compileStack.removeVar(subscript.getIndex());
-        compileStack.removeVar(receiver.getIndex());
+        releaseTemporary(ret.getType(), ret.getIndex());
+        releaseTemporary(subscript.getType(), subscript.getIndex());
+        releaseTemporary(receiver.getType(), receiver.getIndex());
     }
 
     /**
@@ -1336,9 +1499,9 @@ public class BinaryExpressionHelper {
         // remove the result of the method call
         operandStack.pop();
 
-        // reload saved value
+        // reload saved value; the slot must not keep that value afterwards
         operandStack.load(expressionType, tempIdx);
-        compileStack.removeVar(tempIdx);
+        releaseTemporary(expressionType, tempIdx);
         removeSubscriptTemps(subscript);
     }
 
@@ -1349,14 +1512,17 @@ public class BinaryExpressionHelper {
      */
     public void evaluatePostfixMethod(final PostfixExpression expression) {
         int op = expression.getOperation().getType();
+        VariableSlotLoader receiver = evaluateReceiverOnce(expression.getExpression());
+        Expression operand = receiver == null ? expression.getExpression() : withReceiver((PropertyExpression) expression.getExpression(), receiver);
         switch (op) {
             case PLUS_PLUS:
-                evaluatePostfixMethod(op, "next", expression.getExpression(), expression);
+                evaluatePostfixMethod(op, "next", operand, expression);
                 break;
             case MINUS_MINUS:
-                evaluatePostfixMethod(op, "previous", expression.getExpression(), expression);
+                evaluatePostfixMethod(op, "previous", operand, expression);
                 break;
         }
+        if (receiver != null) releaseTemporary(receiver.getType(), receiver.getIndex());
     }
 
     /**
@@ -1366,14 +1532,29 @@ public class BinaryExpressionHelper {
      */
     public void evaluatePrefixMethod(final PrefixExpression expression) {
         int type = expression.getOperation().getType();
+        VariableSlotLoader receiver = evaluateReceiverOnce(expression.getExpression());
+        Expression operand = receiver == null ? expression.getExpression() : withReceiver((PropertyExpression) expression.getExpression(), receiver);
         switch (type) {
             case PLUS_PLUS:
-                evaluatePrefixMethod(type, "next", expression.getExpression(), expression);
+                evaluatePrefixMethod(type, "next", operand, expression);
                 break;
             case MINUS_MINUS:
-                evaluatePrefixMethod(type, "previous", expression.getExpression(), expression);
+                evaluatePrefixMethod(type, "previous", operand, expression);
                 break;
         }
+        if (receiver != null) releaseTemporary(receiver.getType(), receiver.getIndex());
+    }
+
+    /**
+     * Evaluates the receiver of a property operand of {@code ++} or {@code --} into a
+     * temporary, so that the read and the write of the property reuse it. Returns
+     * {@code null} when the operand has no such receiver.
+     */
+    private VariableSlotLoader evaluateReceiverOnce(final Expression operand) {
+        if (operand instanceof PropertyExpression pexp && hasReceiverToEvaluateOnce(pexp)) {
+            return evaluateIntoTemporary(pexp.getObjectExpression(), "$receiver");
+        }
+        return null;
     }
 
     private void evaluatePrefixMethod(final int op, final String method, final Expression expression, final Expression orig) {
@@ -1390,12 +1571,13 @@ public class BinaryExpressionHelper {
     /**
      * Removes the subscript receiver/index temporaries created by
      * {@link #loadWithSubscript} in reverse order of definition (LIFO).
+     * A reference slot is cleared so the receiver does not stay reachable
+     * for the rest of the enclosing method.
      */
     private void removeSubscriptTemps(final SubscriptTemps subscript) {
         if (subscript != null) {
-            CompileStack compileStack = controller.getCompileStack();
-            compileStack.removeVar(subscript.index.getIndex());
-            compileStack.removeVar(subscript.receiver.getIndex());
+            releaseTemporary(subscript.index.getType(), subscript.index.getIndex());
+            releaseTemporary(subscript.receiver.getType(), subscript.receiver.getIndex());
         }
     }
 
@@ -1457,10 +1639,13 @@ public class BinaryExpressionHelper {
             // execute the assignment, this will leave the right side (here the method call result) on the stack
             assignToArray(be, subscript.receiver, subscript.index, methodResultLoader, be.isSafe());
 
-            compileStack.removeVar(resultIdx);
+            releaseTemporary(methodResultType, resultIdx);
 
-        } else if (expression instanceof VariableExpression || expression instanceof PropertyExpression || expression instanceof FieldExpression) {
-            // here we handle a++ and a.b++
+        } else if (expression instanceof FieldExpression
+                || expression instanceof PropertyExpression
+                || (expression instanceof VariableExpression v
+                    && !(v.isThisExpression() || v.isSuperExpression()))) { // GROOVY-7947
+            // write "++a" or "a++" result back to "a", leaving result on stack for caller
             controller.getOperandStack().dup();
             controller.getCompileStack().pushLHS(true);
             expression.visit(controller.getAcg());
