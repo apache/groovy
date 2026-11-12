@@ -1591,6 +1591,24 @@ type of `e`, as in Java: `Class<? extends String>` for a `String` and
   and `datastore.getClass()` passed where a `Class<? extends Datastore>` is
   expected, were compile errors ("Incompatible generic argument types") and
   now compile.
+- **`@CompileStatic` may select a more specific overload.** A value made from
+  `x.getClass()`, such as `x.getClass().cast(o)`,
+  `x.getClass().getDeclaredConstructor().newInstance()` or the result of
+  `<T> T create(Class<T>)`, now has the type of `x`. With overloads
+  `f(Object)`, `f(CharSequence)` and `f(StringBuilder)` and a
+  `StringBuilder x`, `f(x.getClass().cast(o))` calls `f(StringBuilder)` where
+  it called `f(Object)`. That is the overload Java selects, and the one dynamic
+  Groovy and `@TypeChecked` code select at run time. There is no compile error.
+- **A generic call takes type arguments from its target.** In an assignment or
+  a return, a call of a generic method is accepted when the target type
+  determines its type arguments, as in Java:
+  `List<Class<?>> l = Collections.singletonList(x.getClass())`,
+  `Arrays.asList(a.getClass(), b.getClass())`, `Optional.of(x.getClass())` and
+  `list.collect { it.getClass() }` compile, and so does
+  `List<Number> l = Collections.singletonList(1)`, which was a compile error. A
+  value that is not such a call is not converted: `list*.getClass()` is a
+  `List<Class<? extends String>>`, and assigning it or a variable of that type
+  to a `List<Class<?>>` is a compile error, as it is in Java.
 - **A raw bound is not within a parameterized one, and a type is not within a
   type variable.** For an assignment, a return and a declared parameter,
   `? extends A` is no longer accepted for `? extends B` when `B` is
@@ -1603,15 +1621,31 @@ type of `e`, as in Java: `Class<? extends String>` for a `String` and
   <T> Class<? extends T> c(T t) { t.getClass() }
   ```
 
+- **The class of a value of a type variable is not the class of the type
+  variable.** For a `T t`, `t.getClass()` is a `Class<? extends Object>`.
+  `<T> Class<T> typeOf(T t) { t.getClass() }` compiled and is now a compile
+  error, as in Java. So is passing `t.getClass()` to a parameter typed by a
+  type variable in scope, such as `accept(Class<? extends T>)` or
+  `Map<Class<? extends T>, T>.put` within `Box<T>`.
+- **`instanceof` does not change the class of a variable.** After
+  `o instanceof String` for an `Object o`, `o.getClass()` and `o.class` are a
+  `Class<?>`, as in Java, so returning them as a `Class<? extends String>` is a
+  compile error. A pattern variable (`o instanceof String s`), a cast and a new
+  variable have the narrower type, and calls such as `o.length()` are still
+  accepted after the test.
+
 - **The simple name of an inner class keeps the type arguments of the
   enclosing class.** Within `Outer<T>`, `Inner` now means `Outer<T>.Inner`
   and not the raw type `Outer.Inner`, with or without static compilation. The
   `Signature` attribute of a member typed with such a name names the enclosing
   type, so reflection reports the generic type `Outer<T>$Inner` where it
-  reported the class `Outer$Inner`.
+  reported the class `Outer$Inner`. As a type argument it is not the raw type
+  either: `List<Inner> a = raw` and `List<? extends Inner> b = raw` for a
+  `List<Outer.Inner> raw` compiled and are now compile errors, as in Java.
 
 **Who is affected.** Statically checked code that relied on one of the
-conversions above. Add the cast that Java requires, such as
+conversions above, and `@CompileStatic` code whose overloads differ for the
+class of a receiver. Add the cast that Java requires, such as
 `(Class<? extends T>) t.getClass()`, or declare the raw bound, such as
 `Class<? extends List>`. The class of a value is also now checked against the
 bound of a type parameter (see GROOVY-12754 above), so
@@ -1621,7 +1655,11 @@ class member by reflection sees the enclosing type.
 
 **What is unchanged.** Dynamic code, apart from the generic signatures. A raw
 type that is not the bound of a wildcard is still an unchecked conversion, as
-in `List<String> x = rawList`.
+in `List<String> x = rawList`. A member of a raw type whose type parameter has
+a raw bound has the erasure of its type, as in Java: for a raw `Holder`
+declared as `Holder<T extends List>`, a field `Class<? extends T> type` is a
+`Class`, so `Class<? extends List<String>> c = holder.type` is an unchecked
+conversion.
 
 ## The binary-compatibility check
 

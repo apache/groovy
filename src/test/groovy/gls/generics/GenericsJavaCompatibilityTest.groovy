@@ -4607,6 +4607,29 @@ final class GenericsJavaCompatibilityTest {
     }
 
     /**
+     * JLS 15.12.2.5: with {@code x.getClass()} typed {@code Class<? extends StringBuilder>}, a
+     * value made from it is a {@code StringBuilder}, which selects the most specific overload.
+     */
+    @Test
+    void testClassOfReceiverSelectsOverloadForItsType() {
+        final String className = 'gls.generics.test.GetClassOverload'
+        final String javaSrc = '''
+            package gls.generics.test;
+            public class GetClassOverload {
+                static String f(Object o) { return "object"; }
+                static String f(CharSequence o) { return "char sequence"; }
+                static String f(StringBuilder o) { return "string builder"; }
+                public static String test() throws Exception {
+                    StringBuilder x = new StringBuilder();
+                    Object o = new StringBuilder();
+                    return f(x.getClass().cast(o)) + ":" + f(x.getClass().getDeclaredConstructor().newInstance());
+                }
+            }
+        '''
+        assertPositive(className, javaSrc, 'string builder:string builder')
+    }
+
+    /**
      * JLS 18.5.2: the target type does not widen a type argument beyond what the arguments allow.
      */
     @Test

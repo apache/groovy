@@ -3320,6 +3320,24 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-12755
+    @Test
+    void testClassOfReceiverSelectsOverloadForItsType() {
+        // a value made from x.getClass() has the type of x, so the most specific overload is selected
+        assertScript '''
+            String f(Object o) { 'object' }
+            String f(CharSequence o) { 'char sequence' }
+            String f(StringBuilder o) { 'string builder' }
+            def <T> T create(Class<T> type) { type.getDeclaredConstructor().newInstance() }
+
+            List<String> test(StringBuilder x, Object o) {
+                def y = create(x.getClass())
+                [f(x.getClass().cast(o)), f(x.getClass().getDeclaredConstructor().newInstance()), f(y)]
+            }
+            assert test(new StringBuilder(), new StringBuilder()) == ['string builder'] * 3
+        '''
+    }
+
     // GROOVY-8961, GROOVY-9915
     @Test
     void testShouldUseMethodGenericType3() {
