@@ -45,6 +45,7 @@ import org.codehaus.groovy.runtime.ArrayTypeUtils;
 import org.codehaus.groovy.runtime.GeneratedClosure;
 import org.codehaus.groovy.runtime.GroovyCategorySupport;
 import org.codehaus.groovy.runtime.MetaClassHelper;
+import org.codehaus.groovy.runtime.MethodClosure;
 import org.codehaus.groovy.runtime.NullObject;
 import org.codehaus.groovy.runtime.dgmimpl.NumberNumberMetaMethod;
 import org.codehaus.groovy.runtime.metaclass.ClosureMetaClass;
@@ -55,6 +56,7 @@ import org.codehaus.groovy.runtime.metaclass.NewStaticMetaMethod;
 import org.codehaus.groovy.runtime.metaclass.ReflectionMetaMethod;
 import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 import org.codehaus.groovy.runtime.wrappers.Wrapper;
+import org.codehaus.groovy.util.FastArray;
 import org.codehaus.groovy.vmplugin.VMPlugin;
 import org.codehaus.groovy.vmplugin.VMPluginFactory;
 
@@ -67,6 +69,7 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.function.Predicate;
@@ -949,6 +952,15 @@ public abstract class Selector {
                 }
                 method = mci.getMethodWithCaching(selectionBase, name, newArgs, false);
             }
+            // a method reference picks among functional-interface overloads by its arity,
+            // which its class does not tell, so such a choice is not cached by class
+            if (cache && method != null && containsMethodClosure(newArgs)) {
+                List<MetaMethod> named = mci.respondsTo(receiver, name);
+                if (named.size() > 1 && MetaClassHelper.dependsOnMethodClosureArity(
+                        new FastArray(named), MetaClassHelper.convertToTypeArray(newArgs), newArgs)) {
+                    cache = false;
+                }
+            }
             if (LOG_ENABLED) LOG.info("retrieved method from meta class: " + method);
         }
 
@@ -1668,5 +1680,12 @@ public abstract class Selector {
             classes[i] = args[i].getClass();
         }
         return SAME_CLASSES.bindTo(classes).asCollector(Object[].class, n).asType(booleanType);
+    }
+
+    private static boolean containsMethodClosure(final Object[] arguments) {
+        for (Object argument : arguments) {
+            if (argument instanceof MethodClosure) return true;
+        }
+        return false;
     }
 }

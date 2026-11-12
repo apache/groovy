@@ -3677,6 +3677,173 @@ final class MethodReferenceTest {
         assert err.message.contains("Failed to find class method 'inst()' for the type: C")
     }
 
+
+    // GROOVY-11010: a method reference fits only a functional interface whose abstract method it can be called with
+    @Test
+    void testOverloadSelectedByMethodReferenceArity1() {
+        assertScript shell, '''
+            class Ext {
+                static <T> String red(Collection<T> c, BinaryOperator<T> op) { 'combiner:' + c.stream().reduce(op).get() }
+                static <T, R> String red(Collection<T> c, Function<T, R> f) { 'transform:' + c.collect { f.apply(it) } }
+            }
+            class Calc {
+                Integer add(Integer a, Integer b) { a + b }
+                Integer twice(Integer a) { a * 2 }
+            }
+            @CompileStatic
+            void test() {
+                List<Integer> numbers = [1, 2, 3]
+                List<String> strings = ['a ', ' b']
+                def calc = new Calc()
+                assert Ext.red(numbers, Integer::sum) == 'combiner:6'                  // static method, two parameters
+                assert Ext.red(numbers, Math::negateExact) == 'transform:[-1, -2, -3]' // static method, one parameter
+                assert Ext.red(strings, String::concat) == 'combiner:a  b'             // receiver and one parameter
+                assert Ext.red(strings, String::trim) == 'transform:[a, b]'            // receiver only
+                assert Ext.red(numbers, calc::add) == 'combiner:6'                     // bound receiver, two parameters
+                assert Ext.red(numbers, calc::twice) == 'transform:[2, 4, 6]'          // bound receiver, one parameter
+                assert Ext.red(['1', '2'], Integer::new) == 'transform:[1, 2]'         // constructor
+            }
+
+            test()
+        '''
+    }
+
+    // GROOVY-11010: the same for a method pointer
+    @Test
+    void testOverloadSelectedByMethodReferenceArity2() {
+        assertScript shell, '''
+            class Ext {
+                static <T> String red(Collection<T> c, BinaryOperator<T> op) { 'combiner:' + c.stream().reduce(op).get() }
+                static <T, R> String red(Collection<T> c, Function<T, R> f) { 'transform:' + c.collect { f.apply(it) } }
+            }
+            class Calc {
+                Integer add(Integer a, Integer b) { a + b }
+                Integer twice(Integer a) { a * 2 }
+            }
+            @CompileStatic
+            void test() {
+                List<Integer> numbers = [1, 2, 3]
+                def calc = new Calc()
+                assert Ext.red(numbers, calc.&add) == 'combiner:6'
+                assert Ext.red(numbers, calc.&twice) == 'transform:[2, 4, 6]'
+            }
+
+            test()
+        '''
+    }
+
+    // GROOVY-11010
+    @Test
+    void testOverloadSelectedByMethodReferenceArity3() {
+        assertScript shell, '''
+            class Main {
+                static <K, V> String from(Function<K, V> f) { 'Function' }
+                static <V> String from(Supplier<V> f) { 'Supplier' }
+                static int m(String x) { 1 }
+                static int n() { 2 }
+
+                @CompileStatic
+                static void test() {
+                    assert from(Main::m) == 'Function'
+                    assert from(Main::n) == 'Supplier'
+                }
+            }
+
+            Main.test()
+        '''
+    }
+
+    // GROOVY-10714: Closure implements Runnable, which therefore otherwise wins
+    @Test
+    void testOverloadSelectedByMethodReferenceArity4() {
+        assertScript shell, '''
+            class Req<T> {
+            }
+            class Table<T> {
+                String last
+                void putItem(Req<T> request) { last = 'Req' }
+                void putItem(Consumer<Object> consumer) { last = 'Consumer' }
+                void putItem(T item) { last = 'T' }
+            }
+            class Try<T> {
+                final T value
+                Try(T value) { this.value = value }
+                String andThenTry(Consumer<? super T> consumer) { consumer.accept(value); 'Consumer' }
+                String andThenTry(Runnable runnable) { runnable.run(); 'Runnable' }
+            }
+            class Steps {
+                static void noop() {}
+            }
+
+            @CompileStatic
+            void test() {
+                def table = new Table<Req<String>>()
+                assert new Try<Req<String>>(new Req<String>()).andThenTry(table::putItem) == 'Consumer'
+                assert table.last == 'Req'
+                assert new Try<Req<String>>(new Req<String>()).andThenTry(table.&putItem) == 'Consumer'
+                assert new Try<String>('x').andThenTry(Steps::noop) == 'Runnable'
+            }
+
+            test()
+        '''
+    }
+
+    // GROOVY-10714: interfaces that Closure does not implement
+    @Test
+    void testOverloadSelectedByMethodReferenceArity5() {
+        assertScript shell, '''
+            interface CheckedConsumer<T> { void accept(T t) throws Throwable }
+            interface CheckedRunnable { void run() throws Throwable }
+            class Steps {
+                static String tryIt(CheckedConsumer<String> consumer) { 'CheckedConsumer' }
+                static String tryIt(CheckedRunnable runnable) { 'CheckedRunnable' }
+                static void sink(String s) {}
+                static void noop() {}
+            }
+
+            @CompileStatic
+            void test() {
+                assert Steps.tryIt(Steps::sink) == 'CheckedConsumer'
+                assert Steps.tryIt(Steps::noop) == 'CheckedRunnable'
+            }
+
+            test()
+        '''
+    }
+
+    // GROOVY-11010: interfaces of the same arity are still chosen between as before
+    @Test
+    void testOverloadSelectedByMethodReferenceArity6() {
+        assertScript shell, '''
+            import java.util.concurrent.Callable
+            class Steps {
+                static String pick(Runnable runnable) { 'Runnable' }
+                static String pick(Callable<?> callable) { 'Callable' }
+                static String value() { 'v' }
+            }
+
+            @CompileStatic
+            void test() {
+                assert Steps.pick(Steps::value) == 'Runnable'
+            }
+
+            test()
+        '''
+
+        def err = shouldFail shell, '''
+            class Ext {
+                static <T> String red(Collection<T> c, BinaryOperator<T> op) { 'combiner' }
+                static <T, R> String red(Collection<T> c, Function<T, R> f) { 'transform' }
+            }
+
+            @CompileStatic
+            void test() {
+                Ext.red(['1', '2'], Integer::valueOf) // valueOf(String) and valueOf(String, int)
+            }
+        '''
+        assert err.message.contains('Reference to method is ambiguous')
+    }
+
     @Nested
     class NativeMethodReferenceBytecodeTest extends AbstractBytecodeTestCase {
         @Test

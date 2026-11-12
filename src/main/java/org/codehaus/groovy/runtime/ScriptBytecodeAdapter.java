@@ -1079,8 +1079,9 @@ public class ScriptBytecodeAdapter {
      * GROOVY-12151: the bytecode-facing factory for the shared packed-closure adapter. The compiler
      * emits one {@code INVOKESTATIC} of this method per packed closure literal; hosting the factory
      * here (with the dispatcher bundle travelling as {@code Object} and the result as
-     * {@code Closure}) keeps {@code PackedClosure} and {@code GeneratedDispatcher.Bundle} off the
-     * emitted-bytecode surface entirely. The cast is negligible against the object-creation cost.
+     * {@code Closure}) keeps {@code PackedClosure} off the emitted-bytecode surface and
+     * {@code GeneratedDispatcher.Bundle} out of every creation site (only the hosting class's
+     * dispatcher factory names it). The cast is negligible against the object-creation cost.
      *
      * @param owner       the enclosing instance (or the enclosing {@code Class} in a static context)
      * @param dispatchers the hosting class's linked {@link GeneratedDispatcher.Bundle}
@@ -1102,4 +1103,32 @@ public class ScriptBytecodeAdapter {
         return PackedClosure.create(owner, (GeneratedDispatcher.Bundle) dispatchers, id, method,
                 captured, paramTypes, strict, implicit, vararg);
     }
+
+    /**
+     * Creates the classic {@code Closure} form of a GEP-27 open body:
+     * a packed closure whose free names resolve through a live owner/delegate/strategy resolver,
+     * which this factory creates from {@code owner} and installs in {@code captured[0]}. Like
+     * {@link #packedClosure}, it keeps {@code OpenClosure}, its resolver and the
+     * {@code PackedClosure} family off the emitted-bytecode surface.
+     *
+     * @param owner       the enclosing instance (or the enclosing {@code Class} in a static context)
+     * @param dispatchers the hosting class's linked {@link GeneratedDispatcher.Bundle}
+     * @param id          the hoisted body's compile-time id in the class's dispatch tables
+     * @param method      the hoisted method's name (diagnostics only)
+     * @param captured    captured values with slot 0 reserved for the resolver
+     * @param paramTypes  the literal's declared parameter types
+     * @param implicit    whether the literal has an implicit {@code it} parameter (fuzzy 0/1 arity)
+     * @param vararg      whether the literal's last parameter is a trailing array (varargs selection)
+     * @return the open closure
+     *
+     * @since 7.0.0
+     */
+    @GroovyABI(since = "7.0.0")
+    public static Closure<?> openClosure(final Object owner, final Object dispatchers, final int id,
+            final String method, final Object[] captured, final Class[] paramTypes,
+            final boolean implicit, final boolean vararg) {
+        return OpenClosure.create(owner, (GeneratedDispatcher.Bundle) dispatchers, id, method,
+                captured, paramTypes, implicit, vararg);
+    }
+
 }
