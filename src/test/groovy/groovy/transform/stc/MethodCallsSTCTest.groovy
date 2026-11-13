@@ -442,6 +442,492 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-12510: a private method is not inherited (JLS 8.2), so javac rejects
+    // these calls and dynamic Groovy throws MissingMethodException
+    @Test
+    void testCallToPrivateMethodOfSuperclassThroughSubclass() {
+        def sub = 'Cannot find matching method Outer$Sub#im()'
+        def nested = 'Cannot find matching method Outer$Box$Nested#im()'
+        [
+            outer: [
+                'static test() { new Sub().im() }'                                       : sub,
+                'static test() { def sub = new Sub(); sub.im() }'                        : sub,
+                'static test(Object o) { if (o instanceof Sub) o.im() }'                 : sub,
+                'static test() { def c = { -> new Sub().im() }; c() }'                   : sub,
+                'static test() { Supplier<String> s = () -> new Sub().im(); s.get() }'   : sub,
+                'static test() { new Object() { def get() { new Sub().im() } }.get() }'  : sub,
+                'static class Sub2 extends Sub { }\n static test() { new Sub2().im() }'  : 'Cannot find matching method Outer$Sub2#im()',
+                'static test() { new Sub().with { im() } }'                              : 'Cannot find matching method java.lang.Class#im() or static method Outer#im()',
+            ],
+            other: [ // a sibling of Box
+                'static test() { new Sub().im() }'                                       : sub,
+                'static test() { def sub = new Sub(); sub.im() }'                        : sub,
+                'static test(Object o) { if (o instanceof Sub) o.im() }'                 : sub,
+                'static test() { def c = { -> new Sub().im() }; c() }'                   : sub,
+                'static test() { Supplier<String> s = () -> new Sub().im(); s.get() }'   : sub,
+                'static test() { new Object() { def get() { new Sub().im() } }.get() }'  : sub,
+                'static class Sub2 extends Sub { }\n static test() { new Sub2().im() }'  : 'Cannot find matching method Outer$Other$Sub2#im()',
+                'static test() { new Sub().with { im() } }'                              : 'Cannot find matching method java.lang.Class#im() or static method Outer$Other#im()',
+            ],
+            sub: [ // Sub is a sibling of Box
+                'def test() { im() }'                                                    : sub,
+                'def test() { this.im() }'                                               : sub,
+                'def test() { def c = { -> im() }; c() }'                                : sub,
+                'def test() { Supplier<String> s = () -> im(); s.get() }'                : sub,
+                'static class In { def test() { new Sub().im() } }'                      : sub,
+                'class In { def test() { im() } }'                                       : 'Cannot find matching method Outer$Sub$In#im()',
+            ],
+            box: [
+                'static class In { def test() { new Sub().im() } }'                      : sub,
+                'class In { def test() { new Sub().im() } }'                             : sub,
+                'def test() { new Object() { def get() { new Sub().im() } }.get() }'     : sub,
+                'static class Nested extends Box { def test() { im() } }'                : nested,
+                'static class Nested extends Box { def test() { this.im() } }'           : nested,
+                'static class Nested extends Box { def test() { new Nested().im() } }'   : nested,
+                'static class Nested extends Box { def test() { def c = { -> im() }; c() } }' : nested,
+            ],
+        ].each { where, cases ->
+            cases.each { code, message ->
+                shouldFailWithMessages """
+                    import java.util.function.Supplier
+
+                    class Outer {
+                        static class Box {
+                            private String im(String s = '') { 'im' }
+                            ${where == 'box' ? code : ''}
+                        }
+                        static class Sub extends Box {
+                            ${where == 'sub' ? code : ''}
+                        }
+                        static class Other {
+                            ${where == 'other' ? code : ''}
+                        }
+                        ${where == 'outer' ? code : ''}
+                    }
+                """, message
+            }
+        }
+
+        shouldFailWithMessages '''
+            class Shape {
+                private String helper() { 'helper' }
+                static class Circle extends Shape {
+                    String area() { helper() }
+                }
+            }
+        ''',
+        'Cannot find matching method Shape$Circle#helper()'
+    }
+
+    // GROOVY-12510: as in dynamic Groovy, the declaring class may call it through
+    // an instance of a subclass, and a private static method is found through a
+    // subclass
+    @Test
+    void testCallToPrivateMethodOfSuperclassFromDeclaringClass() {
+        assertScript '''
+            import java.util.function.Supplier
+
+            class Outer {
+                static class Box {
+                    String id = 'box'
+                    private String im() { 'im:' + id }
+                    private static String sm() { 'sm' }
+                    static String test() {
+                        def sub = new Sub()
+                        def c = { -> sub.im() }
+                        Supplier<String> s = () -> sub.im()
+                        [sub.im(), c(), s.get(), sub.with { im() }, Sub.sm()].join(',')
+                    }
+                    static class Nested extends Box {
+                        String test() { sm() + Nested.sm() }
+                    }
+                }
+                static class Sub extends Box {
+                    Sub() { id = 'sub' }
+                    String test() { sm() + Sub.sm() }
+                }
+                static class Other {
+                    static String test() { Sub.sm() }
+                }
+                static String test() { Sub.sm() }
+            }
+            assert Outer.Box.test() == 'im:sub,im:sub,im:sub,im:sub,sm'
+            assert new Outer.Box.Nested().test() == 'smsm'
+            assert new Outer.Sub().test() == 'smsm'
+            assert Outer.Other.test() == 'sm'
+            assert Outer.test() == 'sm'
+        '''
+    }
+
+    /**
+     * Calls a private method through a receiver whose static type declares it.
+     * Run by the static compilation test; @TypeChecked dispatches these calls
+     * dynamically, and the meta-class of a subclass offers no private method of
+     * its superclass, so here they are only compiled.
+     */
+    protected static final String PRIVATE_METHOD_THROUGH_DECLARING_TYPE = '''
+        class Outer {
+            static class Box {
+                String id = 'box'
+                private String im() { 'im:' + id }
+                static class Nested extends Box {
+                    Nested() { id = 'nested' }
+                    String viaSuper() { super.im() }
+                    String viaCast() { ((Box) this).im() }
+                }
+            }
+            static class Sub extends Box {
+                Sub() { id = 'sub' }
+                String viaSuper() { super.im() }
+                String viaCast() { ((Box) this).im() }
+            }
+            static class Other {
+                static String param(Box b) { b.im() }
+                static String local() { Box b = new Sub(); b.im() }
+            }
+            static String param(Box b) { b.im() }
+            static String local() { Box b = new Sub(); b.im() }
+            static Box make() { new Sub() }
+            static String result() { make().im() }
+            static String coerced() { (new Sub() as Box).im() }
+            static String narrowed(Box b) { if (b instanceof Sub) { return b.im() }; null }
+            static String closure() { Box b = new Sub(); def c = { -> b.im() }; c() }
+        }
+        def sub = new Outer.Sub()
+    '''
+
+    // GROOVY-12510
+    @Test
+    void testCallToPrivateMethodOfSuperclassThroughReceiverOfItsType() {
+        assertScript PRIVATE_METHOD_THROUGH_DECLARING_TYPE
+    }
+
+    // GROOVY-12510: an enum constant body and an anonymous subclass are nested in
+    // the declaring class, so they find the private method on their enclosing class
+    @Test
+    void testCallToPrivateMethodOfEnclosingClassFromNestedSubclass() {
+        assertScript '''
+            enum E {
+                A {
+                    String f() { helper() + this.helper() + [1].collect { helper() }.join() }
+                }
+                String f() { 'base' }
+                private String helper() { 'h' }
+            }
+            assert E.A.f() == 'hhh'
+        '''
+        assertScript '''
+            class Box {
+                private String im() { 'im' }
+                String test() {
+                    new Box() {
+                        String get() { im() + this.im() }
+                    }.get()
+                }
+            }
+            assert new Box().test() == 'imim'
+        '''
+    }
+
+    // GROOVY-12510: javac and dynamic Groovy select the subclass method, because
+    // the private method of the superclass is not a member of the subclass
+    @Test
+    void testPrivateMethodOfSuperclassIsNoOverloadThroughSubclass() {
+        assertScript '''
+            class Outer {
+                static class Box {
+                    private String m(String s) { 'Box.m(String)' }
+                }
+                static class Sub extends Box {
+                    String m(Object o) { 'Sub.m(Object)' }
+                }
+                static String test() { new Sub().m('x') }
+            }
+            assert Outer.test() == 'Sub.m(Object)'
+        '''
+    }
+
+    // GROOVY-12511: a nested class that extends its outer class does not inherit the
+    // outer class's private method, so an unqualified call refers to the enclosing
+    // instance, as in javac and dynamic Groovy
+    @Test
+    void testCallToPrivateMethodOfEnclosingClassUsesEnclosingInstance() {
+        assertScript '''
+            import java.util.function.Supplier
+
+            class Box {
+                String id = 'outer'
+                private String im() { 'im:' + id }
+                class Sub extends Box {
+                    Sub() { id = 'sub' }
+                    String implicit() { im() }
+                    String explicit() { this.im() }
+                    String viaClosure() { def c = { -> im() }; c() }
+                    String viaLambda() { Supplier<String> s = () -> im(); s.get() }
+                    String explicitInClosure() { def c = { -> this.im() }; c() }
+                    class In {
+                        String deeper() { im() }
+                    }
+                }
+                List<String> anonymous() {
+                    new Box() {
+                        { id = 'anon' }
+                        List<String> test() { [im(), this.im(), { -> im() }()] }
+                    }.test()
+                }
+                String anonymousInClosure() {
+                    def c = { -> new Box() { { id = 'anon' }; String test() { im() } }.test() }
+                    c()
+                }
+            }
+            def box = new Box()
+            def sub = new Box.Sub(box)
+            assert [sub.implicit(), sub.explicit(), sub.viaClosure(), sub.viaLambda(), sub.explicitInClosure()] == ['im:outer'] * 5
+            assert new Box.Sub.In(sub).deeper() == 'im:outer'
+            assert box.anonymous() == ['im:outer'] * 3
+            assert box.anonymousInClosure() == 'im:outer'
+        '''
+    }
+
+    // GROOVY-12511: this.m() in an inner class may name a method of the enclosing
+    // class, as in dynamic Groovy
+    @Test
+    void testCallToMethodOfEnclosingClassThroughThis() {
+        assertScript '''
+            class Box {
+                String id = 'outer'
+                String om() { 'om:' + id }
+                private String im() { 'im:' + id }
+                class In {
+                    String test() { this.om() + ',' + this.im() }
+                    String viaClosure() { def c = { -> this.om() + ',' + this.im() }; c() }
+                }
+            }
+            def inner = new Box.In(new Box())
+            assert inner.test() == 'om:outer,im:outer'
+            assert inner.viaClosure() == 'om:outer,im:outer'
+        '''
+    }
+
+    // GROOVY-12509
+    @Test
+    void testCallToPrivateMethodOfSiblingClass() {
+        assertScript '''
+            class Outer {
+                static class Box {
+                    private static String sm() { 'sm' }
+                    private String im() { 'im' }
+                }
+                static class Other {
+                    static String test() { Box.sm() + new Box().im() }
+                }
+                class Inner {
+                    String test() { Box.sm() + new Box().im() }
+                }
+                static String inner() { new Inner(new Outer()).test() }
+            }
+            assert Outer.Other.test() == 'smim'
+            assert Outer.inner() == 'smim'
+        '''
+    }
+
+    // GROOVY-12509
+    @Test
+    void testCallToPrivateMethodOfInnerSiblingClass() {
+        assertScript '''
+            class Outer {
+                class Box {
+                    private String im() { 'im' }
+                }
+                class Other {
+                    String test() { new Box().im() }
+                }
+                static String test() { new Other(new Outer()).test() }
+            }
+            assert Outer.test() == 'im'
+        '''
+    }
+
+    // GROOVY-12509
+    @Test
+    void testCallToPrivateMethodOfCousinAndNephewClass() {
+        assertScript '''
+            class Outer {
+                static class P {
+                    static class Deep {
+                        static String test() { Q.p() + new Q().q() }
+                    }
+                    static String test() { Q.Deep.p() + new Q.Deep().q() }
+                }
+                static class Q {
+                    private static String p() { 'Q.p' }
+                    private String q() { 'Q.q' }
+                    static class Deep {
+                        private static String p() { 'Deep.p' }
+                        private String q() { 'Deep.q' }
+                    }
+                }
+            }
+            assert Outer.P.Deep.test() == 'Q.pQ.q'
+            assert Outer.P.test() == 'Deep.pDeep.q'
+        '''
+    }
+
+    // GROOVY-12509
+    @Test
+    void testCallToPrivateMethodOfSiblingEnumAndRecord() {
+        assertScript '''
+            class Outer {
+                enum E {
+                    ONE
+                    private static String p() { 'E.p' }
+                    private String q() { 'E.q' }
+                }
+                record R(String a) {
+                    private static String p() { 'R.p' }
+                    private String q() { 'R.q' + a }
+                }
+                static class Other {
+                    static String test() { E.p() + E.ONE.q() + R.p() + new R('!').q() }
+                }
+            }
+            assert Outer.Other.test() == 'E.pE.qR.pR.q!'
+        '''
+    }
+
+    // GROOVY-12509
+    @Test
+    void testCallToPrivateMethodOfSiblingClassFromClosureLambdaOrAnonymousClass() {
+        assertScript '''
+            import java.util.function.Supplier
+
+            class Outer {
+                static class Box {
+                    private static String sm() { 'sm' }
+                    private String im() { 'im' }
+                }
+                static class Other {
+                    static String viaClosure() {
+                        def c = { -> Box.sm() + new Box().im() }
+                        c()
+                    }
+                    static String viaLambda() {
+                        Supplier<String> s = () -> Box.sm() + new Box().im()
+                        s.get()
+                    }
+                    static String viaAnonymousClass() {
+                        new Object() {
+                            String get() { Box.sm() + new Box().im() }
+                        }.get()
+                    }
+                    static String viaDelegate() {
+                        new Box().with { im() }
+                    }
+                }
+            }
+            assert Outer.Other.viaClosure() == 'smim'
+            assert Outer.Other.viaLambda() == 'smim'
+            assert Outer.Other.viaAnonymousClass() == 'smim'
+            assert Outer.Other.viaDelegate() == 'im'
+        '''
+    }
+
+    // GROOVY-12509
+    @Test
+    void testCallToPrivateMethodOfSiblingClassWithDefaultArgument() {
+        assertScript '''
+            class Outer {
+                static class Box {
+                    private static String sm(String a, String b = 'b') { a + b }
+                }
+                static class Other {
+                    static String test() { Box.sm('a') + Box.sm('c', 'd') }
+                }
+            }
+            assert Outer.Other.test() == 'abcd'
+        '''
+    }
+
+    // GROOVY-12509
+    @Test
+    void testCallToPrivateMethodOfSiblingClassFromTrait() {
+        assertScript '''
+            class Outer {
+                static class Box {
+                    private static String sm() { 'sm' }
+                }
+                trait T {
+                    String test() { Box.sm() }
+                }
+                static class U implements T {
+                }
+            }
+            assert new Outer.U().test() == 'sm'
+        '''
+    }
+
+    // GROOVY-12509
+    @Test
+    void testCallToPrivateMethodOfClassInAnotherNest() {
+        shouldFailWithMessages '''
+            class Box {
+                private static String sm() { 'sm' }
+            }
+            class Other {
+                static test() { Box.sm() }
+            }
+        ''',
+        'Cannot find matching method java.lang.Class#sm() or static method Box#sm()'
+
+        shouldFailWithMessages '''
+            class Outer1 {
+                static class Box {
+                    private String im() { 'im' }
+                }
+            }
+            class Outer2 {
+                static test() { new Outer1.Box().im() }
+            }
+        ''',
+        'Cannot find matching method Outer1$Box#im()'
+    }
+
+    // GROOVY-12509
+    @Test
+    void testPrivateMethodOfSiblingClassIsPreferredOverload() {
+        assertScript '''
+            class Outer {
+                static class Base {
+                    String m(Object o) { 'Base.m(Object)' }
+                }
+                static class Box extends Base {
+                    private String m(String s) { 'Box.m(String)' }
+                }
+                static class Other {
+                    static String test() { new Box().m('x') }
+                }
+            }
+            assert Outer.Other.test() == 'Box.m(String)'
+        '''
+    }
+
+    // GROOVY-12509
+    @Test
+    void testPrivateMethodOfSiblingDelegateIsPreferredOverOwnerMethod() {
+        assertScript '''
+            class Outer {
+                static class Box {
+                    private String n(String s) { 'Box.n' }
+                }
+                static class Other {
+                    static String n(Object o) { 'Other.n' }
+                    static String test() { new Box().with { n('x') } }
+                }
+            }
+            assert Outer.Other.test() == 'Box.n'
+        '''
+    }
+
     @Test
     void testCallToPrivateInnerClassConstant() {
         assertScript '''

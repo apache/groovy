@@ -123,6 +123,20 @@ final class StaticCompileConstructorsTest extends ConstructorsSTCTest implements
         assert bar.contains('INVOKESPECIAL Foo.<init> (Ljava/lang/String;)V')
     }
 
+    // GROOVY-12509: the sibling, its closure, its lambda and its anonymous class
+    // all call the private constructor directly
+    @Override @Test
+    void testPrivateConstructorOfSiblingClass() {
+        super.testPrivateConstructorOfSiblingClass()
+        def callers = astTrees.findAll { it.key.startsWith('Outer$Other') }
+        assert callers.size() == 4
+        callers.each { name, tree ->
+            assert tree[1].contains('NEW Outer$Box')
+            assert tree[1].contains('INVOKESPECIAL Outer$Box.<init> (Ljava/lang/String;Ljava/lang/String;)V')
+            assert !tree[1].contains('ScriptBytecodeAdapter.invokeNew')
+        }
+    }
+
     @Test
     void testPrivateConstructorFromAnonymousInnerClass() {
         assertScript '''
