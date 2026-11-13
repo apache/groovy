@@ -492,6 +492,9 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     /** Cached {@link Iterable} type. */
     protected static final ClassNode ITERABLE_TYPE = ClassHelper.ITERABLE_TYPE;
 
+    /** Closure methods that {@code ClosureMetaClass} looks up on the delegate under {@code DELEGATE_ONLY}. */
+    private static final Set<String> CLOSURE_DELEGATE_ONLY_METHODS = Set.of("curry", "ncurry", "rcurry", "leftShift", "rightShift");
+
     private static final List<ClassNode> TUPLE_TYPES = Arrays.stream(ClassHelper.TUPLE_CLASSES).map(ClassHelper::makeWithoutCaching).collect(Collectors.toList());
 
     /** Cached zero-argument {@code Closure#call()} method. */
@@ -5521,9 +5524,15 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
                 if (isThisObjectExpression && call.isImplicitThis()
                     && typeCheckingContext.getEnclosingClosure() != null
                     && !name.equals("call") && !name.equals("doCall")) { // GROOVY-9662
-                    mn = CLOSURE_TYPE.getMethods(name);
                     DelegationMetadata dmd = typeCheckingContext.delegationMetadata;
                     int strategy = dmd != null ? dmd.getStrategy() : Closure.OWNER_FIRST;
+                    // GROOVY-12662: select the closure method by argument types; without a match the
+                    // call goes to the delegate or owner, as at run time
+                    if (strategy == Closure.DELEGATE_ONLY && CLOSURE_DELEGATE_ONLY_METHODS.contains(name)) {
+                        mn = Collections.emptyList();
+                    } else {
+                        mn = chooseBestMethod(CLOSURE_TYPE, CLOSURE_TYPE.getMethods(name), args);
+                    }
                     if (strategy != Closure.TO_SELF) {
                         // a method of Object is looked up on the delegate or owner, as at run time
                         List<MethodNode> objectMethods = new ArrayList<>(mn);
