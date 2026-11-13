@@ -240,6 +240,12 @@ class TraitReceiverTransformer extends ClassCodeExpressionTransformer {
             if (pexp.isImplicitThis() || "this".equals(obj)) {
                 String propName = pexp.getPropertyAsString();
                 if (knownFields.contains(propName)) {
+                    if (isDeclaredInstancePropertyInClosure(propName)) {
+                        // this.name in a closure is read through the accessor, as in a class
+                        PropertyExpression propertyExpression = propX(varX(weaved), propName);
+                        propertyExpression.setSourcePosition(exp);
+                        return propertyExpression;
+                    }
                     // GROOVY-12587: use the declared field, so a static one is read through the implementing class
                     return transformFieldReference(exp, traitClass.getDeclaredField(propName), null);
                 }
@@ -325,6 +331,9 @@ class TraitReceiverTransformer extends ClassCodeExpressionTransformer {
                     && (((PropertyExpression) leftExpression).isImplicitThis() || "this".equals(((PropertyExpression) leftExpression).getObjectExpression().getText()))) {
                 leftFieldName = ((PropertyExpression) leftExpression).getPropertyAsString();
             }
+            if (leftFieldName != null && leftExpression instanceof PropertyExpression && isDeclaredInstancePropertyInClosure(leftFieldName)) {
+                return binX(propX(varX(weaved), leftFieldName), operation, transform(rightExpression)); // this.name = value in a closure
+            }
             if (leftFieldName != null) {
                 ClassNode weavedType = weaved.getOriginType();
                 FieldNode traitField = tryGetFieldNode(weavedType, leftFieldName);
@@ -392,12 +401,24 @@ class TraitReceiverTransformer extends ClassCodeExpressionTransformer {
      * is left for the closure to resolve, so that its delegate is checked according
      * to the resolve strategy, as it is for a property of a class. The closure owner
      * is the implementing instance, which has the property's accessor methods.
+     * A lambda keeps the direct reference: when statically compiled it has no
+     * delegate or owner to resolve the name through.
      */
     private boolean isClosurePropertyReference(final VariableExpression vexp) {
         if (!inClosure || inLambda || ClassHelper.isClassType(weaved.getOriginType())) return false;
         Variable accessedVariable = vexp.getAccessedVariable();
         return !accessedVariable.isInStaticContext() && (accessedVariable instanceof PropertyNode
             || (accessedVariable instanceof FieldNode && traitClass.getProperty(vexp.getName()) != null));
+    }
+
+    /**
+     * Indicates whether {@code this.name} in a closure names a declared instance
+     * property of the trait, which is then accessed through its accessor.
+     */
+    private boolean isDeclaredInstancePropertyInClosure(final String name) {
+        if (!inClosure || inLambda || ClassHelper.isClassType(weaved.getOriginType())) return false;
+        PropertyNode pn = traitClass.getProperty(name);
+        return pn != null && !pn.isStatic();
     }
 
     /**

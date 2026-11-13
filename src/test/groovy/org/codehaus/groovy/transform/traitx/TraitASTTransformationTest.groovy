@@ -2754,6 +2754,31 @@ final class TraitASTTransformationTest {
         """
     }
 
+    @CompileModesTest
+    void testThisPropertyInClosureUsesTheAccessor(String mode) {
+        assertScript shell, """
+            $mode
+            trait T {
+                String name = 'trait'
+                String read() { def c = { -> this.name }; c() }
+                String readDirect() { this.name }
+                void write(String s) { def c = { -> this.name = s }; c() }
+            }
+            class C implements T {
+                List<String> log = []
+                String getName() { log << 'get'; 'class' }
+                void setName(String s) { log << "set \$s".toString() }
+            }
+
+            def c = new C()
+            assert c.read() == 'class'
+            assert c.readDirect() == 'trait'
+            c.write('x')
+            assert c.log == ['get', 'set x']
+            assert c.readDirect() == 'trait'
+        """
+    }
+
     // GROOVY-12608
     @CompileModesTest
     void testSuperTraitStaticAccessorAsPropertyInClosure(String mode) {
