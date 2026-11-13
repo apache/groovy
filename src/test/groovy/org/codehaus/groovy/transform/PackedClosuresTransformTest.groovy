@@ -550,4 +550,108 @@ final class PackedClosuresTransformTest {
                 "the nested map-value closures keep their classes: $names")
         assertEquals([3, 0], instance(src + '\n new N()').m())
     }
+
+    /** Statically compiled packing owner with helpers that call a closure under a given resolve strategy. */
+    private static final String CLOSURE_RECEIVER_OWNER = '''
+        import groovy.transform.CompileStatic
+        import groovy.transform.PackedClosures
+        import java.util.function.Supplier
+        import org.codehaus.groovy.runtime.PackedClosure
+        @CompileStatic @PackedClosures
+        class R {
+            String toString() { 'R' }
+            static List<Object> self(@DelegatesTo(value=String, strategy=Closure.TO_SELF) Closure c) {
+                c.resolveStrategy = Closure.TO_SELF; c.delegate = 'd'; [c(), c]
+            }
+            static List<Object> ownerOnly(@DelegatesTo(value=String, strategy=Closure.OWNER_ONLY) Closure c) {
+                c.resolveStrategy = Closure.OWNER_ONLY; c.delegate = 'd'; [c(), c]
+            }
+            static List<Object> call0(Closure c) { [c(), c] }
+            static List<Boolean> packed(List<List<Object>> results) { results.collect { List<Object> r -> r[1] instanceof PackedClosure } }
+    '''
+
+    // GROOVY-12660
+    @Test
+    void closuresCallingObjectMethodsOnAClosureDecline() {
+        // STC resolves toString(), hashCode(), equals() and getClass() against the closure itself under
+        // TO_SELF, and against the enclosing closure in a nested closure (OWNER_FIRST, OWNER_ONLY). A
+        // hoisted body is a method of R, where the call reached R's method (TO_SELF, nested) or the
+        // nested closure got R instead of the closure as its owner (MissingPropertyException: owner).
+        // Those closures stay classes; a top-level call, resolved against R, still packs.
+        def r = instance(CLOSURE_RECEIVER_OWNER + '''
+            List<Object> toSelf() {
+                def a = self { -> toString() }
+                def b = self { -> hashCode() }
+                def c = self { -> equals(this) }
+                def d = self { -> getClass() }
+                [[a[0] == a[1].toString(), b[0] == b[1].hashCode(), c[0], d[0] == d[1].getClass()], packed([a, b, c, d])]
+            }
+            List<Object> nested() {
+                def a = call0 { -> { -> toString() }() }
+                def b = call0 { -> { -> hashCode() }() }
+                def c = call0 { -> { -> equals(this) }() }
+                def d = call0 { -> { -> getClass() }() }
+                def e = ownerOnly { -> { -> toString() }() }
+                def f = call0 { -> { -> { -> toString() }() }() }
+                [[a[0] == a[1].toString(), b[0] == b[1].hashCode(), c[0], d[0] == d[1].getClass(), e[0] == e[1].toString(),
+                  f[0] != 'R'], packed([a, b, c, d, e, f])]
+            }
+            List<Object> nestedProperties() {
+                def a = call0 { -> { -> owner }() }
+                def b = call0 { -> { -> delegate }() }
+                def c = call0 { -> { -> thisObject }() }
+                [[a[0].is(a[1]), b[0].is(b[1]), c[0].is(this)], packed([a, b, c])]
+            }
+            List<Object> ownerResolved() {
+                def a = call0 { -> toString() }
+                def b = call0 { -> getClass() }
+                def c = call0 { -> Supplier<String> s = () -> toString(); s.get() }
+                [[a[0], b[0], c[0]], packed([a, b, c])]
+            }
+        }
+        new R()
+        ''')
+        assertEquals([[true, true, false, true], [false] * 4], r.toSelf())
+        assertEquals([[true, true, false, true, true, true], [false] * 6], r.nested())
+        assertEquals([[true, true, true], [false] * 3], r.nestedProperties())
+        assertEquals([['R', r.getClass(), 'R'], [true] * 3], r.ownerResolved())
+    }
+
+    // GROOVY-12660
+    @Test
+    void closuresCallingClosureMethodsDecline() {
+        // memoize(), dehydrate() and the other methods Closure declares resolve against the closure
+        // itself; a hoisted body called them on R (VerifyError: R is not assignable to Closure)
+        def r = instance(CLOSURE_RECEIVER_OWNER + '''
+            List<Object> m() {
+                def a = call0 { -> memoize() }
+                def b = call0 { -> dehydrate() }
+                def c = call0 { -> rehydrate(null, null, null) }
+                def d = call0 { -> asWritable() }
+                def e = call0 { -> clone() }
+                def f = self { -> memoizeAtMost(2) }
+                [[a[0] instanceof Closure, b[0].getClass() == b[1].getClass(), c[0].getClass() == c[1].getClass(),
+                  d[0] instanceof Writable, e[0].getClass() == e[1].getClass(), f[0] instanceof Closure],
+                 packed([a, b, c, d, e, f])]
+            }
+        }
+        new R()
+        ''')
+        assertEquals([[true] * 6, [false] * 6], r.m())
+    }
+
+    // GROOVY-12660
+    @Test
+    void strictModeReportsClosureReceiverDecline() {
+        String src = '''import groovy.transform.CompileStatic
+            import groovy.transform.PackedClosures
+            import groovy.transform.PackedClosures.PackMode
+            @CompileStatic @PackedClosures(mode = PackMode.STRICT)
+            class X {
+                static Object self(@DelegatesTo(value=String, strategy=Closure.TO_SELF) Closure c) { c() }
+                Object m() { self { -> toString() } }
+            }'''
+        def e = assertThrows(MultipleCompilationErrorsException) { generatedClassNames(src) }
+        assertTrue(e.message.contains('calls a method on a closure object'), e.message)
+    }
 }
