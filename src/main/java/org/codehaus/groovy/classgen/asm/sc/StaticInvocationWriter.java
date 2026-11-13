@@ -85,6 +85,7 @@ import java.util.stream.Collectors;
 
 import static org.apache.groovy.ast.tools.ClassNodeUtils.formatTypeName;
 import static org.apache.groovy.ast.tools.ClassNodeUtils.isSubtype;
+import static org.apache.groovy.ast.tools.ClassNodeUtils.samePackageName;
 import static org.apache.groovy.ast.tools.ExpressionUtils.isNullConstant;
 import static org.apache.groovy.ast.tools.ExpressionUtils.isSuperExpression;
 import static org.apache.groovy.ast.tools.ExpressionUtils.isThisExpression;
@@ -156,6 +157,15 @@ public class StaticInvocationWriter extends InvocationWriter {
         }
         ClassNode declaringClass = cn.getDeclaringClass();
         ClassNode enclosingClass = controller.getClassNode();
+        if (!cn.isPrivate() && !isDirectlyAccessible(cn, enclosingClass) && !samePackageName(declaringClass, enclosingClass)) {
+            // JLS 6.6.2.2: outside its package, only super(...) or an anonymous inner class can call a protected constructor;
+            // reported here, while the class is generated, so @TypeChecked code is not checked for it and works dynamically
+            controller.getSourceUnit().addError(new SyntaxException(
+                    "Cannot call " + (cn.isProtected() ? "protected" : "package-private") + " constructor for "
+                            + declaringClass.toString(false) + " from class " + enclosingClass.toString(false),
+                    call
+            ));
+        }
         RuntimePackageCheck.checkConstructor(controller, cn, false, call);
         List<Expression> argList = call.getArguments() instanceof TupleExpression
                 ? ((TupleExpression) call.getArguments()).getExpressions() : List.of(call.getArguments());
@@ -377,7 +387,9 @@ public class StaticInvocationWriter extends InvocationWriter {
         RuntimePackageCheck.checkMethod(controller, target, receiver == null || isSuperExpression(receiver) ? null : receiverType, currentCall != null ? currentCall : receiver != null ? receiver : args);
 
         if (AsmClassGenerator.isMemberDirectlyAccessible(target.getModifiers(), declaringClass, enclosingClass)
-                && !(target.isProtected() && !inSamePackage(declaringClass, enclosingClass) && !isSubtype(receiverType, enclosingClass))) { // GROOVY-7325
+                // GROOVY-7325, JVMS 4.10.1.8: outside its package, a protected instance method needs a receiver of the current class
+                && !(target.isProtected() && !target.isStatic() && !inSamePackage(declaringClass, enclosingClass) && receiver != null
+                        && !isSuperExpression(receiver) && !isClassWithSuper(receiver) && !isSubtype(enclosingClass, receiverType))) {
             boolean isThisImplicit = implicitThis;
             Expression theReceiver = receiver;
             MethodNode theTarget = target;
