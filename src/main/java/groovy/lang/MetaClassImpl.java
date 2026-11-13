@@ -1206,6 +1206,12 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         final Object[] arguments = originalArguments == null ? EMPTY_ARGUMENTS : originalArguments;
 
         MetaMethod method = getMetaMethod(sender, object, methodName, isCallToSuper, arguments);
+        // GROOVY-12610: a sender-less call (invokeMethod(Object,String,Object[]), GroovyObject
+        // fallbacks) names the receiver's class as sender, so it cannot vouch for the caller;
+        // this.m() reaches a nest-mate's private method through Selector and ClosureMetaClass
+        if (method == null && (isCallToSuper || sender != theClass)) {
+            method = getNestmatePrivateMethod(sender, methodName, arguments);
+        }
 
         if (object instanceof Closure closure) {
             final Object owner = closure.getOwner();
@@ -1539,6 +1545,104 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         } else {
             return getNormalMethodWithCaching(arguments, e);
         }
+    }
+
+    /**
+     * Finds a private field of a superclass of {@code theClass} that the sender
+     * may access as a nest-mate of the declaring class (JVMS 5.4.4), the way
+     * statically compiled code accesses it. The view of the metaclass for a
+     * subclass does not list private fields of its superclasses, so without
+     * this a nested subclass, or another class of the nest, cannot reach one
+     * dynamically. Consulted only when the sender's view has no such property.
+     */
+    private MetaProperty getNestmatePrivateField(final Class<?> sender, final String name, final boolean isStatic) {
+        if (sender == null || name == null || !hasNestmateSuperclass()) return null;
+        for (Class<?> c = theClass.getSuperclass(); c != null && c != Object.class; c = c.getSuperclass()) {
+            for (CachedField field : ReflectionCache.getCachedClass(c).getFields()) {
+                if (field.isPrivate() && field.getName().equals(name) && (!isStatic || field.isStatic())) {
+                    // check the caller only for a candidate: a miss is the common case
+                    if (isNestmateAccessor(sender, c)) return field;
+                    break;
+                }
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Determines if code of the sender, a class of the nest of {@code declaringClass},
+     * reaches a private member of that superclass on an instance of {@code theClass}:
+     * the sender, or the class enclosing a closure, must be a subclass of the
+     * declaring class and the receiver an instance of it (a private member is not
+     * inherited, so a nest-mate outside the hierarchy does not reach through the
+     * receiver -- GROOVY-10198), and the sender must not be an inner class whose
+     * chain of enclosing instances leads to the declaring class, which instead
+     * reaches the member of the enclosing instance (GROOVY-12533).
+     */
+    private volatile Boolean hasNestmateSuperclass;
+
+    /**
+     * Determines once whether a superclass of {@code theClass} shares a nest with
+     * a class between it and {@code theClass}; only then can a nest-mate reach a
+     * private member of that superclass through an instance of {@code theClass}.
+     * Keeps the common miss path to a field read.
+     */
+    private boolean hasNestmateSuperclass() {
+        Boolean result = hasNestmateSuperclass;
+        if (result == null) {
+            result = Boolean.FALSE;
+            outer:
+            for (Class<?> c = theClass.getSuperclass(); c != null && c != Object.class; c = c.getSuperclass()) {
+                for (Class<?> k = theClass; k != c; k = k.getSuperclass()) {
+                    if (k.isNestmateOf(c)) { result = Boolean.TRUE; break outer; }
+                }
+            }
+            hasNestmateSuperclass = result;
+        }
+        return result;
+    }
+
+    private boolean isNestmateAccessor(final Class<?> sender, final Class<?> declaringClass) {
+        Class<?> caller = GeneratedClosure.class.isAssignableFrom(sender) ? getNonClosureOuter(sender) : sender;
+        if (caller == null || caller == declaringClass || !declaringClass.isAssignableFrom(caller)
+                || !caller.isAssignableFrom(theClass) || !caller.isNestmateOf(declaringClass)) {
+            return false;
+        }
+        for (Class<?> c = caller; c != declaringClass; c = c.getEnclosingClass()) {
+            if (c.getEnclosingClass() == null || (c.getModifiers() & Opcodes.ACC_STATIC) != 0) return true;
+        }
+        return false;
+    }
+
+    /**
+     * Finds a private method of a superclass of {@code theClass} that the
+     * sender may call as a nest-mate of the declaring class. See
+     * {@link #getNestmatePrivateField(Class, String, boolean)}.
+     * <p>
+     * The sender must be the calling class, not a class standing in for it.
+     *
+     * @param sender the calling class
+     * @param name the method name
+     * @param arguments the arguments of the call
+     * @return the method, or {@code null} if there is none
+     */
+    public MetaMethod getNestmatePrivateMethod(final Class<?> sender, final String name, final Object[] arguments) {
+        if (sender == null || name == null || !hasNestmateSuperclass()) return null;
+        for (Class<?> c = theClass.getSuperclass(); c != null && c != Object.class; c = c.getSuperclass()) {
+            FastArray candidates = null;
+            for (CachedMethod method : ReflectionCache.getCachedClass(c).getMethods()) {
+                if (method.isPrivate() && method.getName().equals(name)) {
+                    if (candidates == null) candidates = new FastArray(2);
+                    candidates.add(method);
+                }
+            }
+            // check the caller only for candidates: a miss is the common case
+            if (candidates != null && isNestmateAccessor(sender, c)) {
+                Object chosen = chooseMethod(name, candidates, MetaClassHelper.convertToTypeArray(arguments));
+                if (chosen != null) return (MetaMethod) chosen;
+            }
+        }
+        return null;
     }
 
     private static boolean sameClasses(final Class[] params, final Class[] arguments) {
@@ -3210,6 +3314,14 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
     }
 
     private MetaProperty getMetaProperty(final Class<?> clazz, final String name, final boolean useSuper, final boolean useStatic) {
+        MetaProperty mp = lookupMetaProperty(clazz, name, useSuper, useStatic);
+        if (mp == null) {
+            mp = getNestmatePrivateField(clazz, name, useStatic); // GROOVY-12610
+        }
+        return mp;
+    }
+
+    private MetaProperty lookupMetaProperty(final Class<?> clazz, final String name, final boolean useSuper, final boolean useStatic) {
         CachedClass cachedClass = (clazz == null || clazz == theClass) ? theCachedClass : ReflectionCache.getCachedClass(clazz);
 
         Map<String, MetaProperty> propertyMap;
@@ -3224,7 +3336,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         if (propertyMap != null) {
             return propertyMap.get(name);
         } else if (cachedClass != theCachedClass) {
-            return getMetaProperty(theClass, name, useSuper, useStatic);
+            return lookupMetaProperty(theClass, name, useSuper, useStatic);
         } else {
             return null;
         }

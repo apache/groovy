@@ -951,6 +951,9 @@ public abstract class Selector {
                     name = "doCall";
                 }
                 method = mci.getMethodWithCaching(selectionBase, name, newArgs, false);
+                if (method == null) { // GROOVY-12610: private method of a nest-mate superclass
+                    method = mci.getNestmatePrivateMethod(getThisType(sender), name, newArgs);
+                }
             }
             // a method reference picks among functional-interface overloads by its arity,
             // which its class does not tell, so such a choice is not cached by class
