@@ -127,8 +127,14 @@ class VariableExpressionTransformer {
             // GROOVY-12533: a static nested subclass has the field but no enclosing instance
             fieldOwner = varX("this");
         } else {
-            fieldOwner = propX(classX(declaringClass), "this");
-            fieldOwner.putNodeMetaData(StaticTypesMarker.INFERRED_TYPE, declaringClass);
+            ClassNode ownerType = declaringClass;
+            if (!scTransformer.hasEnclosingInstanceOf(declaringClass)) {
+                // GROOVY-12600: a class nested in a static nested subclass reaches the field through the subclass instance
+                ClassNode subclass = scTransformer.findEnclosingSubclassOf(declaringClass);
+                if (subclass != null) ownerType = subclass;
+            }
+            fieldOwner = propX(classX(ownerType), "this");
+            fieldOwner.putNodeMetaData(StaticTypesMarker.INFERRED_TYPE, ownerType);
         }
         PropertyExpression pe = attrX(fieldOwner, ve.getName()); // GROOVY-10687, GROOVY-11412: direct access
         pe.putNodeMetaData(StaticTypesMarker.DECLARATION_INFERRED_TYPE, field.getOriginType());
