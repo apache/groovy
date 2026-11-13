@@ -18,9 +18,12 @@
  */
 package org.codehaus.groovy.classgen.asm;
 
+import groovy.lang.Closure;
+import groovy.transform.Internal;
 import groovy.transform.PackedClosures.PackMode;
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.ast.AnnotationNode;
+import org.apache.groovy.util.BeanUtils;
 import org.apache.groovy.util.SystemUtil;
 import org.codehaus.groovy.ast.ClassCodeExpressionTransformer;
 import org.codehaus.groovy.ast.ClassHelper;
@@ -55,6 +58,7 @@ import org.codehaus.groovy.ast.expr.MethodCallExpression;
 import org.codehaus.groovy.ast.expr.PropertyExpression;
 import org.codehaus.groovy.ast.expr.PostfixExpression;
 import org.codehaus.groovy.ast.expr.PrefixExpression;
+import org.codehaus.groovy.ast.expr.TernaryExpression;
 import org.codehaus.groovy.ast.expr.TupleExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
@@ -70,11 +74,13 @@ import org.codehaus.groovy.runtime.OpenClosure;
 import org.codehaus.groovy.syntax.Token;
 import org.codehaus.groovy.syntax.TokenUtil;
 import org.codehaus.groovy.syntax.Types;
+import org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport;
 import org.codehaus.groovy.transform.stc.StaticTypesMarker;
 import org.codehaus.groovy.transform.trait.Traits;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.MethodVisitor;
 
+import java.lang.reflect.Method;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -429,7 +435,7 @@ public class ClosureWriter {
      * @param annotated whether a non-DISABLED {@code @PackedClosures} is in scope
      */
     protected boolean isPackTriggered(final ClosureExpression expression, final boolean annotated) {
-        if (annotated) return true;
+        if (annotated) return !callsClosureMethod(expression);
         // Dynamic compilation has no delegate-independence proof from the type checker, so the
         // annotation is normally the only trigger. But a closure with NO free names -- no
         // implicit-this call, no unqualified/dynamic variable -- cannot be affected by any
@@ -501,6 +507,56 @@ public class ClosureWriter {
     }
 
     /**
+     * Whether a name in the closure's body resolves against a closure object rather than the owner,
+     * which the dynamic trust path cannot see from the annotation alone. A hoisted body is a method of
+     * the owner class, and a closure nested in it gets the owner instance, not the packed closure, as
+     * its owner. Without types the check goes by name:
+     * <ul>
+     * <li>in the closure's own body, an implicit-this call to a method that {@code Closure} declares
+     * (or {@code doCall}), such as {@code memoize()} or {@code curry(1)}, or a read of
+     * {@code maximumNumberOfParameters} or {@code parameterTypes}: {@code ClosureMetaClass} resolves
+     * these against the closure itself, before the owner;</li>
+     * <li>in a closure nested directly in the body, an implicit-this call to an {@code Object} method
+     * or a GDK method a closure has, such as {@code toString()} or {@code with}: such a call tries the
+     * nested closure's owner, the enclosing closure, which answers it itself. {@code print},
+     * {@code println} and {@code printf} are kept: their {@code Closure} versions forward to the owner.</li>
+     * </ul>
+     * Methods that {@code Object} declares, called in the closure's own body, go to the owner first and
+     * so reach the same method in the hoisted body.
+     */
+    private boolean callsClosureMethod(final ClosureExpression expression) {
+        Statement code = expression.getCode();
+        if (code == null) return false;
+        ClassLoader loader = controller.getSourceUnit().getClassLoader();
+        boolean[] closureResolved = {false};
+        code.visit(new CodeVisitorSupport() {
+            private int depth;
+            @Override public void visitClosureExpression(final ClosureExpression nested) {
+                depth += 1;
+                super.visitClosureExpression(nested);
+                depth -= 1;
+            }
+            @Override public void visitMethodCallExpression(final MethodCallExpression call) {
+                String name = call.getMethodAsString();
+                if (call.isImplicitThis() && name != null) {
+                    if (depth == 0 && CLOSURE_METHOD_NAMES.contains(name)) {
+                        closureResolved[0] = true;
+                    } else if (depth == 1 && !CLOSURE_METHOD_NAMES.contains(name) && !OWNER_FORWARDING_GDK_METHODS.contains(name)
+                            && (OBJECT_METHOD_NAMES.contains(name)
+                                || !StaticTypeCheckingSupport.findDGMMethodsForClassNode(loader, ClassHelper.CLOSURE_TYPE, name).isEmpty())) {
+                        closureResolved[0] = true;
+                    }
+                }
+                super.visitMethodCallExpression(call);
+            }
+            @Override public void visitVariableExpression(final VariableExpression ve) {
+                if (depth == 0 && CLOSURE_PROPERTY_NAMES.contains(ve.getName())) closureResolved[0] = true;
+            }
+        });
+        return closureResolved[0];
+    }
+
+    /**
      * Whether a closure the ordinary trigger declined is packed open instead (GEP-27): open closures
      * are enabled and every free-name use in the body is rewritable into a resolver call. The static writer overrides this to {@code false} (it proves or declines).
      */
@@ -510,10 +566,14 @@ public class ClosureWriter {
 
     /**
      * A trigger-specific decline reason for {@link #declineReason}, or {@code null} if the trigger did
-     * not decline this closure. Only the static writer has one (a delegate-resolved body); the dynamic
-     * path trusts the annotation and never declines on trigger grounds.
+     * not decline this closure. The dynamic path trusts the annotation except for a body that calls a
+     * method on a closure object; the static writer overrides this for a delegate-resolved body.
      */
     protected String triggerDeclineReason(final ClosureExpression expression) {
+        if (callsClosureMethod(expression)) {
+            return "it calls a method on a closure object (a Closure method such as memoize(), or an Object or GDK "
+                    + "method such as toString() in a nested closure, whose owner is the closure)";
+        }
         return null;
     }
 
@@ -590,12 +650,25 @@ public class ClosureWriter {
         }
     }
 
+    /**
+     * The method or constructor whose code is being written. {@link WriterController#getMethodNode()}
+     * is null inside a constructor, and a constructor's code also holds the instance initializer
+     * blocks and field initializers the {@code Verifier} inlined into it.
+     */
+    private MethodNode enclosingMethod() {
+        MethodNode m = controller.getMethodNode();
+        return (m != null) ? m : controller.getConstructorNode();
+    }
+
     /** The most specific {@code @PackedClosures} mode in scope (method wins over class), or null if not annotated. */
     private PackMode annotatedMode() {
-        MethodNode m = controller.getMethodNode();
+        return annotatedMode(enclosingMethod(), controller.getClassNode());
+    }
+
+    private static PackMode annotatedMode(final MethodNode m, final ClassNode classNode) {
         PackMode mode = (m != null) ? packModeOf(m.getAnnotations()) : null;
         if (mode != null) return mode;
-        for (ClassNode c = controller.getClassNode(); c != null; c = c.getOuterClass()) {
+        for (ClassNode c = classNode; c != null; c = c.getOuterClass()) {
             mode = packModeOf(c.getAnnotations());
             if (mode != null) return mode;
         }
@@ -628,15 +701,16 @@ public class ClosureWriter {
         }
         String triggerReason = triggerDeclineReason(expression);
         if (triggerReason != null) return triggerReason;
+        // before the escape gate: a field initializer is also a field store in the constructor it is inlined into
+        if (isFieldInitializer(expression)) {
+            return "it initialises a field (a visible escape: the closure outlives its construction context)";
+        }
         if (escapesEnclosingMethod(expression)) {
             return "it escapes its method (returned, stored to a field/property/index, appended, or in a collection literal)";
         }
         if (serializationBound(expression)) {
             return "it is visibly serialization-bound (cast or coerced to a Serializable type, or passed directly "
                     + "to writeObject) and packed closures are not serializable";
-        }
-        if (isFieldInitializer(expression)) {
-            return "it initialises a field (a visible escape: the closure outlives its construction context)";
         }
         if (isIntersectionTyped(expression)) {
             return "it is cast to an intersection type, whose marker interfaces the shared adapter cannot declare";
@@ -656,16 +730,71 @@ public class ClosureWriter {
      * shared adapter that fails fast if a delegate is later set on it. To avoid that surprise for the
      * clearest cases, decline (keep a real closure class for) a closure literal that visibly escapes
      * the method it is written in: stored into a field/property/index (e.g. {@code attrs.optionValue =
-     * { ... }}), returned, appended with {@code <<}, or placed in a list/map literal. Transitive escapes
+     * { ... }}, or by a compound assignment that stores or composes it, such as {@code ?=} or
+     * {@code >>=}), returned, appended with {@code <<}, or placed in a list/map literal. Transitive escapes
      * (via a local that is later returned) are intentionally not chased here; the runtime guard remains
      * the backstop for those.
+     * <p>
+     * A literal composed with {@code >>} or {@code <<}, or by {@code andThen}, {@code compose},
+     * {@code andThenSelf} or {@code composeSelf}, escapes wherever the composition does, e.g.
+     * {@code h.handler = c >> { ... }}; the same composition used only in the method still packs.
      */
     private boolean escapesEnclosingMethod(final ClosureExpression expression) {
-        MethodNode m = controller.getMethodNode();
+        if (expression.getNodeMetaData(ESCAPES_METHOD) != null) return true;
+        MethodNode m = enclosingMethod();
         if (m == null || m.getCode() == null) return false;
         return escapingClosuresByMethod
                 .computeIfAbsent(m, k -> collectEscapingClosures(k.getCode()))
                 .contains(expression);
+    }
+
+    /** Metadata marking a closure literal found escaping before a static compilation rewrite. */
+    private static final String ESCAPES_METHOD = "org.codehaus.groovy.classgen.asm.ClosureWriter.escapesMethod";
+
+    /**
+     * Marks the closure literals in the method that visibly escape it, for the escape gate to honour
+     * at class generation. Static compilation calls this before its transformers turn
+     * {@code list << { ... }}, subscript stores and setter-backed property stores into method calls,
+     * shapes the escape walk no longer recognises. Does nothing unless the flag or a non-DISABLED
+     * {@code @PackedClosures} on the method or constructor or an enclosing class requests packing.
+     *
+     * @param method the method or constructor whose body is about to be transformed
+     */
+    @Internal
+    public static void markEscapingClosures(final MethodNode method) {
+        if (method.getCode() == null || !packingRequested(method, method.getDeclaringClass())) return;
+        markEscapingClosures(method.getCode());
+    }
+
+    /**
+     * Marks the escaping closure literals in the instance initializer blocks of the class, as
+     * {@link #markEscapingClosures(MethodNode)} does for a method. The {@code Verifier} later inlines
+     * these blocks into each constructor, so they are marked when the flag, the class or any of its
+     * constructors requests packing.
+     *
+     * @param classNode the class whose initializer blocks are about to be transformed
+     */
+    @Internal
+    public static void markEscapingClosures(final ClassNode classNode) {
+        boolean requested = packingRequested(null, classNode);
+        for (ConstructorNode constructor : classNode.getDeclaredConstructors()) {
+            requested = requested || packingRequested(constructor, classNode);
+        }
+        if (!requested) return;
+        for (Statement statement : classNode.getObjectInitializerStatements()) {
+            markEscapingClosures(statement);
+        }
+    }
+
+    private static boolean packingRequested(final MethodNode method, final ClassNode classNode) {
+        PackMode mode = annotatedMode(method, classNode);
+        return mode != null ? mode != PackMode.DISABLED : SystemUtil.getBooleanSafe(CompilerConfiguration.CLOSURE_PACKING);
+    }
+
+    private static void markEscapingClosures(final Statement code) {
+        for (ClosureExpression closure : collectEscapingClosures(code)) {
+            closure.putNodeMetaData(ESCAPES_METHOD, Boolean.TRUE);
+        }
     }
 
     private static Set<ClosureExpression> collectEscapingClosures(final Statement code) {
@@ -674,36 +803,110 @@ public class ClosureWriter {
             private void mark(final Expression e) {
                 if (e instanceof ClosureExpression) escaping.add((ClosureExpression) e);
             }
+            /**
+             * Marks every literal the escaping value {@code e} can be or keep: both branches of a
+             * ternary or elvis, the operand of a cast that keeps the closure, the receiver of a
+             * call whose result keeps it (see {@link #isWrappingCall}), both operands of a
+             * composition, and the right operand of an assignment used as a value, each followed
+             * the same way.
+             */
+            private void markValue(final Expression e) {
+                if (e instanceof TernaryExpression) {
+                    markValue(((TernaryExpression) e).getTrueExpression()); // for elvis, the left operand
+                    markValue(((TernaryExpression) e).getFalseExpression());
+                } else if (e instanceof CastExpression && keepsClosure(e.getType())) {
+                    markValue(((CastExpression) e).getExpression());
+                } else if (e instanceof MethodCallExpression && isWrappingCall((MethodCallExpression) e)) {
+                    markValue(((MethodCallExpression) e).getObjectExpression());
+                } else if (e instanceof BinaryExpression && isComposition(((BinaryExpression) e).getOperation().getType())) {
+                    markValue(((BinaryExpression) e).getLeftExpression());     // composed, e.g. c >> { ... } or { ... } << c
+                    markValue(((BinaryExpression) e).getRightExpression());
+                } else if (e instanceof MethodCallExpression && isCompositionCall((MethodCallExpression) e)) {
+                    MethodCallExpression call = (MethodCallExpression) e;      // c.rightShift({ ... }), also how SC compiles c >> { ... }
+                    markValue(call.getObjectExpression());
+                    ((TupleExpression) call.getArguments()).getExpressions().forEach(this::markValue); // none for andThenSelf()
+                } else if (e instanceof BinaryExpression && (storesRightOperand(((BinaryExpression) e).getOperation().getType())
+                        || ((BinaryExpression) e).getOperation().getType() == Types.LEFT_SHIFT_EQUAL)) {
+                    markValue(((BinaryExpression) e).getRightExpression());    // an assignment's value, e.g. h.handler = c = { ... }
+                } else {
+                    mark(e);
+                }
+            }
             @Override public void visitReturnStatement(final ReturnStatement statement) {
-                mark(statement.getExpression());
+                markValue(statement.getExpression());
                 super.visitReturnStatement(statement);
             }
             @Override public void visitBinaryExpression(final BinaryExpression be) {
                 int op = be.getOperation().getType();
-                if (op == Types.EQUAL && !isLocalTarget(be.getLeftExpression())) {
-                    mark(be.getRightExpression());          // assigned to a field/property/index
-                } else if (op == Types.LEFT_SHIFT) {
-                    mark(be.getRightExpression());          // appended, e.g. list << { ... }
+                if (storesRightOperand(op) && !isLocalTarget(be.getLeftExpression())) {
+                    markValue(be.getRightExpression());     // stored at a field/property/index, e.g. attrs.handler ?= { ... }
+                } else if (op == Types.LEFT_SHIFT || op == Types.LEFT_SHIFT_EQUAL) {
+                    markValue(be.getRightExpression());     // appended or composed, e.g. list << { ... }, handler <<= { ... }
                 }
                 super.visitBinaryExpression(be);
             }
             @Override public void visitListExpression(final ListExpression le) {
-                le.getExpressions().forEach(this::mark);
+                le.getExpressions().forEach(this::markValue);
                 super.visitListExpression(le);
             }
             @Override public void visitMapEntryExpression(final MapEntryExpression me) {
-                mark(me.getValueExpression());
+                markValue(me.getValueExpression());
                 super.visitMapEntryExpression(me);
             }
         });
         return escaping;
     }
 
+    /**
+     * True for the assignment operators whose stored value can hold the right operand: {@code =},
+     * {@code ?=} and {@code ??=} store it, {@code >>=} composes it into a closure (which keeps a
+     * clone of it) and {@code +=} adds it to a collection.
+     */
+    private static boolean storesRightOperand(final int op) {
+        switch (op) {
+          case Types.EQUAL:
+          case Types.ELVIS_EQUAL:
+          case Types.NULL_COALESCE_EQUAL:
+          case Types.RIGHT_SHIFT_EQUAL:
+          case Types.PLUS_EQUAL:
+            return true;
+          default:
+            return false;
+        }
+    }
+
     /** True when an assignment target is a plain local variable (not a field/property that escapes). */
     private static boolean isLocalTarget(final Expression lhs) {
         if (!(lhs instanceof VariableExpression)) return false;   // property/field/index target
         Variable v = ((VariableExpression) lhs).getAccessedVariable();
-        return !(v instanceof FieldNode) && !(v instanceof PropertyNode);
+        // a DynamicVariable is stored through the MOP: to a script's binding, or to a dynamic
+        // property of the owner, where code outside the method can read it
+        return !(v instanceof FieldNode) && !(v instanceof PropertyNode) && !(v instanceof DynamicVariable);
+    }
+
+    /**
+     * True for {@code >>} and {@code <<}. On closures they compose: the {@code ComposedClosure} keeps a
+     * clone of each operand (a clone of a packed closure is still packed) and passes a delegate set on
+     * it on to them. On a collection {@code <<} appends. Either way the result holds the operands, so
+     * an operand escapes wherever the result does.
+     */
+    private static boolean isComposition(final int op) {
+        return op == Types.RIGHT_SHIFT || op == Types.LEFT_SHIFT;
+    }
+
+    /**
+     * True for a composing call: a one-argument {@code rightShift} or {@code leftShift}, the method form
+     * of {@link #isComposition}, or its alias {@code andThen} or {@code compose}; or {@code andThenSelf}
+     * or {@code composeSelf}, which compose the receiver with itself. The result keeps the receiver and
+     * any closure argument.
+     */
+    private static boolean isCompositionCall(final MethodCallExpression call) {
+        if (!(call.getArguments() instanceof TupleExpression)) return false;
+        String name = call.getMethodAsString();
+        int arity = ((TupleExpression) call.getArguments()).getExpressions().size();
+        return (arity == 1 && ("rightShift".equals(name) || "leftShift".equals(name)
+                        || "andThen".equals(name) || "compose".equals(name)))
+                || (arity <= 1 && ("andThenSelf".equals(name) || "composeSelf".equals(name)));
     }
 
     /**
@@ -717,7 +920,7 @@ public class ClosureWriter {
      * Declines are reported by {@code @PackedClosures(mode = WARN | STRICT)} like any other.
      */
     private boolean serializationBound(final ClosureExpression expression) {
-        MethodNode m = controller.getMethodNode();
+        MethodNode m = enclosingMethod();
         if (m == null || m.getCode() == null) return false;
         return serializationBoundByMethod
                 .computeIfAbsent(m, k -> collectSerializationBoundClosures(k.getCode()))
@@ -839,7 +1042,7 @@ public class ClosureWriter {
     private Set<String> holderCaptureNames(final ClosureExpression expression) {
         Set<String> captured = capturedNames(expression);
         Set<String> holder = new HashSet<>(collectWrittenNames(expression.getCode()));
-        MethodNode m = controller.getMethodNode();
+        MethodNode m = enclosingMethod();
         if (m != null && m.getCode() != null) {
             holder.addAll(writtenNamesByMethod.computeIfAbsent(m, k -> collectWrittenNames(k.getCode())));
         }
@@ -889,6 +1092,56 @@ public class ClosureWriter {
             }
         });
         return written;
+    }
+
+    /** Public methods of {@code Closure} other than those of {@code Object}, plus {@code doCall}. */
+    private static final Set<String> CLOSURE_METHOD_NAMES = new HashSet<>();
+
+    /** Properties of {@code Closure}, named by its getters, e.g. {@code maximumNumberOfParameters}. */
+    private static final Set<String> CLOSURE_PROPERTY_NAMES = new HashSet<>();
+
+    private static final Set<String> OBJECT_METHOD_NAMES = new HashSet<>();
+
+    /** GDK methods whose {@code Closure} versions call the closure's owner, so the receiver does not matter. */
+    private static final Set<String> OWNER_FORWARDING_GDK_METHODS =
+            new HashSet<>(Arrays.asList("print", "println", "printf"));
+
+    static {
+        for (Method m : Object.class.getMethods()) OBJECT_METHOD_NAMES.add(m.getName());
+        for (Method m : Closure.class.getMethods()) {
+            String name = m.getName();
+            if (OBJECT_METHOD_NAMES.contains(name)) continue;
+            CLOSURE_METHOD_NAMES.add(name);
+            if (name.startsWith("get") && name.length() > 3 && m.getParameterCount() == 0) {
+                CLOSURE_PROPERTY_NAMES.add(BeanUtils.decapitalize(name.substring(3)));
+            }
+        }
+        CLOSURE_METHOD_NAMES.add("doCall");
+    }
+
+    private static final Set<String> WRAPPING_CALLS = new HashSet<>(Arrays.asList("curry", "rcurry", "ncurry",
+            "asWritable", "trampoline", "memoize", "memoizeAtMost", "memoizeAtLeast", "memoizeBetween",
+            "clone", "dehydrate", "rehydrate"));
+
+    /**
+     * True for a call on a closure whose result keeps it and may pass a delegate set on the result
+     * on to it: {@code curry}, {@code rcurry} and {@code ncurry} (a {@code CurriedClosure} over a
+     * clone), {@code asWritable}, {@code trampoline} and the {@code memoize} family (wrappers), and
+     * {@code clone}, {@code dehydrate} and {@code rehydrate} (a copy; the copy of a packed closure is
+     * still packed).
+     */
+    private static boolean isWrappingCall(final MethodCallExpression call) {
+        return WRAPPING_CALLS.contains(call.getMethodAsString());
+    }
+
+    /**
+     * True when a cast to {@code type} yields the closure itself rather than a coerced proxy: a
+     * {@code Closure} type, or a type every closure already is, such as {@code Object}, {@code Runnable}
+     * or {@code Callable}.
+     */
+    private static boolean keepsClosure(final ClassNode type) {
+        return type.isDerivedFrom(ClassHelper.CLOSURE_TYPE)
+                || StaticTypeCheckingSupport.implementsInterfaceOrIsSubclassOf(ClassHelper.CLOSURE_TYPE, type);
     }
 
     /**
