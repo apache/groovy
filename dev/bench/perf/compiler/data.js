@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1794466917453,
+  "lastUpdate": 1794553054156,
   "repoUrl": "https://github.com/apache/groovy",
   "entries": {
     "Compiler Performance": [
@@ -9589,6 +9589,63 @@ window.BENCHMARK_DATA = {
             "name": "compile@groovy-6",
             "value": 476.2133333333333,
             "range": "±21.08",
+            "unit": "ms",
+            "extra": "6.0.0"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "Paul King",
+            "username": "paulk-asert",
+            "email": "paulk@asert.com.au"
+          },
+          "committer": {
+            "name": "Paul King",
+            "username": "paulk-asert",
+            "email": "paulk@asert.com.au"
+          },
+          "id": "5e2780943741977f049e814f120f9c85d17398f4",
+          "message": "GROOVY-12582: groovy-http-builder: Support compression",
+          "timestamp": "2026-11-05T12:14:20Z",
+          "url": "https://github.com/apache/groovy/commit/5e2780943741977f049e814f120f9c85d17398f4"
+        },
+        "date": 1794553047553,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "compile@current",
+            "value": 382.86,
+            "range": "±12.14",
+            "unit": "ms",
+            "extra": "current"
+          },
+          {
+            "name": "compile@groovy-3",
+            "value": 522.38,
+            "range": "±179.3",
+            "unit": "ms",
+            "extra": "3.0.25"
+          },
+          {
+            "name": "compile@groovy-4",
+            "value": 472.48,
+            "range": "±125.64",
+            "unit": "ms",
+            "extra": "4.0.33"
+          },
+          {
+            "name": "compile@groovy-5",
+            "value": 373.63666666666666,
+            "range": "±14.84",
+            "unit": "ms",
+            "extra": "5.1.3"
+          },
+          {
+            "name": "compile@groovy-6",
+            "value": 371.3533333333333,
+            "range": "±18.03",
             "unit": "ms",
             "extra": "6.0.0"
           }
