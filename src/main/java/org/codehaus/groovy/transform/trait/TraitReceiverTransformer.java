@@ -37,10 +37,13 @@ import org.codehaus.groovy.ast.expr.ClassExpression;
 import org.codehaus.groovy.ast.expr.ClosureExpression;
 import org.codehaus.groovy.ast.expr.ConstantExpression;
 import org.codehaus.groovy.ast.expr.DeclarationExpression;
+import org.codehaus.groovy.ast.expr.ElvisOperatorExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.FieldExpression;
 import org.codehaus.groovy.ast.expr.LambdaExpression;
 import org.codehaus.groovy.ast.expr.MethodCallExpression;
+import org.codehaus.groovy.ast.expr.PostfixExpression;
+import org.codehaus.groovy.ast.expr.PrefixExpression;
 import org.codehaus.groovy.ast.expr.PropertyExpression;
 import org.codehaus.groovy.ast.expr.TupleExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
@@ -48,6 +51,7 @@ import org.codehaus.groovy.ast.tools.GenericsUtils;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.syntax.SyntaxException;
 import org.codehaus.groovy.syntax.Token;
+import org.codehaus.groovy.syntax.TokenUtil;
 import org.codehaus.groovy.syntax.Types;
 
 import java.util.Collection;
@@ -60,6 +64,7 @@ import static org.apache.groovy.ast.tools.ExpressionUtils.isThisExpression;
 import static org.apache.groovy.util.BeanUtils.capitalize;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.args;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.binX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.callThisX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.callX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.castX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.classX;
@@ -93,6 +98,7 @@ class TraitReceiverTransformer extends ClassCodeExpressionTransformer {
     private boolean inClosure;
     private boolean inLambdaOnly; // in a lambda that is not in a closure
     private boolean inLambda;
+    private Expression assignmentTarget; // the expression being assigned, incremented or decremented, which is not a read
 
     /**
      * Creates a transformer that rewrites trait receiver access against the woven receiver.
@@ -185,6 +191,12 @@ class TraitReceiverTransformer extends ClassCodeExpressionTransformer {
             return transformFieldReference(exp, ((FieldExpression) exp).getField(), null);
         } else if (exp instanceof VariableExpression vexp) {
             Variable accessedVariable = vexp.getAccessedVariable();
+            if (!inClosure && exp != assignmentTarget && isStaticAccessorPropertyName(vexp)) {
+                String getter = findStaticAccessor(vexp.getName(), false);
+                if (getter != null) { // GROOVY-12614: a static accessor read as a property is a call of the accessor
+                    return transformStaticAccessorCall(exp, getter, null);
+                }
+            }
             if (accessedVariable instanceof FieldNode || accessedVariable instanceof PropertyNode) {
                 if (isClosurePropertyReference(vexp)) {
                     return exp; // GROOVY-12598: resolve through the closure's delegate and owner
@@ -231,6 +243,20 @@ class TraitReceiverTransformer extends ClassCodeExpressionTransformer {
                     // GROOVY-12587: use the declared field, so a static one is read through the implementing class
                     return transformFieldReference(exp, traitClass.getDeclaredField(propName), null);
                 }
+                if (propName != null && !inClosure && exp != assignmentTarget) {
+                    String getter = findStaticAccessor(propName, false);
+                    if (getter != null) { // GROOVY-12614
+                        return transformStaticAccessorCall(exp, getter, null);
+                    }
+                }
+            }
+        } else if (exp instanceof PrefixExpression || exp instanceof PostfixExpression) {
+            Expression oldTarget = assignmentTarget;
+            assignmentTarget = exp instanceof PrefixExpression ? ((PrefixExpression) exp).getExpression() : ((PostfixExpression) exp).getExpression();
+            try {
+                return super.transform(exp);
+            } finally {
+                assignmentTarget = oldTarget;
             }
         } else if (exp instanceof ClosureExpression) {
             MethodCallExpression mce = callX(exp, "rehydrate", args(
@@ -264,6 +290,28 @@ class TraitReceiverTransformer extends ClassCodeExpressionTransformer {
         Expression leftExpression = exp.getLeftExpression();
         Expression rightExpression = exp.getRightExpression();
         Token operation = exp.getOperation();
+        // in a closure or lambda the name is left for the closure to resolve, since its delegate may provide it
+        String accessorProperty = inClosure ? null : staticAccessorPropertyName(leftExpression);
+        if (accessorProperty != null && Types.isAssignment(operation.getType())) {
+            // GROOVY-12614: a static accessor written as a property is a call of the accessor
+            String setter = findStaticAccessor(accessorProperty, true);
+            if (setter != null) {
+                int op = operation.getType(), token = TokenUtil.removeAssignment(op);
+                boolean elvis = (op == Types.ELVIS_EQUAL || op == Types.NULL_COALESCE_EQUAL);
+                if (op == Types.ASSIGN) {
+                    return transformStaticAccessorCall(exp, setter, rightExpression);
+                }
+                String getter = findStaticAccessor(accessorProperty, false);
+                if (getter != null && (token != op || elvis)) { // p op= v is setP(getP() op v)
+                    MethodCallExpression read = callThisX(getter);
+                    read.setSourcePosition(leftExpression);
+                    Expression value = elvis ? new ElvisOperatorExpression(read, rightExpression, op == Types.NULL_COALESCE_EQUAL)
+                            : new BinaryExpression(read, Token.newSymbol(token, -1, -1), rightExpression);
+                    value.setSourcePosition(exp);
+                    return transformStaticAccessorCall(exp, setter, value);
+                }
+            }
+        }
         if (operation.getType() == Types.ASSIGN) {
             String leftFieldName = null;
             if (leftExpression instanceof VariableExpression && isClosurePropertyReference((VariableExpression) leftExpression)) {
@@ -288,7 +336,10 @@ class TraitReceiverTransformer extends ClassCodeExpressionTransformer {
             }
         }
 
+        Expression oldTarget = assignmentTarget;
+        if (Types.isAssignment(operation.getType())) assignmentTarget = leftExpression;
         Expression leftTransform = transform(leftExpression);
+        assignmentTarget = oldTarget;
         Expression rightTransform = transform(rightExpression);
         Expression ret = exp instanceof DeclarationExpression ?
                 new DeclarationExpression(leftTransform, operation, rightTransform) : binX(leftTransform, operation, rightTransform);
@@ -347,6 +398,75 @@ class TraitReceiverTransformer extends ClassCodeExpressionTransformer {
         Variable accessedVariable = vexp.getAccessedVariable();
         return !accessedVariable.isInStaticContext() && (accessedVariable instanceof PropertyNode
             || (accessedVariable instanceof FieldNode && traitClass.getProperty(vexp.getName()) != null));
+    }
+
+    /**
+     * Indicates whether the variable may name a static accessor of the trait: it is
+     * not a local variable, a parameter or a field of the trait.
+     */
+    private boolean isStaticAccessorPropertyName(final VariableExpression vexp) {
+        if (vexp.isThisExpression() || vexp.isSuperExpression() || knownFields.contains(vexp.getName())) return false;
+        Variable accessedVariable = vexp.getAccessedVariable();
+        return accessedVariable instanceof DynamicVariable || accessedVariable instanceof PropertyNode;
+    }
+
+    /**
+     * Returns the property name if the expression is {@code name} or {@code this.name}
+     * and may name a static accessor of the trait, or {@code null}.
+     */
+    private String staticAccessorPropertyName(final Expression exp) {
+        if (exp instanceof VariableExpression vexp) {
+            return isStaticAccessorPropertyName(vexp) ? vexp.getName() : null;
+        }
+        if (exp instanceof PropertyExpression pexp
+                && (pexp.isImplicitThis() || "this".equals(pexp.getObjectExpression().getText()))) {
+            String name = pexp.getPropertyAsString();
+            return name != null && !knownFields.contains(name) ? name : null;
+        }
+        return null;
+    }
+
+    /**
+     * Returns the name of the static getter (or setter) that the trait or one of its
+     * super traits declares for the property, or {@code null} if there is none.
+     */
+    private String findStaticAccessor(final String propertyName, final boolean setter) {
+        String suffix = capitalize(propertyName);
+        String[] names = setter ? new String[]{"set" + suffix} : new String[]{"get" + suffix, "is" + suffix};
+        for (String name : names) {
+            for (MethodNode methodNode : traitClass.getDeclaredMethods(name)) {
+                if (methodNode.isStatic() && methodNode.getParameters().length == (setter ? 1 : 0)
+                        && (setter || !name.startsWith("is") || ClassHelper.isPrimitiveBoolean(methodNode.getReturnType()))) {
+                    return name;
+                }
+            }
+        }
+        var traits = Traits.findTraits(traitClass); traits.remove(traitClass);
+        for (ClassNode superTrait : traits) {
+            ClassNode helper = Traits.findHelper(superTrait);
+            if (helper == null) continue;
+            for (String name : names) {
+                for (MethodNode methodNode : helper.getDeclaredMethods(name)) {
+                    Parameter[] parameters = methodNode.getParameters();
+                    if (methodNode.isPublic() && methodNode.isStatic() && parameters.length == (setter ? 2 : 1)
+                            && ClassHelper.isClassType(parameters[0].getType())
+                            && (setter || !name.startsWith("is") || ClassHelper.isPrimitiveBoolean(methodNode.getReturnType()))) {
+                        return name;
+                    }
+                }
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Makes the call of a static accessor that a property reference stands for,
+     * which is then dispatched as the method form is.
+     */
+    private Expression transformStaticAccessorCall(final Expression exp, final String accessor, final Expression value) {
+        MethodCallExpression call = value == null ? callThisX(accessor) : callThisX(accessor, args(value));
+        call.setSourcePosition(exp);
+        return transformMethodCallOnThis(call);
     }
 
     /**

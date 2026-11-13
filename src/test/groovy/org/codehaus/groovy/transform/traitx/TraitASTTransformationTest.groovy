@@ -2664,6 +2664,96 @@ final class TraitASTTransformationTest {
         """
     }
 
+    // GROOVY-12614
+    @CompileModesTest
+    void testStaticAccessorReadAsPropertyIsCallOfTheAccessor(String mode) {
+        assertScript shell, """
+            $mode
+            trait T {
+                static String getLabel() { 'trait' }
+                static boolean isReady() { false }
+                static String sm() { label }
+                static String sm2() { this.label }
+                static String sm3() { getLabel() }
+                static boolean sm4() { ready }
+                String im() { label }
+                String im2() { this.label }
+                String im3() { "\$label" }
+            }
+            class C implements T {
+                static String getLabel() { 'class' }
+                static boolean isReady() { true }
+            }
+            class D implements T {
+            }
+
+            assert [C.sm(), C.sm2(), C.sm3(), C.sm4()] == ['trait', 'trait', 'trait', false]
+            assert [D.sm(), D.sm2(), D.sm3(), D.sm4()] == ['trait', 'trait', 'trait', false]
+            assert [new C().im(), new C().im2(), new C().im3()] == ['trait', 'trait', 'trait']
+            assert C.label == 'class' && C.ready && D.label == 'trait'
+        """
+    }
+
+    // GROOVY-12614
+    @CompileModesTest
+    void testStaticAccessorWrittenAsPropertyIsCallOfTheAccessor(String mode) {
+        assertScript shell, """
+            $mode
+            trait T {
+                private static List<String> log = []
+                private static int count = 1
+                static int getCnt() { log << 'trait get'; count }
+                static void setCnt(int n) { log << 'trait set'; count = n }
+                static List<String> assign() { cnt = 5; log }
+                static List<String> assignThis() { this.cnt = 6; log }
+                static List<String> compound() { cnt += 2; log }
+                static List<String> compoundThis() { this.cnt *= 3; log }
+                List<String> instanceAssign() { cnt = 7; log }
+                static int value() { count }
+            }
+            class C implements T {
+                static List<String> classLog = []
+                static int getCnt() { classLog << 'class get'; 100 }
+                static void setCnt(int n) { classLog << 'class set' }
+            }
+
+            assert C.assign() == ['trait set'] && C.value() == 5
+            assert C.assignThis() == ['trait set'] * 2 && C.value() == 6
+            assert C.compound() == ['trait set', 'trait set', 'trait get', 'trait set'] && C.value() == 8
+            assert C.compoundThis().size() == 6 && C.value() == 24
+            assert new C().instanceAssign().size() == 7 && C.value() == 7
+            assert C.classLog == []
+        """
+    }
+
+    // GROOVY-12614
+    @CompileModesTest
+    void testSuperTraitStaticAccessorAsPropertyIsCallOfTheAccessor(String mode) {
+        assertScript shell, """
+            $mode
+            trait T {
+                static String getLabel() { 'trait' }
+                @Virtual static String getKind() { 'trait' }
+            }
+            $mode
+            trait U extends T {
+                static String sm() { label }
+                static String sm2() { kind }
+                String im() { this.label }
+                String im2() { this.kind }
+            }
+            class C implements U {
+                static String getLabel() { 'class' }
+                static String getKind() { 'class' }
+            }
+            class D implements U {
+            }
+
+            assert [C.sm(), C.sm2(), new C().im(), new C().im2()] == ['trait', 'class', 'trait', 'class']
+            assert [D.sm(), D.sm2(), new D().im(), new D().im2()] == ['trait', 'trait', 'trait', 'trait']
+        """
+    }
+
     // GROOVY-12608
     @CompileModesTest
     void testSuperTraitStaticAccessorAsPropertyInClosure(String mode) {
