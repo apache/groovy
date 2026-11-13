@@ -176,6 +176,7 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
+import static org.apache.groovy.ast.tools.AnnotatedNodeUtils.isGenerated;
 import static org.apache.groovy.ast.tools.ClassNodeUtils.getNestHost;
 import static org.apache.groovy.ast.tools.ClassNodeUtils.hasNoEnclosingInstance;
 import static org.apache.groovy.ast.tools.ExpressionUtils.isThisExpression;
@@ -4848,7 +4849,7 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
                 expression.removeNodeMetaData(DELEGATION_METADATA);
             }
             if (i == 0 && parameters.length > 0 && expression instanceof MapExpression) {
-                checkNamedParamsAnnotation(parameters[0], (MapExpression) expression);
+                checkNamedParamsAnnotation(parameters[0], (MapExpression) expression, isNestedCopyWith(selectedMethod));
             }
         }
     }
@@ -4864,7 +4865,15 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
         return new LambdaExpression(parameters, GENERATED_EMPTY_STATEMENT);
     }
 
-    private void checkNamedParamsAnnotation(final Parameter param, final MapExpression args) {
+    /**
+     * Whether {@code method} is the {@code copyWith(Map)} generated for a record or immutable class, which accepts
+     * dotted keys as nested paths.
+     */
+    private static boolean isNestedCopyWith(final MethodNode method) {
+        return method != null && "copyWith".equals(method.getName()) && isGenerated(method);
+    }
+
+    private void checkNamedParamsAnnotation(final Parameter param, final MapExpression args, final boolean nestedKeys) {
         if (!isOrImplements(param.getType(), MAP_TYPE)) return;
         List<MapEntryExpression> entryExpressions = args.getMapEntryExpressions();
         Map<Object, MapEntryExpression> entries = new LinkedHashMap<>();
@@ -4875,60 +4884,111 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
             }
             entries.put(key, entry);
         }
-        List<String> collectedNames = new ArrayList<>();
-        List<AnnotationNode> annotations = param.getAnnotations(NAMED_PARAMS_CLASSNODE);
-        if (annotations != null && !annotations.isEmpty()) {
-            AnnotationNode an = null;
-            for (AnnotationNode next : annotations) {
-                if (next.getClassNode().getName().equals(NamedParams.class.getName())) {
-                    an = next;
-                }
-            }
-            if (an != null) {
-                Expression value = an.getMember("value");
-                if (value instanceof AnnotationConstantExpression) {
-                    processNamedParam((AnnotationConstantExpression) value, entries, args, collectedNames);
-                } else if (value instanceof ListExpression le) {
-                    for (Expression next : le.getExpressions()) {
-                        if (next instanceof AnnotationConstantExpression) {
-                            processNamedParam((AnnotationConstantExpression) next, entries, args, collectedNames);
-                        }
-                    }
-                }
-            }
-        }
-        annotations = param.getAnnotations(NAMED_PARAM_CLASSNODE);
-        if (annotations != null && !annotations.isEmpty()) {
-            for (AnnotationNode next : annotations) {
-                if (next.getClassNode().getName().equals(NamedParam.class.getName())) {
-                    processNamedParam(next, entries, args, collectedNames);
-                }
-            }
+        Map<String, ClassNode> collectedNames = new LinkedHashMap<>();
+        for (AnnotationNode namedParam : namedParamAnnotations(param)) {
+            processNamedParam(namedParam, entries, args, collectedNames);
         }
         if (!collectedNames.isEmpty()) {
             for (Map.Entry<Object, MapEntryExpression> entry : entries.entrySet()) {
                 Object name = entry.getKey();
-                if (!collectedNames.contains(name)) {
+                if (collectedNames.containsKey(name)) continue;
+                if (nestedKeys && name instanceof String && ((String) name).indexOf('.') > 0) {
+                    checkNestedNamedParam((String) name, entry.getValue(), collectedNames); // GROOVY-12713
+                } else {
                     addStaticTypeError("unexpected named arg: " + name, entry.getValue());
                 }
             }
         }
     }
 
-    private void processNamedParam(final AnnotationConstantExpression value, final Map<Object, MapEntryExpression> entries, final MapExpression args, final List<String> collectedNames) {
-        AnnotationNode namedParam = (AnnotationNode) value.getValue();
-        if (!namedParam.getClassNode().getName().equals(NamedParam.class.getName())) return;
-        processNamedParam(namedParam, entries, args, collectedNames);
+    /**
+     * The {@code @NamedParam} annotations of a map parameter, written directly or inside {@code @NamedParams}.
+     */
+    private static List<AnnotationNode> namedParamAnnotations(final Parameter param) {
+        List<AnnotationNode> result = new ArrayList<>();
+        for (AnnotationNode next : param.getAnnotations(NAMED_PARAMS_CLASSNODE)) {
+            if (!next.getClassNode().getName().equals(NamedParams.class.getName())) continue;
+            Expression value = next.getMember("value");
+            if (value instanceof AnnotationConstantExpression) {
+                addNamedParamAnnotation((AnnotationConstantExpression) value, result);
+            } else if (value instanceof ListExpression le) {
+                for (Expression e : le.getExpressions()) {
+                    if (e instanceof AnnotationConstantExpression) {
+                        addNamedParamAnnotation((AnnotationConstantExpression) e, result);
+                    }
+                }
+            }
+        }
+        for (AnnotationNode next : param.getAnnotations(NAMED_PARAM_CLASSNODE)) {
+            if (next.getClassNode().getName().equals(NamedParam.class.getName())) {
+                result.add(next);
+            }
+        }
+        return result;
     }
 
-    private void processNamedParam(final AnnotationNode namedParam, final Map<Object, MapEntryExpression> entries, final MapExpression args, final List<String> collectedNames) {
+    private static void addNamedParamAnnotation(final AnnotationConstantExpression value, final List<AnnotationNode> result) {
+        AnnotationNode namedParam = (AnnotationNode) value.getValue();
+        if (namedParam.getClassNode().getName().equals(NamedParam.class.getName())) result.add(namedParam);
+    }
+
+    /**
+     * Checks a dotted key such as {@code 'address.city'}, which the nested {@code copyWith(Map)} of records and
+     * immutable classes accepts as a path. Each segment must be a named parameter of the type
+     * reached so far, and the value must suit the last segment's declared type. The walk stops, accepting the
+     * key, at a segment whose type is unknown or whose {@code copyWith(Map)} declares no named parameters; the
+     * runtime then checks the rest.
+     */
+    private void checkNestedNamedParam(final String key, final MapEntryExpression entry, final Map<String, ClassNode> rootNames) {
+        String[] segments = key.split("\\.");
+        Map<String, ClassNode> names = rootNames;
+        ClassNode leafType = null;
+        for (int i = 0, n = segments.length; i < n; i += 1) {
+            if (!names.containsKey(segments[i])) {
+                addStaticTypeError("unexpected named arg: " + key, entry);
+                return;
+            }
+            leafType = names.get(segments[i]);
+            if (i == n - 1) break;
+            names = copyWithNamedParams(leafType);
+            if (names == null) return;
+        }
+        if (leafType != null) {
+            ClassNode argumentType = getDeclaredOrInferredType(entry.getValueExpression());
+            if (!isAssignableTo(argumentType, leafType)) {
+                addStaticTypeError("argument for named param '" + key + "' has type '" + prettyPrintType(argumentType) + "' but expected '" + prettyPrintType(leafType) + "'.", entry);
+            }
+        }
+    }
+
+    /**
+     * The named parameters, by name, of {@code type}'s one-argument {@code copyWith(Map)}; null when the type is
+     * unknown or declares no such method with {@code @NamedParam}s.
+     */
+    private static Map<String, ClassNode> copyWithNamedParams(final ClassNode type) {
+        if (type == null) return null;
+        for (MethodNode method : type.getMethods("copyWith")) {
+            Parameter[] parameters = method.getParameters();
+            if (parameters.length != 1 || !isOrImplements(parameters[0].getType(), MAP_TYPE)) continue;
+            Map<String, ClassNode> names = new LinkedHashMap<>();
+            for (AnnotationNode namedParam : namedParamAnnotations(parameters[0])) {
+                ConstantExpression constX = (ConstantExpression) namedParam.getMember("value");
+                if (constX == null) continue;
+                ClassExpression typeX = (ClassExpression) namedParam.getMember("type");
+                names.put((String) constX.getValue(), typeX != null ? typeX.getType() : null);
+            }
+            if (!names.isEmpty()) return names;
+        }
+        return null;
+    }
+
+    private void processNamedParam(final AnnotationNode namedParam, final Map<Object, MapEntryExpression> entries, final MapExpression args, final Map<String, ClassNode> collectedNames) {
         String name = null;
         boolean required = false;
         ClassNode expectedType = null;
         ConstantExpression constX = (ConstantExpression) namedParam.getMember("value");
         if (constX != null) {
             name = (String) constX.getValue();
-            collectedNames.add(name);
         }
         constX = (ConstantExpression) namedParam.getMember("required");
         if (constX != null) {
@@ -4937,6 +4997,9 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
         ClassExpression typeX = (ClassExpression) namedParam.getMember("type");
         if (typeX != null) {
             expectedType = typeX.getType();
+        }
+        if (name != null) {
+            collectedNames.put(name, expectedType);
         }
         if (!entries.containsKey(name)) {
             if (required) {
