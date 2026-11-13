@@ -508,6 +508,57 @@ final class AsyncAwaitTest {
         '''
     }
 
+    // === casts ===
+
+    // GROOVY-12715
+    @Test
+    void testCastAppliedToAwait() {
+        assertScript '''
+            def task = async { 7 }
+            Integer a = (Integer) await task
+            assert a == 7
+            def price = async { 2.50 }
+            BigDecimal b = (BigDecimal) await(price)
+            assert b == 2.50
+            def x = async { 1 }
+            def y = async { 2 }
+            List<Integer> both = (List<Integer>) await(x, y)
+            assert both == [1, 2]
+        '''
+    }
+
+    // GROOVY-12715
+    @Test
+    void testCastAppliedToAwaitInsideAsyncTask() {
+        assertScript '''
+            import groovy.concurrent.Awaitable
+            import groovy.concurrent.DataflowVariable
+
+            DataflowVariable<BigDecimal> price = new DataflowVariable<BigDecimal>()
+            DataflowVariable<Integer> quantity = new DataflowVariable<Integer>()
+            DataflowVariable<BigDecimal> total = new DataflowVariable<BigDecimal>()
+            async {
+                BigDecimal unitPrice = (BigDecimal) await(price)
+                Integer count = (Integer) await(quantity)
+                total << unitPrice * count
+            }
+            async { quantity << 4 }
+            async { price << 2.50 }
+            assert await(Awaitable.orTimeoutMillis(total, 5000)) == 10.00
+        '''
+    }
+
+    // GROOVY-12715
+    @Test
+    void testCastAppliedToAsyncClosure() {
+        assertScript '''
+            import groovy.concurrent.Awaitable
+
+            Awaitable<Integer> task = (Awaitable<Integer>) async { 6 * 7 }
+            assert await(task) == 42
+        '''
+    }
+
     // === for await ===
 
     @Test

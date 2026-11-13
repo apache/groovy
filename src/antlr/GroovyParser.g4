@@ -1016,6 +1016,14 @@ castOperandExpression
 options { baseContext = expression; }
     :   castParExpression castOperandExpression                                             #castExprAlt
 
+    // GROOVY-12715: the operand of a cast may be an async closure or an await, as in `(Awaitable<Integer>) async { 7 }`
+    // and `(BigDecimal) await(price)`; without these alternatives `async` and `await` parse as names of called methods
+    |   ASYNC NL* { inAsyncClosureLevel++; } closureOrLambdaExpression { inAsyncClosureLevel--; }   #asyncClosureExprAlt
+
+    |   AWAIT NL* ( LPAREN expression (COMMA NL* expression)* RPAREN
+                  | expression (COMMA NL* expression)*
+                  )                                                                         #awaitExprAlt
+
     |   postfixExpression                                                                   #postfixExprAlt
 
     // ~(BNOT)/!(LNOT)
