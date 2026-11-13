@@ -19,9 +19,11 @@
 package org.apache.groovy.contracts.tests.other
 
 import org.apache.groovy.contracts.tests.basic.BaseTestClass
+import org.codehaus.groovy.control.MultipleCompilationErrorsException
 import org.junit.jupiter.api.Test
 
 import static groovy.test.GroovyAssert.assertScript
+import static groovy.test.GroovyAssert.shouldFail
 
 /**
  * Tests for {@code @ThrowsIf}, the exceptional contract: the method throws the
@@ -516,6 +518,57 @@ class ThrowsIfTests extends BaseTestClass {
                 C.divide(4, 0)
                 assert false
             } catch (ArithmeticException expected) {
+            }
+        '''
+    }
+
+    // GROOVY-12741: the guard is woven into the trait's helper class after the trait transform has rewritten
+    // the body, so a condition that refers to trait state had no receiver there; the forwarder generation
+    // failed earlier still with an UnsupportedOperationException
+    @Test
+    void guardOnTraitMethodWithBodyIsRejected() {
+        def message = shouldFail(MultipleCompilationErrorsException) {
+            assertScript '''
+                import groovy.contracts.ThrowsIf
+
+                trait Bank {
+                    BigDecimal balance = 0
+                    @ThrowsIf(value = { amount > balance }, exception = IllegalStateException)
+                    void withdraw(BigDecimal amount) { balance -= amount }
+                }
+                class Account implements Bank {
+                }
+                new Account().withdraw(1)
+            '''
+        }.message
+        assert message.contains('[groovy-contracts] @ThrowsIf is not supported on a trait method with a body (Bank.withdraw).')
+    }
+
+    // GROOVY-12741: on an abstract trait method the arm stays informational, as on any abstract method
+    @Test
+    void guardOnAbstractTraitMethodIsAccepted() {
+        assertScript '''
+            import groovy.contracts.ThrowsIf
+
+            trait Bank {
+                @ThrowsIf(value = { amount < 0 }, exception = IllegalArgumentException)
+                abstract void withdraw(BigDecimal amount)
+            }
+            class Account implements Bank {
+                BigDecimal balance = 0
+                void withdraw(BigDecimal amount) {
+                    if (amount < 0) throw new IllegalArgumentException('negative amount')
+                    balance -= amount
+                }
+            }
+            def account = new Account()
+            account.withdraw(1)
+            assert account.balance == -1
+            try {
+                account.withdraw(-1)
+                assert false, 'expected the body to throw'
+            } catch (IllegalArgumentException e) {
+                assert e.message == 'negative amount'
             }
         '''
     }
