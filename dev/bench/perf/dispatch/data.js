@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1794466937383,
+  "lastUpdate": 1794553069797,
   "repoUrl": "https://github.com/apache/groovy",
   "entries": {
     "Dispatch Metrics": [
@@ -6801,6 +6801,58 @@ window.BENCHMARK_DATA = {
           {
             "name": "classes.groovyRuntime",
             "value": 1568,
+            "unit": "classes"
+          },
+          {
+            "name": "bytecode.corpus.bytes",
+            "value": 193866,
+            "unit": "bytes"
+          },
+          {
+            "name": "bytecode.corpus.classes",
+            "value": 57,
+            "unit": "classes"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "Paul King",
+            "username": "paulk-asert",
+            "email": "paulk@asert.com.au"
+          },
+          "committer": {
+            "name": "Paul King",
+            "username": "paulk-asert",
+            "email": "paulk@asert.com.au"
+          },
+          "id": "5e2780943741977f049e814f120f9c85d17398f4",
+          "message": "GROOVY-12582: groovy-http-builder: Support compression",
+          "timestamp": "2026-11-05T12:14:20Z",
+          "url": "https://github.com/apache/groovy/commit/5e2780943741977f049e814f120f9c85d17398f4"
+        },
+        "date": 1794553069236,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "classes.loaded.total",
+            "value": 4066,
+            "unit": "classes"
+          },
+          {
+            "name": "classes.lambdaForms",
+            "value": 440,
+            "unit": "classes"
+          },
+          {
+            "name": "classes.hidden",
+            "value": 870,
+            "unit": "classes"
+          },
+          {
+            "name": "classes.groovyRuntime",
+            "value": 1570,
             "unit": "classes"
           },
           {
