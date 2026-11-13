@@ -2732,7 +2732,610 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         }
         new ClassB()
         ''',
-            'Cannot call <X> groovy.transform.stc.GenericsSTCTest$ClassA#bar(java.lang.Class<java.lang.Long>) with arguments [java.lang.Class<?>]'
+            'Cannot call <X> groovy.transform.stc.GenericsSTCTest$ClassA#bar(java.lang.Class<java.lang.Long>) with arguments [java.lang.Class<? extends ClassB>]'
+    }
+
+    // GROOVY-12755
+    @Test
+    void testGetClassIsClassOfReceiverErasure1() {
+        assertScript '''
+            interface Store {}
+            class Impl implements Store {}
+            class Adapter {
+                final String name
+                Adapter(Class<? extends Store> type) { name = type.simpleName }
+            }
+            String named(Class<? extends Store> type) { type.simpleName }
+            Class<? extends Store> typeOf(Store store) { store.class }
+
+            Store store = new Impl()
+            assert named(store.getClass()) == 'Impl'
+            assert named(store.class) == 'Impl'
+            assert new Adapter(store.getClass()).name == 'Impl'
+            assert typeOf(store) == Impl
+            Class<? extends Store> local = store.getClass()
+            assert local == Impl
+
+            Impl made = new Impl().getClass().getDeclaredConstructor().newInstance()
+            assert made instanceof Impl
+        '''
+    }
+
+    // GROOVY-12755
+    @Test
+    void testGetClassIsClassOfReceiverErasure2() {
+        assertScript '''
+            class C {
+                Class<? extends C> implicitThis() { getClass() }
+                Class<? extends C> thisProperty() { this.class }
+                Class<? extends C> inClosure() { Class<? extends C> result = null; [1].each { result = getClass() }; result }
+                static Class<? extends Class> staticThis() { this.getClass() }
+            }
+            def c = new C()
+            assert c.implicitThis() == C
+            assert c.thisProperty() == C
+            assert c.inClosure() == C
+            assert C.staticThis() == Class
+
+            @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                assert node.getNodeMetaData(INFERRED_TYPE).toString(false) == 'java.lang.Class<? extends java.lang.Integer>'
+            })
+            def boxed = 1.getClass()
+            assert boxed == Integer
+
+            @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                assert node.getNodeMetaData(INFERRED_TYPE).toString(false) == 'java.lang.Class<? extends java.lang.Class>'
+            })
+            def ofClass = String.getClass()
+            assert ofClass == Class
+
+            @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                assert node.getNodeMetaData(INFERRED_TYPE).toString(false) == 'java.lang.Class<? extends java.util.List>'
+            })
+            def ofList = (['x'] as List<String>).getClass()
+            assert ofList == ArrayList
+
+            Class<? extends int[]> ofPrimitiveArray = new int[0].getClass()
+            Class<? extends String[]> ofArray = new String[0].class
+            assert ofPrimitiveArray == int[] && ofArray == String[]
+
+            static <N extends Number> Class<? extends Number> numberType(N value) { value.getClass() }
+            assert numberType(1L) == Long
+        '''
+    }
+
+    // GROOVY-12755
+    @Test
+    void testGetClassIsClassOfReceiverErasure3() {
+        shouldFailWithMessages '''
+            interface Store {}
+            void test(Object value, Store store) {
+                Class<? extends Store> a = value.getClass()
+                Class<? extends String> b = store.class
+            }
+        ''',
+            'Incompatible generic argument types. Cannot assign java.lang.Class<?> to: java.lang.Class<? extends Store>',
+            'Incompatible generic argument types. Cannot assign java.lang.Class<? extends Store> to: java.lang.Class<? extends java.lang.String>'
+    }
+
+    // GROOVY-12755
+    @Test
+    void testGetClassIsClassOfReceiverErasure4() {
+        assertScript '''
+            class Outer<T> {
+                class Inner {
+                    Class<? extends Outer.Inner> self() { getClass() }
+                }
+                Inner inner() { new Inner() }
+            }
+            Class<? extends Outer.Inner> typeOf(Outer<String>.Inner inner) {
+                @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                    def bound = node.getNodeMetaData(INFERRED_TYPE).genericsTypes[0].upperBounds[0]
+                    assert bound.name == 'Outer$Inner' && bound.outerClassType == null
+                })
+                def type = inner.getClass()
+                type
+            }
+
+            def inner = new Outer<String>().inner()
+            assert typeOf(inner) == Outer.Inner
+            assert inner.self() == Outer.Inner
+        '''
+
+        shouldFailWithMessages '''
+            class Outer<T> {
+                class Inner {}
+            }
+            Class<? extends Outer<String>.Inner> typeOf(Outer<String>.Inner inner) { inner.getClass() }
+        ''',
+            'Incompatible generic argument types. Cannot assign java.lang.Class<? extends Outer.Inner> to: java.lang.Class<? extends Outer<java.lang.String>.Inner>'
+    }
+
+    // GROOVY-12755
+    @Test
+    void testGetClassIsClassOfReceiverErasure5() {
+        assertScript '''
+            abstract class Task extends Number implements Runnable {}
+
+            Class<? extends Number> typeOf(Object value) {
+                @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                    assert node.getNodeMetaData(INFERRED_TYPE).toString(false) == 'java.lang.Class<? extends java.lang.Number>'
+                })
+                def type = ((Number & Runnable) value).getClass()
+                type
+            }
+
+            Task task = new Task() {
+                void run() {}
+                int intValue() { 1 }
+                long longValue() { 1L }
+                float floatValue() { 1f }
+                double doubleValue() { 1d }
+            }
+            assert Task.isAssignableFrom(typeOf(task))
+        '''
+
+        shouldFailWithMessages '''
+            Class<? extends Runnable> typeOf(Object value) { ((Number & Runnable) value).getClass() }
+        ''',
+            'Incompatible generic argument types. Cannot assign java.lang.Class<? extends java.lang.Number> to: java.lang.Class<? extends java.lang.Runnable>'
+    }
+
+    // GROOVY-12755
+    @Test
+    void testGetClassIsClassOfReceiverErasure6() {
+        assertScript '''
+            List<String> strings = ['x']
+
+            @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                assert node.getNodeMetaData(INFERRED_TYPE).toString(false) == 'java.util.List<java.lang.Class<? extends java.lang.String>>'
+            })
+            def viaMethod = strings*.getClass()
+
+            @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                assert node.getNodeMetaData(INFERRED_TYPE).toString(false) == 'java.util.List<java.lang.Class<? extends java.lang.String>>'
+            })
+            def viaProperty = strings*.class
+
+            List<Class<? extends String>> declared = strings*.class
+            assert viaMethod == [String] && viaProperty == [String] && declared == [String]
+        '''
+    }
+
+    // GROOVY-12755
+    @Test
+    void testGetClassIsClassOfReceiverErasure7() {
+        // the static type of a variable that instanceof narrows is its type without the test
+        assertScript '''
+            Class<?> typeOf(Object value) {
+                if (value instanceof String) {
+                    assert value.substring(1) == 'y' // the receiver is a String here
+                    @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                        assert node.getNodeMetaData(INFERRED_TYPE).toString(false) == 'java.lang.Class<? extends java.lang.Object>'
+                    })
+                    def type = value.getClass()
+                    return type
+                }
+                String
+            }
+            assert typeOf('xy') == String
+        '''
+
+        for (expr in ['value.getClass()', 'value.class']) {
+            shouldFailWithMessages """
+                Class<? extends String> typeOf(Object value) {
+                    if (value instanceof String) {
+                        return $expr
+                    }
+                    String
+                }
+            """,
+                'Incompatible generic argument types. Cannot assign java.lang.Class<?> to: java.lang.Class<? extends java.lang.String>'
+        }
+
+        // a pattern variable, a cast and a new variable have the narrower type
+        assertScript '''
+            Class<? extends String> pattern(Object value) { value instanceof String s ? s.getClass() : String }
+            Class<? extends String> cast(Object value) { value instanceof String ? ((String) value).getClass() : String }
+            Class<? extends String> local(Object value) {
+                if (value instanceof String) {
+                    String string = value
+                    return string.getClass()
+                }
+                String
+            }
+            assert pattern('x') == String
+            assert cast('x') == String
+            assert local('x') == String
+        '''
+    }
+
+    // GROOVY-12755
+    @Test
+    void testGetClassIsNotClassOfInnerClassSimpleName() {
+        shouldFailWithMessages '''
+            class Outer<T> {
+                class Inner {
+                    Class<? extends Inner> self() { getClass() }
+                }
+            }
+        ''',
+            'Incompatible generic argument types. Cannot assign java.lang.Class<? extends Outer.Inner> to: java.lang.Class<? extends Outer<T>.Inner>'
+
+        shouldFailWithMessages '''
+            class Outer<T> {
+                class Inner {
+                    void test(Class<? extends Outer.Inner> raw) {
+                        Class<? extends Inner> type = raw
+                    }
+                }
+            }
+        ''',
+            'Incompatible generic argument types. Cannot assign java.lang.Class<? extends Outer.Inner> to: java.lang.Class<? extends Outer<T>.Inner>'
+
+        shouldFailWithMessages '''
+            class Outer<T> {
+                class Inner {}
+            }
+            class Sub extends Outer<String> {
+                void test(Inner inner, Class<? extends Outer.Inner> raw) {
+                    Class<? extends Inner> one = inner.getClass()
+                    Class<? extends Inner> two = raw
+                }
+            }
+        ''',
+            'Incompatible generic argument types. Cannot assign java.lang.Class<? extends Outer.Inner> to: java.lang.Class<? extends Outer<java.lang.String>.Inner>',
+            'Incompatible generic argument types. Cannot assign java.lang.Class<? extends Outer.Inner> to: java.lang.Class<? extends Outer<java.lang.String>.Inner>'
+
+        assertScript '''
+            class Outer<T> {
+                class Inner {
+                    Class<? extends Outer.Inner> raw() { getClass() }
+                    Class<? extends Inner> cast() { (Class<? extends Inner>) getClass() }
+                    Class<? extends Outer<T>.Inner> same(Class<? extends Inner> type) { type }
+                    Class<? extends Outer.Inner> erased(Class<? extends Inner> type) { type }
+                }
+
+                @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                    assert node.returnType.outerClassType.toString(false) == 'Outer<T>'
+                    assert node.parameters[0].type.genericsTypes[0].type.outerClassType.toString(false) == 'Outer<T>'
+                })
+                Inner first(List<Inner> inners) { inners[0] }
+
+                // the type variable is out of scope in a static method, so the name is the raw type
+                @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                    assert node.returnType.genericsTypes[0].upperBounds[0].outerClassType == null
+                })
+                static Class<? extends Inner> ofStatic(Class<? extends Outer.Inner> raw) { raw }
+
+                // a nested record is static, so its name has no enclosing type
+                record Point(int x) {}
+                @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                    assert node.returnType.outerClassType == null
+                })
+                Point point() { new Point(1) }
+
+                Inner inner() { new Inner() }
+                Inner[] array() { new Inner[1] }
+                Class literal() { Inner }
+                boolean isInner(Object value) { value instanceof Inner }
+            }
+            class Sub extends Outer<String> {
+                Class<? extends Outer<String>.Inner> same(Class<? extends Inner> type) { type }
+            }
+
+            def outer = new Outer<String>()
+            Outer<String>.Inner inner = outer.inner()
+            assert inner.raw() == Outer.Inner
+            assert inner.same(inner.cast()) == Outer.Inner
+            assert inner.erased(inner.cast()) == Outer.Inner
+            assert outer.first([inner]).is(inner)
+            assert Outer.ofStatic(Outer.Inner) == Outer.Inner
+            assert outer.array().length == 1
+            assert outer.literal() == Outer.Inner
+            assert outer.isInner(inner)
+            assert outer.point().x() == 1
+            assert new Sub().same(inner.cast()) == Outer.Inner
+        '''
+    }
+
+    // GROOVY-12755
+    @Test
+    void testGetClassIsNotClassOfParameterizedReceiverType() {
+        shouldFailWithMessages '''
+            Class<? extends List<String>> test(List<String> strings) {
+                Class<? extends List<String>> type = strings.getClass()
+                return strings.getClass()
+            }
+        ''',
+            'Incompatible generic argument types. Cannot assign java.lang.Class<? extends java.util.List> to: java.lang.Class<? extends java.util.List<java.lang.String>>',
+            'Incompatible generic argument types. Cannot assign java.lang.Class<? extends java.util.List> to: java.lang.Class<? extends java.util.List<java.lang.String>>'
+
+        shouldFailWithMessages '''
+            <T extends Comparable<T>> Class<? extends Comparable<T>> test(T value) { value.getClass() }
+        ''',
+            'Incompatible generic argument types. Cannot assign java.lang.Class<? extends java.lang.Comparable> to: java.lang.Class<? extends java.lang.Comparable<T>>'
+
+        shouldFailWithMessages '''
+            class Outer<T> {
+                Class<? extends Outer<T>> test() { getClass() }
+            }
+        ''',
+            'Incompatible generic argument types. Cannot assign java.lang.Class<? extends Outer> to: java.lang.Class<? extends Outer<T>>'
+
+        shouldFailWithMessages '''
+            <T extends Number> Class<? extends T> test(T value) { value.getClass() }
+        ''',
+            'Incompatible generic argument types. Cannot assign java.lang.Class<? extends java.lang.Number> to: java.lang.Class<? extends T>'
+
+        shouldFailWithMessages '''
+            void accept(Class<? extends List<String>> type) {}
+            void test(List<String> strings) { accept(strings.getClass()) }
+        ''',
+            '#accept(java.lang.Class<? extends java.util.List<java.lang.String>>) with arguments [java.lang.Class<? extends java.util.List>]'
+
+        assertScript '''
+            Class<? extends List> raw(List<String> strings) { strings.getClass() }
+            <T extends Comparable<T>> Class<? extends Comparable> bound(T value) { value.getClass() }
+            <T extends Number> Class<? extends T> cast(T value) { (Class<? extends T>) value.getClass() }
+
+            assert raw(['x']) == ArrayList
+            assert bound('x') == String
+            assert cast(1) == Integer
+        '''
+    }
+
+    // GROOVY-12755
+    @Test
+    void testUpperBoundedWildcardIsNotWithinNarrowerBound() {
+        shouldFailWithMessages '''
+            Class<? extends List<String>> test(Class<? extends List> type) { type }
+        ''',
+            'Incompatible generic argument types. Cannot assign java.lang.Class<? extends java.util.List> to: java.lang.Class<? extends java.util.List<java.lang.String>>'
+
+        shouldFailWithMessages '''
+            Collection<? extends List<String>> test(List<? extends ArrayList> lists) { lists }
+        ''',
+            'Incompatible generic argument types. Cannot assign java.util.List<? extends java.util.ArrayList> to: java.util.Collection<? extends java.util.List<java.lang.String>>'
+
+        shouldFailWithMessages '''
+            <T extends Number> Class<? extends T> test(Class<? extends Number> type) { type }
+        ''',
+            'Incompatible generic argument types. Cannot assign java.lang.Class<? extends java.lang.Number> to: java.lang.Class<? extends T>'
+
+        shouldFailWithMessages '''
+            Class<? extends List<List<String>>> test(Class<? extends List<List>> type) { type }
+        ''',
+            'Incompatible generic argument types. Cannot assign java.lang.Class<? extends java.util.List<java.util.List>> to: java.lang.Class<? extends java.util.List<java.util.List<java.lang.String>>>'
+
+        shouldFailWithMessages '''
+            <T extends List> Class<? extends List<String>> test(Class<? extends T> type) { type }
+        ''',
+            'Incompatible generic argument types. Cannot assign java.lang.Class<? extends T> to: java.lang.Class<? extends java.util.List<java.lang.String>>'
+
+        assertScript '''
+            class Strings extends ArrayList<String> {}
+            class Holder<T> { Class<? extends T> type }
+
+            Class<? extends List> raw(Class<? extends List<String>> type) { type }
+            Class<? extends List<String>> same(Class<? extends ArrayList<String>> type) { type }
+            Class<? extends List<String>> sub(Class<? extends Strings> type) { type }
+            <T extends Number> Class<? extends T> bound(Class<? extends T> type) { type }
+            <T extends Number, U extends T> Class<? extends T> chain(Class<? extends U> type) { type }
+            <T extends List<String>> Class<? extends List<String>> ofBound(Class<? extends T> type) { type }
+            <T extends ArrayList> Class<? extends List> ofRawBound(Class<? extends T> type) { type }
+            Class<? extends List<List<String>>> nested(Class<? extends ArrayList<List<String>>> type) { type }
+            void set(Holder holder, Class<? extends Integer> type) { holder.type = type }
+            List<String> unchecked(List list) { list }
+            List<? extends List<String>> literal() { [new ArrayList()] }
+
+            assert raw(ArrayList) == ArrayList
+            assert same(ArrayList) == ArrayList
+            assert sub(Strings) == Strings
+            assert bound(Integer) == Integer
+            assert chain(Integer) == Integer
+            assert ofBound(ArrayList) == ArrayList
+            assert ofRawBound(ArrayList) == ArrayList
+            assert nested(ArrayList) == ArrayList
+            assert literal() == [[]]
+            def holder = new Holder<Number>()
+            set(holder, Integer)
+            assert holder.type == Integer
+            assert unchecked(['x']) == ['x']
+        '''
+    }
+
+    // GROOVY-12755
+    @Test
+    void testGenericCallTakesTypeArgumentsFromTargetType() {
+        assertScript '''
+            List<Class<?>> single(String x) { Collections.singletonList(x.getClass()) }
+            Optional<Class<?>> optional(String x) { Optional.of(x.getClass()) }
+            Map<String, Class<?>> keyed(String x) { Collections.singletonMap('k', x.getClass()) }
+            List<Class<?>> collected(List<String> strings) { strings.collect { it.getClass() } }
+            List<Number> numbers() { Arrays.asList(1, 2) }
+
+            List<Class<?>> list = Arrays.asList('a'.getClass(), 1.getClass())
+            assert list == [String, Integer]
+            assert single('x') == [String]
+            assert optional('x').get() == String
+            assert keyed('x') == [k: String]
+            assert collected(['a', 'b']) == [String, String]
+            assert numbers() == [1, 2]
+        '''
+
+        shouldFailWithMessages '''
+            List<Class<? extends Number>> test(String x) { Collections.singletonList(x.getClass()) }
+        ''',
+            'Incompatible generic argument types. Cannot assign java.util.List<java.lang.Class<? extends java.lang.String>> to: java.util.List<java.lang.Class<? extends java.lang.Number>>'
+
+        shouldFailWithMessages '''
+            List<Integer> test(List<String> strings) { strings.collect { it.toUpperCase() } }
+        ''',
+            'Incompatible generic argument types. Cannot assign java.util.List<java.lang.String> to: java.util.List<java.lang.Integer>'
+
+        shouldFailWithMessages '''
+            <T extends Number> List<T> numbers(T t) { [t] }
+            List<Object> test() { numbers(1) }
+        ''',
+            'Incompatible generic argument types. Cannot assign java.util.List<java.lang.Integer> to: java.util.List<java.lang.Object>'
+    }
+
+    // GROOVY-12755
+    @Test
+    void testValueOfGenericTypeDoesNotTakeTypeArgumentsFromTargetType() {
+        // only a call of a generic method is inferred from its target
+        shouldFailWithMessages '''
+            List<Class<?>> test(List<String> strings) { strings*.getClass() }
+        ''',
+            'Incompatible generic argument types. Cannot assign java.util.List<java.lang.Class<? extends java.lang.String>> to: java.util.List<java.lang.Class<?>>'
+
+        shouldFailWithMessages '''
+            List<Class<?>> test(List<Class<? extends String>> classes) { classes }
+        ''',
+            'Incompatible generic argument types. Cannot assign java.util.List<java.lang.Class<? extends java.lang.String>> to: java.util.List<java.lang.Class<?>>'
+    }
+
+    // GROOVY-12755
+    @Test
+    void testMemberOfRawTypeIsErasedForRawBound() {
+        assertScript '''
+            class Holder<T extends List> {
+                Class<? extends T> type = ArrayList
+                List<T> items = []
+                Class<? extends T> get() { type }
+            }
+            Class<? extends List<String>> field(Holder holder) { holder.type }
+            Class<? extends List<String>> method(Holder holder) { holder.get() }
+            List<String> items(Holder holder) { holder.items }
+
+            def holder = new Holder()
+            assert field(holder) == ArrayList
+            assert method(holder) == ArrayList
+            assert items(holder) == []
+        '''
+
+        shouldFailWithMessages '''
+            class Holder<T extends List> {
+                Class<? extends T> type
+            }
+            Class<? extends List<String>> test(Holder<ArrayList> holder) { holder.type }
+        ''',
+            'Incompatible generic argument types. Cannot assign java.lang.Class<? extends java.util.ArrayList> to: java.lang.Class<? extends java.util.List<java.lang.String>>'
+    }
+
+    // GROOVY-12755
+    @Test
+    void testSimpleNameOfInnerClassIsNotRawAsTypeArgument() {
+        for (assignment in ['List<Inner> a = raw', 'List<? extends Inner> b = raw', 'Map<String, Inner> c = rawMap']) {
+            shouldFailWithMessages """
+                class Outer<T> {
+                    class Inner {
+                    }
+                    void test(List<Outer.Inner> raw, Map<String, Outer.Inner> rawMap) {
+                        $assignment
+                    }
+                }
+            """,
+                'Incompatible generic argument types. Cannot assign java.util.'
+        }
+
+        shouldFailWithMessages '''
+            class Outer<T> {
+                class Inner {
+                }
+                void test(List<Inner> inner) {
+                    List<Outer.Inner> raw = inner
+                }
+            }
+        ''',
+            'Incompatible generic argument types. Cannot assign java.util.List<Outer<T>.Inner> to: java.util.List<Outer.Inner>'
+
+        assertScript '''
+            class Outer<T> {
+                class Inner {
+                    T value
+                }
+                List<Inner> list = []
+                List<Inner> copy() {
+                    List<Inner> copy = new ArrayList<>(list)
+                    copy.addAll(list.findAll { true })
+                    copy
+                }
+            }
+            class Sub extends Outer<String> {
+                List<Outer<String>.Inner> spelled() { list }
+            }
+            List<Outer<String>.Inner> viaReceiver(Outer<String> outer) { outer.list }
+
+            def sub = new Sub()
+            assert sub.copy() == []
+            assert sub.spelled() == []
+            assert viaReceiver(sub) == []
+        '''
+    }
+
+    // GROOVY-12755
+    @Test
+    void testClassOfValueOfTypeVariableIsNotClassOfTypeVariable() {
+        for (decl in ['<T> Class<T> typeOf(T t) { t.getClass() }', '<T> void typeOf(T t) { Class<T> c = t.getClass() }']) {
+            shouldFailWithMessages decl,
+                'Incompatible generic argument types. Cannot assign java.lang.Class<?> to: java.lang.Class<T>'
+        }
+
+        shouldFailWithMessages '''
+            class Box<T> {
+                void accept(Class<? extends T> type) { }
+                void test(T t) {
+                    accept(t.getClass())
+                }
+            }
+        ''',
+            'Cannot call Box#accept(java.lang.Class<?>) with arguments [java.lang.Class<?>]'
+
+        shouldFailWithMessages '''
+            class Box<T> {
+                Map<Class<? extends T>, T> byType = [:]
+                void test(T t) {
+                    byType.put(t.getClass(), t)
+                }
+            }
+        ''',
+            'Cannot call java.util.Map#put(java.lang.Class<? extends T>, T) with arguments [java.lang.Class<?>, T]'
+
+        assertScript '''
+            class Box<T extends Number> {
+                Map<Class<? extends T>, T> byType = [:]
+                Class<? extends Number> typeOf(T t) { t.getClass() }
+                void accept(Class<? extends T> type) { }
+                void test(T t, Class<? extends T> type) {
+                    accept(type)
+                    byType.put(type, t)
+                }
+            }
+            def box = new Box<Integer>()
+            box.test(1, Integer)
+            assert box.typeOf(1) == Integer
+            assert box.byType == [(Integer): 1]
+        '''
+    }
+
+    // GROOVY-12755
+    @Test
+    void testClassOfReceiverSelectsOverloadForItsType() {
+        // a value made from x.getClass() has the type of x, so the most specific overload is selected
+        assertScript '''
+            String f(Object o) { 'object' }
+            String f(CharSequence o) { 'char sequence' }
+            String f(StringBuilder o) { 'string builder' }
+            def <T> T create(Class<T> type) { type.getDeclaredConstructor().newInstance() }
+
+            List<String> test(StringBuilder x, Object o) {
+                def y = create(x.getClass())
+                [f(x.getClass().cast(o)), f(x.getClass().getDeclaredConstructor().newInstance()), f(y)]
+            }
+            assert test(new StringBuilder(), new StringBuilder()) == ['string builder'] * 3
+        '''
     }
 
     // GROOVY-8961, GROOVY-9915
@@ -4932,6 +5535,321 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
             }
             def cl = {1}
             assert foo(cl.class, cl) == cl
+        '''
+    }
+
+    // GROOVY-12754
+    @Test
+    void testUpperBoundedWildcardArgumentForBoundedTypeParameter() {
+        assertScript '''
+            public <T extends Number> T first(List<T> list) { list.get(0) }
+            public <T extends CharSequence> String named(Class<T> type) { type.simpleName }
+            public <T extends List<Integer>> T cast(Class<T> type, def value) { type.cast(value) }
+
+            void test(List<? extends Integer> ints, Class<? extends String> type, Class<? extends ArrayList> listType) {
+                Integer i = first(ints)
+                Number n = first(ints)
+                assert i == 4 && n == 4
+                assert named(type) == 'String'
+                def list = [1, 2]
+                assert cast(listType, list).is(list)
+            }
+            test([4, 2], String, ArrayList)
+        '''
+    }
+
+    // GROOVY-12754
+    @Test
+    void testUpperBoundedWildcardArgumentOutsideTypeParameterBound() {
+        shouldFailWithMessages '''
+            public <T extends Integer> T narrow(List<T> list) { list.get(0) }
+            void test(List<? extends Number> numbers) {
+                narrow(numbers)
+            }
+        ''',
+            '#narrow(java.util.List<T>) with arguments [java.util.List<? extends java.lang.Number>]'
+    }
+
+    // GROOVY-12754
+    @Test
+    void testUpperBoundedWildcardArgumentForTypeParameterInItsOwnBound() {
+        assertScript '''
+            public <T extends Comparable<? super T>> T first(List<T> list) { list.get(0) }
+            public <T extends Number & Comparable<? super T>> T second(List<T> list) { list.get(1) }
+            public <T extends CharSequence & Comparable<String>> T third(Collection<T> items) { items[2] }
+            public <T extends List<? extends Number>> T head(List<T> lists) { lists.get(0) }
+            public <T extends Map<String, ? extends Number>> String named(Class<T> type) { type.simpleName }
+
+            void test(List<? extends Integer> ints, List<? extends String> strings, List<? extends ArrayList<Integer>> lists,
+                    Class<? extends HashMap<String, Integer>> type) {
+                Integer i = first(ints)
+                assert i == 4
+                assert second(ints) == 2
+                assert third(strings) == 'c'
+                ArrayList<Integer> list = head(lists)
+                assert list == [1]
+                assert named(type) == 'HashMap'
+                Collections.sort(ints)
+            }
+            test([4, 2], ['a', 'b', 'c'], [[1] as ArrayList<Integer>], HashMap)
+        '''
+    }
+
+    // GROOVY-12754
+    @Test
+    void testUpperBoundedWildcardArgumentBoundedByTypeVariable() {
+        assertScript '''
+            public <T extends Number> T first(List<T> list) { list.get(0) }
+            public <E extends Integer> Number test(List<? extends E> list) {
+                first(list)
+            }
+            assert test([4, 2]) == 4
+        '''
+
+        shouldFailWithMessages '''
+            public <T extends Integer> T narrow(List<T> list) { list.get(0) }
+            public <E extends Number> void test(List<? extends E> list) {
+                narrow(list)
+            }
+        ''',
+            '#narrow(java.util.List<T>) with arguments [java.util.List<? extends E>]'
+
+        shouldFailWithMessages '''
+            public <T extends Number> T first(List<T> list) { list.get(0) }
+            public <E> void test(List<? extends E> list) {
+                first(list)
+            }
+        ''',
+            '#first(java.util.List<T>) with arguments [java.util.List<? extends E>]'
+    }
+
+    // GROOVY-12754
+    @Test
+    void testUpperBoundedWildcardArgumentOutsideBoundThatNamesTypeParameter() {
+        for (bound in ['Comparable<T>', 'Number & Comparable<T>']) {
+            shouldFailWithMessages """
+                public <T extends $bound> T id(List<T> list) { list.get(0) }
+                void test(List<? extends Integer> list) {
+                    id(list)
+                }
+            """,
+                '#id(java.util.List<T>) with arguments [java.util.List<? extends java.lang.Integer>]'
+        }
+
+        shouldFailWithMessages '''
+            public <T extends Comparable<T>> int cmp(List<T> list) { list.get(0).compareTo(list.get(1)) }
+            void test(List<? extends Integer> list) {
+                cmp(list)
+            }
+        ''',
+            '#cmp(java.util.List<T>) with arguments [java.util.List<? extends java.lang.Integer>]'
+
+        shouldFailWithMessages '''
+            public <T extends Enum<T>> T id(List<T> list) { list.get(0) }
+            void test(List<? extends Thread.State> list) {
+                id(list)
+            }
+        ''',
+            '#id(java.util.List<T>) with arguments [java.util.List<? extends java.lang.Thread$State>]'
+
+        shouldFailWithMessages '''
+            class Base implements Comparable<Base> {
+                int compareTo(Base that) { 0 }
+            }
+            class Sub extends Base {
+            }
+            public <T extends Comparable<T>> T id(List<T> list) { list.get(0) }
+            void test(List<? extends Sub> list) {
+                id(list)
+            }
+        ''',
+            '#id(java.util.List<T>) with arguments [java.util.List<? extends Sub>]'
+
+        shouldFailWithMessages '''
+            void test(Class<? extends Thread.State> type) {
+                EnumSet.allOf(type)
+            }
+        ''',
+            '#allOf(java.lang.Class<E>) with arguments [java.lang.Class<? extends java.lang.Thread$State>]'
+
+        shouldFailWithMessages '''
+            void test(Class<? extends Enum<?>> type) {
+                Enum.valueOf(type, 'NEW')
+            }
+        ''',
+            '#valueOf(java.lang.Class<T>, java.lang.String) with arguments [java.lang.Class<? extends java.lang.Enum<?>>, java.lang.String]'
+
+        shouldFailWithMessages '''
+            void test(List<? extends Comparable<?>> list) {
+                Collections.sort(list)
+            }
+        ''',
+            '#sort(java.util.List<T>) with arguments [java.util.List<? extends java.lang.Comparable<?>>]'
+    }
+
+    // GROOVY-12754
+    @Test
+    void testUpperBoundedWildcardArgumentOutsideIntersectionBound() {
+        shouldFailWithMessages '''
+            public <T extends CharSequence & Appendable> T id(List<T> list) { list.get(0).append('x'); list.get(0) }
+            void test(List<? extends String> list) {
+                id(list)
+            }
+        ''',
+            '#id(java.util.List<T>) with arguments [java.util.List<? extends java.lang.String>]'
+    }
+
+    // GROOVY-12754
+    @Test
+    void testUpperBoundedWildcardArgumentOutsideParameterizedBound() {
+        for (type in ['ArrayList<String>', 'List<String>']) {
+            shouldFailWithMessages """
+                public <T extends List<Integer>> Integer head(Class<T> type, value) { type.cast(value).get(0) }
+                void test(Class<? extends $type> type) {
+                    head(type, ['x'])
+                }
+            """,
+                '#head(java.lang.Class<T>, java.lang.Object) with arguments [java.lang.Class<? extends java.util.'
+        }
+
+        for (bound in ['List<Integer>', 'List<? extends Integer>']) {
+            shouldFailWithMessages """
+                public <T extends $bound> T id(List<T> lists) { lists.get(0) }
+                void test(List<? extends ArrayList<String>> lists) {
+                    id(lists)
+                }
+            """,
+                '#id(java.util.List<T>) with arguments [java.util.List<? extends java.util.ArrayList<java.lang.String>>]'
+        }
+
+        shouldFailWithMessages '''
+            class ListBox<E extends List<Integer>> {
+            }
+            public <T extends List<Integer>> T id(ListBox<T> box) { null }
+            void test(ListBox<? extends ArrayList<String>> box) {
+                id(box)
+            }
+        ''',
+            '#id(ListBox<T>) with arguments [ListBox<? extends java.util.ArrayList<java.lang.String>>]'
+    }
+
+    // GROOVY-12754
+    @Test
+    void testUpperBoundedWildcardArgumentForBoundThatNamesAnotherTypeParameter() {
+        assertScript '''
+            public <T extends Number, U extends T> U first(List<U> list) { list.get(0) }
+            public <T extends Number, U extends List<T>> String named(Class<U> type) { type.simpleName }
+            public <K extends Number, V, U extends Map<K, V>> String keyed(Class<U> type) { type.simpleName }
+
+            void test(List<? extends Integer> ints, Class<? extends ArrayList<Integer>> lists, Class<? extends HashMap<Integer, String>> maps) {
+                Number n = first(ints)
+                assert n == 4
+                assert named(lists) == 'ArrayList'
+                assert keyed(maps) == 'HashMap'
+            }
+            test([4, 2], ArrayList, HashMap)
+        '''
+
+        shouldFailWithMessages '''
+            public <T extends Number, U extends T> U first(List<U> list) { list.get(0) }
+            void test(List<? extends String> list) {
+                Number n = first(list)
+            }
+        ''',
+            '#first(java.util.List<U>) with arguments [java.util.List<? extends java.lang.String>]'
+
+        shouldFailWithMessages '''
+            public <T extends Integer, U extends T> U first(List<U> list) { list.get(0) }
+            void test(List<? extends Number> list) {
+                first(list)
+            }
+        ''',
+            '#first(java.util.List<U>) with arguments [java.util.List<? extends java.lang.Number>]'
+
+        shouldFailWithMessages '''
+            public <T extends Number, U extends List<T>> int count(Class<U> type) { 1 }
+            void test(Class<? extends ArrayList<String>> type) {
+                count(type)
+            }
+        ''',
+            '#count(java.lang.Class<U>) with arguments [java.lang.Class<? extends java.util.ArrayList<java.lang.String>>]'
+
+        shouldFailWithMessages '''
+            public <K extends Number, V, U extends Map<K, V>> int count(Class<U> type) { 1 }
+            void test(Class<? extends HashMap<String, Integer>> type) {
+                count(type)
+            }
+        ''',
+            '#count(java.lang.Class<U>) with arguments [java.lang.Class<? extends java.util.HashMap<java.lang.String, java.lang.Integer>>]'
+    }
+
+    // GROOVY-12754
+    @Test
+    void testUpperBoundedWildcardArgumentIsCapturedOnceAndNotWhenNested() {
+        shouldFailWithMessages '''
+            public <T extends Number> void take(Map<T, T> map) { }
+            void test(Map<? extends Integer, ? extends Integer> map) {
+                take(map)
+            }
+        ''',
+            '#take(java.util.Map<T, T>) with arguments [java.util.Map<? extends java.lang.Integer, ? extends java.lang.Integer>]'
+
+        shouldFailWithMessages '''
+            public <T extends Number> void take(List<List<T>> lists) { }
+            void test(List<List<? extends Integer>> lists) {
+                take(lists)
+            }
+        ''',
+            '#take(java.util.List<java.util.List<T>>) with arguments [java.util.List<java.util.List<? extends java.lang.Integer>>]'
+
+        assertScript '''
+            public <K extends Number, V extends Number> int take(Map<K, V> map) { map.size() }
+            int test(Map<? extends Integer, ? extends Integer> map) {
+                take(map)
+            }
+            assert test([(1): 2]) == 1
+        '''
+    }
+
+    // GROOVY-12754
+    @Test
+    void testWildcardArgumentWithoutUpperBoundForBoundedTypeParameter() {
+        for (type in ['List<?>', 'List<? extends Object>', 'List<? super Integer>', 'List<? super Number>']) {
+            shouldFailWithMessages """
+                public <T extends Number> T first(List<T> list) { list.get(0) }
+                void test($type list) {
+                    first(list)
+                }
+            """,
+                '#first(java.util.List<T>) with arguments [java.util.List<?'
+        }
+
+        for (type in ['Class<?>', 'Class<? extends Object>']) {
+            shouldFailWithMessages """
+                public <T extends List<Integer>> T cast(Class<T> type, value) { type.cast(value) }
+                void test($type type) {
+                    cast(type, [1])
+                }
+            """,
+                '#cast(java.lang.Class<T>, java.lang.Object) with arguments [java.lang.Class<?>, '
+        }
+
+        assertScript '''
+            class NumBox<N extends Number> {
+                N value
+            }
+            public <T extends Number> T valueOf(NumBox<T> box) { box.value }
+            public <T extends Enum<T>> int sizeOf(EnumSet<T> set) { set.size() }
+            public <T> T first(List<T> list) { list.get(0) }
+
+            void test(NumBox<?> one, NumBox<? super Integer> two, EnumSet<?> set, List<?> list) {
+                Number n = valueOf(one)
+                assert n == 1
+                assert valueOf(two) == 2
+                assert sizeOf(set) == 1
+                assert first(list) == 'x'
+            }
+            test(new NumBox<Integer>(value: 1), new NumBox<Number>(value: 2), EnumSet.of(Thread.State.NEW), ['x'])
         '''
     }
 

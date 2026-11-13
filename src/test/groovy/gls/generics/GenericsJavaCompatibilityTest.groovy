@@ -573,6 +573,379 @@ final class GenericsJavaCompatibilityTest {
         assertPositive(className, javaSrc, 'second-first')
     }
 
+    /**
+     * JLS 5.1.10, 18.5.1: the capture of {@code ? extends B} is a subtype of {@code B}, so
+     * an argument such as {@code List<? extends Integer>} infers a type parameter bounded
+     * by {@code Number}, and {@code Class<? extends String>} one bounded by {@code CharSequence}.
+     */
+    @Test
+    void testUpperBoundedWildcardArgumentForBoundedTypeParameter() {
+        final String className = 'gls.generics.test.ExtendsWildcardArgument'
+        final String javaSrc = '''
+            package gls.generics.test;
+            import java.util.*;
+            public class ExtendsWildcardArgument {
+                static <T extends Number> T first(List<T> list) { return list.get(0); }
+                static <T extends CharSequence> String named(Class<T> type) { return type.getSimpleName(); }
+                static String check(List<? extends Integer> ints, Class<? extends String> type) {
+                    Integer i = first(ints);
+                    Number n = first(ints);
+                    return i + ":" + n + ":" + named(type);
+                }
+                public static String test() {
+                    return check(Arrays.asList(4, 2), String.class);
+                }
+            }
+        '''
+        assertPositive(className, javaSrc, '4:4:String')
+    }
+
+    /**
+     * JLS 18.5.1: the capture of {@code ? extends Number} is not known to be a subtype of
+     * {@code Integer}, so it does not infer a type parameter bounded by {@code Integer}.
+     */
+    @Test
+    void testNegativeUpperBoundedWildcardArgumentOutsideTypeParameterBound() {
+        final String className = 'gls.generics.test.ExtendsWildcardArgumentOutOfBound'
+        final String javaSrc = '''
+            package gls.generics.test;
+            import java.util.*;
+            public class ExtendsWildcardArgumentOutOfBound {
+                static <T extends Integer> T narrow(List<T> list) { return list.get(0); }
+                static Object check(List<? extends Number> numbers) { return narrow(numbers); }
+            }
+        '''
+        assertNegativeCompile(className, javaSrc, "incompatible bounds", "Cannot call <T extends java.lang.Integer>")
+    }
+
+    /**
+     * JLS 5.1.10, 18.5.1: the capture of {@code ? extends B} is checked against every bound
+     * of the type parameter, with the capture in place of the type parameter. It satisfies
+     * {@code Comparable<? super T>} when {@code B} is comparable to a supertype of itself, a
+     * parameterized bound when {@code B} has matching type arguments, and a bound of
+     * {@code Number} when {@code B} is a type variable that extends {@code Integer}.
+     */
+    @Test
+    void testUpperBoundedWildcardArgumentForTypeParameterInItsOwnBound() {
+        final String className = 'gls.generics.test.ExtendsWildcardArgumentSelfBound'
+        final String javaSrc = '''
+            package gls.generics.test;
+            import java.util.*;
+            public class ExtendsWildcardArgumentSelfBound {
+                static <T extends Comparable<? super T>> T first(List<T> list) { return list.get(0); }
+                static <T extends Number & Comparable<? super T>> T second(List<T> list) { return list.get(1); }
+                static <T extends List<? extends Number>> T head(List<T> lists) { return lists.get(0); }
+                static <T extends Map<String, ? extends Number>> int count(Collection<T> maps) { return maps.size(); }
+                static <T extends Number> T number(List<T> list) { return list.get(0); }
+                static <E extends Integer> Number viaTypeVariable(List<? extends E> list) { return number(list); }
+                static String check(List<? extends Integer> ints, List<? extends ArrayList<Integer>> lists,
+                        List<? extends HashMap<String, Integer>> maps) {
+                    Integer i = first(ints);
+                    ArrayList<Integer> list = head(lists);
+                    return i + ":" + second(ints) + ":" + list + ":" + count(maps) + ":" + viaTypeVariable(ints);
+                }
+                public static String test() {
+                    List<ArrayList<Integer>> lists = new ArrayList<>();
+                    lists.add(new ArrayList<>(Arrays.asList(1)));
+                    List<HashMap<String, Integer>> maps = new ArrayList<>();
+                    return check(Arrays.asList(4, 2), lists, maps);
+                }
+            }
+        '''
+        assertPositive(className, javaSrc, '4:2:[1]:0:4')
+    }
+
+    /**
+     * JLS 5.1.10, 18.5.1: the capture of {@code ? extends B} is a fresh type variable, not
+     * {@code B}. {@code B} being a {@code Comparable<B>} or an {@code Enum<B>} does not make
+     * the capture comparable to itself, so it is not within a bound that names the type
+     * parameter as a type argument.
+     */
+    @Test
+    void testNegativeUpperBoundedWildcardArgumentOutsideBoundThatNamesTypeParameter() {
+        [
+            SelfComparable: '''
+                static <T extends Comparable<T>> T id(List<T> list) { return list.get(0); }
+                static Object check(List<? extends Integer> list) { return id(list); }
+            ''',
+            SelfComparableNumber: '''
+                static <T extends Number & Comparable<T>> T id(List<T> list) { return list.get(0); }
+                static Object check(List<? extends Integer> list) { return id(list); }
+            ''',
+            SelfComparableElements: '''
+                static <T extends Comparable<T>> int cmp(List<T> list) { return list.get(0).compareTo(list.get(1)); }
+                static int check(List<? extends Integer> list) { return cmp(list); }
+            ''',
+            SelfComparableSuperclass: '''
+                static class Base implements Comparable<Base> {
+                    public int compareTo(Base that) { return 0; }
+                }
+                static class Sub extends Base {}
+                static <T extends Comparable<T>> T id(List<T> list) { return list.get(0); }
+                static Object check(List<? extends Sub> list) { return id(list); }
+            ''',
+            SelfEnum: '''
+                static <T extends Enum<T>> T id(List<T> list) { return list.get(0); }
+                static Object check(List<? extends Thread.State> list) { return id(list); }
+            ''',
+            EnumOfUnknown: '''
+                static Object check(Class<? extends Enum<?>> type) { return Enum.valueOf(type, "NEW"); }
+            ''',
+            ComparableToUnknown: '''
+                static <T extends Comparable<? super T>> void order(List<T> list) {}
+                static void check(List<? extends Comparable<?>> list) { order(list); }
+            '''
+        ].each { String name, String members ->
+            assertNegativeCompile("gls.generics.test.$name", """
+                package gls.generics.test;
+                import java.util.*;
+                public class $name {
+                    $members
+                }
+            """, 'cannot be applied to given types', 'Cannot call <T extends')
+        }
+    }
+
+    /**
+     * JLS 4.9, 18.5.1: the capture of {@code ? extends B} is within an intersection bound
+     * only when it is a subtype of every type of the intersection.
+     */
+    @Test
+    void testNegativeUpperBoundedWildcardArgumentOutsideIntersectionBound() {
+        final String className = 'gls.generics.test.ExtendsWildcardArgumentIntersection'
+        final String javaSrc = '''
+            package gls.generics.test;
+            import java.util.*;
+            public class ExtendsWildcardArgumentIntersection {
+                static <T extends CharSequence & Appendable> T id(List<T> list) { return list.get(0); }
+                static Object check(List<? extends String> list) { return id(list); }
+            }
+        '''
+        assertNegativeCompile(className, javaSrc, 'cannot be applied to given types', 'Cannot call <T extends')
+    }
+
+    /**
+     * JLS 4.10.2, 18.5.1: a parameterized bound is checked with its type arguments. The
+     * capture of {@code ? extends ArrayList<String>} is not a {@code List<Integer>}.
+     */
+    @Test
+    void testNegativeUpperBoundedWildcardArgumentOutsideParameterizedBound() {
+        [
+            ClassOfArrayList: '''
+                static <T extends List<Integer>> T cast(Class<T> type) { return null; }
+                static void check(Class<? extends ArrayList<String>> type) { cast(type); }
+            ''',
+            ClassOfList: '''
+                static <T extends List<Integer>> T cast(Class<T> type) { return null; }
+                static void check(Class<? extends List<String>> type) { cast(type); }
+            ''',
+            ListOfArrayList: '''
+                static <T extends List<Integer>> T id(List<T> lists) { return lists.get(0); }
+                static Object check(List<? extends ArrayList<String>> lists) { return id(lists); }
+            ''',
+            WildcardBound: '''
+                static <T extends List<? extends Integer>> T id(List<T> lists) { return lists.get(0); }
+                static Object check(List<? extends ArrayList<String>> lists) { return id(lists); }
+            '''
+        ].each { String name, String members ->
+            assertNegativeCompile("gls.generics.test.$name", """
+                package gls.generics.test;
+                import java.util.*;
+                public class $name {
+                    $members
+                }
+            """, 'cannot be applied to given types', 'Cannot call <T extends')
+        }
+    }
+
+    /**
+     * JLS 4.5: {@code ? extends ArrayList<String>} is not within the bound of a type parameter
+     * declared as {@code E extends List<Integer>}. javac reports the type argument and static
+     * Groovy the call that passes it.
+     */
+    @Test
+    void testNegativeUpperBoundedWildcardArgumentOutsideDeclaredBound() {
+        final String className = 'gls.generics.test.ExtendsWildcardArgumentDeclaredBound'
+        final String javaSrc = '''
+            package gls.generics.test;
+            import java.util.*;
+            public class ExtendsWildcardArgumentDeclaredBound {
+                static class ListBox<E extends List<Integer>> {}
+                static <T extends List<Integer>> T id(ListBox<T> box) { return null; }
+                static Object check(ListBox<? extends ArrayList<String>> box) { return id(box); }
+            }
+        '''
+        assertNegativeCompile(className, javaSrc, 'not within bounds of type-variable E', 'Cannot call <T extends')
+    }
+
+    /**
+     * JLS 5.1.10: each wildcard type argument has its own capture and a wildcard nested in a
+     * type argument has none, so neither two wildcards nor a nested one infer a single
+     * type parameter.
+     */
+    @Test
+    void testNegativeUpperBoundedWildcardArgumentCapturedTwiceOrNested() {
+        [
+            TwoCaptures: '''
+                static <T extends Number> void take(Map<T, T> map) {}
+                static void check(Map<? extends Integer, ? extends Integer> map) { take(map); }
+            ''',
+            NestedWildcard: '''
+                static <T extends Number> void take(List<List<T>> lists) {}
+                static void check(List<List<? extends Integer>> lists) { take(lists); }
+            '''
+        ].each { String name, String members ->
+            assertNegativeCompile("gls.generics.test.$name", """
+                package gls.generics.test;
+                import java.util.*;
+                public class $name {
+                    $members
+                }
+            """, 'cannot be applied to given types', 'Cannot call <T extends')
+        }
+    }
+
+    /**
+     * JLS 18.3.1, 18.5.1: a bound that names another type parameter, such as {@code T} in
+     * {@code <T extends Number, U extends T>} or {@code List<T>} in
+     * {@code <T extends Number, U extends List<T>>}, constrains that type parameter too, so the
+     * capture of the wildcard must fit within the bounds of {@code T}.
+     */
+    @Test
+    void testUpperBoundedWildcardArgumentForBoundThatNamesAnotherTypeParameter() {
+        final String className = 'gls.generics.test.ExtendsWildcardArgumentOtherTypeParameter'
+        final String javaSrc = '''
+            package gls.generics.test;
+            import java.util.*;
+            public class ExtendsWildcardArgumentOtherTypeParameter {
+                static <T extends Number, U extends T> U first(List<U> list) { return list.get(0); }
+                static <T extends Number, U extends List<T>> String named(Class<U> type) { return type.getSimpleName(); }
+                static String check(List<? extends Integer> ints, Class<? extends ArrayList<Integer>> lists) {
+                    Number n = first(ints);
+                    return n + ":" + named(lists);
+                }
+                @SuppressWarnings("unchecked")
+                public static String test() {
+                    return check(Arrays.asList(4, 2), (Class<? extends ArrayList<Integer>>) (Class<?>) ArrayList.class);
+                }
+            }
+        '''
+        assertPositive(className, javaSrc, '4:ArrayList')
+    }
+
+    /**
+     * JLS 18.3.1, 18.5.1: the capture of {@code ? extends String} is not within
+     * {@code T extends Number} for {@code U extends T}, and {@code ArrayList<String>} gives a
+     * {@code T} of {@code String} for {@code U extends List<T>}.
+     */
+    @Test
+    void testNegativeUpperBoundedWildcardArgumentOutsideBoundOfAnotherTypeParameter() {
+        [
+            OtherTypeParameter: '''
+                static <T extends Number, U extends T> U first(List<U> list) { return list.get(0); }
+                static Object check(List<? extends String> list) { Number n = first(list); return n; }
+            ''',
+            NarrowerOtherTypeParameter: '''
+                static <T extends Integer, U extends T> U first(List<U> list) { return list.get(0); }
+                static Object check(List<? extends Number> list) { return first(list); }
+            ''',
+            OtherTypeParameterArgument: '''
+                static <T extends Number, U extends List<T>> int count(Class<U> type) { return 1; }
+                static int check(Class<? extends ArrayList<String>> type) { return count(type); }
+            '''
+        ].each { String name, String members ->
+            assertNegativeCompile("gls.generics.test.$name", """
+                package gls.generics.test;
+                import java.util.*;
+                public class $name {
+                    $members
+                }
+            """, 'incompatible', 'Cannot call <T extends')
+        }
+    }
+
+    /**
+     * JLS 5.1.10, 18.5.1: the capture of {@code ? extends E} is bounded by the bound of the
+     * type variable {@code E}, so it is not within a bound that {@code E} is not within.
+     */
+    @Test
+    void testNegativeUpperBoundedWildcardArgumentBoundedByTypeVariable() {
+        [
+            WiderTypeVariable: '''
+                static <T extends Integer> T narrow(List<T> list) { return list.get(0); }
+                static <E extends Number> Object check(List<? extends E> list) { return narrow(list); }
+            ''',
+            UnboundedTypeVariable: '''
+                static <T extends Number> T first(List<T> list) { return list.get(0); }
+                static <E> Object check(List<? extends E> list) { return first(list); }
+            '''
+        ].each { String name, String members ->
+            assertNegativeCompile("gls.generics.test.$name", """
+                package gls.generics.test;
+                import java.util.*;
+                public class $name {
+                    $members
+                }
+            """, 'cannot be applied to given types', 'Cannot call <T extends')
+        }
+    }
+
+    /**
+     * JLS 5.1.10: the capture of {@code ?} or of {@code ? super B} has the upper bound that
+     * the type parameter of the generic type declares. For {@code List} that is {@code Object},
+     * so such an argument does not infer a type parameter bounded by {@code Number}.
+     */
+    @Test
+    void testNegativeWildcardArgumentWithoutUpperBoundForBoundedTypeParameter() {
+        [
+            Unbounded: ['<T extends Number> T first(List<T> list) { return list.get(0); }', 'List<?>', 'first'],
+            ExtendsObject: ['<T extends Number> T first(List<T> list) { return list.get(0); }', 'List<? extends Object>', 'first'],
+            SuperInteger: ['<T extends Number> T first(List<T> list) { return list.get(0); }', 'List<? super Integer>', 'first'],
+            SuperNumber: ['<T extends Number> T first(List<T> list) { return list.get(0); }', 'List<? super Number>', 'first'],
+            UnboundedClass: ['<T extends List<Integer>> T cast(Class<T> type) { return null; }', 'Class<?>', 'cast'],
+            ExtendsObjectClass: ['<T extends List<Integer>> T cast(Class<T> type) { return null; }', 'Class<? extends Object>', 'cast']
+        ].each { String name, List<String> parts ->
+            assertNegativeCompile("gls.generics.test.$name", """
+                package gls.generics.test;
+                import java.util.*;
+                public class $name {
+                    static ${parts[0]}
+                    static Object check(${parts[1]} arg) { return ${parts[2]}(arg); }
+                }
+            """, 'cannot be applied to given types', 'Cannot call <T extends')
+        }
+    }
+
+    /**
+     * JLS 5.1.10: the capture of {@code ?} takes the declared bound of the type parameter it
+     * stands for, so {@code NumBox<?>} infers a type parameter bounded by {@code Number} and
+     * {@code EnumSet<?>} one bounded by {@code Enum<T>}.
+     */
+    @Test
+    void testWildcardArgumentWithoutUpperBoundTakesDeclaredBound() {
+        final String className = 'gls.generics.test.WildcardArgumentDeclaredBound'
+        final String javaSrc = '''
+            package gls.generics.test;
+            import java.util.*;
+            public class WildcardArgumentDeclaredBound {
+                static class NumBox<N extends Number> {
+                    final N value;
+                    NumBox(N value) { this.value = value; }
+                }
+                static <T extends Number> T valueOf(NumBox<T> box) { return box.value; }
+                static <T extends Enum<T>> int sizeOf(EnumSet<T> set) { return set.size(); }
+                static String check(NumBox<?> one, NumBox<? super Integer> two, EnumSet<?> set) {
+                    Number n = valueOf(one);
+                    return n + ":" + valueOf(two) + ":" + sizeOf(set);
+                }
+                public static String test() {
+                    return check(new NumBox<Integer>(1), new NumBox<Number>(2), EnumSet.of(Thread.State.NEW));
+                }
+            }
+        '''
+        assertPositive(className, javaSrc, '1:2:1')
+    }
+
     // =========================================================================
     // Category 4: Diamond and target-type inference (JLS 15.9.3, 18.5.2)
     // =========================================================================
@@ -3760,6 +4133,589 @@ final class GenericsJavaCompatibilityTest {
             }
         '''
         assertPositive(className, javaSrc, true, true)
+    }
+
+    /**
+     * JLS 4.3.2, 4.6: the type of {@code e.getClass()} is {@code Class<? extends |T|>},
+     * where {@code |T|} is the erasure of the static type of {@code e}: a type variable
+     * becomes its bound, type arguments are dropped and an array keeps its dimensions.
+     * So it may be passed, returned or assigned where a {@code Class<? extends T>} is expected.
+     */
+    @Test
+    void testGetClassIsClassOfErasureOfReceiverType() {
+        final String className = 'gls.generics.test.GetClassType'
+        final String javaSrc = '''
+            package gls.generics.test;
+            import java.util.ArrayList;
+            import java.util.List;
+            public class GetClassType {
+                public interface Store {}
+                public static class Impl implements Store {}
+                public static class Adapter {
+                    public final String name;
+                    public Adapter(Class<? extends Store> type) { this.name = type.getSimpleName(); }
+                }
+                static <R> R named(Class<? extends Store> type, R result) { return result; }
+                static Class<? extends Store> typeOf(Store store) { return store.getClass(); }
+                static <N extends Number> Class<? extends Number> numberType(N value) { return value.getClass(); }
+                @SuppressWarnings({"rawtypes"})
+                public static String test() {
+                    Store store = new Impl();
+                    Class<? extends Store> local = store.getClass();
+                    List<String> strings = new ArrayList<>();
+                    Class<? extends List> list = strings.getClass();
+                    Class<? extends String[]> array = new String[0].getClass();
+                    return named(store.getClass(), "named") + ":" + new Adapter(store.getClass()).name + ":" +
+                        typeOf(store).getSimpleName() + ":" + local.getSimpleName() + ":" + list.getSimpleName() + ":" +
+                        array.getSimpleName() + ":" + numberType(Long.valueOf(1)).getSimpleName();
+                }
+            }
+        '''
+        assertPositive(className, javaSrc, 'named:Impl:Impl:Impl:ArrayList:String[]:Long', true)
+    }
+
+    /**
+     * JLS 4.3.2: {@code getClass()} gives the erasure of the receiver's static type and
+     * nothing narrower, so on an {@code Object} it is not a {@code Class<? extends Store>}.
+     */
+    @Test
+    void testNegativeGetClassOfWiderReceiverType() {
+        final String className = 'gls.generics.test.GetClassWiderReceiver'
+        final String javaSrc = '''
+            package gls.generics.test;
+            public class GetClassWiderReceiver {
+                public interface Store {}
+                static void check(Object value) {
+                    Class<? extends Store> type = value.getClass();
+                }
+                public static void test() {
+                    check(new Store() {});
+                }
+            }
+        '''
+        assertNegativeCompile(className, javaSrc, "cannot be converted", "Incompatible generic argument types")
+    }
+
+    /**
+     * JLS 4.6, 4.8: the erasure in the type of {@code getClass()} is a raw type, which is
+     * not a subtype of a parameterization of the same generic type (JLS 4.10.2). So
+     * {@code Class<? extends List>} is not a {@code Class<? extends List<String>>}.
+     */
+    @Test
+    void testNegativeGetClassOfParameterizedReceiverType() {
+        final String className = 'gls.generics.test.GetClassParameterizedReceiver'
+        final String javaSrc = '''
+            package gls.generics.test;
+            import java.util.ArrayList;
+            import java.util.List;
+            public class GetClassParameterizedReceiver {
+                static Class<? extends List<String>> typeOf(List<String> strings) {
+                    return strings.getClass();
+                }
+                public static void test() {
+                    typeOf(new ArrayList<>());
+                }
+            }
+        '''
+        assertNegativeCompile(className, javaSrc, "cannot be converted",
+            "Cannot assign java.lang.Class<? extends java.util.List> to: java.lang.Class<? extends java.util.List<java.lang.String>>")
+    }
+
+    /**
+     * JLS 4.6: the erasure of a type variable is the erasure of its leftmost bound, so for
+     * {@code T extends Comparable<T>} the type of {@code getClass()} is
+     * {@code Class<? extends Comparable>} and not a {@code Class<? extends Comparable<T>>}.
+     */
+    @Test
+    void testNegativeGetClassOfTypeVariableWithParameterizedBound() {
+        final String className = 'gls.generics.test.GetClassParameterizedBound'
+        final String javaSrc = '''
+            package gls.generics.test;
+            public class GetClassParameterizedBound {
+                static <T extends Comparable<T>> Class<? extends Comparable<T>> typeOf(T value) {
+                    return value.getClass();
+                }
+                public static void test() {
+                    typeOf("x");
+                }
+            }
+        '''
+        assertNegativeCompile(className, javaSrc, "cannot be converted",
+            "Cannot assign java.lang.Class<? extends java.lang.Comparable> to: java.lang.Class<? extends java.lang.Comparable<T>>")
+    }
+
+    /**
+     * JLS 4.6: within a generic class the type of {@code getClass()} is the {@code Class}
+     * of the raw type, which is not a {@code Class<? extends Outer<T>>}.
+     */
+    @Test
+    void testNegativeGetClassOfThisInGenericClass() {
+        final String className = 'gls.generics.test.GetClassGenericThis'
+        final String javaSrc = '''
+            package gls.generics.test;
+            public class GetClassGenericThis<T> {
+                Class<? extends GetClassGenericThis<T>> type() {
+                    return getClass();
+                }
+                public static void test() {
+                    new GetClassGenericThis<String>().type();
+                }
+            }
+        '''
+        assertNegativeCompile(className, javaSrc, "cannot be converted",
+            "Cannot assign java.lang.Class<? extends gls.generics.test.GetClassGenericThis> to: java.lang.Class<? extends gls.generics.test.GetClassGenericThis<T>>")
+    }
+
+    /**
+     * JLS 4.6: the erasure of a nested type {@code T.C} is {@code |T|.C}, so for an
+     * {@code Outer<String>.Inner} the type of {@code getClass()} is
+     * {@code Class<? extends Outer.Inner>}.
+     */
+    @Test
+    void testGetClassOfInnerClassOfParameterizedType() {
+        final String className = 'gls.generics.test.GetClassNested'
+        final String javaSrc = '''
+            package gls.generics.test;
+            public class GetClassNested<T> {
+                public class Inner {
+                    @SuppressWarnings({"rawtypes"})
+                    Class<? extends GetClassNested.Inner> self() { return getClass(); }
+                }
+                @SuppressWarnings({"rawtypes"})
+                static Class<? extends GetClassNested.Inner> typeOf(GetClassNested<String>.Inner inner) {
+                    return inner.getClass();
+                }
+                public static String test() {
+                    GetClassNested<String>.Inner inner = new GetClassNested<String>().new Inner();
+                    return typeOf(inner).getSimpleName() + ":" + inner.self().getSimpleName();
+                }
+            }
+        '''
+        assertPositive(className, javaSrc, 'Inner:Inner')
+    }
+
+    @Test
+    void testNegativeGetClassOfInnerClassOfParameterizedType() {
+        final String className = 'gls.generics.test.GetClassNestedParameterized'
+        final String javaSrc = '''
+            package gls.generics.test;
+            public class GetClassNestedParameterized<T> {
+                public class Inner {}
+                static Class<? extends GetClassNestedParameterized<String>.Inner> typeOf(GetClassNestedParameterized<String>.Inner inner) {
+                    return inner.getClass();
+                }
+                public static void test() {
+                    typeOf(new GetClassNestedParameterized<String>().new Inner());
+                }
+            }
+        '''
+        assertNegativeCompile(className, javaSrc, "cannot be converted",
+            "to: java.lang.Class<? extends gls.generics.test.GetClassNestedParameterized<java.lang.String>.Inner>")
+    }
+
+    /**
+     * JLS 6.5.5.1, 8.1.3: within {@code Outer<T>} the simple name {@code Inner} is the type
+     * {@code Outer<T>.Inner}. The type of {@code getClass()} is the {@code Class} of the raw
+     * type {@code Outer.Inner}, which is not a {@code Class<? extends Inner>}.
+     */
+    @Test
+    void testNegativeGetClassForSimpleNameOfInnerClass() {
+        final String className = 'gls.generics.test.GetClassInnerSimpleName'
+        final String javaSrc = '''
+            package gls.generics.test;
+            public class GetClassInnerSimpleName<T> {
+                public class Inner {
+                    Class<? extends Inner> self() { return getClass(); }
+                }
+                public static void test() {
+                    new GetClassInnerSimpleName<String>().new Inner().self();
+                }
+            }
+        '''
+        assertNegativeCompile(className, javaSrc, "cannot be converted",
+            "Cannot assign java.lang.Class<? extends gls.generics.test.GetClassInnerSimpleName.Inner> to: java.lang.Class<? extends gls.generics.test.GetClassInnerSimpleName<T>.Inner>")
+    }
+
+    /**
+     * JLS 6.5.5.1, 4.8: the qualified name {@code Outer.Inner} is the raw type, which is
+     * not a subtype of the {@code Outer<T>.Inner} that the simple name {@code Inner} denotes.
+     */
+    @Test
+    void testNegativeRawInnerClassForSimpleNameOfInnerClass() {
+        final String className = 'gls.generics.test.RawInnerForSimpleName'
+        final String javaSrc = '''
+            package gls.generics.test;
+            public class RawInnerForSimpleName<T> {
+                public class Inner {
+                    @SuppressWarnings({"rawtypes"})
+                    void check(Class<? extends RawInnerForSimpleName.Inner> raw) {
+                        Class<? extends Inner> type = raw;
+                    }
+                }
+                public static void test() {
+                    new RawInnerForSimpleName<String>().new Inner().check(null);
+                }
+            }
+        '''
+        assertNegativeCompile(className, javaSrc, "cannot be converted",
+            "Cannot assign java.lang.Class<? extends gls.generics.test.RawInnerForSimpleName.Inner> to: java.lang.Class<? extends gls.generics.test.RawInnerForSimpleName<T>.Inner>")
+    }
+
+    /**
+     * JLS 8.5: an inner class inherited from {@code Outer<String>} is the member
+     * {@code Outer<String>.Inner}, which the raw type {@code Outer.Inner} is not.
+     */
+    @Test
+    void testNegativeRawInnerClassForSimpleNameOfInheritedInnerClass() {
+        final String className = 'gls.generics.test.RawInnerForInheritedName'
+        final String javaSrc = '''
+            package gls.generics.test;
+            public class RawInnerForInheritedName<T> {
+                public class Inner {}
+                public static class Sub extends RawInnerForInheritedName<String> {
+                    void check(Inner inner) {
+                        Class<? extends Inner> type = inner.getClass();
+                    }
+                }
+                public static void test() {
+                    new Sub().check(null);
+                }
+            }
+        '''
+        assertNegativeCompile(className, javaSrc, "cannot be converted",
+            "Cannot assign java.lang.Class<? extends gls.generics.test.RawInnerForInheritedName.Inner> to: java.lang.Class<? extends gls.generics.test.RawInnerForInheritedName<java.lang.String>.Inner>")
+    }
+
+    /**
+     * JLS 6.5.5.1, 8.1.3, 8.5: the simple name of an inner class is the member of the
+     * current parameterization of its enclosing class, so {@code Inner} and
+     * {@code Outer<T>.Inner} are the same type within {@code Outer<T>}, and so are
+     * {@code Inner} and {@code Outer<String>.Inner} within a subclass of {@code Outer<String>}.
+     */
+    @Test
+    void testSimpleNameOfInnerClassIsMemberOfParameterizedType() {
+        final String className = 'gls.generics.test.InnerSimpleName'
+        final String javaSrc = '''
+            package gls.generics.test;
+            import java.util.ArrayList;
+            import java.util.List;
+            public class InnerSimpleName<T> {
+                public class Inner {
+                    public Class<? extends InnerSimpleName<T>.Inner> same(Class<? extends Inner> type) { return type; }
+                    @SuppressWarnings({"rawtypes"})
+                    public Class<? extends InnerSimpleName.Inner> erased(Class<? extends Inner> type) { return type; }
+                    @SuppressWarnings({"unchecked"})
+                    public Class<? extends Inner> self() { return (Class<? extends Inner>) getClass(); }
+                }
+                public Inner inner() { return new Inner(); }
+                public List<Inner> inners() {
+                    List<Inner> inners = new ArrayList<>();
+                    inners.add(inner());
+                    return inners;
+                }
+                public static class Sub extends InnerSimpleName<String> {
+                    public Class<? extends InnerSimpleName<String>.Inner> same(Class<? extends Inner> type) { return type; }
+                    public Inner first(List<? extends Inner> inners) { return inners.get(0); }
+                }
+                public static String test() {
+                    Sub outer = new Sub();
+                    InnerSimpleName<String>.Inner inner = outer.inner();
+                    return inner.same(inner.self()).getSimpleName() + ":" + inner.erased(inner.self()).getSimpleName() + ":" +
+                        outer.same(inner.self()).getSimpleName() + ":" + (outer.first(outer.inners()) != null);
+                }
+            }
+        '''
+        assertPositive(className, javaSrc, 'Inner:Inner:Inner:true', true)
+    }
+
+    /**
+     * JLS 4.9: an intersection type has the members of a class that extends its leftmost
+     * bound, so for a {@code (Number & Runnable)} the type of {@code getClass()} is
+     * {@code Class<? extends Number>}.
+     */
+    @Test
+    void testNegativeGetClassOfIntersectionType() {
+        final String className = 'gls.generics.test.GetClassIntersection'
+        final String javaSrc = '''
+            package gls.generics.test;
+            public class GetClassIntersection {
+                static Class<? extends Runnable> typeOf(Object value) {
+                    return ((Number & Runnable) value).getClass();
+                }
+                public static void test() {
+                    typeOf(null);
+                }
+            }
+        '''
+        assertNegativeCompile(className, javaSrc, "cannot be converted",
+            "Cannot assign java.lang.Class<? extends java.lang.Number> to: java.lang.Class<? extends java.lang.Runnable>")
+    }
+
+    /**
+     * JLS 18.5.2: a generic method invocation in an assignment or return context takes its type
+     * arguments from the target type as well, so {@code Collections.singletonList(x.getClass())}
+     * is a {@code List<Class<?>>} when that is the target.
+     */
+    @Test
+    void testGenericCallOfGetClassTakesTypeArgumentsFromTargetType() {
+        final String className = 'gls.generics.test.GetClassTargetTyped'
+        final String javaSrc = '''
+            package gls.generics.test;
+            import java.util.*;
+            public class GetClassTargetTyped {
+                static List<Class<?>> single(String x) { return Collections.singletonList(x.getClass()); }
+                static Optional<Class<?>> optional(String x) { return Optional.of(x.getClass()); }
+                static List<Number> numbers() { return Arrays.asList(1, 2); }
+                public static String test() {
+                    List<Class<?>> list = Arrays.asList("a".getClass(), Integer.valueOf(1).getClass());
+                    String name = optional("x").get().getSimpleName();
+                    return list.size() + ":" + single("x").get(0).getSimpleName() + ":" + name + ":" + numbers();
+                }
+            }
+        '''
+        assertPositive(className, javaSrc, '2:String:String:[1, 2]')
+    }
+
+    /**
+     * JLS 4.3.2: {@code e.getClass()} has the type {@code Class<? extends |T|>} for the static type
+     * {@code T} of {@code e}. An {@code instanceof} test does not change the type of {@code o},
+     * so {@code o.getClass()} stays a {@code Class<?>} for an {@code Object o}.
+     */
+    @Test
+    void testNegativeGetClassOfVariableTestedByInstanceof() {
+        final String className = 'gls.generics.test.GetClassAfterInstanceof'
+        final String javaSrc = '''
+            package gls.generics.test;
+            public class GetClassAfterInstanceof {
+                static Class<? extends String> typeOf(Object o) {
+                    if (o instanceof String) return o.getClass();
+                    return String.class;
+                }
+            }
+        '''
+        assertNegativeCompile(className, javaSrc, 'incompatible types', 'Incompatible generic argument types')
+    }
+
+    /**
+     * JLS 14.30.1, 15.16: a pattern variable and a cast have the narrower type.
+     */
+    @Test
+    void testGetClassOfPatternVariableAndCast() {
+        final String className = 'gls.generics.test.GetClassOfPatternVariable'
+        final String javaSrc = '''
+            package gls.generics.test;
+            public class GetClassOfPatternVariable {
+                static Class<? extends String> pattern(Object o) { return o instanceof String s ? s.getClass() : String.class; }
+                static Class<? extends String> cast(Object o) { return o instanceof String ? ((String) o).getClass() : String.class; }
+                public static String test() {
+                    return pattern("x").getSimpleName() + ":" + cast("x").getSimpleName();
+                }
+            }
+        '''
+        assertPositive(className, javaSrc, 'String:String')
+    }
+
+    /**
+     * JLS 4.8: the type of a member of a raw type is the erasure of its type, so assigning it to
+     * a parameterized type is an unchecked conversion.
+     */
+    @Test
+    void testMemberOfRawTypeHasErasureOfItsType() {
+        final String className = 'gls.generics.test.RawMemberErasure'
+        final String javaSrc = '''
+            package gls.generics.test;
+            import java.util.*;
+            public class RawMemberErasure {
+                static class Holder<T extends List> {
+                    Class<? extends T> type;
+                    List<T> items = new ArrayList<>();
+                    Class<? extends T> get() { return type; }
+                }
+                @SuppressWarnings({"unchecked", "rawtypes"})
+                static Class<? extends List<String>> field(Holder holder) { return holder.type; }
+                @SuppressWarnings({"unchecked", "rawtypes"})
+                static Class<? extends List<String>> method(Holder holder) { return holder.get(); }
+                @SuppressWarnings({"unchecked", "rawtypes"})
+                static List<String> items(Holder holder) { return holder.items; }
+                @SuppressWarnings("rawtypes")
+                public static String test() {
+                    Holder holder = new Holder();
+                    return String.valueOf(field(holder)) + ":" + method(holder) + ":" + items(holder);
+                }
+            }
+        '''
+        assertPositive(className, javaSrc, 'null:null:[]')
+    }
+
+    /**
+     * JLS 6.5.5.1, 8.1.3: within {@code Outer<T>}, the simple name {@code Inner} is
+     * {@code Outer<T>.Inner}, which is a different type argument than the raw {@code Outer.Inner}.
+     */
+    @Test
+    void testNegativeSimpleNameOfInnerClassIsNotRawAsTypeArgument() {
+        [
+            InnerTypeArgument: 'List<Inner> a = raw;',
+            InnerWildcardBound: 'List<? extends Inner> b = raw;',
+            InnerMapValue: 'Map<String, Inner> c = rawMap;'
+        ].each { String name, String assignment ->
+            assertNegativeCompile("gls.generics.test.$name", """
+                package gls.generics.test;
+                import java.util.*;
+                public class $name<T> {
+                    class Inner {}
+                    @SuppressWarnings("rawtypes")
+                    void f(List<${name}.Inner> raw, Map<String, ${name}.Inner> rawMap) {
+                        $assignment
+                    }
+                }
+            """, 'incompatible types', 'Incompatible generic argument types')
+        }
+    }
+
+    /**
+     * JLS 4.3.2, 4.5.1: for a value {@code t} of a type variable {@code T}, {@code t.getClass()}
+     * is a {@code Class<? extends Object>}, which is neither a {@code Class<T>} nor within
+     * {@code ? extends T}.
+     */
+    @Test
+    void testNegativeClassOfValueOfTypeVariable() {
+        [
+            ClassOfTypeVariable: '''
+                static <T> Class<T> typeOf(T t) { return t.getClass(); }
+            ''',
+            ClassOfTypeVariableArgument: '''
+                static class Box<T> {
+                    void accept(Class<? extends T> type) {}
+                    void test(T t) { accept(t.getClass()); }
+                }
+            ''',
+            ClassOfTypeVariableKey: '''
+                static class Box<T> {
+                    Map<Class<? extends T>, T> byType = new HashMap<>();
+                    void test(T t) { byType.put(t.getClass(), t); }
+                }
+            '''
+        ].each { String name, String members ->
+            assertNegativeCompile("gls.generics.test.$name", """
+                package gls.generics.test;
+                import java.util.*;
+                public class $name {
+                    $members
+                }
+            """, 'incompatible types', 'Cannot')
+        }
+    }
+
+    /**
+     * JLS 15.12.2.5: with {@code x.getClass()} typed {@code Class<? extends StringBuilder>}, a
+     * value made from it is a {@code StringBuilder}, which selects the most specific overload.
+     */
+    @Test
+    void testClassOfReceiverSelectsOverloadForItsType() {
+        final String className = 'gls.generics.test.GetClassOverload'
+        final String javaSrc = '''
+            package gls.generics.test;
+            public class GetClassOverload {
+                static String f(Object o) { return "object"; }
+                static String f(CharSequence o) { return "char sequence"; }
+                static String f(StringBuilder o) { return "string builder"; }
+                public static String test() throws Exception {
+                    StringBuilder x = new StringBuilder();
+                    Object o = new StringBuilder();
+                    return f(x.getClass().cast(o)) + ":" + f(x.getClass().getDeclaredConstructor().newInstance());
+                }
+            }
+        '''
+        assertPositive(className, javaSrc, 'string builder:string builder')
+    }
+
+    /**
+     * JLS 18.5.2: the target type does not widen a type argument beyond what the arguments allow.
+     */
+    @Test
+    void testNegativeGenericCallOfGetClassOutsideTargetType() {
+        final String className = 'gls.generics.test.GetClassTargetTypedNegative'
+        final String javaSrc = '''
+            package gls.generics.test;
+            import java.util.*;
+            public class GetClassTargetTypedNegative {
+                static List<Class<? extends Number>> single(String x) { return Collections.singletonList(x.getClass()); }
+            }
+        '''
+        assertNegativeCompile(className, javaSrc, 'incompatible types', 'Incompatible generic argument types')
+    }
+
+    /**
+     * JLS 4.5.1, 4.10.2: {@code ? extends A} is contained by {@code ? extends B} only when
+     * {@code A} is a subtype of {@code B}, and a type that is not a type variable is not a
+     * subtype of one. So {@code Class<? extends Number>} is not a {@code Class<? extends T>}.
+     */
+    @Test
+    void testNegativeUpperBoundedWildcardForTypeVariableBound() {
+        final String className = 'gls.generics.test.WildcardForTypeVariableBound'
+        final String javaSrc = '''
+            package gls.generics.test;
+            public class WildcardForTypeVariableBound {
+                static <T extends Number> Class<? extends T> narrow(Class<? extends Number> type) {
+                    return type;
+                }
+                public static void test() {
+                    Class<? extends Integer> type = narrow(Integer.class);
+                }
+            }
+        '''
+        assertNegativeCompile(className, javaSrc, "cannot be converted",
+            "Cannot assign java.lang.Class<? extends java.lang.Number> to: java.lang.Class<? extends T>")
+    }
+
+    /**
+     * JLS 4.5.1, 4.10.2: {@code List<List>} is not a subtype of {@code List<List<String>>},
+     * because the type argument {@code List} is not {@code List<String>}. So
+     * {@code Class<? extends List<List>>} is not a {@code Class<? extends List<List<String>>>}.
+     */
+    @Test
+    void testNegativeUpperBoundedWildcardWithRawTypeArgumentInBound() {
+        final String className = 'gls.generics.test.WildcardRawTypeArgumentInBound'
+        final String javaSrc = '''
+            package gls.generics.test;
+            import java.util.List;
+            public class WildcardRawTypeArgumentInBound {
+                @SuppressWarnings({"rawtypes"})
+                static Class<? extends List<List<String>>> narrow(Class<? extends List<List>> type) {
+                    return type;
+                }
+                public static void test() {
+                    narrow(null);
+                }
+            }
+        '''
+        assertNegativeCompile(className, javaSrc, "cannot be converted",
+            "Cannot assign java.lang.Class<? extends java.util.List<java.util.List>> to: java.lang.Class<? extends java.util.List<java.util.List<java.lang.String>>>")
+    }
+
+    /**
+     * JLS 4.5.1, 4.10.2: a type variable is a subtype of its bound, and the raw bound
+     * {@code List} is not a subtype of {@code List<String>}. So for {@code T extends List}
+     * a {@code Class<? extends T>} is not a {@code Class<? extends List<String>>}.
+     */
+    @Test
+    void testNegativeUpperBoundedWildcardOfTypeVariableWithRawBound() {
+        final String className = 'gls.generics.test.WildcardOfTypeVariableWithRawBound'
+        final String javaSrc = '''
+            package gls.generics.test;
+            import java.util.List;
+            public class WildcardOfTypeVariableWithRawBound {
+                @SuppressWarnings({"rawtypes"})
+                static <T extends List> Class<? extends List<String>> narrow(Class<? extends T> type) {
+                    return type;
+                }
+                public static void test() {
+                    narrow(null);
+                }
+            }
+        '''
+        assertNegativeCompile(className, javaSrc, "cannot be converted",
+            "Cannot assign java.lang.Class<? extends T> to: java.lang.Class<? extends java.util.List<java.lang.String>>")
     }
 
     /**
