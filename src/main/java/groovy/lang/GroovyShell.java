@@ -20,6 +20,7 @@ package groovy.lang;
 
 import groovy.security.GroovyCodeSourcePermission;
 import groovy.ui.GroovyMain;
+import org.apache.groovy.lang.annotation.Incubating;
 import org.apache.groovy.plugin.GroovyRunner;
 import org.apache.groovy.plugin.GroovyRunnerRegistry;
 import org.codehaus.groovy.control.CompilationFailedException;
@@ -56,9 +57,8 @@ public class GroovyShell extends GroovyObjectSupport {
     private final AtomicInteger counter = new AtomicInteger(0);
     private final CompilerConfiguration config;
     private final GroovyClassLoader loader;
-    private final Object scriptNameLock = new Object();
-    /** File name to mark generated on the next name-taking parse that receives it. */
-    private String pendingGeneratedScriptName;
+    /** Generated file name awaiting the next name-taking parse on this thread. */
+    private final ThreadLocal<String> pendingGeneratedScriptName = new ThreadLocal<>();
 
     /**
      * Runs the standard {@code groovysh}-style command-line entry point.
@@ -561,7 +561,12 @@ public class GroovyShell extends GroovyObjectSupport {
      * @param scriptText the text of the script
      */
     public Object evaluate(final String scriptText) throws CompilationFailedException {
-        return evaluate(scriptText, generateScriptName(), DEFAULT_CODE_BASE);
+        String name = generateScriptName();
+        try {
+            return evaluate(scriptText, name, DEFAULT_CODE_BASE);
+        } finally {
+            clearGeneratedScriptName(name);
+        }
     }
 
     /**
@@ -615,7 +620,12 @@ public class GroovyShell extends GroovyObjectSupport {
      * @param in the stream reading the script
      */
     public Object evaluate(Reader in) throws CompilationFailedException {
-        return evaluate(in, generateScriptName());
+        String name = generateScriptName();
+        try {
+            return evaluate(in, name);
+        } finally {
+            clearGeneratedScriptName(name);
+        }
     }
 
     /**
@@ -720,7 +730,12 @@ public class GroovyShell extends GroovyObjectSupport {
      * @param binding the context eval the script
      */
     public Script parse(String scriptText, Binding binding) throws CompilationFailedException {
-        return parse(scriptText, generateScriptName(), binding);
+        String name = generateScriptName();
+        try {
+            return parse(scriptText, name, binding);
+        } finally {
+            clearGeneratedScriptName(name);
+        }
     }
 
     /**
@@ -765,7 +780,12 @@ public class GroovyShell extends GroovyObjectSupport {
      * @param in the stream reading the script
      */
     public Script parse(Reader in) throws CompilationFailedException {
-        return parse(in, generateScriptName(), context);
+        String name = generateScriptName();
+        try {
+            return parse(in, name, context);
+        } finally {
+            clearGeneratedScriptName(name);
+        }
     }
 
     /**
@@ -775,7 +795,12 @@ public class GroovyShell extends GroovyObjectSupport {
      * @param binding the context eval the script
      */
     public Script parse(Reader in, Binding binding) throws CompilationFailedException {
-        return parse(in, generateScriptName(), binding);
+        String name = generateScriptName();
+        try {
+            return parse(in, name, binding);
+        } finally {
+            clearGeneratedScriptName(name);
+        }
     }
 
     /**
@@ -796,30 +821,34 @@ public class GroovyShell extends GroovyObjectSupport {
     }
 
     /**
-     * Records that {@code fileName} was generated. The next name-taking parse
-     * or evaluation on this shell that receives it marks the source generated.
-     * A subclass override of that overload is still invoked.
+     * Records that {@code fileName} was generated on the current thread.
+     * The next name-taking parse or evaluation on this thread that receives
+     * it marks the source generated. A subclass override of that overload is
+     * still invoked.
+     * <p>
+     * Intended for Groovy's own script and template engines.
      *
      * @param fileName the generated script file name
      * @since 7.0.0
      */
+    @Incubating
     public void noteGeneratedScriptName(final String fileName) {
-        synchronized (scriptNameLock) {
-            pendingGeneratedScriptName = fileName;
-        }
+        pendingGeneratedScriptName.set(fileName);
     }
 
     /**
-     * Clears a generated-name note when it is still {@code fileName}.
+     * Clears the generated-name note on the current thread when it is still
+     * {@code fileName}.
+     * <p>
+     * Intended for Groovy's own script and template engines.
      *
      * @param fileName the note to drop, or {@code null} to drop whatever is pending
      * @since 7.0.0
      */
+    @Incubating
     public void clearGeneratedScriptName(final String fileName) {
-        synchronized (scriptNameLock) {
-            if (fileName == null || fileName.equals(pendingGeneratedScriptName)) {
-                pendingGeneratedScriptName = null;
-            }
+        if (fileName == null || fileName.equals(pendingGeneratedScriptName.get())) {
+            pendingGeneratedScriptName.remove();
         }
     }
 
@@ -827,11 +856,9 @@ public class GroovyShell extends GroovyObjectSupport {
         if (fileName == null) {
             return;
         }
-        synchronized (scriptNameLock) {
-            if (fileName.equals(pendingGeneratedScriptName)) {
-                gcs.setNameGenerated(true);
-            }
-            pendingGeneratedScriptName = null;
+        if (fileName.equals(pendingGeneratedScriptName.get())) {
+            gcs.setNameGenerated(true);
         }
+        pendingGeneratedScriptName.remove();
     }
 }

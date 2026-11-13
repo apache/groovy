@@ -18,12 +18,22 @@
  */
 package bugs
 
+import groovy.lang.Binding
 import groovy.lang.GroovyClassLoader
+import groovy.lang.GroovyCodeSource
 import groovy.lang.GroovyShell
+import groovy.lang.Script
 import groovy.ui.GroovySocketServer
 import org.junit.jupiter.api.Test
 
 import java.lang.reflect.Method
+import java.util.ArrayList
+import java.util.List
+import java.util.concurrent.CyclicBarrier
+import java.util.concurrent.ExecutorService
+import java.util.concurrent.Executors
+import java.util.concurrent.Future
+import java.util.concurrent.atomic.AtomicInteger
 
 import static org.junit.jupiter.api.Assertions.assertEquals
 import static org.junit.jupiter.api.Assertions.assertFalse
@@ -94,5 +104,121 @@ final class Groovy8113Compatibility {
         file.write('println 2\n')
         GroovyCodeSource fromFile = (GroovyCodeSource) method.invoke(null, true, file.absolutePath)
         assertFalse(fromFile.isNameGenerated())
+    }
+
+    @Test
+    void sharedShellAndLoaderMarkEveryConcurrentParse() throws Exception {
+        // GROOVY-8113
+        final int threads = 8
+        final int each = 50
+        AtomicInteger shellTotal = new AtomicInteger()
+        AtomicInteger shellMarked = new AtomicInteger()
+        GroovyShell shell = new GroovyShell() {
+            @Override
+            Script parse(GroovyCodeSource codeSource, Binding binding) {
+                shellTotal.incrementAndGet()
+                if (codeSource.isNameGenerated()) {
+                    shellMarked.incrementAndGet()
+                }
+                return null
+            }
+        }
+        AtomicInteger loaderTotal = new AtomicInteger()
+        AtomicInteger loaderMarked = new AtomicInteger()
+        GroovyClassLoader loader = new GroovyClassLoader() {
+            @Override
+            Class parseClass(GroovyCodeSource codeSource) {
+                loaderTotal.incrementAndGet()
+                if (codeSource.isNameGenerated()) {
+                    loaderMarked.incrementAndGet()
+                }
+                return null
+            }
+        }
+        runTogether(threads, each) { int id, int i ->
+            shell.parse("${id}-${i}")
+            loader.parseClass("${id}-${i}")
+        }
+        assertEquals(threads * each, shellTotal.get())
+        assertEquals(threads * each, shellMarked.get())
+        assertEquals(threads * each, loaderTotal.get())
+        assertEquals(threads * each, loaderMarked.get())
+    }
+
+    @Test
+    void callerChosenNameIsNotMarkedFromAnotherThread() throws Exception {
+        // GROOVY-8113
+        AtomicInteger marked = new AtomicInteger()
+        GroovyShell shell = new GroovyShell() {
+            @Override
+            Script parse(GroovyCodeSource codeSource, Binding binding) {
+                if (codeSource.isNameGenerated()) {
+                    marked.incrementAndGet()
+                }
+                return null
+            }
+        }
+        Thread other = new Thread({ shell.noteGeneratedScriptName('Script1.groovy') })
+        other.start()
+        other.join()
+        shell.parse('2', 'Script1.groovy')
+        assertEquals(0, marked.get())
+    }
+
+    @Test
+    void overrideThatSkipsMarkingLeavesNoStaleName() {
+        // GROOVY-8113
+        AtomicInteger marked = new AtomicInteger()
+        GroovyShell shell = new GroovyShell() {
+            @Override
+            Object evaluate(String scriptText, String fileName, String codeBase) {
+                return fileName
+            }
+
+            @Override
+            Script parse(GroovyCodeSource codeSource, Binding binding) {
+                if (codeSource.isNameGenerated()) {
+                    marked.incrementAndGet()
+                }
+                return null
+            }
+        }
+        String generated = (String) shell.evaluate('ignored')
+        shell.parse('2', generated)
+        assertEquals(0, marked.get())
+    }
+
+    @Test
+    void nestedEvaluateStillRuns() {
+        // GROOVY-8113
+        assertEquals(2, new GroovyShell().evaluate('evaluate("1 + 1")'))
+    }
+
+    private static void runTogether(int threads, int each, GroovyClosure work) throws Exception {
+        CyclicBarrier start = new CyclicBarrier(threads)
+        ExecutorService pool = Executors.newFixedThreadPool(threads)
+        try {
+            List<Future<?>> futures = new ArrayList<>()
+            for (int t = 0; t < threads; t++) {
+                int id = t
+                futures.add(pool.submit {
+                    start.await()
+                    for (int i = 0; i < each; i++) {
+                        work.accept(id, i)
+                    }
+                    return null
+                })
+            }
+            for (Future<?> future : futures) {
+                future.get()
+            }
+        } finally {
+            pool.shutdown()
+        }
+    }
+
+    @FunctionalInterface
+    private interface GroovyClosure {
+        void accept(int id, int i) throws Exception
     }
 }

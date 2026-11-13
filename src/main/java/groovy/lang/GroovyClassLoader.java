@@ -19,6 +19,7 @@
 package groovy.lang;
 
 import groovy.util.CharsetToolkit;
+import org.apache.groovy.lang.annotation.Incubating;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.FieldNode;
@@ -106,9 +107,8 @@ public class GroovyClassLoader extends URLClassLoader {
     private final CompilerConfiguration config;
     private final String sourceEncoding;
     private Boolean recompile;
-    private final Object scriptNameLock = new Object();
-    /** File name to mark generated on the next name-taking parse that receives it. */
-    private String pendingGeneratedScriptName;
+    /** Generated file name awaiting the next name-taking parse on this thread. */
+    private final ThreadLocal<String> pendingGeneratedScriptName = new ThreadLocal<>();
 
     static {
         registerAsParallelCapable();
@@ -709,31 +709,35 @@ public class GroovyClassLoader extends URLClassLoader {
     }
 
     /**
-     * The next {@link #parseClass(String, String)} that receives {@code fileName}
-     * marks that source generated. A subclass override of the name-taking
-     * overload is still invoked; the flag is applied when that overload creates
-     * the code source.
+     * Records that {@code fileName} was generated on the current thread.
+     * The next name-taking {@link #parseClass(String, String)} on this thread
+     * that receives it marks that source generated. A subclass override of
+     * that overload is still invoked; the flag is applied when that overload
+     * creates the code source.
+     * <p>
+     * Intended for Groovy's own script and template engines.
      *
      * @param fileName the generated script file name
      * @since 7.0.0
      */
+    @Incubating
     public void noteGeneratedScriptName(final String fileName) {
-        synchronized (scriptNameLock) {
-            pendingGeneratedScriptName = fileName;
-        }
+        pendingGeneratedScriptName.set(fileName);
     }
 
     /**
-     * Clears a generated-name note when it is still {@code fileName}.
+     * Clears the generated-name note on the current thread when it is still
+     * {@code fileName}.
+     * <p>
+     * Intended for Groovy's own script and template engines.
      *
      * @param fileName the note to drop, or {@code null} to drop whatever is pending
      * @since 7.0.0
      */
+    @Incubating
     public void clearGeneratedScriptName(final String fileName) {
-        synchronized (scriptNameLock) {
-            if (fileName == null || fileName.equals(pendingGeneratedScriptName)) {
-                pendingGeneratedScriptName = null;
-            }
+        if (fileName == null || fileName.equals(pendingGeneratedScriptName.get())) {
+            pendingGeneratedScriptName.remove();
         }
     }
 
@@ -741,12 +745,10 @@ public class GroovyClassLoader extends URLClassLoader {
         if (fileName == null) {
             return;
         }
-        synchronized (scriptNameLock) {
-            if (fileName.equals(pendingGeneratedScriptName)) {
-                gcs.setNameGenerated(true);
-            }
-            pendingGeneratedScriptName = null;
+        if (fileName.equals(pendingGeneratedScriptName.get())) {
+            gcs.setNameGenerated(true);
         }
+        pendingGeneratedScriptName.remove();
     }
 
     /**
@@ -1396,9 +1398,9 @@ public class GroovyClassLoader extends URLClassLoader {
         /**
          * The JDK asks this loader for {@code <generated>Customizer} and, on
          * {@link ClassNotFoundException}, asks the thread context loader too.
-     * The probe is reported as {@link IntrospectionProbeMiss} so neither
-     * loader records the name. A class this loader has already defined is
-     * not a probe and is left for normal loading.
+         * The probe is reported as {@link IntrospectionProbeMiss} so neither
+         * loader records the name. A class this loader has already defined is
+         * not a probe and is left for normal loading.
          */
         private void rejectGeneratedCustomizer(final String name) {
             String base = customizerBase(name);
