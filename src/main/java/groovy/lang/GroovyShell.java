@@ -56,8 +56,9 @@ public class GroovyShell extends GroovyObjectSupport {
     private final AtomicInteger counter = new AtomicInteger(0);
     private final CompilerConfiguration config;
     private final GroovyClassLoader loader;
-    /** Name most recently produced by {@link #generateScriptName()}, if that method ran. */
-    private String lastGeneratedScriptName;
+    private final Object scriptNameLock = new Object();
+    /** File name to mark generated on the next name-taking parse that receives it. */
+    private String pendingGeneratedScriptName;
 
     /**
      * Runs the standard {@code groovysh}-style command-line entry point.
@@ -560,7 +561,7 @@ public class GroovyShell extends GroovyObjectSupport {
      * @param scriptText the text of the script
      */
     public Object evaluate(final String scriptText) throws CompilationFailedException {
-        return evaluate(codeSourceForGeneratedName(scriptText));
+        return evaluate(scriptText, generateScriptName(), DEFAULT_CODE_BASE);
     }
 
     /**
@@ -585,6 +586,7 @@ public class GroovyShell extends GroovyObjectSupport {
         }
 
         GroovyCodeSource gcs = new GroovyCodeSource(scriptText, fileName, codeBase);
+        markGeneratedName(gcs, fileName);
 
         return evaluate(gcs);
     }
@@ -613,15 +615,7 @@ public class GroovyShell extends GroovyObjectSupport {
      * @param in the stream reading the script
      */
     public Object evaluate(Reader in) throws CompilationFailedException {
-        Script script = null;
-        try {
-            script = parse(codeSourceForGeneratedName(in));
-            return script.run();
-        } finally {
-            if (script != null) {
-                InvokerHelper.removeClass(script.getClass());
-            }
-        }
+        return evaluate(in, generateScriptName());
     }
 
     /**
@@ -663,7 +657,9 @@ public class GroovyShell extends GroovyObjectSupport {
      * @return the parsed script which is ready to be run via {@link Script#run()}
      */
     public Script parse(final Reader reader, final String fileName, Binding binding) throws CompilationFailedException {
-        return parse(new GroovyCodeSource(reader, fileName, DEFAULT_CODE_BASE), binding);
+        GroovyCodeSource gcs = new GroovyCodeSource(reader, fileName, DEFAULT_CODE_BASE);
+        markGeneratedName(gcs, fileName);
+        return parse(gcs, binding);
     }
 
     /**
@@ -724,7 +720,7 @@ public class GroovyShell extends GroovyObjectSupport {
      * @param binding the context eval the script
      */
     public Script parse(String scriptText, Binding binding) throws CompilationFailedException {
-        return parse(codeSourceForGeneratedName(scriptText), binding);
+        return parse(scriptText, generateScriptName(), binding);
     }
 
     /**
@@ -747,6 +743,7 @@ public class GroovyShell extends GroovyObjectSupport {
      */
     public Script parse(final String scriptText, final String fileName, Binding binding) throws CompilationFailedException {
         GroovyCodeSource gcs = new GroovyCodeSource(scriptText, fileName, DEFAULT_CODE_BASE);
+        markGeneratedName(gcs, fileName);
         return parse(gcs, binding);
     }
 
@@ -768,7 +765,7 @@ public class GroovyShell extends GroovyObjectSupport {
      * @param in the stream reading the script
      */
     public Script parse(Reader in) throws CompilationFailedException {
-        return parse(codeSourceForGeneratedName(in), context);
+        return parse(in, generateScriptName(), context);
     }
 
     /**
@@ -778,16 +775,15 @@ public class GroovyShell extends GroovyObjectSupport {
      * @param binding the context eval the script
      */
     public Script parse(Reader in, Binding binding) throws CompilationFailedException {
-        return parse(codeSourceForGeneratedName(in), binding);
+        return parse(in, generateScriptName(), binding);
     }
 
     /**
      * Generates a unique logical script name for anonymous shell evaluations.
      * <p>
-     * The shell records the name as generated only when the string returned
-     * to the caller is the string this implementation just produced. An
-     * override that returns a stable name, or any other string, leaves the
-     * flag unset, and that name is resolved like a caller-supplied name.
+     * The name-taking parse and evaluate methods mark a source generated only
+     * when the file name is the one this method just produced. An override
+     * that returns a stable name, or any other string, leaves the flag unset.
      * An override that needs a stable name should not return the value
      * produced by this implementation.
      *
@@ -795,31 +791,47 @@ public class GroovyShell extends GroovyObjectSupport {
      */
     protected String generateScriptName() {
         String name = "Script" + counter.incrementAndGet() + ".groovy";
-        lastGeneratedScriptName = name;
+        noteGeneratedScriptName(name);
         return name;
     }
 
-    private GroovyCodeSource codeSourceForGeneratedName(final String scriptText) {
-        synchronized (this) {
-            lastGeneratedScriptName = null;
-            String name = generateScriptName();
-            GroovyCodeSource gcs = new GroovyCodeSource(scriptText, name, DEFAULT_CODE_BASE);
-            if (name != null && name.equals(lastGeneratedScriptName)) {
-                gcs.setNameGenerated(true);
-            }
-            return gcs;
+    /**
+     * Records that {@code fileName} was generated. The next name-taking parse
+     * or evaluation on this shell that receives it marks the source generated.
+     * A subclass override of that overload is still invoked.
+     *
+     * @param fileName the generated script file name
+     * @since 7.0.0
+     */
+    public void noteGeneratedScriptName(final String fileName) {
+        synchronized (scriptNameLock) {
+            pendingGeneratedScriptName = fileName;
         }
     }
 
-    private GroovyCodeSource codeSourceForGeneratedName(final Reader reader) {
-        synchronized (this) {
-            lastGeneratedScriptName = null;
-            String name = generateScriptName();
-            GroovyCodeSource gcs = new GroovyCodeSource(reader, name, DEFAULT_CODE_BASE);
-            if (name != null && name.equals(lastGeneratedScriptName)) {
+    /**
+     * Clears a generated-name note when it is still {@code fileName}.
+     *
+     * @param fileName the note to drop, or {@code null} to drop whatever is pending
+     * @since 7.0.0
+     */
+    public void clearGeneratedScriptName(final String fileName) {
+        synchronized (scriptNameLock) {
+            if (fileName == null || fileName.equals(pendingGeneratedScriptName)) {
+                pendingGeneratedScriptName = null;
+            }
+        }
+    }
+
+    private void markGeneratedName(final GroovyCodeSource gcs, final String fileName) {
+        if (fileName == null) {
+            return;
+        }
+        synchronized (scriptNameLock) {
+            if (fileName.equals(pendingGeneratedScriptName)) {
                 gcs.setNameGenerated(true);
             }
-            return gcs;
+            pendingGeneratedScriptName = null;
         }
     }
 }

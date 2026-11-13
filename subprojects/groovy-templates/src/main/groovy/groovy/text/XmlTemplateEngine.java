@@ -20,7 +20,6 @@ package groovy.text;
 
 import groovy.lang.Binding;
 import groovy.lang.Closure;
-import groovy.lang.GroovyCodeSource;
 import groovy.lang.GroovyRuntimeException;
 import groovy.lang.GroovyShell;
 import groovy.lang.Script;
@@ -474,9 +473,13 @@ public class XmlTemplateEngine extends TemplateEngine {
 
         Script script;
         try {
-            GroovyCodeSource codeSource = new GroovyCodeSource(writer.toString(), "XmlTemplateScript" + counter.incrementAndGet() + ".groovy", GroovyShell.DEFAULT_CODE_BASE);
-            codeSource.setNameGenerated(true);
-            script = groovyShell.parse(codeSource);
+            String name = "XmlTemplateScript" + counter.incrementAndGet() + ".groovy";
+            groovyShell.noteGeneratedScriptName(name);
+            try {
+                script = groovyShell.parse(writer.toString(), name);
+            } finally {
+                groovyShell.clearGeneratedScriptName(name);
+            }
         } catch (Exception e) {
             throw new GroovyRuntimeException("Failed to parse template script (your template may contain an error or be trying to use expressions not currently supported): " + e.getMessage());
         }

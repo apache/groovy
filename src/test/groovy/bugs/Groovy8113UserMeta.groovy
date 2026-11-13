@@ -93,6 +93,35 @@ final class Groovy8113UserMeta {
         }
     }
 
+    @Test
+    void fixedGenerateScriptNameStillUsesCustomMetaClass() {
+        // GROOVY-8113
+        final String fixed = 'Groovy8113Fixed'
+        final String metaName = 'groovy.runtime.metaclass.' + fixed + 'MetaClass'
+        ClassLoader registryLoader = MetaClassRegistry.classLoader
+        Map<String, byte[]> bytes = compileOne(fixed, 'fixed-meta')
+        define(registryLoader, metaName, bytes[metaName])
+
+        GroovyShell shell = new GroovyShell(registryLoader) {
+            @Override
+            protected String generateScriptName() {
+                return fixed + '.groovy'
+            }
+        }
+        Script script = shell.parse("'ran'")
+        assertEquals(fixed, script.getClass().getName())
+        MetaClass meta = null
+        try {
+            meta = GroovySystem.metaClassRegistry.getMetaClass(script.getClass())
+            assertEquals(metaName, meta.getClass().getName())
+            assertEquals('fixed-meta', meta.invokeMethod(script, 'marker', new Object[0]))
+        } finally {
+            if (meta != null) {
+                GroovySystem.metaClassRegistry.removeMetaClass(script.getClass())
+            }
+        }
+    }
+
     private static boolean reaches(ClassLoader start, ClassLoader target) {
         ClassLoader current = start
         while (current != null) {
@@ -104,12 +133,24 @@ final class Groovy8113UserMeta {
         return false
     }
 
+    private static Map<String, byte[]> compileOne(String className, String marker) {
+        return compileSources(Collections.singletonMap(className, marker))
+    }
+
     private static Map<String, byte[]> compileMetaClasses() {
+        Map<String, String> sources = new LinkedHashMap<>()
+        sources.put(SCRIPT, 'script-meta')
+        sources.put(DECLARED, 'declared-meta')
+        return compileSources(sources)
+    }
+
+    private static Map<String, byte[]> compileSources(Map<String, String> markers) {
         CompilerConfiguration config = new CompilerConfiguration()
         config.setTargetDirectory((File) null)
         CompilationUnit unit = new CompilationUnit(config, null, new GroovyClassLoader(Groovy8113UserMeta.classLoader, config))
-        unit.addSource(SCRIPT + 'MetaClass.groovy', metaSource(SCRIPT, 'script-meta'))
-        unit.addSource(DECLARED + 'MetaClass.groovy', metaSource(DECLARED, 'declared-meta'))
+        for (Map.Entry<String, String> entry : markers.entrySet()) {
+            unit.addSource(entry.getKey() + 'MetaClass.groovy', metaSource(entry.getKey(), entry.getValue()))
+        }
         unit.compile(Phases.CLASS_GENERATION)
         Map<String, byte[]> bytes = new LinkedHashMap<>()
         for (GroovyClass groovyClass : unit.classes) {

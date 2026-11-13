@@ -106,6 +106,9 @@ public class GroovyClassLoader extends URLClassLoader {
     private final CompilerConfiguration config;
     private final String sourceEncoding;
     private Boolean recompile;
+    private final Object scriptNameLock = new Object();
+    /** File name to mark generated on the next name-taking parse that receives it. */
+    private String pendingGeneratedScriptName;
 
     static {
         registerAsParallelCapable();
@@ -244,8 +247,8 @@ public class GroovyClassLoader extends URLClassLoader {
             unit.addClassNode(classNode);
             unit.setClassgenCallback((cv, cn) -> generatedClasses.put(cn, cv));
             unit.compile(Phases.CLASS_GENERATION);
-        collect(collector, generatedClasses);
-        definePackageInternal(collector.generatedClass.getName());
+            collect(collector, generatedClasses);
+            definePackageInternal(collector.generatedClass.getName());
             return collector.generatedClass;
         } catch (CompilationFailedException e) {
             throw new RuntimeException(e);
@@ -319,6 +322,7 @@ public class GroovyClassLoader extends URLClassLoader {
     public Class parseClass(final String text, final String fileName) throws CompilationFailedException {
         GroovyCodeSource gcs = new GroovyCodeSource(text, fileName, "/groovy/script");
         gcs.setCachable(false);
+        markGeneratedName(gcs, fileName);
         return parseClass(gcs);
     }
 
@@ -329,10 +333,13 @@ public class GroovyClassLoader extends URLClassLoader {
      * @return the main class defined in the given script
      */
     public Class parseClass(final String text) throws CompilationFailedException {
-        GroovyCodeSource gcs = new GroovyCodeSource(text, "Script_" + genEncodingString(text) + ".groovy", "/groovy/script");
-        gcs.setCachable(false);
-        gcs.setNameGenerated(true);
-        return parseClass(gcs);
+        String fileName = "Script_" + genEncodingString(text) + ".groovy";
+        noteGeneratedScriptName(fileName);
+        try {
+            return parseClass(text, fileName);
+        } finally {
+            clearGeneratedScriptName(fileName);
+        }
     }
 
     /**
@@ -490,7 +497,8 @@ public class GroovyClassLoader extends URLClassLoader {
         if (mainName == null) {
             return null;
         }
-        if (!simpleClassName(mainName).equals(classNameFromSourceName(codeSource.getName()))) {
+        String fromSource = classNameFromSourceName(codeSource.getName());
+        if (!simpleClassName(mainName).equals(fromSource)) {
             return null;
         }
         return mainName;
@@ -504,24 +512,30 @@ public class GroovyClassLoader extends URLClassLoader {
     }
 
     /**
-     * Class name Groovy derives from a source name: the last path segment,
-     * without an extension, encoded as a class name. Matches the script class
-     * created for that source.
+     * Class name Groovy derives from a source name. Uses the same description
+     * stripping as {@link ModuleNode#extractClassFromFileDescription()}, then
+     * encodes the result the way a script class does.
      */
     private static String classNameFromSourceName(final String sourceName) {
         if (sourceName == null) {
             return "";
         }
-        String name = sourceName;
-        int slash = Math.max(name.lastIndexOf('/'), name.lastIndexOf('\\'));
-        if (slash >= 0) {
-            name = name.substring(slash + 1);
+        return GeneratorContext.encodeAsValidClassName(new SourceNameModule(sourceName).className());
+    }
+
+    /**
+     * Exposes {@link ModuleNode#extractClassFromFileDescription()} for a
+     * source name that is not yet a module.
+     */
+    private static final class SourceNameModule extends ModuleNode {
+        private SourceNameModule(String description) {
+            super((SourceUnit) null);
+            setDescription(description);
         }
-        int dot = name.lastIndexOf('.');
-        if (dot > 0) {
-            name = name.substring(0, dot);
+
+        private String className() {
+            return extractClassFromFileDescription();
         }
-        return GeneratorContext.encodeAsValidClassName(name);
     }
 
     /**
@@ -682,11 +696,56 @@ public class GroovyClassLoader extends URLClassLoader {
      * <p>
      * Any other name, including a binary name containing {@code '$'}, is
      * delegated. A missing class resource is not evidence that a parent cannot
-     * define the class.
+     * define the class. A class this loader has already defined or cached is
+     * returned rather than rejected.
      */
     private void throwIfParentWouldOnlyRecordAMiss(final String name) {
+        if (name == null || findLoadedClass(name) != null || getClassCacheEntry(name) != null) {
+            return;
+        }
         if (isGeneratedCustomizerProbe(name)) {
             throw new IntrospectionProbeMiss(name);
+        }
+    }
+
+    /**
+     * The next {@link #parseClass(String, String)} that receives {@code fileName}
+     * marks that source generated. A subclass override of the name-taking
+     * overload is still invoked; the flag is applied when that overload creates
+     * the code source.
+     *
+     * @param fileName the generated script file name
+     * @since 7.0.0
+     */
+    public void noteGeneratedScriptName(final String fileName) {
+        synchronized (scriptNameLock) {
+            pendingGeneratedScriptName = fileName;
+        }
+    }
+
+    /**
+     * Clears a generated-name note when it is still {@code fileName}.
+     *
+     * @param fileName the note to drop, or {@code null} to drop whatever is pending
+     * @since 7.0.0
+     */
+    public void clearGeneratedScriptName(final String fileName) {
+        synchronized (scriptNameLock) {
+            if (fileName == null || fileName.equals(pendingGeneratedScriptName)) {
+                pendingGeneratedScriptName = null;
+            }
+        }
+    }
+
+    private void markGeneratedName(final GroovyCodeSource gcs, final String fileName) {
+        if (fileName == null) {
+            return;
+        }
+        synchronized (scriptNameLock) {
+            if (fileName.equals(pendingGeneratedScriptName)) {
+                gcs.setNameGenerated(true);
+            }
+            pendingGeneratedScriptName = null;
         }
     }
 
@@ -1325,18 +1384,25 @@ public class GroovyClassLoader extends URLClassLoader {
             if (generated == null || name == null) {
                 return false;
             }
-            return name.equals(generated) || name.startsWith(generated + "$");
+            if (name.equals(generated)) {
+                return true;
+            }
+            int prefix = generated.length();
+            return name.length() > prefix
+                    && name.charAt(prefix) == '$'
+                    && name.regionMatches(0, generated, 0, prefix);
         }
 
         /**
          * The JDK asks this loader for {@code <generated>Customizer} and, on
          * {@link ClassNotFoundException}, asks the thread context loader too.
-         * The probe is reported as {@link IntrospectionProbeMiss} so neither
-         * loader records the name.
+     * The probe is reported as {@link IntrospectionProbeMiss} so neither
+     * loader records the name. A class this loader has already defined is
+     * not a probe and is left for normal loading.
          */
         private void rejectGeneratedCustomizer(final String name) {
             String base = customizerBase(name);
-            if (base != null && isGeneratedName(base)) {
+            if (base != null && isGeneratedName(base) && findLoadedClass(name) == null) {
                 throw new IntrospectionProbeMiss(name);
             }
         }

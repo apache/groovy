@@ -49,6 +49,9 @@ final class Groovy8113 {
         for (int i = 0; i < ITERATIONS; i++) {
             assert shell.evaluate("${i} + 1", "Groovy8113Shell_${i}.groovy") == i + 1
             assert new GroovyShell().evaluate("${i} + 2") == i + 2
+            Class<?> parsed = new GroovyClassLoader().parseClass("${i} + 4")
+            assert parsed.name ==~ /Script_[0-9a-fA-F]+/
+            assert ((Script) parsed.getDeclaredConstructor().newInstance()).run() == i + 4
         }
         assert shell.evaluate('''
             package pkg
@@ -174,7 +177,7 @@ final class Groovy8113 {
     private static final String CUSTOMIZER_SUFFIX = 'Customizer'
     private static final String[] BEANINFO_PACKAGES = ['com.sun.beans.infos.', 'sun.beans.infos.']
     private static final String GENERATED_SIMPLE =
-            /Script\d+|script\d+|SimpleTemplateScript\d+|GStringTemplateScript\d+|StreamingTemplateScript\d+|XmlTemplateScript\d+|GeneratedMarkupTemplate\d+/
+            /Script\d+|Script_[0-9a-fA-F]+|script\d+|SimpleTemplateScript\d+|GStringTemplateScript\d+|StreamingTemplateScript\d+|XmlTemplateScript\d+|GeneratedMarkupTemplate\d+/
     private static final String USER_SIMPLE =
             /Groovy8113Shell_\d+|Groovy8113_\d+|Groovy8113P|Groovy8113Holder|Groovy8113Box/
 

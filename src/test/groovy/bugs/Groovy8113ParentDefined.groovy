@@ -23,6 +23,7 @@ import groovy.lang.GroovyClassLoader
 import groovy.lang.GroovyShell
 import org.junit.jupiter.api.Test
 import org.objectweb.asm.ClassWriter
+import org.objectweb.asm.MethodVisitor
 
 import static org.junit.jupiter.api.Assertions.assertEquals
 import static org.junit.jupiter.api.Assertions.assertNull
@@ -30,6 +31,9 @@ import static org.junit.jupiter.api.Assertions.assertSame
 import static org.objectweb.asm.Opcodes.ACC_FINAL
 import static org.objectweb.asm.Opcodes.ACC_PUBLIC
 import static org.objectweb.asm.Opcodes.ACC_STATIC
+import static org.objectweb.asm.Opcodes.ALOAD
+import static org.objectweb.asm.Opcodes.INVOKESPECIAL
+import static org.objectweb.asm.Opcodes.RETURN
 import static org.objectweb.asm.Opcodes.V17
 
 /**
@@ -67,15 +71,28 @@ final class Groovy8113ParentDefined {
             import groovy8113.Holder.Inner
             Inner.VALUE
         '''))
+        assertEquals('ok', shell.evaluate('''
+            class Sub extends groovy8113.Holder {
+                def v() { Inner.VALUE }
+            }
+            new Sub().v()
+        '''))
     }
 
     private static byte[] classBytes(String internalName, boolean valueField) {
-        ClassWriter writer = new ClassWriter(0)
+        ClassWriter writer = new ClassWriter(ClassWriter.COMPUTE_MAXS)
         writer.visit(V17, ACC_PUBLIC, internalName, null, 'java/lang/Object', null)
         writer.visitInnerClass('groovy8113/Holder$Inner', 'groovy8113/Holder', 'Inner', ACC_PUBLIC | ACC_STATIC)
         if (valueField) {
             writer.visitField(ACC_PUBLIC | ACC_STATIC | ACC_FINAL, 'VALUE', 'Ljava/lang/String;', null, 'ok').visitEnd()
         }
+        MethodVisitor init = writer.visitMethod(ACC_PUBLIC, '<init>', '()V', null, null)
+        init.visitCode()
+        init.visitVarInsn(ALOAD, 0)
+        init.visitMethodInsn(INVOKESPECIAL, 'java/lang/Object', '<init>', '()V', false)
+        init.visitInsn(RETURN)
+        init.visitMaxs(0, 0)
+        init.visitEnd()
         writer.visitEnd()
         return writer.toByteArray()
     }

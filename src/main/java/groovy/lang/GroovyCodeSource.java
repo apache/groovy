@@ -292,12 +292,12 @@ public class GroovyCodeSource {
     }
 
     /**
-     * Records whether {@link #getName()} was chosen by Groovy for this compilation.
-     * A generated name is not a type a caller asked to resolve. Companion lookups
-     * for that name are not delegated to a parent loader. A caller-supplied name,
-     * including a script file name, leaves the flag unset.
+     * Marking a name as generated disables the custom MetaClass lookup and the
+     * immediate BeanInfo lookup for that class and its nested classes, and
+     * answers the {@code Customizer} probe without delegation.
      *
      * @param generated {@code true} when Groovy minted the name
+     * @since 7.0.0
      */
     public void setNameGenerated(boolean generated) {
         nameGenerated = generated;
@@ -307,6 +307,7 @@ public class GroovyCodeSource {
      * Indicates whether {@link #getName()} was chosen by Groovy.
      *
      * @return {@code true} when the name was generated for this source
+     * @since 7.0.0
      */
     public boolean isNameGenerated() {
         return nameGenerated;
