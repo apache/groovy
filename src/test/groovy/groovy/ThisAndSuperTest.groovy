@@ -535,6 +535,107 @@ final class ThisAndSuperTest {
         """
     }
 
+    // GROOVY-12519: a static method of the superclass hidden by one of the class
+    @ParameterizedTest
+    @ValueSource(strings=['', '@groovy.transform.TypeChecked', '@groovy.transform.CompileStatic'])
+    void testSuperDotStaticMethod(String mode) {
+        assertScript """
+            import java.util.function.Supplier
+
+            class Base {
+                static String sm() { 'sm:base' }
+                static String sm(String s) { 'sm:base:' + s }
+                String im() { 'im:base' }
+            }
+            class Mid extends Base {
+            }
+            $mode
+            class Sub extends Mid {
+                static String sm() { 'sm:sub' }
+                static String sm(String s) { 'sm:sub:' + s }
+                String im() { 'im:sub' }
+                List test() {
+                    Supplier<String> lambda = () -> super.sm()
+                    [super.sm(), super.sm('x'), { -> super.sm() }(), lambda.get(), super.im(), sm(), im()]
+                }
+            }
+            class Top {
+                static String sm() { 'sm:top' }
+            }
+            class Hider extends Top {
+                static String sm() { 'sm:hider' }
+            }
+            $mode
+            class Low extends Hider {
+                static String sm() { 'sm:low' }
+                String test() { super.sm() }
+            }
+            assert new Sub().test() == ['sm:base', 'sm:base:x', 'sm:base', 'sm:base', 'im:base', 'sm:sub', 'im:sub']
+            assert new Low().test() == 'sm:hider'
+        """
+    }
+
+    // GROOVY-12519: a static property of the superclass hidden by one of the class
+    @ParameterizedTest
+    @ValueSource(strings=['', '@groovy.transform.TypeChecked', '@groovy.transform.CompileStatic'])
+    void testSuperDotStaticProperty(String mode) {
+        assertScript """
+            class Base {
+                static String sp = 'sp:base'
+                static String getQ() { 'q:base' }
+            }
+            $mode
+            class Sub extends Base {
+                static String sp = 'sp:sub'
+                static String getQ() { 'q:sub' }
+                List test() {
+                    def read = [super.sp, super.q, { -> super.sp }(), { -> super.q }()]
+                    super.sp = 'w'
+                    def write = [Base.sp]
+                    def c = { -> super.sp = 'v' }
+                    c()
+                    read + write + [Base.sp, sp, q]
+                }
+            }
+            assert new Sub().test() == ['sp:base', 'q:base', 'sp:base', 'q:base', 'w', 'v', 'sp:sub', 'q:sub']
+        """
+    }
+
+    // GROOVY-12519: an extension method, which is static too, needs no super$ helper in a closure or lambda
+    @ParameterizedTest
+    @ValueSource(strings=['', '@groovy.transform.TypeChecked', '@groovy.transform.CompileStatic'])
+    void testSuperDotExtensionMethodInClosure(String mode) {
+        assertScript """
+            import java.util.function.Supplier
+
+            $mode
+            class Numbers extends ArrayList<Integer> {
+                Numbers() { super([1, 2, 3]) }
+                List test() {
+                    def c = { -> super.first() }
+                    Supplier<Integer> lambda = () -> super.last()
+                    [c(), lambda.get()]
+                }
+            }
+            assert new Numbers().test() == [1, 3]
+        """
+    }
+
+    // GROOVY-12519: a private static method of the superclass stays out of reach
+    @Test
+    void testSuperDotPrivateStaticMethod() {
+        shouldFail MissingMethodException, '''
+            class Base {
+                private static String sm() { 'sm:base' }
+            }
+            class Sub extends Base {
+                static String sm() { 'sm:sub' }
+                String test() { super.sm() }
+            }
+            new Sub().test()
+        '''
+    }
+
     // GROOVY-9851
     @Test
     void testPrivateSuperMethod() {
