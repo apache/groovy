@@ -108,6 +108,12 @@ public class StaticTypesMethodReferenceExpressionWriter extends MethodReferenceE
     /** {@inheritDoc} */
     @Override
     public void writeMethodReferenceExpression(final MethodReferenceExpression methodReferenceExpression) {
+        // Marked pointers are Groovy method pointers. The metafactory would
+        // insert a cast the dynamic pointer does not.
+        if (methodReferenceExpression.getNodeMetaData(StaticTypesMarker.DYNAMIC_RESOLUTION) != null) {
+            super.writeMethodReferenceExpression(methodReferenceExpression);
+            return;
+        }
         FunctionalInterfaceContext functionalInterface = resolveFunctionalInterfaceContext(methodReferenceExpression);
         if (functionalInterface == null) {
             // generate the default bytecode -- most likely a method closure

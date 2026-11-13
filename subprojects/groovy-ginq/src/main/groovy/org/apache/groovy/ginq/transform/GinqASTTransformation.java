@@ -19,6 +19,7 @@
 package org.apache.groovy.ginq.transform;
 
 import groovy.ginq.transform.GQ;
+import org.apache.groovy.ginq.GinqStaticBridge;
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.AnnotatedNode;
@@ -26,6 +27,7 @@ import org.codehaus.groovy.ast.AnnotationNode;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.MethodNode;
+import org.codehaus.groovy.ast.tools.ParameterUtils;
 import org.codehaus.groovy.ast.expr.CastExpression;
 import org.codehaus.groovy.ast.expr.ClassExpression;
 import org.codehaus.groovy.ast.expr.Expression;
@@ -47,6 +49,7 @@ import static org.apache.groovy.ginq.GinqGroovyMethods.CONF_LIST;
 import static org.apache.groovy.ginq.GinqGroovyMethods.transformGinqCode;
 import static org.codehaus.groovy.ast.ClassHelper.LIST_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.make;
+import static org.codehaus.groovy.ast.ClassHelper.isDynamicTyped;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.block;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.callX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.castX;
@@ -91,7 +94,11 @@ public class GinqASTTransformation extends AbstractASTTransformation {
             }
 
             Expression resultExpression = transformGinqCode(sourceUnit, ginqConfigurationMapExpression, origCode);
-            if (DEFAULT_RESULT_TYPE.equals(targetType)) { // same as `GQ {...}`
+            boolean keepQueryable = DEFAULT_RESULT_TYPE.equals(targetType);
+            // A Queryable result waits for its first read. A list or a coerced
+            // value is read before the method returns, so the query runs here.
+            resultExpression = GinqStaticBridge.prepare(sourceUnit, methodNode, resultExpression, keepQueryable);
+            if (keepQueryable) { // same as `GQ {...}`
                 // DO NOTHING
             } else if (LIST_TYPE.equals(targetType)) { // same as `GQL {...}`
                 resultExpression = callX(resultExpression, "toList");
@@ -104,9 +111,69 @@ public class GinqASTTransformation extends AbstractASTTransformation {
             BlockStatement newCode = block(stmt(resultExpression));
             newCode.setSourcePosition(origCode);
             methodNode.setCode(newCode);
+            widenDynamicReturn(methodNode, targetType);
             VariableScopeVisitor variableScopeVisitor = new VariableScopeVisitor(sourceUnit);
             variableScopeVisitor.visitClass(methodNode.getDeclaringClass());
         }
+    }
+
+    /**
+     * A {@code def} query method is widened to the declared GINQ result type so callers
+     * compiled statically can use the result. An explicit return type is left alone.
+     * A method that actually overrides a superclass or interface method is left alone
+     * when the widened type is not a legal covariant return.
+     */
+    private static void widenDynamicReturn(MethodNode methodNode, ClassNode targetType) {
+        if (!isDynamicTyped(methodNode.getReturnType()) || targetType == null) {
+            return;
+        }
+        ClassNode widened = targetType.getPlainNodeReference();
+        widened.setGenericsTypes(null);
+        if (incompatibleSuperReturn(methodNode, widened)) {
+            return;
+        }
+        methodNode.setReturnType(widened);
+    }
+
+    /**
+     * True when {@code methodNode} overrides a method whose return type cannot be
+     * widened. The override must be the same method: name, static-ness, and parameter
+     * types including generics ({@link ParameterUtils#parametersEqual}). Interface
+     * methods count, as do methods inherited through the superclass chain.
+     */
+    private static boolean incompatibleSuperReturn(MethodNode methodNode, ClassNode widened) {
+        ClassNode type = methodNode.getDeclaringClass();
+        for (ClassNode current = type.getSuperClass(); current != null; current = current.getSuperClass()) {
+            if (incompatibleDeclared(current, methodNode, widened)) {
+                return true;
+            }
+        }
+        for (ClassNode face : type.getAllInterfaces()) {
+            if (incompatibleDeclared(face, methodNode, widened)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static boolean incompatibleDeclared(ClassNode owner, MethodNode methodNode, ClassNode widened) {
+        for (MethodNode candidate : owner.getDeclaredMethods(methodNode.getName())) {
+            if (candidate.isPrivate() || candidate.isStatic() != methodNode.isStatic()) {
+                continue;
+            }
+            if (!ParameterUtils.parametersEqual(methodNode.getParameters(), candidate.getParameters())) {
+                continue;
+            }
+            ClassNode returned = candidate.getReturnType();
+            if (returned == null || isDynamicTyped(returned) || ClassHelper.OBJECT_TYPE.equals(returned)) {
+                continue;
+            }
+            if (widened.equals(returned) || widened.isDerivedFrom(returned) || widened.implementsInterface(returned)) {
+                continue;
+            }
+            return true;
+        }
+        return false;
     }
 
     private MapExpression makeGinqConfigurationMapExpression(AnnotationNode annotationNode) {

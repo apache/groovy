@@ -21,9 +21,14 @@ package org.apache.groovy.ginq.provider.collection.runtime;
 import groovy.lang.Tuple2;
 import groovy.transform.Internal;
 import org.apache.groovy.lang.annotation.GroovyABI;
+import org.codehaus.groovy.runtime.DefaultGroovyMethods;
+import org.codehaus.groovy.runtime.typehandling.GroovyCastException;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
 import java.util.function.BiFunction;
@@ -89,6 +94,24 @@ public interface Queryable<T> {
     @GroovyABI(since = "4.0.0")
     static <T> Queryable<T> from(T[] array) {
         return new QueryableCollection<>(Arrays.asList(array));
+    }
+
+    /**
+     * Factory for a primitive {@code int} array. {@code int[]} is not a
+     * {@code T[]}, so the elements are boxed and the queryable's element
+     * type is {@code Integer}.
+     *
+     * @param array the source values
+     * @return a queryable of the boxed values
+     * @since 7.0.0
+     */
+    @GroovyABI(since = "7.0.0")
+    static Queryable<Integer> from(int[] array) {
+        List<Integer> boxed = new ArrayList<>(array.length);
+        for (int value : array) {
+            boxed.add(value);
+        }
+        return new QueryableCollection<>(boxed);
     }
 
     /**
@@ -517,6 +540,56 @@ public interface Queryable<T> {
     List<T> toList();
 
     /**
+     * Iterates the materialized elements. A static {@code for} loop calls this
+     * rather than wrapping the query as a single value.
+     *
+     * @return an iterator over the elements
+     * @since 7.0.0
+     */
+    default Iterator<T> iterator() {
+        return toList().iterator();
+    }
+
+    /**
+     * Coerces this query. {@link List} is {@link #toList()}. {@link Collection},
+     * {@link Iterable} and any other collection type are that list passed to
+     * {@link DefaultGroovyMethods#asType(Collection, Class)}: this query does
+     * not implement those types, so {@link DefaultGroovyMethods#asType(Object, Class)}
+     * cannot walk its elements. Every other target, including {@link Queryable},
+     * is delegated to {@link DefaultGroovyMethods#asType(Object, Class)}, which
+     * throws {@link GroovyCastException} when the value is not compatible with
+     * the target.
+     *
+     * @param type the requested type
+     * @return the coerced value
+     * @throws GroovyCastException when {@code type} is null or the value cannot be coerced
+     * @since 7.0.0
+     */
+    default Object asType(Class<?> type) {
+        if (type == null) {
+            throw new GroovyCastException("Cannot cast '" + getClass().getName() + "' to null");
+        }
+        if (type == List.class) {
+            return toList();
+        }
+        if (type == Iterable.class || Collection.class.isAssignableFrom(type)) {
+            return DefaultGroovyMethods.asType(toList(), type);
+        }
+        return DefaultGroovyMethods.asType((Object) this, type);
+    }
+
+    /**
+     * Returns one materialized element.
+     *
+     * @param index the element index
+     * @return the element at that index
+     * @since 7.0.0
+     */
+    default T getAt(int index) {
+        return toList().get(index);
+    }
+
+    /**
      * Returns the count of elements of the {@link Queryable} instance
      *
      * @return the count of elements of the {@link Queryable} instance
@@ -525,9 +598,10 @@ public interface Queryable<T> {
     long size();
 
     /**
-     * Create {@link Stream<T>} object for the {@link Queryable} instance
+     * Returns a new stream over the elements. The stream has not been consumed.
+     * The default implementation streams the list from {@link #toList()}.
      *
-     * @return the result stream
+     * @return a stream that has not been consumed
      * @since 4.0.0
      */
     default Stream<T> stream() {

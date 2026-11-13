@@ -18,13 +18,21 @@
  */
 package org.codehaus.groovy.classgen.asm
 
+import org.codehaus.groovy.ast.ClassCodeVisitorSupport
+import org.codehaus.groovy.ast.ClassHelper
+import org.codehaus.groovy.ast.expr.MethodCallExpression
 import org.codehaus.groovy.control.CompilationUnit
 import org.codehaus.groovy.control.CompilerConfiguration
+import org.codehaus.groovy.control.MultipleCompilationErrorsException
+import org.codehaus.groovy.control.SourceUnit
+import org.codehaus.groovy.transform.stc.StaticTypesMarker
 import org.junit.jupiter.api.Test
 import org.objectweb.asm.ClassReader
 import org.objectweb.asm.ClassVisitor
 import org.objectweb.asm.MethodVisitor
 import org.objectweb.asm.Opcodes
+
+import static org.junit.jupiter.api.Assertions.assertThrows
 
 final class ClosureReturnTypeSignatureTest {
 
@@ -52,6 +60,17 @@ final class ClosureReturnTypeSignatureTest {
                 null
             }
         }, ClassReader.SKIP_CODE)
+    }
+
+    private static String classSignature(byte[] bytes) {
+        String[] found = new String[1]
+        new ClassReader(bytes).accept(new ClassVisitor(Opcodes.ASM9) {
+            @Override
+            void visit(int version, int access, String name, String signature, String superName, String[] interfaces) {
+                found[0] = signature
+            }
+        }, ClassReader.SKIP_CODE)
+        found[0]
     }
 
     private static List<String> doCallSignatures(byte[] bytes) {
@@ -137,6 +156,105 @@ final class ClosureReturnTypeSignatureTest {
                 (PACKED + '2'): '()LRes; null', // raw
                 (PACKED + '3'): '()LSvc; null', // self
             ]
+        }
+    }
+
+    // JLS 4.5: Serializable declares no type parameters, so a generic class that
+    // implements it does not construct Serializable<T>.
+    @Test
+    void serializableStaysRawOnAGenericClass() {
+        File dir = File.createTempDir()
+        try {
+            def holder = new File(dir, 'Holder.groovy')
+            holder.write '''
+                class Holder<T> implements java.io.Serializable {
+                    T value
+                }
+            '''
+            def unit = compile(dir, [holder])
+            String signature = classSignature(bytes(unit, 'Holder'))
+            assert signature != null
+            assert signature.contains('Ljava/io/Serializable;')
+            assert !signature.contains('Serializable<')
+            def face = unit.ast.classes.find { it.name == 'Holder' }.interfaces.find { it.name == 'java.io.Serializable' }
+            assert face != null
+            assert face.genericsTypes == null || face.genericsTypes.length == 0
+        } finally {
+            dir.deleteDir()
+        }
+    }
+
+    // JLS 4.5: a use site may not parameterize a class that declares no type
+    // parameters. GenericsVisitor rejects the arguments.
+    @Test
+    void nonGenericUseSiteIsRejected() {
+        File dir = File.createTempDir()
+        try {
+            def holder = new File(dir, 'Holder.groovy')
+            holder.write '''
+                class Holder<T> {
+                    java.io.Serializable<T> box
+                    Raw<String> raw
+                }
+                class Raw {}
+            '''
+            def ex = assertThrows(MultipleCompilationErrorsException) {
+                compile(dir, [holder])
+            }
+            assert ex.message.contains('Serializable')
+            assert ex.message.contains('Raw')
+            assert ex.message.contains('(supplied with 1 type parameter)')
+            assert ex.message.contains('which takes no parameters')
+        } finally {
+            dir.deleteDir()
+        }
+    }
+
+    // JLS 4.5 / javac: of(1, 2) infers T as Integer. The call type is
+    // List<Integer>. An int[] is not a T[] (javac rejects that call).
+    @Test
+    void primitiveArgumentIsBoxedInTheInferredType() {
+        File dir = File.createTempDir()
+        try {
+            def source = new File(dir, 'Boxes.groovy')
+            source.write '''
+                @groovy.transform.CompileStatic
+                class Boxes {
+                    static <T> java.util.List<T> of(T a, T b) { null }
+                    static <T> java.util.List<? extends T> ext(T value) { null }
+                    static Object list() { of(1, 2) }
+                    static Object bound() { ext(1) }
+                }
+            '''
+            def unit = compile(dir, [source])
+            def calls = [:]
+            unit.ast.classes.find { it.name == 'Boxes' }.methods.findAll { it.name in ['list', 'bound'] }.each { method ->
+                method.code.visit(new ClassCodeVisitorSupport() {
+                    @Override
+                    void visitMethodCallExpression(MethodCallExpression expression) {
+                        if (expression.methodAsString in ['of', 'ext']) calls[expression.methodAsString] = expression
+                        super.visitMethodCallExpression(expression)
+                    }
+                    @Override
+                    protected SourceUnit getSourceUnit() { null }
+                })
+            }
+            def ofType = calls.of.getNodeMetaData(StaticTypesMarker.INFERRED_TYPE)
+            assert ofType.name == 'java.util.List'
+            assert ofType.genericsTypes[0].type.name == 'java.lang.Integer'
+            assert !ClassHelper.isPrimitiveType(ofType.genericsTypes[0].type)
+            def extType = calls.ext.getNodeMetaData(StaticTypesMarker.INFERRED_TYPE)
+            def bound = extType.genericsTypes[0]
+            assert bound.wildcard
+            def upper = bound.upperBounds ? bound.upperBounds[0] : bound.type
+            assert upper.name == 'java.lang.Integer'
+            assert !ClassHelper.isPrimitiveType(upper)
+            eachMethod(bytes(unit, 'Boxes')) { name, methodSignature ->
+                assert !methodSignature.contains('<I') : methodSignature
+                assert !methodSignature.contains('+I') : methodSignature
+            }
+        } finally {
+            dir.deleteDir()
         }
     }
 }
