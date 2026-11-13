@@ -485,7 +485,7 @@ public class TupleConstructorASTTransformation extends AbstractASTTransformation
         return null;
     }
 
-    private static Stream<ClassNode[]> variants(final Parameter[] parameters) {
+    static Stream<ClassNode[]> variants(final Parameter[] parameters) {
         int n = (int) Stream.of(parameters).filter(Parameter::hasInitialExpression).count();
 
         return rangeClosed(0, n).mapToObj(i -> {
