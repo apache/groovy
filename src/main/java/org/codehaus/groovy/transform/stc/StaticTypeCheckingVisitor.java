@@ -5412,6 +5412,33 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
             && !(enclosingClosures.get(1).getClosureExpression() instanceof LambdaExpression);
     }
 
+    /**
+     * Tells whether the given enclosing closure is a lambda that is statically
+     * compiled to a native lambda. In such a lambda, as in Java, a method of the
+     * enclosing class comes before one of {@code Closure}. A lambda in dynamic or
+     * type-checked code, or one without a functional interface type, is a closure
+     * at run time, where the closure's own methods come first.
+     */
+    private boolean isNativeLambda(final TypeCheckingContext.EnclosingClosure enclosingClosure) {
+        ClosureExpression closure = enclosingClosure.getClosureExpression();
+        return closure instanceof LambdaExpression && isStaticDispatchScope()
+                && isFunctionalInterface(closure.getNodeMetaData(PARAMETER_TYPE));
+    }
+
+    /**
+     * Tells whether an implicit-this method call finds a method on the delegate,
+     * owner or enclosing class.
+     */
+    private boolean hasReceiverMethod(final Expression objectExpression, final String name, final ClassNode[] args) {
+        List<Receiver<String>> receivers = new ArrayList<>();
+        addReceivers(receivers, makeOwnerList(objectExpression), true);
+        for (Receiver<String> receiver : receivers) {
+            List<MethodNode> methods = findMethod(receiver.getType().getPlainNodeReference(), name, args);
+            if (!allowStaticAccessToMember(methods, !receiver.isObject()).isEmpty()) return true;
+        }
+        return false;
+    }
+
     private static void addDelegateReceiver(final List<Receiver<String>> receivers, final ClassNode delegate, final String path) {
         if (isClassClassNodeWrappingConcreteType(delegate)) { // GROOVY-11393: Type from Class<Type>
             receivers.add(new Receiver<>(delegate.getGenericsTypes()[0].getType(), false, path));
@@ -5520,6 +5547,7 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
                 // GROOVY-11386:
                 if (isThisObjectExpression && call.isImplicitThis()
                     && typeCheckingContext.getEnclosingClosure() != null
+                    && !(isNativeLambda(typeCheckingContext.getEnclosingClosure()) && hasReceiverMethod(objectExpression, name, args)) // GROOVY-12668
                     && !name.equals("call") && !name.equals("doCall")) { // GROOVY-9662
                     mn = CLOSURE_TYPE.getMethods(name);
                     DelegationMetadata dmd = typeCheckingContext.delegationMetadata;
