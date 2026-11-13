@@ -20,6 +20,8 @@ package org.codehaus.groovy.transform.traitx
 
 import org.codehaus.groovy.control.MultipleCompilationErrorsException
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.ValueSource
 
 import static groovy.test.GroovyAssert.assertScript
 import static groovy.test.GroovyAssert.shouldFail
@@ -156,6 +158,106 @@ final class VirtualAnnotationTest {
 
             assert Impl.seen() == 'impl'
         '''
+    }
+
+    // GROOVY-12601
+    @ParameterizedTest
+    @ValueSource(strings=['@groovy.transform.CompileDynamic','@groovy.transform.TypeChecked','@groovy.transform.CompileStatic'])
+    void virtualStatic_namedLikeClassMethod(String mode) {
+        assertScript """
+            import groovy.transform.Virtual
+
+            $mode
+            trait V {
+                @Virtual
+                static String getName() { 'trait' }
+                @Virtual
+                static boolean isInterface() { true }
+                @Virtual
+                static int getModifiers() { 42 }
+                @Virtual
+                static String cast(Object o) { 'trait ' + o }
+                @Virtual
+                static String dump() { 'trait' }
+                static String sm() { getName() }
+                static String st() { this.getName() }
+                static boolean si() { isInterface() }
+                static int sg() { getModifiers() }
+                static String sc() { cast('x') }
+                static String sd() { dump() }
+                String im() { getName() }
+                String it() { this.getName() }
+                String ic() { cast('y') }
+            }
+            $mode
+            class Over implements V {
+                static String getName() { 'impl' }
+                static boolean isInterface() { false }
+                static int getModifiers() { 7 }
+                static String cast(Object o) { 'impl ' + o }
+                static String dump() { 'impl' }
+            }
+            $mode
+            class Def implements V {
+            }
+
+            $mode void m() {
+                assert Over.sm() == 'impl'
+                assert Def.sm()  == 'trait'
+                assert Over.st() == 'impl'
+                assert Def.st()  == 'trait'
+                assert !Over.si()
+                assert Def.si()
+                assert Over.sg() == 7
+                assert Def.sg()  == 42
+                assert Over.sc() == 'impl x'
+                assert Def.sc()  == 'trait x'
+                assert Over.sd() == 'impl'
+                assert Def.sd()  == 'trait'
+                assert new Over().im() == 'impl'
+                assert new Def().im()  == 'trait'
+                assert new Over().it() == 'impl'
+                assert new Def().it()  == 'trait'
+                assert new Over().ic() == 'impl y'
+                assert new Def().ic()  == 'trait y'
+            }
+            m()
+        """
+    }
+
+    // GROOVY-12601
+    @ParameterizedTest
+    @ValueSource(strings=['@groovy.transform.CompileDynamic','@groovy.transform.TypeChecked','@groovy.transform.CompileStatic'])
+    void virtualStatic_ofSuperTrait_namedLikeClassMethod(String mode) {
+        assertScript """
+            import groovy.transform.Virtual
+
+            $mode
+            trait P {
+                @Virtual
+                static String getSimpleName() { 'trait' }
+            }
+            $mode
+            trait V extends P {
+                static String sm() { getSimpleName() }
+                String im() { getSimpleName() }
+            }
+            $mode
+            class Over implements V {
+                static String getSimpleName() { 'impl' }
+            }
+            $mode
+            class Def implements V {
+            }
+
+            $mode void m() {
+                assert Over.sm() == 'impl'
+                assert Def.sm()  == 'trait'
+                assert new Over().im() == 'impl'
+                assert new Def().im()  == 'trait'
+            }
+            m()
+        """
     }
 
     // ============ Validation ============
