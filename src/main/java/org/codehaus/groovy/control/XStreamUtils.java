@@ -98,7 +98,7 @@ public abstract class XStreamUtils {
             LOGGER.log(DEBUG, "Written AST to {0}.xml", name);
 
         } catch (Exception e) {
-            LOGGER.log(WARNING, "Couldn''t write to " + name + ".xml", e);
+            LOGGER.log(WARNING, "Couldn't write to " + name + ".xml", e);
         } finally {
             DefaultGroovyMethods.closeQuietly(astFileWriter);
         }

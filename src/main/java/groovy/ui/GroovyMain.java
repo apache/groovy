@@ -457,7 +457,8 @@ public class GroovyMain {
             if (e instanceof InvokerInvocationException iie) {
                 e = iie.getCause();
             }
-            LOGGER.log(ERROR, "Caught: {0}", e);
+            // log the text only; the stack trace is printed once below, sanitized unless -d is given
+            LOGGER.log(ERROR, "Caught: " + e);
             if (!debug) {
                 StackTraceUtils.deepSanitize(e);
             }
