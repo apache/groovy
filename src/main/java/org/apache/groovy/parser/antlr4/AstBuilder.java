@@ -604,7 +604,8 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
         visitAnnotationsOpt(ctx.annotationsOpt()).forEach(forStatement::addStatementAnnotation);
 
         if (isForAwait) {
-            return configureAST(AsyncTransformHelper.wrapForAwaitLoop(forStatement), ctx);
+            // numbered per source unit, so the generated name does not depend on compile order (GROOVY-12712)
+            return configureAST(AsyncTransformHelper.wrapForAwaitLoop(forStatement, ++forAwaitLoopCount), ctx);
         }
 
         return forStatement;
@@ -6051,6 +6052,8 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
 
     private final ModuleNode moduleNode;
     private final SourceUnit sourceUnit;
+    /** The {@code for await} loops seen so far in this source unit; their source variables are numbered by it. */
+    private int forAwaitLoopCount;
     private final GroovyLangLexer lexer;
     private final GroovyLangParser parser;
     private final GroovydocManager groovydocManager;

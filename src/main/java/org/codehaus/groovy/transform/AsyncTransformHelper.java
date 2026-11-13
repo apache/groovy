@@ -214,8 +214,24 @@ public final class AsyncTransformHelper {
      * @return the rewritten statement block
      */
     public static Statement wrapForAwaitLoop(ForStatement forStatement) {
+        return wrapForAwaitLoop(forStatement, FOR_AWAIT_SEQ.incrementAndGet());
+    }
+
+    /**
+     * Rewrites a {@code for await} loop as {@link #wrapForAwaitLoop(ForStatement)}
+     * does, naming the source variable {@code $__forAwaitSource_<index>}. The
+     * parser passes the loop's ordinal within its source unit, so the name, which
+     * reaches the class file through the local variable table, depends on the
+     * source alone and not on what else the JVM has compiled before it.
+     *
+     * @param forStatement the for statement whose collection is the await source
+     * @param index        a number unique among the {@code for await} loops of the source unit
+     * @return the rewritten statement block
+     * @since 6.0.1
+     */
+    public static Statement wrapForAwaitLoop(ForStatement forStatement, long index) {
         Expression original = forStatement.getCollectionExpression();
-        String tempVar = "$__forAwaitSource_" + FOR_AWAIT_SEQ.incrementAndGet();
+        String tempVar = "$__forAwaitSource_" + index;
         Expression toIterableCall = buildToIterableCall(original);
 
         Statement declStmt = declS(varX(tempVar), toIterableCall);

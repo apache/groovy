@@ -32,6 +32,10 @@ import org.codehaus.groovy.ast.stmt.EmptyStatement
 import org.codehaus.groovy.ast.stmt.ExpressionStatement
 import org.codehaus.groovy.ast.stmt.ForStatement
 import org.codehaus.groovy.ast.tools.GeneralUtils
+import org.codehaus.groovy.ast.CodeVisitorSupport
+import org.codehaus.groovy.ast.expr.DeclarationExpression
+import org.codehaus.groovy.control.CompilationUnit
+import org.codehaus.groovy.control.Phases
 import org.junit.jupiter.api.Test
 
 /**
@@ -112,6 +116,50 @@ final class AsyncTransformHelperTest {
         assert name1.startsWith('$__forAwaitSource_')
         assert name2.startsWith('$__forAwaitSource_')
         assert name1 != name2
+    }
+
+    @Test
+    void testWrapForAwaitLoopWithIndexUsesThatIndex() {
+        def loop = new ForStatement(
+                new Parameter(ClassHelper.OBJECT_TYPE, 'item'),
+                new ConstantExpression([1, 2, 3]),
+                EmptyStatement.INSTANCE)
+
+        def block = AsyncTransformHelper.wrapForAwaitLoop(loop, 7) as BlockStatement
+
+        assert extractDeclaredName(block) == '$__forAwaitSource_7'
+        assert loop.collectionExpression instanceof VariableExpression
+        assert loop.collectionExpression.name == '$__forAwaitSource_7'
+    }
+
+    // GROOVY-12712: the parser numbers the loops per source unit, so the generated names, which reach the
+    // class file through the local variable table, are the same however often and in whatever order the
+    // JVM compiles the source
+    @Test
+    void testForAwaitSourceNamesDependOnTheSourceUnitOnly() {
+        String source = '''
+            def gen = async { for (int i in 1..2) { yield return i } }
+            for await (n in gen) { println n }
+            for await (m in gen) { println m }
+        '''
+        def names = { ->
+            def unit = new CompilationUnit()
+            def sourceUnit = unit.addSource('ForAwaitNames.groovy', source)
+            unit.compile(Phases.CONVERSION)
+            def found = []
+            sourceUnit.AST.statementBlock.visit(new CodeVisitorSupport() {
+                @Override
+                void visitDeclarationExpression(DeclarationExpression expression) {
+                    String name = expression.variableExpression.name
+                    if (name.startsWith('$__forAwaitSource_')) found << name
+                    super.visitDeclarationExpression(expression)
+                }
+            })
+            found
+        }
+
+        assert names() == ['$__forAwaitSource_1', '$__forAwaitSource_2']
+        assert names() == ['$__forAwaitSource_1', '$__forAwaitSource_2']
     }
 
     @Test
