@@ -41,6 +41,10 @@ import java.lang.annotation.Target;
  * trait code invokes the annotated method, regardless of which method
  * inside the trait does the calling.
  *
+ * <p>It applies to calls made from the body of a trait method. A call
+ * made from a closure or a lambda in trait code invokes the trait's own
+ * copy, as for a trait static method without the marker.
+ *
  * <p>Valid only on public, non-abstract <code>static</code> trait
  * methods. Applying it to an instance method, a private method, an
  * abstract method, or anything outside a trait is a compile-time
