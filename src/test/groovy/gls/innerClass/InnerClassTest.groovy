@@ -2861,6 +2861,17 @@ final class InnerClassTest {
         }
     }
 
+    // GROOVY-12621: an enum constant body has no enclosing instance
+    @Test
+    void testOuterThisInEnumConstantBody() {
+        def err = shouldFail CompilationFailedException, '''
+            enum E {
+                A { def m() { E.this } }
+            }
+        '''
+        assert err.message.contains("The usage of 'Class.this' and 'Class.super' is not allowed in 'E\$1', which has no enclosing instance of 'E'.")
+    }
+
     // GROOVY-12512: an argument of this(...) or super(...) is in a static context
     @Test
     void testOuterFieldFromAnonymousClassInSpecialConstructorCall() {
