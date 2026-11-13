@@ -182,14 +182,12 @@ public class ToStringASTTransformation extends AbstractASTTransformation {
         // replace its body below.
         MethodNode stubberPlaceholder = null;
         if (hasExistingToString) {
-            // no point in the private method if one with that name already exists
-            if (hasDeclaredMethod(cNode, UNDER_TO_STRING, 0)) return;
             MethodNode toString = cNode.getDeclaredMethod(TO_STRING, Parameter.EMPTY_ARRAY);
             if (StubberSupport.isStub(toString)) {
                 stubberPlaceholder = toString;
                 hasExistingToString = false;
-            } else if (AnnotatedNodeUtils.isGenerated(toString)) {
-                // an existing non-stub generated method also takes precedence
+            } else if (hasDeclaredMethod(cNode, UNDER_TO_STRING, 0) || AnnotatedNodeUtils.isGenerated(toString)) {
+                // A hand-written helper, or a generated method that is not a stub, already owns this case.
                 return;
             }
         }

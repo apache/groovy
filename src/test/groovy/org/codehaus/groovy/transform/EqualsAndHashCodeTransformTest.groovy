@@ -121,4 +121,63 @@ class EqualsAndHashCodeTransformTest extends GroovyShellTestCase {
         '''
     }
 
+    // GROOVY-12726
+    void testHandWrittenEqualsAndHashCodeWithHelpersArePreserved() {
+        assertScript '''
+            import groovy.transform.EqualsAndHashCode
+            @EqualsAndHashCode
+            class Cell {
+                int value
+                boolean equals(Object other) { false }
+                int hashCode() { 7 }
+                private boolean _equals(Object other) { true }
+                private int _hashCode() { 9 }
+            }
+            def cell = new Cell(value: 1)
+            assert !cell.equals(cell)
+            assert cell.hashCode() == 7
+        '''
+    }
+
+    // GROOVY-12726
+    void testHandWrittenEqualsAndHashCodeDelegateToGeneratedHelpers() {
+        assertScript '''
+            import groovy.transform.EqualsAndHashCode
+            @EqualsAndHashCode
+            class Cell {
+                int value
+                boolean equals(Object other) { _equals(other) }
+                int hashCode() { _hashCode() }
+            }
+            def a = new Cell(value: 1)
+            def b = new Cell(value: 1)
+            def c = new Cell(value: 2)
+            assert a == b
+            assert a != c
+            assert a.hashCode() == b.hashCode()
+            assert a.hashCode() != c.hashCode()
+        '''
+    }
+
+    // GROOVY-12726
+    void testRepeatedAnnotationDoesNotDuplicateGeneratedMethods() {
+        assertScript '''
+            import groovy.transform.EqualsAndHashCode
+            @EqualsAndHashCode
+            @EqualsAndHashCode
+            class Cell {
+                int value
+            }
+            def a = new Cell(value: 1)
+            def b = new Cell(value: 1)
+            def c = new Cell(value: 2)
+            assert a == b
+            assert a != c
+            assert a.hashCode() == b.hashCode()
+            assert Cell.declaredMethods.count { it.name == 'equals' } == 1
+            assert Cell.declaredMethods.count { it.name == 'hashCode' } == 1
+            assert Cell.declaredMethods.every { it.name != '_equals' && it.name != '_hashCode' }
+        '''
+    }
+
 }

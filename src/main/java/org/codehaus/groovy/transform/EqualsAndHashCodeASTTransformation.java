@@ -235,14 +235,12 @@ public class EqualsAndHashCodeASTTransformation extends AbstractASTTransformatio
         // generated" so we replace its body below.
         MethodNode stubberHashCodePlaceholder = null;
         if (hasExistingHashCode) {
-            // no point in the private method if one with that name already exists
-            if (hasDeclaredMethod(cNode, UNDER_HASH_CODE, 0)) return;
             MethodNode hashCode = cNode.getDeclaredMethod(HASH_CODE, Parameter.EMPTY_ARRAY);
             if (StubberSupport.isStub(hashCode)) {
                 stubberHashCodePlaceholder = hashCode;
                 hasExistingHashCode = false;
-            } else if (AnnotatedNodeUtils.isGenerated(hashCode)) {
-                // an existing non-stub generated method also takes precedence
+            } else if (hasDeclaredMethod(cNode, UNDER_HASH_CODE, 0) || AnnotatedNodeUtils.isGenerated(hashCode)) {
+                // A hand-written helper, or a generated method that is not a stub, already owns this case.
                 return;
             }
         }
@@ -465,18 +463,15 @@ public class EqualsAndHashCodeASTTransformation extends AbstractASTTransformatio
         // generated" so we replace its body below.
         MethodNode stubberEqualsPlaceholder = null;
         if (hasExistingEquals) {
-            // no point in the private method if one with that name already exists
-            if (hasDeclaredMethod(cNode, UNDER_EQUALS, 1)) return;
             MethodNode equals = findDeclaredMethod(cNode, EQUALS, 1);
             if (StubberSupport.isStub(equals)) {
                 stubberEqualsPlaceholder = equals;
                 hasExistingEquals = false;
-            } else if (AnnotatedNodeUtils.isGenerated(equals)) {
-                // an existing non-stub generated method also takes precedence
+            } else if (hasDeclaredMethod(cNode, UNDER_EQUALS, 1) || AnnotatedNodeUtils.isGenerated(equals)) {
+                // A hand-written helper, or a generated method that is not a stub, already owns this case.
                 return;
             }
         }
-        if (hasExistingEquals && hasDeclaredMethod(cNode, UNDER_EQUALS, 1)) return;
 
         final BlockStatement body = new BlockStatement();
         VariableExpression other = varX("other");
