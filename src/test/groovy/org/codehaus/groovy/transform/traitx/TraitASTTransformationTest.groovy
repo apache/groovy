@@ -4216,6 +4216,228 @@ final class TraitASTTransformationTest {
         """
     }
 
+    // GROOVY-12598
+    @CompileModesTest
+    void testTraitPropertyInDelegateFirstClosure(String mode) {
+        assertScript shell, """
+            $mode
+            trait T {
+                def cnt = 1
+                def read() {
+                    [cnt: 42].with { cnt }
+                }
+                def write() {
+                    def map = [cnt: 42]
+                    map.with { cnt = 5 }
+                    [map.cnt, cnt]
+                }
+                def readDT() {
+                    dt([cnt: 42]) { cnt }
+                }
+                def writeDT() {
+                    def map = [cnt: 42]
+                    dt(map) { cnt = 5 }
+                    [map.cnt, cnt]
+                }
+                def dt(Map map, @DelegatesTo(value=Map, strategy=Closure.DELEGATE_FIRST) Closure block) {
+                    block.resolveStrategy = Closure.DELEGATE_FIRST
+                    block.delegate = map
+                    block()
+                }
+            }
+            $mode
+            class C implements T {
+            }
+
+            def c = new C()
+            assert c.read() == 42
+            assert c.write() == [5, 1]
+            assert c.readDT() == 42
+            assert c.writeDT() == [5, 1]
+        """
+    }
+
+    // GROOVY-12598
+    @CompileModesTest
+    void testTraitAccessorPropertyInDelegateFirstClosure(String mode) {
+        assertScript shell, """
+            $mode
+            trait T {
+                def getCnt() { 1 }
+                def read() {
+                    [cnt: 42].with { cnt }
+                }
+                def write() {
+                    def map = [cnt: 42]
+                    map.with { cnt = 5 }
+                    map.cnt
+                }
+            }
+            $mode
+            class C implements T {
+            }
+
+            def c = new C()
+            assert c.read() == 42
+            assert c.write() == 5
+        """
+    }
+
+    // GROOVY-12598
+    @CompileModesTest
+    void testTraitPropertyInClosureFallsBackToOwner(String mode) {
+        assertScript shell, """
+            class P {
+                String name = 'P'
+            }
+            $mode
+            trait T {
+                String name = 'T'
+                int cnt = 1
+                def read() {
+                    new P().with { name + cnt }
+                }
+                def write() {
+                    def p = new P()
+                    p.with { name = 'X'; cnt = 2 }
+                    [p.name, name, cnt]
+                }
+                def ownerFirst() {
+                    def block = { name }
+                    block.delegate = new P()
+                    block()
+                }
+            }
+            $mode
+            class C implements T {
+            }
+
+            def c = new C()
+            assert c.read() == 'P1'
+            assert c.write() == ['X', 'T', 2]
+            assert c.ownerFirst() == 'T'
+        """
+    }
+
+    // GROOVY-12598
+    @CompileModesTest
+    void testTraitPropertyInClosureUsesAccessor(String mode) {
+        assertScript shell, """
+            $mode
+            trait T {
+                def cnt = 1
+                def read() {
+                    def block = { -> cnt }
+                    block()
+                }
+            }
+            $mode
+            class C implements T {
+                def getCnt() { 2 }
+            }
+
+            assert new C().read() == 2
+        """
+    }
+
+    // GROOVY-12598
+    @CompileModesTest
+    void testTraitPropertyInDelegateOnlyClosure(String mode) {
+        assertScript shell, """
+            class H {
+                static <V> V only(Map map, @DelegatesTo(value=Map, strategy=Closure.DELEGATE_ONLY) Closure<V> block) {
+                    block.resolveStrategy = Closure.DELEGATE_ONLY
+                    block.delegate = map
+                    block()
+                }
+            }
+            $mode
+            trait T {
+                def cnt = 1
+                def read() {
+                    H.only([cnt: 42]) { cnt }
+                }
+                def write() {
+                    def map = [cnt: 42]
+                    H.only(map) { cnt = 5 }
+                    [map.cnt, cnt]
+                }
+            }
+            $mode
+            class C implements T {
+            }
+
+            def c = new C()
+            assert c.read() == 42
+            assert c.write() == [5, 1]
+        """
+    }
+
+    // GROOVY-12598
+    @CompileModesTest
+    void testTraitPropertyInDelegateOnlyClosureNotOnDelegate(String mode) {
+        def err = shouldFail shell, """
+            class H {
+                static <V> V only(@DelegatesTo(value=Object, strategy=Closure.DELEGATE_ONLY) Closure<V> block) {
+                    block.resolveStrategy = Closure.DELEGATE_ONLY
+                    block.delegate = new Object()
+                    block()
+                }
+            }
+            $mode
+            trait T {
+                def cnt = 1
+                def read() {
+                    H.only { cnt }
+                }
+            }
+            $mode
+            class C implements T {
+            }
+
+            new C().read()
+        """
+        if (mode == '@CompileDynamic') {
+            assert err instanceof MissingPropertyException
+            assert err.message.contains('No such property: cnt for class: java.lang.Object')
+        } else {
+            assert err.message.contains('The variable [cnt] is undeclared')
+        }
+    }
+
+    // GROOVY-12598
+    @CompileModesTest
+    void testTraitPropertyInOwnerOnlyClosure(String mode) {
+        assertScript shell, """
+            class H {
+                static <V> V only(Map map, @DelegatesTo(value=Map, strategy=Closure.OWNER_ONLY) Closure<V> block) {
+                    block.resolveStrategy = Closure.OWNER_ONLY
+                    block.delegate = map
+                    block()
+                }
+            }
+            $mode
+            trait T {
+                def cnt = 1
+                def read() {
+                    H.only([cnt: 42]) { cnt }
+                }
+                def write() {
+                    def map = [cnt: 42]
+                    H.only(map) { cnt = 5 }
+                    [map.cnt, cnt]
+                }
+            }
+            $mode
+            class C implements T {
+            }
+
+            def c = new C()
+            assert c.read() == 1
+            assert c.write() == [42, 5]
+        """
+    }
+
     // GROOVY-8000
     @Test
     void testTraitMultiLevelGenerics() {
