@@ -19,6 +19,9 @@
 package org.apache.groovy.contracts.tests.other
 
 import groovy.test.GroovyShellTestCase
+import org.apache.groovy.contracts.ClassInvariantViolation
+import org.apache.groovy.contracts.PostconditionViolation
+import org.apache.groovy.contracts.PreconditionViolation
 import org.codehaus.groovy.control.CompilationFailedException
 import org.codehaus.groovy.control.CompilationUnit
 import org.codehaus.groovy.control.Phases
@@ -401,5 +404,184 @@ class ClosureExpressionValidationTests extends GroovyShellTestCase {
         unit.compile(Phases.CLASS_GENERATION)
 
         assertTrue unit.classes*.name.containsAll(['B', 'C'])
+    }
+
+    // GROOVY-12740: a statement that is not an expression, e.g. 'return amount > 0', crashed the compiler
+    // with an internal error instead of being reported
+    void testReturnStatementPrecondition() {
+
+        def msg = shouldFail CompilationFailedException, {
+            evaluate """
+                import groovy.contracts.*
+
+                class A {
+                    @Requires({ return amount > 0 })
+                    void deposit(BigDecimal amount) {}
+                }
+
+                new A().deposit(1.0)
+                """
+        }
+
+        assertTrue msg.contains("[groovy-contracts] Annotation closure may only contain boolean expressions; return statements are not supported (e.g. use '@Requires({ argument1 > 0 })').")
+    }
+
+    // GROOVY-12740
+    void testAssertStatementPrecondition() {
+
+        def msg = shouldFail CompilationFailedException, {
+            evaluate """
+                import groovy.contracts.*
+
+                class A {
+                    @Requires({ assert amount > 0 })
+                    void deposit(BigDecimal amount) {}
+                }
+
+                new A().deposit(1.0)
+                """
+        }
+
+        assertTrue msg.contains("[groovy-contracts] Annotation closure may only contain boolean expressions; assert statements are not supported (e.g. use '@Requires({ argument1 > 0 })').")
+    }
+
+    // GROOVY-12740
+    void testIfStatementPrecondition() {
+
+        def msg = shouldFail CompilationFailedException, {
+            evaluate """
+                import groovy.contracts.*
+
+                class A {
+                    @Requires({ if (amount <= 0) throw new IllegalArgumentException('amount') })
+                    void deposit(BigDecimal amount) {}
+                }
+
+                new A().deposit(1.0)
+                """
+        }
+
+        assertTrue msg.contains("[groovy-contracts] Annotation closure may only contain boolean expressions; if statements are not supported (e.g. use '@Requires({ argument1 > 0 })').")
+    }
+
+    // GROOVY-12740: the statement is reported beside a valid condition too
+    void testStatementBesideExpressionPrecondition() {
+
+        def msg = shouldFail CompilationFailedException, {
+            evaluate """
+                import groovy.contracts.*
+
+                class A {
+                    @Requires({ amount > 0; return amount < 100 })
+                    void deposit(BigDecimal amount) {}
+                }
+
+                new A().deposit(1.0)
+                """
+        }
+
+        assertTrue msg.contains("return statements are not supported")
+        assertFalse msg.contains("BUG!")
+    }
+
+    // GROOVY-12740
+    void testReturnStatementPostcondition() {
+
+        def msg = shouldFail CompilationFailedException, {
+            evaluate """
+                import groovy.contracts.*
+
+                class A {
+                    @Ensures({ return result > 0 })
+                    int op(int x) { x }
+                }
+
+                new A().op(1)
+                """
+        }
+
+        assertTrue msg.contains("[groovy-contracts] Annotation closure may only contain boolean expressions; return statements are not supported (e.g. use '@Ensures({ argument1 > 0 })').")
+    }
+
+    // GROOVY-12740
+    void testAssertStatementClassInvariant() {
+
+        def msg = shouldFail CompilationFailedException, {
+            evaluate """
+                import groovy.contracts.*
+
+                @Invariant({ assert count >= 0 })
+                class A {
+                    int count
+                    void dec() { count-- }
+                }
+
+                new A().dec()
+                """
+        }
+
+        assertTrue msg.contains("[groovy-contracts] Annotation closure may only contain boolean expressions; assert statements are not supported (e.g. use '@Invariant({ argument1 > 0 })').")
+    }
+
+    // GROOVY-12740: '{ -> amount > 0 }' declares no parameters, like '{ amount > 0 }', but crashed the compiler
+    void testExplicitEmptyParameterListPrecondition() {
+
+        def msg = shouldFail PreconditionViolation, {
+            evaluate """
+                import groovy.contracts.*
+
+                class A {
+                    @Requires({ -> amount > 0 })
+                    void deposit(BigDecimal amount) {}
+                }
+
+                def a = new A()
+                a.deposit(1.0)
+                a.deposit(-1.0)
+                """
+        }
+
+        assertTrue msg.contains("amount > 0")
+    }
+
+    // GROOVY-12740
+    void testExplicitEmptyParameterListPostcondition() {
+
+        def msg = shouldFail PostconditionViolation, {
+            evaluate """
+                import groovy.contracts.*
+
+                class A {
+                    @Ensures({ -> result > 0 })
+                    int op(int x) { x }
+                }
+
+                def a = new A()
+                a.op(1)
+                a.op(-1)
+                """
+        }
+
+        assertTrue msg.contains("result > 0")
+    }
+
+    // GROOVY-12740
+    void testExplicitEmptyParameterListClassInvariant() {
+
+        def msg = shouldFail ClassInvariantViolation, {
+            evaluate """
+                import groovy.contracts.*
+
+                @Invariant({ -> count >= 0 })
+                class A {
+                    int count
+                    void dec() { count-- }
+                }
+
+                new A().dec()
+                """
+        }
+
+        assertTrue msg.contains("count >= 0")
     }
 }

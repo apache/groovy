@@ -31,11 +31,13 @@ import org.codehaus.groovy.ast.expr.BooleanExpression;
 import org.codehaus.groovy.ast.expr.ClosureExpression;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.ast.stmt.DoWhileStatement;
+import org.codehaus.groovy.ast.stmt.ExpressionStatement;
 import org.codehaus.groovy.ast.stmt.LoopingStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
 import org.codehaus.groovy.control.CompilationUnit;
 import org.codehaus.groovy.control.CompilePhase;
 import org.codehaus.groovy.control.SourceUnit;
+import org.codehaus.groovy.syntax.SyntaxException;
 import org.codehaus.groovy.transform.ASTTransformation;
 import org.codehaus.groovy.transform.GroovyASTTransformation;
 
@@ -97,6 +99,18 @@ public class LoopInvariantASTTransformation implements ASTTransformation, Compil
 
         ClosureExpression closureExpression = LoopContractSupport.contractClosure(annotation, source);
         if (closureExpression == null) return;
+
+        // each statement becomes one assertion, so a statement that is not an expression (e.g.
+        // 'assert i >= 0') holds no condition to assert and must not be dropped unnoticed
+        boolean onlyExpressions = true;
+        for (Statement statement : ((BlockStatement) closureExpression.getCode()).getStatements()) {
+            if (statement instanceof ExpressionStatement) continue;
+            source.addError(new SyntaxException("@Invariant on a loop may only contain boolean expressions; "
+                    + ExpressionUtils.describeStatementKind(statement) + " are not supported",
+                    statement.getLineNumber(), statement.getColumnNumber()));
+            onlyExpressions = false;
+        }
+        if (!onlyExpressions) return;
 
         List<BooleanExpression> booleanExpressions = ExpressionUtils.getBooleanExpression(closureExpression);
         if (booleanExpressions == null || booleanExpressions.isEmpty()) {
