@@ -134,11 +134,14 @@ public final class IndyCompoundAssign {
         // re-create the MetaClass on every lookup can never yield a live
         // token and fall through to the uncacheable legacy helper.
         SwitchPoint mopSwitchPoint = null;
+        SwitchPoint metaClassSwitchPoint = null;
         MetaClass mc = null;
         for (int attempt = 0; attempt < 3 && mopSwitchPoint == null; attempt++) {
             mopSwitchPoint = IndyInvalidation.classSwitchPointFor(receiver);
             mc = InvokerHelper.getMetaClass(receiver);
-            if (mopSwitchPoint.hasBeenInvalidated()) mopSwitchPoint = null;
+            metaClassSwitchPoint = IndyInvalidation.foreignMetaClassSwitchPointFor(receiver, mc);
+            if (mopSwitchPoint.hasBeenInvalidated()
+                    || (metaClassSwitchPoint != null && metaClassSwitchPoint.hasBeenInvalidated())) mopSwitchPoint = null;
         }
         if (mopSwitchPoint == null) return genericWrapper(assignName, baseName);
         boolean useAssign;
@@ -165,6 +168,9 @@ public final class IndyCompoundAssign {
         MethodHandle guarded = MethodHandles.guardWithTest(test, invoke, elseTarget);
         // Per-class SwitchPoint, same domain as a normal indy call (GROOVY-12191).
         guarded = IndyInterface.applyMopSwitchPoints(guarded, elseTarget, mopSwitchPoint);
+        if (metaClassSwitchPoint != null) {
+            guarded = IndyInterface.applyMopSwitchPoints(guarded, elseTarget, metaClassSwitchPoint);
+        }
 
         // Per-instance metaclasses make a class-keyed cache unsound, so mark such
         // shapes uncacheable (the wrapper is still used for the current call) —
