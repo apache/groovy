@@ -18,10 +18,16 @@
  */
 package org.codehaus.groovy.transform.stc
 
+import org.codehaus.groovy.ast.ClassHelper
 import org.codehaus.groovy.ast.ClassNode
+import org.codehaus.groovy.ast.ConstructorNode
 import org.codehaus.groovy.ast.GenericsType
+import org.codehaus.groovy.ast.GenericsType.GenericsTypeName
 import org.codehaus.groovy.ast.MethodNode
 import org.codehaus.groovy.ast.Parameter
+import org.codehaus.groovy.ast.expr.Expression
+import org.codehaus.groovy.ast.expr.TupleExpression
+import org.codehaus.groovy.ast.expr.VariableExpression
 import org.junit.jupiter.api.Test
 
 import java.lang.reflect.Modifier
@@ -204,6 +210,83 @@ final class StaticTypeCheckingSupportTest {
     void testChooseBestMethodEmptyAndNullCandidates() {
         assert chooseBestMethod(OBJECT_TYPE, [], STRING_TYPE).isEmpty()
         assert chooseBestMethod(OBJECT_TYPE, null, STRING_TYPE).isEmpty()
+    }
+
+    // GROOVY-7204: guards around receiver instantiation must not throw, and must not
+    // let a static, extension, foreign, or raw-constructor candidate steal a tighter instance method
+    @Test
+    void testReceiverInstantiationSkipsMethodsThatCannotSeeClassParameters() {
+        ClassNode box = new ClassNode('Box', Modifier.PUBLIC, OBJECT_TYPE)
+        ClassNode t = placeholder('T')
+        box.genericsTypes = [t.asGenericsType()] as GenericsType[]
+        ClassNode boxOfString = parameterized(box, STRING_TYPE)
+
+        MethodNode takeT = method(box, 'm', STRING_TYPE, new Parameter(t, 'arg'))
+        MethodNode takeCharSequence = method(box, 'm', STRING_TYPE, new Parameter(makeWithoutCaching(CharSequence), 'arg'))
+        MethodNode takeStatic = method(box, 'm', STRING_TYPE, new Parameter(STRING_TYPE, 'arg'))
+        takeStatic.modifiers = Modifier.PUBLIC | Modifier.STATIC
+
+        ClassNode other = new ClassNode('Other', Modifier.PUBLIC, OBJECT_TYPE)
+        MethodNode foreign = method(other, 'm', STRING_TYPE, new Parameter(placeholder('U'), 'arg'))
+
+        MethodNode orphan = new MethodNode('m', Modifier.PUBLIC, STRING_TYPE, [new Parameter(placeholder('E'), 'arg')] as Parameter[], ClassNode.EMPTY_ARRAY, null)
+
+        ClassNode placeholderOwner = placeholder('P')
+        MethodNode onPlaceholder = method(placeholderOwner, 'm', STRING_TYPE, new Parameter(placeholder('Q'), 'arg'))
+
+        MethodNode extensionSource = method(other, 'ext', STRING_TYPE, new Parameter(box, 'self'), new Parameter(t, 'arg'))
+        ExtensionMethodNode extension = new ExtensionMethodNode(extensionSource, 'm', Modifier.PUBLIC, STRING_TYPE,
+                [new Parameter(t, 'arg')] as Parameter[], ClassNode.EMPTY_ARRAY, null)
+        extension.declaringClass = other
+
+        ConstructorNode rawConstructor = new ConstructorNode(Modifier.PUBLIC, [new Parameter(t, 'arg')] as Parameter[], ClassNode.EMPTY_ARRAY, null)
+        rawConstructor.declaringClass = box
+        ConstructorNode rawList = new ConstructorNode(Modifier.PUBLIC, [new Parameter(LIST_TYPE, 'arg')] as Parameter[], ClassNode.EMPTY_ARRAY, null)
+        rawList.declaringClass = box
+
+        def chosen = chooseBestMethod(boxOfString, [takeT, takeCharSequence, takeStatic, foreign, onPlaceholder, extension], STRING_TYPE)
+        assert chosen.contains(takeT)
+        assert !chosen.contains(foreign)
+        assert !chosen.contains(extension)
+
+        // A constructor-first set skips the covariant filter, so a method with no declaring class is visible to distance.
+        def withOrphan = chooseBestMethod(boxOfString, [rawConstructor, orphan], STRING_TYPE)
+        assert withOrphan == [rawConstructor]
+        assert !withOrphan.contains(orphan)
+
+        def constructed = chooseBestMethod(box.plainNodeReference, [rawConstructor, rawList], STRING_TYPE)
+        assert constructed == [rawConstructor]
+        assert rawConstructor.parameters[0].originType.is(t)
+    }
+
+    // GROOVY-7204: Class is not a superclass, so the placeholder walk has to jump to it;
+    // an inner receiver whose own type dropped the outer arguments still reads them from the variable origin
+    @Test
+    void testPlaceHolderWalkReachesClassAndVariableOrigin() {
+        def fromClass = StaticTypeCheckingSupport.extractPlaceHolders(STRING_TYPE, ClassHelper.CLASS_Type)
+        assert fromClass != null
+
+        ClassNode outerDecl = new ClassNode('Outer', Modifier.PUBLIC, OBJECT_TYPE)
+        ClassNode t = placeholder('T')
+        outerDecl.genericsTypes = [t.asGenericsType()] as GenericsType[]
+        ClassNode outerUse = parameterized(outerDecl, STRING_TYPE)
+
+        ClassNode inner = new ClassNode('Inner', Modifier.PUBLIC, OBJECT_TYPE)
+        MethodNode method = method(inner, 'm', STRING_TYPE, new Parameter(t, 'arg'))
+        ClassNode origin = new ClassNode('Inner', Modifier.PUBLIC, OBJECT_TYPE)
+        origin.outerClassType = outerUse
+        VariableExpression receiverVar = new VariableExpression('inner', origin)
+
+        def helper = StaticTypeCheckingVisitor.getDeclaredMethod('extractPlaceHoldersVisibleToDeclaration', ClassNode, MethodNode, Expression)
+        helper.accessible = true
+        Map spec = helper.invoke(null, inner, method, receiverVar)
+        assert spec[new GenericsTypeName('T')].type.equals(STRING_TYPE)
+
+        Class marker = Class.forName('org.codehaus.groovy.transform.stc.StaticTypeCheckingVisitor$ExtensionMethodDeclaringClass')
+        VariableExpression self = new VariableExpression('$self', inner)
+        self.putNodeMetaData(marker, inner)
+        def specFromExtension = helper.invoke(null, inner, method, new TupleExpression(self))
+        assert specFromExtension != null
     }
 
     private static MethodNode method(ClassNode owner, String name, ClassNode returnType, Parameter... params) {
