@@ -230,9 +230,8 @@ class Use {
         // The script also runs. TimSort is not public, so the class expression
         // is not an ldc (BytecodeHelper.isClassLiteralPossible is public
         // only). It is loaded with Class.forName, and ".name" is
-        // Class.getName(), which does not access-check the class. A non-null
-        // instanceof, a cast, or a constructor does. null instanceof TimSort
-        // does not: the JVM does not resolve the type for a null operand.
+        // Class.getName(), which does not access-check the class. That does
+        // not decide whether ResolveVisitor accepts the import.
         assertScript '''
             import java.util.TimSort
             assert TimSort.name == 'java.util.TimSort'
