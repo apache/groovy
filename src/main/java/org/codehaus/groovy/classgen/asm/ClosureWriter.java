@@ -18,6 +18,7 @@
  */
 package org.codehaus.groovy.classgen.asm;
 
+import groovy.transform.Internal;
 import groovy.transform.PackedClosures.PackMode;
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.ast.AnnotationNode;
@@ -592,10 +593,13 @@ public class ClosureWriter {
 
     /** The most specific {@code @PackedClosures} mode in scope (method wins over class), or null if not annotated. */
     private PackMode annotatedMode() {
-        MethodNode m = controller.getMethodNode();
+        return annotatedMode(controller.getMethodNode(), controller.getClassNode());
+    }
+
+    private static PackMode annotatedMode(final MethodNode m, final ClassNode classNode) {
         PackMode mode = (m != null) ? packModeOf(m.getAnnotations()) : null;
         if (mode != null) return mode;
-        for (ClassNode c = controller.getClassNode(); c != null; c = c.getOuterClass()) {
+        for (ClassNode c = classNode; c != null; c = c.getOuterClass()) {
             mode = packModeOf(c.getAnnotations());
             if (mode != null) return mode;
         }
@@ -661,11 +665,35 @@ public class ClosureWriter {
      * the backstop for those.
      */
     private boolean escapesEnclosingMethod(final ClosureExpression expression) {
+        if (expression.getNodeMetaData(ESCAPES_METHOD) != null) return true;
         MethodNode m = controller.getMethodNode();
         if (m == null || m.getCode() == null) return false;
         return escapingClosuresByMethod
                 .computeIfAbsent(m, k -> collectEscapingClosures(k.getCode()))
                 .contains(expression);
+    }
+
+    /** Metadata marking a closure literal found escaping before a static compilation rewrite. */
+    private static final String ESCAPES_METHOD = "org.codehaus.groovy.classgen.asm.ClosureWriter.escapesMethod";
+
+    /**
+     * Marks the closure literals in the method that visibly escape it, for the escape gate to honour
+     * at class generation. Static compilation calls this before its transformers turn
+     * {@code list << { ... }}, subscript stores and setter-backed property stores into method calls,
+     * shapes the escape walk no longer recognises. Does nothing unless the flag or a non-DISABLED
+     * {@code @PackedClosures} on the method or an enclosing class requests packing.
+     *
+     * @param method the method whose body is about to be transformed
+     */
+    @Internal
+    public static void markEscapingClosures(final MethodNode method) {
+        if (method.getCode() == null) return;
+        PackMode mode = annotatedMode(method, method.getDeclaringClass());
+        if (mode == PackMode.DISABLED
+                || (mode == null && !SystemUtil.getBooleanSafe(CompilerConfiguration.CLOSURE_PACKING))) return;
+        for (ClosureExpression closure : collectEscapingClosures(method.getCode())) {
+            closure.putNodeMetaData(ESCAPES_METHOD, Boolean.TRUE);
+        }
     }
 
     private static Set<ClosureExpression> collectEscapingClosures(final Statement code) {
