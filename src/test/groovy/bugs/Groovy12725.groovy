@@ -31,6 +31,8 @@ import org.codehaus.groovy.control.SourceUnit
 import org.junit.jupiter.api.Test
 
 import java.lang.reflect.Field
+import java.util.concurrent.CyclicBarrier
+import java.util.concurrent.TimeUnit
 
 import static org.junit.jupiter.api.Assertions.assertEquals
 import static org.junit.jupiter.api.Assertions.assertFalse
@@ -144,6 +146,83 @@ final class Groovy12725 {
             assertEquals("groovy.util.${name}".toString(), type.superClass.name)
             assertEquals(['groovy.util.'], cache.get(name).toList())
         }
+    }
+
+    @Test
+    void defaultImportCacheIsIndependentAcrossClassLoaders() {
+        String name = 'CrossLoaderProbe12725'
+        GroovyClassLoader loaderA = define(name, 'groovy.util')
+        GroovyClassLoader loaderB = define(name, 'groovy.lang')
+        withCache(name, null) { cache ->
+            ClassNode first = compile(loaderA, "${name}A1.groovy", "class ${name}A1 extends ${name} {}")
+            assertEquals("groovy.util.${name}".toString(), first.superClass.name)
+            assertEquals(['groovy.util.'], cache.get(name).toList())
+
+            ClassNode second = compile(loaderB, "${name}B.groovy", "class ${name}B extends ${name} {}")
+            assertEquals("groovy.lang.${name}".toString(), second.superClass.name)
+            assertEquals(['groovy.lang.', 'groovy.util.'], cache.get(name).toList())
+
+            ClassNode third = compile(loaderA, "${name}A2.groovy", "class ${name}A2 extends ${name} {}")
+            assertEquals("groovy.util.${name}".toString(), third.superClass.name)
+            assertEquals(['groovy.lang.', 'groovy.util.'], cache.get(name).toList())
+            assertFalse(cache.get(name).is(index().get(name)))
+            assertThrows(UnsupportedOperationException) {
+                cache.get(name).add('java.lang.')
+            }
+        }
+        assertNull(cache().get(name))
+    }
+
+    @Test
+    void concurrentResolutionsOfTheSameNameHonorEachClassLoader() {
+        String name = 'ConcurrentProbe12725'
+        int threads = 8
+        int rounds = 4
+        String utilSource = "package groovy.util\nclass ${name} {}"
+        String langSource = "package groovy.lang\nclass ${name} {}"
+        GroovyClassLoader[] loaders = new GroovyClassLoader[threads]
+        for (int i = 0; i < threads; i++) {
+            GroovyClassLoader loader = new GroovyClassLoader(Groovy12725.class.classLoader)
+            loader.parseClass((i % 2 == 0) ? utilSource : langSource)
+            loaders[i] = loader
+        }
+        String[][] resolved = new String[threads][rounds]
+        Throwable[] failures = new Throwable[threads]
+        CyclicBarrier start = new CyclicBarrier(threads)
+        Thread[] workers = new Thread[threads]
+        withCache(name, null) { cache ->
+            threads.times { int id ->
+                workers[id] = Thread.start {
+                    try {
+                        start.await(30, TimeUnit.SECONDS)
+                        rounds.times { int round ->
+                            String client = "${name}_${id}_${round}"
+                            ClassNode type = compile(loaders[id], "${client}.groovy", "class ${client} extends ${name} {}")
+                            resolved[id][round] = type.superClass.name
+                        }
+                    } catch (Throwable failure) {
+                        failures[id] = failure
+                    }
+                }
+            }
+            for (int i = 0; i < threads; i++) {
+                workers[i].join(60_000)
+                assertFalse(workers[i].isAlive(), "worker ${i} did not finish")
+                if (failures[i] != null) {
+                    throw new AssertionError("worker ${i} failed", failures[i])
+                }
+                String expected = (i % 2 == 0) ? "groovy.util.${name}" : "groovy.lang.${name}"
+                for (int round = 0; round < rounds; round++) {
+                    assertEquals(expected, resolved[i][round])
+                }
+            }
+            assertEquals(['groovy.lang.', 'groovy.util.'], cache.get(name).toList())
+            assertFalse(cache.get(name).is(index().get(name)))
+            assertThrows(UnsupportedOperationException) {
+                cache.get(name).add('java.lang.')
+            }
+        }
+        assertNull(cache().get(name))
     }
 
     @Test
