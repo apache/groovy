@@ -52,10 +52,11 @@ final class TypeSignatureWriter {
 
     /**
      * Type arguments safe to write for a resolved declaration. A signature
-     * cannot name arguments a class does not declare. Source use sites are
-     * corrected by {@code ResolveVisitor}; a type built later (a lowest upper
-     * bound, for example) may still carry them, and an unresolved name is
-     * left unchanged.
+     * cannot name arguments a class does not declare, so a count that does
+     * not match the declaration is omitted. An unresolved name is left
+     * unchanged. A source use site that does not match is rejected before
+     * bytecode; a type built later, such as a lowest upper bound, may still
+     * carry arguments this method has to drop.
      */
     private static GenericsType[] signatureArguments(final ClassNode printType) {
         GenericsType[] useSite = printType.getGenericsTypes();

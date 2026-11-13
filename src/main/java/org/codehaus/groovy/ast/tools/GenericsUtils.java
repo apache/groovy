@@ -375,8 +375,11 @@ public class GenericsUtils {
      * The declaration is read from the class, not from whether a use site has
      * already been resolved. A primary class records its formals on itself.
      * A use-site proxy reads the redirect target. An unresolved name has no
-     * declaration yet, so its arguments are left in place;
-     * {@link ResolveVisitor} applies this method again once the class is known.
+     * declaration yet, so its arguments are left in place. A source use site
+     * is not rewritten; the generics check reports a type argument that is
+     * not well-formed. Callers that build a type, such as inference or
+     * substitution, use this method so the type they store is one a signature
+     * can carry.
      *
      * @param owner the parameterized type
      * @param arguments the arguments about to be stored
@@ -401,8 +404,7 @@ public class GenericsUtils {
      * recorded. A loaded class whose formals were not copied onto the node
      * answers from {@code Class.getTypeParameters()}. An unresolved use site
      * answers {@code false} because the declaration is not this node; its
-     * own generics are the arguments, and {@link ResolveVisitor} decides
-     * again after the redirect is set.
+     * own generics are the arguments.
      */
     private static boolean declaresNoTypeParameters(final ClassNode type) {
         if (type == null || type.isGenericsPlaceHolder()) return false;

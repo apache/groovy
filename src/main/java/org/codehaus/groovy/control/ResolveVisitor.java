@@ -66,7 +66,6 @@ import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.ast.stmt.CatchStatement;
 import org.codehaus.groovy.ast.stmt.ForStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
-import org.codehaus.groovy.ast.tools.GenericsUtils;
 import org.codehaus.groovy.classgen.VariableScopeVisitor;
 import org.codehaus.groovy.runtime.memoize.UnlimitedConcurrentCache;
 import org.codehaus.groovy.syntax.Types;
@@ -542,24 +541,17 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
             }
         }
 
-        if (type.isPrimaryClassNode()) {
-            normalizeUseSite(type);
-            return true;
-        }
+        if (type.isPrimaryClassNode()) return true;
         if (type.isArray()) {
             ClassNode element = type.getComponentType();
             boolean resolved = resolve(element, testModuleImports, testDefaultImports, testStaticInnerClasses);
             if (resolved) {
                 ClassNode cn = element.makeArray();
                 type.setRedirect(cn);
-                normalizeUseSite(type);
             }
             return resolved;
         }
-        if (type.isResolved()) {
-            normalizeUseSite(type);
-            return true;
-        }
+        if (type.isResolved()) return true;
 
         String typeName = type.getName();
 
@@ -590,39 +582,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
         if (resolved && genericsTypes != null) {
             resolveWildcardBounding(genericsTypes, type);
         }
-        if (resolved) {
-            normalizeUseSite(type);
-        }
         return resolved;
-    }
-
-    /**
-     * Drops type arguments a class does not declare and boxes a primitive
-     * argument or wildcard bound. A use site is a redirect; the declaration
-     * itself is left alone. An unresolved name is not a redirect yet, so this
-     * runs again once {@link #resolve} has found the class.
-     */
-    private static void normalizeUseSite(final ClassNode type) {
-        if (type == null || type.isGenericsPlaceHolder() || !type.isRedirectNode()) {
-            return;
-        }
-        GenericsType[] arguments = type.getGenericsTypes();
-        if (arguments == null || arguments.length == 0) {
-            return;
-        }
-        GenericsType[] legal = GenericsUtils.legalTypeArguments(type, arguments);
-        if (legal == arguments) {
-            return;
-        }
-        if (legal == null || legal.length == 0) {
-            type.setGenericsTypes(null);
-            ClassNode outer = type.getOuterClassType();
-            if (outer == null || outer.getGenericsTypes() == null || outer.getGenericsTypes().length == 0) {
-                type.setUsingGenerics(false);
-            }
-            return;
-        }
-        type.setGenericsTypes(legal);
     }
 
     /**

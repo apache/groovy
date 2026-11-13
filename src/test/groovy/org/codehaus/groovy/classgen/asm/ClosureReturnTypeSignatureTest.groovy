@@ -23,14 +23,16 @@ import org.codehaus.groovy.ast.ClassHelper
 import org.codehaus.groovy.ast.expr.MethodCallExpression
 import org.codehaus.groovy.control.CompilationUnit
 import org.codehaus.groovy.control.CompilerConfiguration
+import org.codehaus.groovy.control.MultipleCompilationErrorsException
 import org.codehaus.groovy.control.SourceUnit
 import org.codehaus.groovy.transform.stc.StaticTypesMarker
 import org.junit.jupiter.api.Test
 import org.objectweb.asm.ClassReader
 import org.objectweb.asm.ClassVisitor
-import org.objectweb.asm.FieldVisitor
 import org.objectweb.asm.MethodVisitor
 import org.objectweb.asm.Opcodes
+
+import static org.junit.jupiter.api.Assertions.assertThrows
 
 final class ClosureReturnTypeSignatureTest {
 
@@ -66,18 +68,6 @@ final class ClosureReturnTypeSignatureTest {
             @Override
             void visit(int version, int access, String name, String signature, String superName, String[] interfaces) {
                 found[0] = signature
-            }
-        }, ClassReader.SKIP_CODE)
-        found[0]
-    }
-
-    private static String fieldSignature(byte[] bytes, String fieldName) {
-        String[] found = new String[1]
-        new ClassReader(bytes).accept(new ClassVisitor(Opcodes.ASM9) {
-            @Override
-            FieldVisitor visitField(int access, String name, String descriptor, String signature, Object value) {
-                if (name == fieldName) found[0] = "$descriptor $signature".toString()
-                null
             }
         }, ClassReader.SKIP_CODE)
         found[0]
@@ -194,10 +184,10 @@ final class ClosureReturnTypeSignatureTest {
         }
     }
 
-    // JLS 4.5: a use site does not parameterize a class that declares no type
-    // parameters. ResolveVisitor drops the arguments; the signature writer does not.
+    // JLS 4.5: a use site may not parameterize a class that declares no type
+    // parameters. GenericsVisitor rejects the arguments.
     @Test
-    void nonGenericUseSiteIsRawBeforeBytecode() {
+    void nonGenericUseSiteIsRejected() {
         File dir = File.createTempDir()
         try {
             def holder = new File(dir, 'Holder.groovy')
@@ -208,19 +198,13 @@ final class ClosureReturnTypeSignatureTest {
                 }
                 class Raw {}
             '''
-            def unit = compile(dir, [holder])
-            byte[] holderBytes = bytes(unit, 'Holder')
-            String boxSignature = fieldSignature(holderBytes, 'box')
-            String rawSignature = fieldSignature(holderBytes, 'raw')
-            assert boxSignature.contains('Ljava/io/Serializable;')
-            assert !boxSignature.contains('Serializable<')
-            assert rawSignature.contains('LRaw;')
-            assert !rawSignature.contains('Raw<')
-            def holderClass = unit.ast.classes.find { it.name == 'Holder' }
-            def box = holderClass.fields.find { it.name == 'box' }
-            def raw = holderClass.fields.find { it.name == 'raw' }
-            assert box.originType.genericsTypes == null || box.originType.genericsTypes.length == 0
-            assert raw.originType.genericsTypes == null || raw.originType.genericsTypes.length == 0
+            def ex = assertThrows(MultipleCompilationErrorsException) {
+                compile(dir, [holder])
+            }
+            assert ex.message.contains('Serializable')
+            assert ex.message.contains('Raw')
+            assert ex.message.contains('(supplied with 1 type parameter)')
+            assert ex.message.contains('which takes no parameters')
         } finally {
             dir.deleteDir()
         }
