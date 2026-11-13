@@ -846,7 +846,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     }
                     // falls through
                   case "owner":
-                    if (typeCheckingContext.getEnclosingClosureStack().size() > 1) {
+                    if (hasClosureOwner()) {
                         vexp.putNodeMetaData(INFERRED_TYPE, CLOSURE_TYPE.getPlainNodeReference());
                         return;
                     }
@@ -5697,7 +5697,7 @@ out:                if (mn.size() != 1) {
                                 }
                                 // falls through
                               case "getOwner":
-                                if (typeCheckingContext.getEnclosingClosureStack().size() > 1) {
+                                if (hasClosureOwner()) {
                                     returnType = CLOSURE_TYPE.getPlainNodeReference();
                                     break;
                                 }
@@ -8162,6 +8162,19 @@ trying: for (ClassNode[] signature : signatures) {
 
     private ClassNode makeSuper() {
         return makeType(typeCheckingContext.getEnclosingClassNode().getUnresolvedSuperClass(), typeCheckingContext.isInStaticContext);
+    }
+
+    /**
+     * Tells whether the owner of the innermost enclosing closure or lambda is an
+     * enclosing closure. A lambda that is statically compiled to a native lambda
+     * is owned by the enclosing instance (or class) at any depth of nesting.
+     */
+    private boolean hasClosureOwner() {
+        List<TypeCheckingContext.EnclosingClosure> enclosingClosures = typeCheckingContext.getEnclosingClosureStack();
+        if (enclosingClosures.size() < 2) return false;
+        ClosureExpression closure = enclosingClosures.get(0).getClosureExpression();
+        return !(closure instanceof LambdaExpression && isStaticDispatchScope()
+                && isFunctionalInterface(closure.getNodeMetaData(PARAMETER_TYPE)));
     }
 
     private ClassNode makeThis() {
