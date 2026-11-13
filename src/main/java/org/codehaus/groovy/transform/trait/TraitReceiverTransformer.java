@@ -270,7 +270,8 @@ class TraitReceiverTransformer extends ClassCodeExpressionTransformer {
     private Expression transformFieldReference(final Expression exp, final FieldNode fn, final Expression value) {
         Expression receiver;
         if (ClassHelper.isClassType(weaved.getOriginType())) {
-            receiver = varX(weaved); // $static$self
+            // GROOVY-12597: (Class) $static$self, so static compilation does not bind to the trait interface's accessor
+            receiver = castX(ClassHelper.CLASS_Type.getPlainNodeReference(), varX(weaved));
         } else if (fn.isStatic()) {
             var call = callX(varX(weaved), "getClass"); // $self.getClass()
             call.setImplicitThis(false);
