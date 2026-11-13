@@ -196,8 +196,9 @@ public abstract class PackedClosure extends Closure<Object> {
     /**
      * The hoisted method's receiver, captured at construction. Dispatch uses this — never
      * {@code getOwner()} — so {@code dehydrate()} (which nulls the visible owner for its
-     * disconnect contract) and {@code rehydrate(...)} (which installs a different one) leave the
-     * closure callable, exactly as a generated closure class whose body never touches the owner.
+     * disconnect contract) and {@code rehydrate(...)} (which installs a different one where the
+     * guard in {@link #rehydrate} allows it) leave the closure callable, exactly as a generated
+     * closure class whose body never touches the owner.
      * Serialization stays blocked either way ({@link #writeObject}).
      */
     private final Object receiver;
@@ -232,7 +233,8 @@ public abstract class PackedClosure extends Closure<Object> {
      *                     exactly as with a generated closure class
      * @param strict       whether the delegate guard throws. {@code true} for the dynamic trust path
      *                     (an unverifiable {@code @PackedClosures} assertion must fail fast on misuse);
-     *                     {@code false} when the type checker PROVED every free name owner-resolved.
+     *                     {@code false} when the type checker PROVED every free name owner-resolved,
+     *                     or the body has no free name at all.
      */
     public PackedClosure(final Object owner, final GeneratedDispatcher.Bundle dispatchers, final int id, final String method, final Object[] captured, final Class[] visibleTypes, final boolean strict) {
         super(owner, owner);
@@ -261,15 +263,43 @@ public abstract class PackedClosure extends Closure<Object> {
     @Override
     public void setDelegate(final Object delegate) {
         if (strict && delegate != null && delegate != getOwner()) {
-            throw new UnsupportedOperationException(
-                    "Cannot set a delegate on a @PackedClosures closure (hoisted method '" + method
-                    + "'): its free names were bound to the owner at compile time, so an external "
-                    + "delegate cannot be honoured. Remove @PackedClosures from this scope, or "
-                    + "exclude this closure, if it relies on delegate-based resolution.");
+            throw delegateRefused();
         }
         // checked first, so a rejected delegate changes nothing (classic is null when strict)
         if (classic != null) classic.setDelegate(delegate);
         super.setDelegate(delegate);
+    }
+
+    // GROOVY-12661: Closure.rehydrate writes delegate, owner and thisObject on the copy directly,
+    // past setDelegate, while the hoisted body keeps calling the receiver captured at construction.
+    // So the same guard applies here: on the dynamic trust path refuse a delegate, owner or this
+    // object other than that receiver. null (the dehydrate() disconnect) and the receiver itself
+    // stay allowed, so rehydrating onto the original owner keeps working. A body with no free name
+    // is not strict: it cannot observe the new objects, so rehydrating it anywhere keeps working.
+    @Override
+    public Closure<Object> rehydrate(final Object delegate, final Object owner, final Object thisObject) {
+        if (strict) {
+            if (delegate != null && delegate != receiver) {
+                throw delegateRefused();
+            }
+            if ((owner != null && owner != receiver) || (thisObject != null && thisObject != receiver)) {
+                throw new UnsupportedOperationException(
+                        "Cannot rehydrate a @PackedClosures closure (hoisted method '" + method
+                        + "') with a different owner or this object: its free names were bound to the "
+                        + "owner at compile time, so a new owner cannot be honoured. Remove "
+                        + "@PackedClosures from this scope, or exclude this closure, if it relies on "
+                        + "owner- or delegate-based resolution.");
+            }
+        }
+        return super.rehydrate(delegate, owner, thisObject);
+    }
+
+    private UnsupportedOperationException delegateRefused() {
+        return new UnsupportedOperationException(
+                "Cannot set a delegate on a @PackedClosures closure (hoisted method '" + method
+                + "'): its free names were bound to the owner at compile time, so an external "
+                + "delegate cannot be honoured. Remove @PackedClosures from this scope, or "
+                + "exclude this closure, if it relies on delegate-based resolution.");
     }
 
     @Override

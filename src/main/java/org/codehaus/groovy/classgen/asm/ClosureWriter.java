@@ -1288,11 +1288,13 @@ public class ClosureWriter {
                 typesDescriptor.toString()));
         os.push(ClassHelper.CLASS_Type.makeArray());
         // strict guard only for the dynamic trust path; a PROVEN delegate-independent closure --
-        // statically (StaticTypesClosureWriter) or syntactically (SYNTACTIC_PACK, dynamic) --
-        // stores-and-ignores a caller-set delegate, like a @CompileStatic closure class.
+        // statically (StaticTypesClosureWriter) or syntactically (no free name, whether packed by
+        // the flag or the annotation) -- stores-and-ignores a caller-set delegate, and the owner
+        // and this object rehydrate installs, like a @CompileStatic closure class.
         // an open closure takes no strict flag: its live resolver honours a caller-set delegate
         if (!open) {
-            boolean strict = packedClosureUsesDelegateGuard() && expression.getNodeMetaData(SYNTACTIC_PACK) == null;
+            boolean strict = packedClosureUsesDelegateGuard() && expression.getNodeMetaData(SYNTACTIC_PACK) == null
+                    && !isSyntacticallyDelegateIndependent(expression);
             mv.visitInsn(strict ? Opcodes.ICONST_1 : Opcodes.ICONST_0);
             os.push(ClassHelper.boolean_TYPE);
         }
