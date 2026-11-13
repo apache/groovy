@@ -143,18 +143,16 @@ public interface MetaClassRegistry {
 
         private MetaClass createWithCustomLookup(Class theClass, MetaClassRegistry registry) {
             try {
-                final String customName = "groovy.runtime.metaclass." + theClass.getName() + "MetaClass";
-                // Class.forName keeps every name it is asked for in parallelLockMap,
-                // and the entry is never removed. The names that grow without bound
-                // are the companions of generated script and template classes
-                // (groovy.runtime.metaclass.<generated>MetaClass): no parent can
-                // define that fresh name, and there is no .class resource. Skip
-                // only those. A custom MetaClass defined with no .class resource,
-                // and the companion of any other class, still goes through Class.forName.
-                if (!customMetaClassVisible(theClass, customName)) {
+                // Class.forName records every name it is asked for. Skip that
+                // lookup only for a name Groovy itself generated: no companion
+                // was defined for it. A caller-chosen name, including a script
+                // file name and a class declared in a script, is resolved with
+                // Class.forName as usual. A missing class resource is not
+                // treated as proof that the companion is absent.
+                if (GroovyClassLoader.isGeneratedClassName(theClass)) {
                     return createNormalMetaClass(theClass, registry);
                 }
-                final Class customMetaClass = Class.forName(customName);
+                final Class customMetaClass = Class.forName("groovy.runtime.metaclass." + theClass.getName() + "MetaClass");
                 if (DelegatingMetaClass.class.isAssignableFrom(customMetaClass)) {
                     final Constructor customMetaClassConstructor = customMetaClass.getConstructor(MetaClass.class);
                     MetaClass normalMetaClass = createNormalMetaClass(theClass, registry);
@@ -170,60 +168,6 @@ public interface MetaClassRegistry {
             } catch (final Exception e) {
                 throw new GroovyRuntimeException("Could not instantiate custom Metaclass for class: " + theClass.getName() + ". Reason: " + e, e);
             }
-        }
-
-        private static boolean customMetaClassVisible(Class theClass, String customName) {
-            ClassLoader loader = MetaClassRegistry.class.getClassLoader();
-            if (loader == null) {
-                // Class.forName(String) uses the bootstrap loader that defined this class.
-                return true;
-            }
-            if (!isGeneratedScriptOrTemplate(theClass)) {
-                return true;
-            }
-            for (ClassLoader current = loader; current != null; current = current.getParent()) {
-                if (current instanceof GroovyClassLoader
-                        && ((GroovyClassLoader) current).getClassCacheEntry(customName) != null) {
-                    return true;
-                }
-            }
-            return classResourcePresent(loader, customName);
-        }
-
-        /**
-         * True for a script or template class, and for a class compiled with
-         * one. Each of those compilations chooses a new name.
-         */
-        private static boolean isGeneratedScriptOrTemplate(Class theClass) {
-            for (Class current = theClass; current != null; current = current.getEnclosingClass()) {
-                ClassLoader defining = current.getClassLoader();
-                if (defining instanceof GroovyClassLoader.InnerLoader
-                        && ((GroovyClassLoader.InnerLoader) defining).isScriptClassDefined()) {
-                    return true;
-                }
-            }
-            return false;
-        }
-
-        /**
-         * True when {@code className} is visible as a class file. A native image
-         * with exact reachability metadata throws if that resource was not
-         * registered; the class may still be loadable, so the caller falls
-         * through to {@code Class.forName}.
-         */
-        private static boolean classResourcePresent(ClassLoader loader, String className) {
-            try {
-                return loader.getResource(className.replace('.', '/') + ".class") != null;
-            } catch (Error error) {
-                if (isMissingResourceRegistration(error)) {
-                    return true;
-                }
-                throw error;
-            }
-        }
-
-        private static boolean isMissingResourceRegistration(Throwable error) {
-            return "com.oracle.svm.core.jdk.resources.MissingResourceRegistrationError".equals(error.getClass().getName());
         }
 
         /**

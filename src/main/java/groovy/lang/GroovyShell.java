@@ -56,6 +56,8 @@ public class GroovyShell extends GroovyObjectSupport {
     private final AtomicInteger counter = new AtomicInteger(0);
     private final CompilerConfiguration config;
     private final GroovyClassLoader loader;
+    /** Name most recently produced by {@link #generateScriptName()}, if that method ran. */
+    private String lastGeneratedScriptName;
 
     /**
      * Runs the standard {@code groovysh}-style command-line entry point.
@@ -558,7 +560,7 @@ public class GroovyShell extends GroovyObjectSupport {
      * @param scriptText the text of the script
      */
     public Object evaluate(final String scriptText) throws CompilationFailedException {
-        return evaluate(scriptText, generateScriptName(), DEFAULT_CODE_BASE);
+        return evaluate(codeSourceForGeneratedName(scriptText));
     }
 
     /**
@@ -611,7 +613,15 @@ public class GroovyShell extends GroovyObjectSupport {
      * @param in the stream reading the script
      */
     public Object evaluate(Reader in) throws CompilationFailedException {
-        return evaluate(in, generateScriptName());
+        Script script = null;
+        try {
+            script = parse(codeSourceForGeneratedName(in));
+            return script.run();
+        } finally {
+            if (script != null) {
+                InvokerHelper.removeClass(script.getClass());
+            }
+        }
     }
 
     /**
@@ -714,7 +724,7 @@ public class GroovyShell extends GroovyObjectSupport {
      * @param binding the context eval the script
      */
     public Script parse(String scriptText, Binding binding) throws CompilationFailedException {
-        return parse(scriptText, generateScriptName(), binding);
+        return parse(codeSourceForGeneratedName(scriptText), binding);
     }
 
     /**
@@ -758,7 +768,7 @@ public class GroovyShell extends GroovyObjectSupport {
      * @param in the stream reading the script
      */
     public Script parse(Reader in) throws CompilationFailedException {
-        return parse(in, generateScriptName(), context);
+        return parse(codeSourceForGeneratedName(in), context);
     }
 
     /**
@@ -768,15 +778,48 @@ public class GroovyShell extends GroovyObjectSupport {
      * @param binding the context eval the script
      */
     public Script parse(Reader in, Binding binding) throws CompilationFailedException {
-        return parse(in, generateScriptName(), binding);
+        return parse(codeSourceForGeneratedName(in), binding);
     }
 
     /**
      * Generates a unique logical script name for anonymous shell evaluations.
+     * <p>
+     * The shell records the name as generated only when the string returned
+     * to the caller is the string this implementation just produced. An
+     * override that returns a stable name, or any other string, leaves the
+     * flag unset, and that name is resolved like a caller-supplied name.
+     * An override that needs a stable name should not return the value
+     * produced by this implementation.
      *
      * @return a unique script name ending in {@code .groovy}
      */
     protected String generateScriptName() {
-        return "Script" + counter.incrementAndGet() + ".groovy";
+        String name = "Script" + counter.incrementAndGet() + ".groovy";
+        lastGeneratedScriptName = name;
+        return name;
+    }
+
+    private GroovyCodeSource codeSourceForGeneratedName(final String scriptText) {
+        synchronized (this) {
+            lastGeneratedScriptName = null;
+            String name = generateScriptName();
+            GroovyCodeSource gcs = new GroovyCodeSource(scriptText, name, DEFAULT_CODE_BASE);
+            if (name != null && name.equals(lastGeneratedScriptName)) {
+                gcs.setNameGenerated(true);
+            }
+            return gcs;
+        }
+    }
+
+    private GroovyCodeSource codeSourceForGeneratedName(final Reader reader) {
+        synchronized (this) {
+            lastGeneratedScriptName = null;
+            String name = generateScriptName();
+            GroovyCodeSource gcs = new GroovyCodeSource(reader, name, DEFAULT_CODE_BASE);
+            if (name != null && name.equals(lastGeneratedScriptName)) {
+                gcs.setNameGenerated(true);
+            }
+            return gcs;
+        }
     }
 }

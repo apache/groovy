@@ -3767,6 +3767,12 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         try {
             if (isBeanDerivative(theClass)) {
                 info = Introspector.getBeanInfo(theClass, Introspector.IGNORE_ALL_BEANINFO);
+            } else if (GroovyClassLoader.isGeneratedClassName(theClass)) {
+                // Skip this class's BeanInfo. Superclass BeanInfo is still
+                // read. The JDK still probes <name>Customizer; the defining
+                // loader answers that probe for a generated name without
+                // delegating it.
+                info = Introspector.getBeanInfo(theClass, Introspector.IGNORE_IMMEDIATE_BEANINFO);
             } else {
                 info = Introspector.getBeanInfo(theClass);
             }

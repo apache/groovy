@@ -53,6 +53,8 @@ final class Groovy8113 {
         assert shell.evaluate('''
             package pkg
             class Groovy8113Box { String item = 'x' }
+            def closure = { it }
+            assert closure('z') == 'z'
             new Groovy8113Box().item
         ''', 'pkg/Groovy8113Holder.groovy') == 'x'
 
@@ -74,12 +76,12 @@ final class Groovy8113 {
 
         Set<String> leaked = new TreeSet<>(lockKeys())
         leaked.removeAll(before)
-        leaked.removeIf { String key -> key.find(GENERATED) == null }
+        leaked.removeIf { String key -> !isForbiddenRetention(key) }
 
         List<String> retained = new ArrayList<>()
         for (ClassInfo info : ClassInfo.getAllClassInfo()) {
             Class<?> type = info.getTheClass()
-            if (type != null && type.name =~ GENERATED) {
+            if (type != null && isGeneratedClass(type.name)) {
                 retained.add(type.name)
             }
         }
@@ -89,8 +91,7 @@ final class Groovy8113 {
     @Test
     void presentBinaryInnerNameStillLoads() {
         // GROOVY-8113
-        // A binary inner name that has a class file must still load. The
-        // known-miss probe only skips names it can show are absent.
+        // A binary inner name that a parent can define must still load.
         GroovyShell shell = new GroovyShell()
         assertEquals(Thread.State, shell.classLoader.loadClass('java.lang.Thread$State'))
         assertEquals(Map.Entry, shell.classLoader.loadClass('java.util.Map$Entry'))
@@ -99,9 +100,8 @@ final class Groovy8113 {
     @Test
     void parentDefinedJavaLangDollarNameStillLoads() {
         // GROOVY-8113
-        // Names such as java.lang.$JaCoCo are defined by a parent loader and
-        // are not class files this loader can see. Generated script inner
-        // names are not in that package and are still not delegated.
+        // A parent loader can define a class, including one whose binary name
+        // contains '$', without exposing a class file to this loader.
         ClassLoader parent = new ClassLoader(Groovy8113.class.classLoader) {
             @Override
             protected Class<?> findClass(String name) throws ClassNotFoundException {
@@ -120,8 +120,63 @@ final class Groovy8113 {
         public static final String VALUE = 'ok'
     }
 
-    private static final String GENERATED =
-            /script\d+|Groovy8113Shell_\d+|Groovy8113_\d+|pkg\.Groovy8113|SimpleTemplateScript\d+/
+    /**
+     * A generated script name must not appear in a lock map at all. A
+     * caller-chosen script may appear only as a MetaClass, BeanInfo or
+     * Customizer companion, including companions of its closure classes.
+     */
+    private static boolean isForbiddenRetention(String key) {
+        String name = key.substring(key.indexOf('|') + 1)
+        String base = companionBase(name)
+        if (base != null) {
+            return isGeneratedClass(base)
+        }
+        return isGeneratedClass(name) || isUserClass(name)
+    }
+
+    private static String companionBase(String name) {
+        if (name.startsWith(META_PREFIX) && name.endsWith(META_SUFFIX) && name.length() > META_PREFIX.length() + META_SUFFIX.length()) {
+            return name.substring(META_PREFIX.length(), name.length() - META_SUFFIX.length())
+        }
+        for (String prefix : BEANINFO_PACKAGES) {
+            if (name.startsWith(prefix) && name.endsWith(BEANINFO_SUFFIX) && name.length() > prefix.length() + BEANINFO_SUFFIX.length()) {
+                return name.substring(prefix.length(), name.length() - BEANINFO_SUFFIX.length())
+            }
+        }
+        if (name.endsWith(BEANINFO_SUFFIX) && name.length() > BEANINFO_SUFFIX.length()) {
+            return name.substring(0, name.length() - BEANINFO_SUFFIX.length())
+        }
+        if (name.endsWith(CUSTOMIZER_SUFFIX) && name.length() > CUSTOMIZER_SUFFIX.length()) {
+            return name.substring(0, name.length() - CUSTOMIZER_SUFFIX.length())
+        }
+        return null
+    }
+
+    private static boolean isGeneratedClass(String name) {
+        return simpleClassName(name) ==~ GENERATED_SIMPLE
+    }
+
+    private static boolean isUserClass(String name) {
+        String simple = simpleClassName(name)
+        return simple ==~ USER_SIMPLE || name.contains('pkg.Groovy8113')
+    }
+
+    private static String simpleClassName(String name) {
+        int dot = name.lastIndexOf('.')
+        String simple = dot < 0 ? name : name.substring(dot + 1)
+        int dollar = simple.indexOf('$')
+        return dollar < 0 ? simple : simple.substring(0, dollar)
+    }
+
+    private static final String META_PREFIX = 'groovy.runtime.metaclass.'
+    private static final String META_SUFFIX = 'MetaClass'
+    private static final String BEANINFO_SUFFIX = 'BeanInfo'
+    private static final String CUSTOMIZER_SUFFIX = 'Customizer'
+    private static final String[] BEANINFO_PACKAGES = ['com.sun.beans.infos.', 'sun.beans.infos.']
+    private static final String GENERATED_SIMPLE =
+            /Script\d+|script\d+|SimpleTemplateScript\d+|GStringTemplateScript\d+|StreamingTemplateScript\d+|XmlTemplateScript\d+|GeneratedMarkupTemplate\d+/
+    private static final String USER_SIMPLE =
+            /Groovy8113Shell_\d+|Groovy8113_\d+|Groovy8113P|Groovy8113Holder|Groovy8113Box/
 
     private static Set<String> lockKeys() {
         Set<String> keys = new TreeSet<>()

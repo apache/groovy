@@ -111,7 +111,9 @@ public class GroovySocketServer implements Runnable {
             // We could jump through some hoops to have GroovyShell make our script name, but that seems unwarranted.
             // If we *did* jump through that hoop then we should probably change the run loop to not recompile
             // the script on every iteration since the script text can't change (the reason for the recompilation).
-            return new GroovyCodeSource(scriptFilenameOrText, generateScriptName(), GroovyShell.DEFAULT_CODE_BASE);
+            GroovyCodeSource source = new GroovyCodeSource(scriptFilenameOrText, generateScriptName(), GroovyShell.DEFAULT_CODE_BASE);
+            source.setNameGenerated(true);
+            return source;
         }
     }
 

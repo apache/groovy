@@ -70,7 +70,6 @@ import java.util.Collection;
 import java.util.Comparator;
 import java.util.Enumeration;
 import java.util.LinkedHashMap;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /*
@@ -98,13 +97,6 @@ public class GroovyClassLoader extends URLClassLoader {
      * This cache contains the loaded classes or PARSING, if the class is currently parsed.
      */
     protected final EvictableCache<String, Class> classCache = new UnlimitedConcurrentCache<>();
-
-    /**
-     * How many cached classes share each binary simple name. Beans
-     * introspection looks up {@code com.sun.beans.infos.<simple>BeanInfo}
-     * by simple name, which is not the cache key of a packaged class.
-     */
-    private final ConcurrentHashMap<String, Integer> definedSimpleNameCounts = new ConcurrentHashMap<>();
 
     /**
      * This cache contains mappings of file name to class. It is used to bypass compilation.
@@ -252,9 +244,8 @@ public class GroovyClassLoader extends URLClassLoader {
             unit.addClassNode(classNode);
             unit.setClassgenCallback((cv, cn) -> generatedClasses.put(cn, cv));
             unit.compile(Phases.CLASS_GENERATION);
-            collect(collector, generatedClasses);
-            markScriptCompilation(collector.getLoadedClasses());
-            definePackageInternal(collector.generatedClass.getName());
+        collect(collector, generatedClasses);
+        definePackageInternal(collector.generatedClass.getName());
             return collector.generatedClass;
         } catch (CompilationFailedException e) {
             throw new RuntimeException(e);
@@ -338,7 +329,10 @@ public class GroovyClassLoader extends URLClassLoader {
      * @return the main class defined in the given script
      */
     public Class parseClass(final String text) throws CompilationFailedException {
-        return parseClass(text, "Script_" + genEncodingString(text) + ".groovy");
+        GroovyCodeSource gcs = new GroovyCodeSource(text, "Script_" + genEncodingString(text) + ".groovy", "/groovy/script");
+        gcs.setCachable(false);
+        gcs.setNameGenerated(true);
+        return parseClass(gcs);
     }
 
     /**
@@ -446,10 +440,14 @@ public class GroovyClassLoader extends URLClassLoader {
         unit.setClassgenCallback((cv, cn) -> generatedClasses.put(cn, cv));
         unit.compile(config == null || config.getTargetDirectory() == null ? Phases.CLASS_GENERATION : Phases.OUTPUT);
 
+        // Record the generated name before the classes are published. A reader
+        // can otherwise observe a class whose loader does not yet know the name.
+        String generatedName = generatedMainClassName(codeSource, su);
+        if (generatedName != null && collector.getDefiningClassLoader() instanceof InnerLoader inner) {
+            inner.setGeneratedName(generatedName);
+        }
+
         collect(collector, generatedClasses);
-        // Mark before the classes are published. A reader can otherwise
-        // observe a class whose loader is not yet known to have defined a script.
-        markScriptCompilation(collector.getLoadedClasses());
 
         Class<?> answer = collector.generatedClass;
         String mainName = su.getAST().getMainClassName();
@@ -479,18 +477,63 @@ public class GroovyClassLoader extends URLClassLoader {
     }
 
     /**
-     * Records that this compilation defined a script or template class.
-     * Those classes, and the classes compiled with them, are the ones whose
-     * custom MetaClass companion names grow without bound.
+     * The main class name to treat as generated, or {@code null} when this
+     * compilation's main class was not named by the generated source name.
+     * {@code parseClass(String)} mints a file name even for a source that
+     * declares its own class; that declared name is left unset.
      */
-    private static void markScriptCompilation(final Collection<?> defined) {
-        for (Object item : defined) {
-            Class<?> type = (Class<?>) item;
-            if (Script.class.isAssignableFrom(type) && type.getClassLoader() instanceof InnerLoader) {
-                ((InnerLoader) type.getClassLoader()).noteScriptClassDefined();
-                return;
-            }
+    private static String generatedMainClassName(final GroovyCodeSource codeSource, final SourceUnit su) {
+        if (codeSource == null || !codeSource.isNameGenerated() || su == null || su.getAST() == null) {
+            return null;
         }
+        String mainName = su.getAST().getMainClassName();
+        if (mainName == null) {
+            return null;
+        }
+        if (!simpleClassName(mainName).equals(classNameFromSourceName(codeSource.getName()))) {
+            return null;
+        }
+        return mainName;
+    }
+
+    private static String simpleClassName(final String name) {
+        int dot = name.lastIndexOf('.');
+        String simple = dot < 0 ? name : name.substring(dot + 1);
+        int dollar = simple.indexOf('$');
+        return dollar < 0 ? simple : simple.substring(0, dollar);
+    }
+
+    /**
+     * Class name Groovy derives from a source name: the last path segment,
+     * without an extension, encoded as a class name. Matches the script class
+     * created for that source.
+     */
+    private static String classNameFromSourceName(final String sourceName) {
+        if (sourceName == null) {
+            return "";
+        }
+        String name = sourceName;
+        int slash = Math.max(name.lastIndexOf('/'), name.lastIndexOf('\\'));
+        if (slash >= 0) {
+            name = name.substring(slash + 1);
+        }
+        int dot = name.lastIndexOf('.');
+        if (dot > 0) {
+            name = name.substring(0, dot);
+        }
+        return GeneratorContext.encodeAsValidClassName(name);
+    }
+
+    /**
+     * True when {@code type} was defined for a name Groovy generated, or is a
+     * nested class of that name ({@code name$...}).
+     */
+    static boolean isGeneratedClassName(final Class<?> type) {
+        if (type == null) {
+            return false;
+        }
+        ClassLoader loader = type.getClassLoader();
+        return loader instanceof InnerLoader && ((InnerLoader) loader).isGeneratedName(type.getName());
     }
 
     private static void validate(final GroovyCodeSource codeSource) {
@@ -612,9 +655,7 @@ public class GroovyClassLoader extends URLClassLoader {
      * @see #clearCache()
      */
     protected void setClassCacheEntry(final Class cls) {
-        if (classCache.put(cls.getName(), cls) == null) {
-            noteDefinedSimpleName(cls.getName());
-        }
+        classCache.put(cls.getName(), cls);
     }
 
     /**
@@ -626,151 +667,56 @@ public class GroovyClassLoader extends URLClassLoader {
      * @see #clearCache()
      */
     protected void removeClassCacheEntry(final String name) {
-        if (classCache.remove(name) != null) {
-            noteRemovedSimpleName(name);
-        }
+        classCache.remove(name);
     }
 
     /**
-     * Beans introspection and inner-class resolution ask for companion names
-     * that are not on any classpath. {@code Class.forName} of a beans companion
-     * retries the platform loader when this loader reports
-     * {@link ClassNotFoundException}, so that probe is reported as a different
-     * exception the introspector already ignores. Other known misses stay a
-     * normal {@link ClassNotFoundException}, without consulting the parent.
-     * A {@code java.lang.$} name is not one of those misses: a parent loader
-     * can define it without exposing a class file here.
+     * Beans introspection asks the defining loader for {@code <class>Customizer}
+     * and, on {@link ClassNotFoundException}, asks the thread context loader
+     * as well. For a name this compilation generated, that probe cannot succeed:
+     * Groovy did not define a Customizer, and a parent is not asked.
+     * {@link IntrospectionProbeMiss} is not a {@link ClassNotFoundException}, so
+     * the context loader is not tried and neither loader records the name.
+     * BeanInfo is not handled here. Introspection of a generated class ignores
+     * the immediate BeanInfo and still uses the superclass BeanInfo.
+     * <p>
+     * Any other name, including a binary name containing {@code '$'}, is
+     * delegated. A missing class resource is not evidence that a parent cannot
+     * define the class.
      */
-    private void throwIfParentWouldOnlyRecordAMiss(final String name, final boolean lookupScriptFiles) throws ClassNotFoundException {
-        if (name == null) {
-            return;
-        }
-        boolean beanCompanion = isBeanCompanionProbe(name);
-        boolean innerName = name.indexOf('$') >= 0;
-        if (!beanCompanion && !innerName) {
-            return;
-        }
-        // java.lang.$JaCoCo and similar helpers are real parent-defined types.
-        // Generated script and template names are not in this package.
-        if (!beanCompanion && name.startsWith("java.lang.$")) {
-            return;
-        }
-        if (definedByParentGroovyLoader(name) || hasClassResource(name)) {
-            return;
-        }
-        if (lookupScriptFiles) {
-            try {
-                if (resourceLoader.loadGroovySource(name) != null) {
-                    return;
-                }
-            } catch (MalformedURLException ignored) {
-                // Let the normal load path report the bad source URL.
-                return;
-            }
-        }
-        if (beanCompanion) {
+    private void throwIfParentWouldOnlyRecordAMiss(final String name) {
+        if (isGeneratedCustomizerProbe(name)) {
             throw new IntrospectionProbeMiss(name);
         }
-        throw new ClassNotFoundException(name);
-    }
-
-    private boolean hasClassResource(final String name) {
-        // A class file path is formed only from a binary name. Any other
-        // spelling is not a miss this probe can decide, so the caller keeps
-        // the normal load path (parent-defined helpers, hidden classes).
-        if (name == null || name.isEmpty() || name.contains("..") || name.contains("/") || name.contains("\\")) {
-            return true;
-        }
-        for (String part : name.split("\\.", -1)) {
-            if (part.isEmpty() || !Character.isJavaIdentifierStart(part.charAt(0))) {
-                return true;
-            }
-            for (int i = 1; i < part.length(); i += 1) {
-                if (!Character.isJavaIdentifierPart(part.charAt(i))) {
-                    return true;
-                }
-            }
-        }
-        try {
-            return getResource(name.replace('.', '/') + ".class") != null;
-        } catch (Error error) {
-            // Exact native-image metadata reports an unregistered resource
-            // probe as an error. That is a miss for this check: the class file
-            // is not one this loader can see, so the known-miss path applies.
-            if (isMissingResourceRegistration(error)) {
-                return false;
-            }
-            throw error;
-        }
-    }
-
-    private static boolean isMissingResourceRegistration(final Throwable error) {
-        return "com.oracle.svm.core.jdk.resources.MissingResourceRegistrationError".equals(error.getClass().getName());
-    }
-
-    private boolean definedByParentGroovyLoader(final String name) {
-        for (ClassLoader current = getParent(); current != null; current = current.getParent()) {
-            if (current instanceof GroovyClassLoader
-                    && ((GroovyClassLoader) current).getClassCacheEntry(name) != null) {
-                return true;
-            }
-        }
-        return false;
     }
 
     /**
-     * True when {@code name} is the BeanInfo or Customizer companion of a
-     * class this loader defined, including the {@code com.sun.beans.infos}
-     * search used by {@code java.beans.Introspector}.
+     * True when {@code name} is the Customizer companion of a class whose name
+     * Groovy generated for this loader.
      */
-    private boolean isBeanCompanionProbe(final String name) {
-        String base = beanCompanionBase(name);
-        return base != null && definesCachedClass(base);
+    private boolean isGeneratedCustomizerProbe(final String name) {
+        String base = customizerBase(name);
+        return base != null && definesGeneratedName(base);
     }
 
-    private static String beanCompanionBase(final String name) {
-        final String beanInfo = "BeanInfo";
-        final String customizer = "Customizer";
-        String base;
-        if (name.endsWith(beanInfo) && name.length() > beanInfo.length()) {
-            base = name.substring(0, name.length() - beanInfo.length());
-        } else if (name.endsWith(customizer) && name.length() > customizer.length()) {
-            base = name.substring(0, name.length() - customizer.length());
-        } else {
+    private static String customizerBase(final String name) {
+        final String suffix = "Customizer";
+        if (name == null || name.length() <= suffix.length() || !name.endsWith(suffix)) {
             return null;
         }
-        int dot = base.lastIndexOf('.');
-        if (dot > 0) {
-            String pkg = base.substring(0, dot);
-            if ("com.sun.beans.infos".equals(pkg) || "sun.beans.infos".equals(pkg)) {
-                return base.substring(dot + 1);
-            }
-        }
-        return base;
+        return name.substring(0, name.length() - suffix.length());
     }
 
-    private boolean definesCachedClass(final String base) {
-        if (getClassCacheEntry(base) != null) {
-            return true;
+    private boolean definesGeneratedName(final String name) {
+        if (this instanceof InnerLoader) {
+            return ((InnerLoader) this).isGeneratedName(name);
         }
-        if (base.indexOf('.') >= 0) {
+        Class<?> cached = getClassCacheEntry(name);
+        if (cached == null) {
             return false;
         }
-        Integer count = definedSimpleNameCounts.get(base);
-        return count != null && count > 0;
-    }
-
-    private void noteDefinedSimpleName(final String className) {
-        definedSimpleNameCounts.merge(binarySimpleName(className), 1, Integer::sum);
-    }
-
-    private void noteRemovedSimpleName(final String className) {
-        definedSimpleNameCounts.computeIfPresent(binarySimpleName(className), (key, count) -> count <= 1 ? null : count - 1);
-    }
-
-    private static String binarySimpleName(final String className) {
-        int dot = className.lastIndexOf('.');
-        return dot < 0 ? className : className.substring(dot + 1);
+        ClassLoader defining = cached.getClassLoader();
+        return defining instanceof InnerLoader && ((InnerLoader) defining).isGeneratedName(name);
     }
 
     /**
@@ -888,11 +834,11 @@ public class GroovyClassLoader extends URLClassLoader {
         if (!isRecompilable(cls)) return cls;
 
         // A parallel-capable loader keeps every name passed to loadClass in
-        // its lock map, including names that are not found. Delegating a miss
-        // to a long-lived parent therefore retains one entry per generated
-        // script. Resolve the misses we know cannot succeed without asking.
+        // its lock map, including names that are not found. The Customizer
+        // probe of a name Groovy generated cannot succeed; answer it here,
+        // before the parent is asked. Every other name is delegated.
         if (cls == null) {
-            throwIfParentWouldOnlyRecordAMiss(name, lookupScriptFiles);
+            throwIfParentWouldOnlyRecordAMiss(name);
         }
 
         // try parent loader
@@ -1187,7 +1133,6 @@ public class GroovyClassLoader extends URLClassLoader {
      */
     public void clearCache() {
         sourceCache.clear();
-        definedSimpleNameCounts.clear();
 
         for (var entry : classCache.clearAll().entrySet()) {
             // Another Thread may be using an instance of this class
@@ -1237,8 +1182,11 @@ public class GroovyClassLoader extends URLClassLoader {
     public static class InnerLoader extends GroovyClassLoader {
         private final GroovyClassLoader delegate;
         private final long timeStamp;
-        /** True once this compilation has defined a script or template class. */
-        private volatile boolean scriptClassDefined;
+        /**
+         * Binary name of the main class when Groovy generated that name for
+         * this compilation. Not a set of every name the loader has seen.
+         */
+        private volatile String generatedName;
 
         /**
          * Creates an inner loader delegating to the supplied outer Groovy class loader.
@@ -1355,16 +1303,42 @@ public class GroovyClassLoader extends URLClassLoader {
         }
 
         /**
-         * True when the compilation that created this loader defined a script
-         * or template class. Checked when resolving a custom MetaClass so a
-         * generated companion name is not recorded on a long-lived loader.
+         * Records the main class name Groovy generated for this compilation.
+         *
+         * @param name the binary name of that class
          */
-        boolean isScriptClassDefined() {
-            return scriptClassDefined;
+        void setGeneratedName(final String name) {
+            generatedName = name;
         }
 
-        private void noteScriptClassDefined() {
-            scriptClassDefined = true;
+        /**
+         * True for the generated main class name and for a nested name
+         * {@code name$...}. Other classes defined by this compilation,
+         * including a class declared in the same source, are not generated
+         * names.
+         *
+         * @param name the binary name to test
+         * @return {@code true} when {@code name} is the generated class or one of its nested classes
+         */
+        boolean isGeneratedName(final String name) {
+            String generated = generatedName;
+            if (generated == null || name == null) {
+                return false;
+            }
+            return name.equals(generated) || name.startsWith(generated + "$");
+        }
+
+        /**
+         * The JDK asks this loader for {@code <generated>Customizer} and, on
+         * {@link ClassNotFoundException}, asks the thread context loader too.
+         * The probe is reported as {@link IntrospectionProbeMiss} so neither
+         * loader records the name.
+         */
+        private void rejectGeneratedCustomizer(final String name) {
+            String base = customizerBase(name);
+            if (base != null && isGeneratedName(base)) {
+                throw new IntrospectionProbeMiss(name);
+            }
         }
 
         /** {@inheritDoc} */
@@ -1382,6 +1356,7 @@ public class GroovyClassLoader extends URLClassLoader {
         /** {@inheritDoc} */
         @Override
         public Class<?> loadClass(final String name) throws ClassNotFoundException {
+            rejectGeneratedCustomizer(name);
             return delegate.loadClass(name);
         }
 
@@ -1394,6 +1369,7 @@ public class GroovyClassLoader extends URLClassLoader {
         /** {@inheritDoc} */
         @Override
         public Class loadClass(final String name, final boolean lookupScriptFiles, final boolean preferClassOverScript, final boolean resolve) throws ClassNotFoundException, CompilationFailedException {
+            rejectGeneratedCustomizer(name);
             var c = findLoadedClass(name);
             if (c == null)
                 c = delegate.loadClass(name, lookupScriptFiles, preferClassOverScript, resolve);

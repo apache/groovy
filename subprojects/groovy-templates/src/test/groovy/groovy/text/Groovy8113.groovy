@@ -20,6 +20,8 @@ package groovy.text
 
 import groovy.junit6.plugin.ForkedJvm
 import groovy.lang.GroovyShell
+import groovy.text.markup.MarkupTemplateEngine
+import groovy.text.markup.TemplateConfiguration
 import org.junit.jupiter.api.Test
 
 import static org.junit.jupiter.api.Assertions.assertTrue
@@ -44,6 +46,8 @@ final class Groovy8113 {
             assert new SimpleTemplateEngine().createTemplate(text).make([name: 'Ada']).toString().contains('Ada')
             assert new GStringTemplateEngine().createTemplate(text).make([name: 'Ada']).toString().contains('Ada')
             assert new StreamingTemplateEngine().createTemplate(text).make([name: 'Ada']).toString().contains('Ada')
+            assert new XmlTemplateEngine().createTemplate("<person><name>${i}</name></person>").make().toString().contains(String.valueOf(i))
+            assert new MarkupTemplateEngine(new TemplateConfiguration()).createTemplate("html { body { yield '${i}' } }").make().toString().contains(String.valueOf(i))
         }
 
         Set<String> leaked = new TreeSet<>(lockKeys())
@@ -53,7 +57,7 @@ final class Groovy8113 {
     }
 
     private static final String GENERATED =
-            /SimpleTemplateScript\d+|GStringTemplateScript\d+|StreamingTemplateScript\d+/
+            /SimpleTemplateScript\d+|GStringTemplateScript\d+|StreamingTemplateScript\d+|XmlTemplateScript\d+|GeneratedMarkupTemplate\d+/
 
     private static Set<String> lockKeys() {
         Set<String> keys = new TreeSet<>()

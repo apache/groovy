@@ -65,6 +65,12 @@ public class GroovyCodeSource {
 
     private boolean cachable;
 
+    /**
+     * True when {@link #name} was chosen by Groovy for this compilation.
+     * A caller-supplied name leaves this unset.
+     */
+    private boolean nameGenerated;
+
     private File file;
 
     private URL url;
@@ -283,6 +289,27 @@ public class GroovyCodeSource {
      */
     public boolean isCachable() {
         return cachable;
+    }
+
+    /**
+     * Records whether {@link #getName()} was chosen by Groovy for this compilation.
+     * A generated name is not a type a caller asked to resolve. Companion lookups
+     * for that name are not delegated to a parent loader. A caller-supplied name,
+     * including a script file name, leaves the flag unset.
+     *
+     * @param generated {@code true} when Groovy minted the name
+     */
+    public void setNameGenerated(boolean generated) {
+        nameGenerated = generated;
+    }
+
+    /**
+     * Indicates whether {@link #getName()} was chosen by Groovy.
+     *
+     * @return {@code true} when the name was generated for this source
+     */
+    public boolean isNameGenerated() {
+        return nameGenerated;
     }
 
     @SuppressWarnings("removal") // TODO a future Groovy version should remove the security check
