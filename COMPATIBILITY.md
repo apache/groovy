@@ -1184,6 +1184,26 @@ from the trait's own field), instance accessors and properties, names in a
 closure or lambda (which the closure resolves), `++` and `--`, and access from
 outside the trait (`Special.label`).
 
+### Groovy 7 — a declared trait property in a closure is read and written through its accessor (GROOVY-12598)
+
+In a closure in a trait method, the name of an instance property that the
+trait declares is resolved by the closure, through its delegate and owner,
+and `this.name` is a call of the accessor on the implementing instance.
+Before, both went straight to the trait's backing field. This is what the
+same names mean in a closure in a class that declares the property.
+
+**Who is affected.** A trait that declares a property and uses it in a
+closure, when an implementing class declares its own accessor for that
+property, or when the closure's delegate has a property of the same name and
+the closure's resolve strategy consults the delegate first. A getter or
+setter that the trait itself declares for the property and that uses the
+property in a closure now calls itself; use the property outside the closure
+there.
+
+**What is unchanged.** The property in a method body or a lambda, which is
+the trait's backing field; private and static fields of the trait; and
+`getName()` and `setName(v)`.
+
 ### Groovy 6.0.1 — statically compiled constructor references call the constructor directly (GROOVY-12488)
 
 Under `@CompileStatic`, a constructor reference such as `X::new` created the
