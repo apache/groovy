@@ -842,6 +842,53 @@ final class MethodReferenceTest {
         assert err.message =~ /Possible loss of precision from java.lang.Long to int/
     }
 
+    // GROOVY-12716: only the overloads that the parameter types can select are checked
+    @Test
+    void testMethodPointerToOverloadsSelectedByParameterTypes() {
+        assertScript shell, '''
+            @CompileStatic
+            class C {
+                Function<Integer,Integer> returned() { Math.&abs }
+                static void test() {
+                    Function<Integer,Integer> f = Math.&abs
+                    assert f.apply(-3) == 3
+                    Function<Long,Long> g = Math.&abs
+                    assert g.apply(-4L) == 4L
+                    ToIntFunction<Integer> h = Math.&abs
+                    assert h.applyAsInt(-5) == 5
+                    BiFunction<Integer,Integer,Integer> i = Math.&max
+                    assert i.apply(1, 2) == 2
+                    Function<Number,Number> j = Math.&abs
+                    assert j.apply(-6) == 6
+                    assert j.apply(-7.5d) == 7.5d
+                }
+            }
+            C.test()
+            assert new C().returned().apply(-8) == 8
+        '''
+
+        // a Number may be a Double, which selects abs(double)
+        def err = shouldFail shell, '''
+            @CompileStatic
+            class C {
+                static void test() {
+                    ToIntFunction<Number> f = Math.&abs
+                }
+            }
+        '''
+        assert err.message =~ /Possible loss of precision from double to int/
+
+        err = shouldFail shell, '''
+            @CompileStatic
+            class C {
+                static void test() {
+                    ToIntFunction<Long> f = Math.&abs
+                }
+            }
+        '''
+        assert err.message =~ /Possible loss of precision from long to int/
+    }
+
     // GROOVY-12623: a method pointer still selects its method at run time
     @Test
     void testMethodPointerFromTypeParameterReturnType() {
