@@ -3651,6 +3651,8 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
                 } else if (!statement.isReturningNullOrVoid() && isPrimitiveType(inferredReturnType)
                         && checkReturnValue(inferredReturnType, type, expression, statement)) {
                     type = inferredReturnType; // GROOVY-12616: the value is converted to a primitive return type as by a method's return
+                } else if (!statement.isReturningNullOrVoid() && isClosureCoercibleToSAM(inferredReturnType, type)) {
+                    type = inferredReturnType; // GROOVY-12606: closure value is coerced to the SAM type at point of return
                 } else if ((statement.isReturningNullOrVoid() || !isPrimitiveVoid(type)) && !extension.handleIncompatibleReturnType(statement, type)) {
                     // GROOVY-10277, GROOVY-11490: incompatible return statement (null for primitive or inconvertible type)
                     String value = (statement.isReturningNullOrVoid() ? "null" : "value of type " + prettyPrintValueType(type, expression));
@@ -3710,6 +3712,20 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
             addPrecisionErrors(target.redirect(), target, type, value);
         }
         return true;
+    }
+
+    /**
+     * Checks if a value of type {@code Closure<R>} can be coerced to the given
+     * SAM type: its abstract method returns void or a supertype of {@code R}.
+     */
+    private static boolean isClosureCoercibleToSAM(final ClassNode samType, final ClassNode closureType) {
+        if (!closureType.isDerivedFrom(CLOSURE_TYPE) || !isSAMType(samType)) return false;
+        ClassNode returnType = GenericsUtils.parameterizeSAM(samType).getV2();
+        if (isPrimitiveVoid(returnType)) return true;
+        GenericsType[] closureGenerics = GenericsUtils.findParameterizedType(CLOSURE_TYPE, closureType).getGenericsTypes();
+        if (closureGenerics == null) return true; // raw Closure
+        ClassNode closureReturnType = getCombinedBoundType(closureGenerics[0]);
+        return GenericsUtils.buildWildcardType(wrapTypeIfNecessary(returnType)).isCompatibleWith(wrapTypeIfNecessary(closureReturnType));
     }
 
     /**
