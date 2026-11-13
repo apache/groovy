@@ -482,7 +482,7 @@ final class ThisAndSuperTest {
 
     // GROOVY-12521
     @ParameterizedTest
-    @ValueSource(strings=['', '@groovy.transform.TypeChecked'])
+    @ValueSource(strings=['', '@groovy.transform.TypeChecked', '@groovy.transform.CompileStatic'])
     void testSuperDotPropertyWithOverloadedSettersInClosure(String mode) {
         assertScript """
             class Base {

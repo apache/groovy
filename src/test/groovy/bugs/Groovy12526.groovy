@@ -248,8 +248,7 @@ final class Groovy12526 {
 
     @Test
     void testEnclosingClassSuperIsOutsideTheInterfaceCheck() {
-        def err = shouldFail '''
-            @groovy.transform.CompileStatic
+        def body = '''
             class C {
                 String value() { 'C' }
                 static class D extends C {
@@ -259,9 +258,12 @@ final class Groovy12526 {
                     }
                 }
             }
+            def d = new C.D()
+            assert new C.D.B(d).m() == 'C'
         '''
-        assert err.message.contains('No such property: super') : err.message
-        assert !err.message.contains(NOT_DIRECT) : err.message
+        for (String annotation : ['', '@groovy.transform.TypeChecked ', '@groovy.transform.CompileStatic ']) {
+            assertScript(annotation + body)
+        }
     }
 
     @Test
