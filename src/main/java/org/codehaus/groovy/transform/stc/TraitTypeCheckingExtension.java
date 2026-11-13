@@ -24,9 +24,11 @@ import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.expr.ArgumentListExpression;
+import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.MethodCall;
 import org.codehaus.groovy.ast.expr.MethodCallExpression;
 import org.codehaus.groovy.ast.expr.PropertyExpression;
+import org.codehaus.groovy.ast.expr.SpreadExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.transform.trait.TraitASTTransformation;
 import org.codehaus.groovy.transform.trait.Traits;
@@ -149,6 +151,50 @@ public class TraitTypeCheckingExtension extends AbstractTypeCheckingExtension {
         }
 
         return Collections.emptyList();
+    }
+
+    /**
+     * Checks a call to a private or static trait method from a closure against the
+     * delegate of the enclosing closure, if the delegate would be selected for a
+     * method of a class or the resolve strategy excludes the owner. Statically
+     * compiled code keeps the call to the trait helper otherwise. Dynamically
+     * compiled code selects the delegate or the trait helper at runtime.
+     */
+    @Override
+    public void afterMethodCall(final MethodCall call) {
+        if (call instanceof MethodCallExpression mce
+                && mce.getNodeMetaData(TraitASTTransformation.POST_TYPECHECKING_REPLACEMENT) instanceof MethodCallExpression closureCall) { // GROOVY-12611
+            if (isDelegateCall(closureCall)) {
+                typeCheckingVisitor.visitMethodCallExpression(closureCall);
+                storeType(mce, getType(closureCall));
+            } else if (typeCheckingVisitor.isStaticDispatchScope()) {
+                mce.removeNodeMetaData(TraitASTTransformation.POST_TYPECHECKING_REPLACEMENT);
+            }
+        }
+    }
+
+    /**
+     * Indicates whether the implicit-this call is resolved against a delegate of the
+     * enclosing closures: a delegate declares the method and precedes the owner
+     * according to the resolve strategy, or the resolve strategy excludes the owner.
+     */
+    private boolean isDelegateCall(final MethodCallExpression call) {
+        List<Expression> arguments = ((ArgumentListExpression) call.getArguments()).getExpressions();
+        ClassNode[] argumentTypes = new ClassNode[arguments.size()];
+        for (int i = 0; i < argumentTypes.length; i += 1) {
+            if (arguments.get(i) instanceof SpreadExpression) return false;
+            argumentTypes[i] = getType(arguments.get(i));
+        }
+        Receiver<String> owner = Receiver.make(ClassHelper.OBJECT_TYPE);
+        List<Receiver<String>> receivers = new ArrayList<>();
+        typeCheckingVisitor.addReceivers(receivers, List.of(owner), true);
+        for (Receiver<String> receiver : receivers) {
+            if (receiver == owner) return false; // the trait declares the method
+            for (MethodNode method : typeCheckingVisitor.findMethod(receiver.getType(), call.getMethodAsString(), argumentTypes)) {
+                if (receiver.isObject() || method.isStatic()) return true;
+            }
+        }
+        return true; // DELEGATE_ONLY: the trait method is not a candidate, as for a method of a class
     }
 
     /**
