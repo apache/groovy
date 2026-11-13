@@ -71,11 +71,19 @@ final class Groovy11916 {
                 class Collision {}
             '''
         ])
-        // Lock the access flags the later tests assume. A missed
-        // @PackageScope, or an inner class whose flag is not the one named
-        // below, would make those tests pass or fail for the wrong reason.
-        // Outer is not public and its member Inner is; Protector.Secret is
-        // protected; Priv.Secret is private.
+        // Not the accessibility policy. isStarImportAccessible decides whether
+        // a star, module, or default import may bind a type, and the test
+        // methods below are that check: same package, another package, a
+        // protected member, a private member, a public member of a non-public
+        // outer. This block only pins the bytecode flags of the classes just
+        // compiled, which those tests then load. Resolve reads the flags from
+        // the class file. If @PackageScope had not cleared public, or a member
+        // type did not have the flag named here, a later test would pass or
+        // fail for a fixture that is not the type it names. The asserts are
+        // not a second copy of the policy and are not repeated elsewhere.
+        // Hidden and Collision are not public. Visible is public. Outer is not
+        // public and its member Inner is public. Protector.Secret is protected.
+        // Priv.Secret is private.
         assert !Modifier.isPublic(types.loadClass('p.Hidden').modifiers)
         assert !Modifier.isPublic(types.loadClass('p.Collision').modifiers)
         assert Modifier.isPublic(types.loadClass('p.Visible').modifiers)
@@ -210,15 +218,21 @@ class Use {
 
     @Test
     void testExplicitReferenceToPackagePrivateTypeStillResolves() {
-        // An explicit import is still resolved, and this script runs.
-        // TimSort is package-private, so the class expression is not an
-        // ldc of the class (that linkage throws IllegalAccessError). It is
-        // loaded with Class.forName, and ".name" is Class.getName().
-        // Class.forName does not access-check the class. A non-null
-        // instanceof or cast, and a constructor, do. null instanceof
-        // TimSort does not: the JVM does not resolve the type for a null
-        // operand. The star-import filter stops a simple name from being
-        // compiled into one of the linkages that fail.
+        // Compiles because a single-type import is not an on-demand import.
+        // visitClass resolves each module import with resolve(type, false,
+        // false, true) and fails only when that name does not exist.
+        // isStarImportAccessible is not called on it, nor on a fully qualified
+        // name. The program-structure chapter describes a simple import as
+        // naming the class; it does not require a compile-time access error
+        // for an explicit import. Star, module, and default imports are
+        // filtered because they would bind a simple name the source did not
+        // write.
+        // The script also runs. TimSort is not public, so the class expression
+        // is not an ldc (BytecodeHelper.isClassLiteralPossible is public
+        // only). It is loaded with Class.forName, and ".name" is
+        // Class.getName(), which does not access-check the class. A non-null
+        // instanceof, a cast, or a constructor does. null instanceof TimSort
+        // does not: the JVM does not resolve the type for a null operand.
         assertScript '''
             import java.util.TimSort
             assert TimSort.name == 'java.util.TimSort'

@@ -144,6 +144,20 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
      * nested class with an unknown number of levels down. This allows resolve tests to
      * skip this node for further inner class searches and combinations with imports, since
      * the outer class we know is already resolved.
+     * <p>
+     * {@link ClassNode#getOuterClass()} is not overridden. It follows {@link ClassNode#redirect()},
+     * and {@code resolve} redirects this node to the loaded class before
+     * {@code isStarImportAccessible} reads it. A binary member type is not an
+     * {@link InnerClassNode}, so the loaded node's {@code getOuterClass()} is null.
+     * Returning {@code knownEnclosingType} from here would skip that redirect.
+     * {@code transformPropertyExpression} keeps this node as the type of the
+     * {@code ClassExpression} for a resolved {@code Outer.Inner}, and later phases
+     * call {@code getOuterClass()} on that node. {@code NewifyASTTransformation}
+     * inserts an enclosing instance when the outer is non-null and the member is
+     * not static. {@code StaticTypeCheckingVisitor.hasAccessToClass} treats a null
+     * outer as an unknown enclosing type of a precompiled member.
+     * {@code GenericsType.appendName} and {@code StaticTypeCheckingSupport.applyGenericsContext}
+     * read the same method.
      */
     private static class ConstructedNestedClass extends ClassNode {
         final ClassNode knownEnclosingType;
@@ -1318,11 +1332,15 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
      *                   member types are not {@link InnerClassNode}, so
      *                   {@link ClassNode#getOuterClass()} is null for them and
      *                   this argument is what names the enclosing type.
+     *                   {@code ConstructedNestedClass} does not supply it: that
+     *                   node is already redirected when this method runs.
      * @return {@code true} if the star import may bind {@code type}
      */
     private boolean isStarImportAccessible(final ClassNode type, final ClassNode knownOuter) {
-        // getOuterClass() is non-null only for a source InnerClassNode. A
-        // member type read from bytecode does not carry that link.
+        // getOuterClass() follows redirect and is non-null only for a source
+        // InnerClassNode. resolve() has already redirected a ConstructedNestedClass
+        // onto the loaded class, and a member type read from bytecode does not
+        // carry the link. knownOuter is the enclosing type from the import.
         ClassNode outer = type.getOuterClass();
         if (outer == null) {
             outer = knownOuter;
