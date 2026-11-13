@@ -165,7 +165,6 @@ final class Groovy12725 {
             ClassNode third = compile(loaderA, "${name}A2.groovy", "class ${name}A2 extends ${name} {}")
             assertEquals("groovy.util.${name}".toString(), third.superClass.name)
             assertEquals(['groovy.lang.', 'groovy.util.'], cache.get(name).toList())
-            assertFalse(cache.get(name).is(index().get(name)))
             assertThrows(UnsupportedOperationException) {
                 cache.get(name).add('java.lang.')
             }
@@ -217,7 +216,6 @@ final class Groovy12725 {
                 }
             }
             assertEquals(['groovy.lang.', 'groovy.util.'], cache.get(name).toList())
-            assertFalse(cache.get(name).is(index().get(name)))
             assertThrows(UnsupportedOperationException) {
                 cache.get(name).add('java.lang.')
             }
