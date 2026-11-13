@@ -18,6 +18,7 @@
  */
 package org.codehaus.groovy.classgen.asm;
 
+import groovy.transform.Internal;
 import groovy.transform.PackedClosures.PackMode;
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.ast.AnnotationNode;
@@ -590,12 +591,25 @@ public class ClosureWriter {
         }
     }
 
+    /**
+     * The method or constructor whose code is being written. {@link WriterController#getMethodNode()}
+     * is null inside a constructor, and a constructor's code also holds the instance initializer
+     * blocks and field initializers the {@code Verifier} inlined into it.
+     */
+    private MethodNode enclosingMethod() {
+        MethodNode m = controller.getMethodNode();
+        return (m != null) ? m : controller.getConstructorNode();
+    }
+
     /** The most specific {@code @PackedClosures} mode in scope (method wins over class), or null if not annotated. */
     private PackMode annotatedMode() {
-        MethodNode m = controller.getMethodNode();
+        return annotatedMode(enclosingMethod(), controller.getClassNode());
+    }
+
+    private static PackMode annotatedMode(final MethodNode m, final ClassNode classNode) {
         PackMode mode = (m != null) ? packModeOf(m.getAnnotations()) : null;
         if (mode != null) return mode;
-        for (ClassNode c = controller.getClassNode(); c != null; c = c.getOuterClass()) {
+        for (ClassNode c = classNode; c != null; c = c.getOuterClass()) {
             mode = packModeOf(c.getAnnotations());
             if (mode != null) return mode;
         }
@@ -628,15 +642,16 @@ public class ClosureWriter {
         }
         String triggerReason = triggerDeclineReason(expression);
         if (triggerReason != null) return triggerReason;
+        // before the escape gate: a field initializer is also a field store in the constructor it is inlined into
+        if (isFieldInitializer(expression)) {
+            return "it initialises a field (a visible escape: the closure outlives its construction context)";
+        }
         if (escapesEnclosingMethod(expression)) {
             return "it escapes its method (returned, stored to a field/property/index, appended, or in a collection literal)";
         }
         if (serializationBound(expression)) {
             return "it is visibly serialization-bound (cast or coerced to a Serializable type, or passed directly "
                     + "to writeObject) and packed closures are not serializable";
-        }
-        if (isFieldInitializer(expression)) {
-            return "it initialises a field (a visible escape: the closure outlives its construction context)";
         }
         if (isIntersectionTyped(expression)) {
             return "it is cast to an intersection type, whose marker interfaces the shared adapter cannot declare";
@@ -656,16 +671,67 @@ public class ClosureWriter {
      * shared adapter that fails fast if a delegate is later set on it. To avoid that surprise for the
      * clearest cases, decline (keep a real closure class for) a closure literal that visibly escapes
      * the method it is written in: stored into a field/property/index (e.g. {@code attrs.optionValue =
-     * { ... }}), returned, appended with {@code <<}, or placed in a list/map literal. Transitive escapes
+     * { ... }}, or by a compound assignment that stores or composes it, such as {@code ?=} or
+     * {@code >>=}), returned, appended with {@code <<}, or placed in a list/map literal. Transitive escapes
      * (via a local that is later returned) are intentionally not chased here; the runtime guard remains
      * the backstop for those.
      */
     private boolean escapesEnclosingMethod(final ClosureExpression expression) {
-        MethodNode m = controller.getMethodNode();
+        if (expression.getNodeMetaData(ESCAPES_METHOD) != null) return true;
+        MethodNode m = enclosingMethod();
         if (m == null || m.getCode() == null) return false;
         return escapingClosuresByMethod
                 .computeIfAbsent(m, k -> collectEscapingClosures(k.getCode()))
                 .contains(expression);
+    }
+
+    /** Metadata marking a closure literal found escaping before a static compilation rewrite. */
+    private static final String ESCAPES_METHOD = "org.codehaus.groovy.classgen.asm.ClosureWriter.escapesMethod";
+
+    /**
+     * Marks the closure literals in the method that visibly escape it, for the escape gate to honour
+     * at class generation. Static compilation calls this before its transformers turn
+     * {@code list << { ... }}, subscript stores and setter-backed property stores into method calls,
+     * shapes the escape walk no longer recognises. Does nothing unless the flag or a non-DISABLED
+     * {@code @PackedClosures} on the method or constructor or an enclosing class requests packing.
+     *
+     * @param method the method or constructor whose body is about to be transformed
+     */
+    @Internal
+    public static void markEscapingClosures(final MethodNode method) {
+        if (method.getCode() == null || !packingRequested(method, method.getDeclaringClass())) return;
+        markEscapingClosures(method.getCode());
+    }
+
+    /**
+     * Marks the escaping closure literals in the instance initializer blocks of the class, as
+     * {@link #markEscapingClosures(MethodNode)} does for a method. The {@code Verifier} later inlines
+     * these blocks into each constructor, so they are marked when the flag, the class or any of its
+     * constructors requests packing.
+     *
+     * @param classNode the class whose initializer blocks are about to be transformed
+     */
+    @Internal
+    public static void markEscapingClosures(final ClassNode classNode) {
+        boolean requested = packingRequested(null, classNode);
+        for (ConstructorNode constructor : classNode.getDeclaredConstructors()) {
+            requested = requested || packingRequested(constructor, classNode);
+        }
+        if (!requested) return;
+        for (Statement statement : classNode.getObjectInitializerStatements()) {
+            markEscapingClosures(statement);
+        }
+    }
+
+    private static boolean packingRequested(final MethodNode method, final ClassNode classNode) {
+        PackMode mode = annotatedMode(method, classNode);
+        return mode != null ? mode != PackMode.DISABLED : SystemUtil.getBooleanSafe(CompilerConfiguration.CLOSURE_PACKING);
+    }
+
+    private static void markEscapingClosures(final Statement code) {
+        for (ClosureExpression closure : collectEscapingClosures(code)) {
+            closure.putNodeMetaData(ESCAPES_METHOD, Boolean.TRUE);
+        }
     }
 
     private static Set<ClosureExpression> collectEscapingClosures(final Statement code) {
@@ -680,10 +746,10 @@ public class ClosureWriter {
             }
             @Override public void visitBinaryExpression(final BinaryExpression be) {
                 int op = be.getOperation().getType();
-                if (op == Types.EQUAL && !isLocalTarget(be.getLeftExpression())) {
-                    mark(be.getRightExpression());          // assigned to a field/property/index
-                } else if (op == Types.LEFT_SHIFT) {
-                    mark(be.getRightExpression());          // appended, e.g. list << { ... }
+                if (storesRightOperand(op) && !isLocalTarget(be.getLeftExpression())) {
+                    mark(be.getRightExpression());          // stored at a field/property/index, e.g. attrs.handler ?= { ... }
+                } else if (op == Types.LEFT_SHIFT || op == Types.LEFT_SHIFT_EQUAL) {
+                    mark(be.getRightExpression());          // appended or composed, e.g. list << { ... }, handler <<= { ... }
                 }
                 super.visitBinaryExpression(be);
             }
@@ -697,6 +763,24 @@ public class ClosureWriter {
             }
         });
         return escaping;
+    }
+
+    /**
+     * True for the assignment operators whose stored value can hold the right operand: {@code =},
+     * {@code ?=} and {@code ??=} store it, {@code >>=} composes it into a closure (which keeps a
+     * clone of it) and {@code +=} adds it to a collection.
+     */
+    private static boolean storesRightOperand(final int op) {
+        switch (op) {
+          case Types.EQUAL:
+          case Types.ELVIS_EQUAL:
+          case Types.NULL_COALESCE_EQUAL:
+          case Types.RIGHT_SHIFT_EQUAL:
+          case Types.PLUS_EQUAL:
+            return true;
+          default:
+            return false;
+        }
     }
 
     /** True when an assignment target is a plain local variable (not a field/property that escapes). */
@@ -717,7 +801,7 @@ public class ClosureWriter {
      * Declines are reported by {@code @PackedClosures(mode = WARN | STRICT)} like any other.
      */
     private boolean serializationBound(final ClosureExpression expression) {
-        MethodNode m = controller.getMethodNode();
+        MethodNode m = enclosingMethod();
         if (m == null || m.getCode() == null) return false;
         return serializationBoundByMethod
                 .computeIfAbsent(m, k -> collectSerializationBoundClosures(k.getCode()))
@@ -839,7 +923,7 @@ public class ClosureWriter {
     private Set<String> holderCaptureNames(final ClosureExpression expression) {
         Set<String> captured = capturedNames(expression);
         Set<String> holder = new HashSet<>(collectWrittenNames(expression.getCode()));
-        MethodNode m = controller.getMethodNode();
+        MethodNode m = enclosingMethod();
         if (m != null && m.getCode() != null) {
             holder.addAll(writtenNamesByMethod.computeIfAbsent(m, k -> collectWrittenNames(k.getCode())));
         }
