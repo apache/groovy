@@ -44,6 +44,7 @@ import org.codehaus.groovy.classgen.asm.ClosureWriter;
 import org.codehaus.groovy.classgen.asm.WriterController;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.transform.sc.StaticCompilationMetadataKeys;
+import org.codehaus.groovy.transform.stc.ExtensionMethodNode;
 import org.objectweb.asm.Opcodes;
 
 import java.util.Collections;
@@ -156,6 +157,49 @@ public class StaticTypesClosureWriter extends ClosureWriter {
     @Override
     protected boolean isOpenPackTriggered(final ClosureExpression expression) {
         return false; // GEP-27 open closures are dynamic-only: here independence is proved or declined
+    }
+
+    /**
+     * Whether the body, nested closures included, uses its this object: {@code this}, an instance
+     * field or property, an implicit-this call of an instance method, or the creation of an inner
+     * class instance, which passes {@code this} as its enclosing instance (an instance of a static
+     * nested class takes none). A closure class casts {@code getThisObject()} to the enclosing
+     * class for these, except for the methods of {@code Object}, which it calls on the uncast this
+     * object; those count too, as the hoisted body can only call them on an instance of the
+     * enclosing class. Static members and extension methods (the {@code println} family) do not
+     * count.
+     */
+    @Override
+    protected boolean hoistedBodyUsesReceiver(final ClosureExpression expression) {
+        Statement code = expression.getCode();
+        if (code == null) return false;
+        boolean[] uses = {false};
+        code.visit(new CodeVisitorSupport() {
+            @Override public void visitMethodCallExpression(final MethodCallExpression call) {
+                if (!call.isImplicitThis()) {
+                    super.visitMethodCallExpression(call);
+                    return;
+                }
+                MethodNode target = call.getNodeMetaData(DIRECT_METHOD_CALL_TARGET);
+                if (target == null || !(target.isStatic() || target instanceof ExtensionMethodNode)) {
+                    uses[0] = true;
+                }
+                call.getMethod().visit(this); // not the implicit this
+                call.getArguments().visit(this);
+            }
+            @Override public void visitPropertyExpression(final PropertyExpression pexp) {
+                if ("this".equals(pexp.getPropertyAsString())) uses[0] = true; // Outer.this
+                super.visitPropertyExpression(pexp);
+            }
+            @Override public void visitVariableExpression(final VariableExpression ve) {
+                Variable av = ve.getAccessedVariable();
+                if (ve.isThisExpression() || ve.isSuperExpression() || av instanceof DynamicVariable
+                        || ((av instanceof FieldNode || av instanceof PropertyNode) && !av.isStatic())) {
+                    uses[0] = true;
+                }
+            }
+        });
+        return uses[0];
     }
 
     /**

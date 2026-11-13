@@ -420,6 +420,81 @@ final class ClosurePackCapabilityTest {
         }
     }
 
+    // GROOVY-12666
+    @Test
+    void autoPackedClosureRehydratedOntoAnotherOwnerUsesIt() {
+        // the flag path: a @CompileStatic closure class reads foo() and name from the rehydrated this
+        // object, and throws ClassCastException for an object that is not an O; the packed body
+        // kept reading them from the receiver it was created with. A body that does not use its
+        // receiver keeps running against it, so rehydrating onto an unrelated object (the DSL
+        // builder idiom) keeps working.
+        String src = '''import groovy.transform.CompileStatic
+            class Builder {}
+            @CompileStatic
+            class O {
+                String name
+                String foo() { 'foo ' + name }
+                static Object attempt(Closure c, Object t) {
+                    try { c.rehydrate(t, t, t).call() } catch (ClassCastException e) { 'CCE' }
+                }
+                List run(O b) {
+                    Closure f = { -> foo() }
+                    Closure n = { -> name }
+                    Closure free = { -> [1, 2].collect { Integer i -> i * 2 } }
+                    Closure print = { -> sprintf('%s', 'x') }
+                    assert [f, n, free, print].every { it instanceof org.codehaus.groovy.runtime.PackedClosure }
+                    def builder = new Builder()
+                    [attempt(f, b), attempt(n, b), attempt(f, builder), attempt(n, builder),
+                     attempt(free, builder), attempt(print, builder), f(), n()]
+                }
+            }'''
+        assertEquals(['foo b', 'b', 'CCE', 'CCE', [2, 4], 'x', 'foo a', 'a'],
+                eval(src, "new O(name: 'a').run(new O(name: 'b'))", true))
+    }
+
+    // GROOVY-12666
+    @Test
+    void syntacticallyPackedClosureRehydratedOntoAnInstanceOfItsOwnerClassUsesIt() {
+        // the dynamic syntactic path packs a body with no free name, which cannot name this
+        // (GROOVY-12670) but can create a nested closure, whose this object is the enclosing
+        // closure's this object: for the hoisted body, its receiver. Rehydrated onto
+        // another instance of the owner class, the copy hands that instance on, as the closure
+        // class does
+        String src = '''
+            class O {
+                String name
+                String foo() { name }
+                List run(O b) {
+                    Closure c = { -> Closure n = { -> 0 }; n.getThisObject().foo() }
+                    [c.rehydrate(null, b, b)(), c(), c instanceof org.codehaus.groovy.runtime.PackedClosure]
+                }
+            }'''
+        String tail = "new O(name: 'a').run(new O(name: 'b'))"
+        assertEquals(['b', 'a', false], eval(src, tail, false))
+        assertEquals(['b', 'a', true], eval(src, tail, true))
+    }
+
+    // GROOVY-12666
+    @Test
+    void syntacticallyPackedClosureCreatedOnASubclassInstanceRehydratesOntoAnInstanceOfItsOwnerClass() {
+        // created by an inherited method of a subclass instance, the closure's receiver is that
+        // instance; rehydrated onto an instance of the owner class that is not a subclass instance,
+        // the closure class hands the new this object to the nested closure, so the copy must too
+        String src = '''
+            class O {
+                String name
+                String foo() { name }
+                List run(O b) {
+                    Closure c = { -> Closure n = { -> 0 }; n.getThisObject().foo() }
+                    [c.rehydrate(null, b, b)(), c(), c instanceof org.codehaus.groovy.runtime.PackedClosure]
+                }
+            }
+            class P extends O {}'''
+        String tail = "new P(name: 'p').run(new O(name: 'b'))"
+        assertEquals(['b', 'p', false], eval(src, tail, false))
+        assertEquals(['b', 'p', true], eval(src, tail, true))
+    }
+
     @Test
     void directCallsLetABodyThrownInvokerInvocationExceptionThrough() {
         // no reflective step lies between the call lanes and a hoisted body, so there is nothing to

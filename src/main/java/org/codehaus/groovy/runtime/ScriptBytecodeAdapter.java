@@ -1100,8 +1100,27 @@ public class ScriptBytecodeAdapter {
     public static Closure<?> packedClosure(final Object owner, final Object dispatchers, final int id,
             final String method, final Object[] captured, final Class[] paramTypes,
             final boolean strict, final boolean implicit, final boolean vararg) {
+        return packedClosure(owner, dispatchers, id, method, captured, paramTypes, strict, implicit, vararg, false);
+    }
+
+    /**
+     * The packed-closure factory the compiler emits: as
+     * {@link #packedClosure(Object, Object, int, String, Object[], Class[], boolean, boolean, boolean)},
+     * which stays for class files compiled before it, plus whether the hoisted body uses its
+     * receiver, so {@code rehydrate} hands the copy's body a new this object wherever a
+     * {@code @CompileStatic} closure class would use it.
+     *
+     * @param usesReceiver whether the hoisted body uses its receiver
+     * @return the packed closure adapter
+     *
+     * @since 7.0.0
+     */
+    @GroovyABI(since = "7.0.0")
+    public static Closure<?> packedClosure(final Object owner, final Object dispatchers, final int id,
+            final String method, final Object[] captured, final Class[] paramTypes,
+            final boolean strict, final boolean implicit, final boolean vararg, final boolean usesReceiver) {
         return PackedClosure.create(owner, (GeneratedDispatcher.Bundle) dispatchers, id, method,
-                captured, paramTypes, strict, implicit, vararg);
+                captured, paramTypes, strict, implicit, vararg, usesReceiver);
     }
 
     /**
