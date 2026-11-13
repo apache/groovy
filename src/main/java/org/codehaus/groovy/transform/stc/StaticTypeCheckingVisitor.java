@@ -354,6 +354,7 @@ import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.isBein
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.isBitOperator;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.isBoolIntrinsicOp;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.isClassClassNodeWrappingConcreteType;
+import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.isClosureCoercibleToSAM;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.isCompareToBoolean;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.isGStringOrGStringStringLUB;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.isOperationInGroup;
@@ -3706,6 +3707,10 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
                 ClassNode resultType = getResultType(target, ASSIGN, type, dummy); // GROOVY-10295
                 checkTypeGenerics(target, resultType, value);
             }
+        } else if (type.isDerivedFrom(CLOSURE_TYPE) && isSAMType(target) // GROOVY-12599: Closure<R> value for SAM type
+                && !(value instanceof ClosureExpression || value instanceof MethodPointerExpression)
+                && !isClosureCoercibleToSAM(target, type)) {
+            return false;
         } else { // GROOVY-11623: check array items or number bounds
             addPrecisionErrors(target.redirect(), target, type, value);
         }
