@@ -34,6 +34,7 @@ import org.apache.groovy.ast.pattern.MatchPattern.BindingPattern;
 import org.apache.groovy.ast.pattern.MatchPattern.ListPattern;
 import org.apache.groovy.ast.pattern.MatchPattern.MapPattern;
 import org.apache.groovy.ast.pattern.MatchPattern.RecordPattern;
+import org.apache.groovy.transform.copywith.CopyWithRecorder;
 import org.apache.groovy.util.SystemUtil;
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.ast.ASTNode;
@@ -176,6 +177,7 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
+import static org.apache.groovy.ast.tools.AnnotatedNodeUtils.isGenerated;
 import static org.apache.groovy.ast.tools.ClassNodeUtils.getNestHost;
 import static org.apache.groovy.ast.tools.ClassNodeUtils.hasNoEnclosingInstance;
 import static org.apache.groovy.ast.tools.ExpressionUtils.isThisExpression;
@@ -868,12 +870,16 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 }
             }
 
+            if (resolveCopyWithBlockVariable(vexp, name)) return; // GROOVY-12713
+
             if (tryVariableExpressionAsProperty(vexp, name)) return;
 
             if (!extension.handleUnresolvedVariableExpression(vexp)) {
                 addStaticTypeError("The variable [" + name + "] is undeclared.", vexp);
             }
         } else if (accessedVariable instanceof FieldNode) {
+            if (resolveCopyWithBlockVariable(vexp, name)) return; // GROOVY-12713
+
             if (tryVariableExpressionAsProperty(vexp, name)) {
                 ClassNode temporaryType = getInferredTypeFromTempInfo(vexp, null); // GROOVY-9454
                 if (temporaryType != null && !isObjectType(temporaryType)) {
@@ -891,6 +897,8 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 addStaticTypeError("No such property: " + name + " for class: " + prettyPrintTypeName(typeCheckingContext.getEnclosingClassNode()), vexp);
             }
         } else if (accessedVariable instanceof PropertyNode) {
+            if (resolveCopyWithBlockVariable(vexp, name)) return; // GROOVY-12713
+
             // we must be careful -- the property node may be of a wrong type:
             // if a class contains a getter and a setter of different types or
             // overloaded setters, the type of the property node is arbitrary!
@@ -969,6 +977,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     @Override
     public void visitPropertyExpression(final PropertyExpression expression) {
         boolean readOnly = !typeCheckingContext.isTargetOfEnclosingAssignment(expression);
+        if (resolveCopyWithBlockPath(expression)) return; // GROOVY-12713
         if (existsProperty(expression, readOnly)
                 || extension.handleUnresolvedProperty(expression)) {
             if (readOnly) { // GROOVY-12305: record narrowed type of instanceof-guarded receiver for later use
@@ -2545,6 +2554,14 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
         Set<ClassNode> handledTypes = new HashSet<>();
         List<Receiver<String>> receivers = new ArrayList<>();
         addReceivers(receivers, makeOwnerList(objectExpression), pexp.isImplicitThis());
+        if (pexp.isImplicitThis()) { // GROOVY-12713: a copyWith block's recorder answers every name, so none after it is reached
+            for (int i = 0, n = receivers.size(); i < n; i += 1) {
+                if (receivers.get(i).getType().equals(COPY_WITH_RECORDER_TYPE)) {
+                    receivers.subList(i, n).clear();
+                    break;
+                }
+            }
+        }
 
     on: for (Receiver<String> receiver : receivers) {
             ClassNode receiverType = receiver.getType();
@@ -4848,7 +4865,7 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
                 expression.removeNodeMetaData(DELEGATION_METADATA);
             }
             if (i == 0 && parameters.length > 0 && expression instanceof MapExpression) {
-                checkNamedParamsAnnotation(parameters[0], (MapExpression) expression);
+                checkNamedParamsAnnotation(parameters[0], (MapExpression) expression, isNestedCopyWith(selectedMethod));
             }
         }
     }
@@ -4864,7 +4881,15 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
         return new LambdaExpression(parameters, GENERATED_EMPTY_STATEMENT);
     }
 
-    private void checkNamedParamsAnnotation(final Parameter param, final MapExpression args) {
+    /**
+     * Whether {@code method} is the {@code copyWith(Map)} generated for a record or immutable class, which accepts
+     * dotted keys as nested paths.
+     */
+    private static boolean isNestedCopyWith(final MethodNode method) {
+        return method != null && "copyWith".equals(method.getName()) && isGenerated(method);
+    }
+
+    private void checkNamedParamsAnnotation(final Parameter param, final MapExpression args, final boolean nestedKeys) {
         if (!isOrImplements(param.getType(), MAP_TYPE)) return;
         List<MapEntryExpression> entryExpressions = args.getMapEntryExpressions();
         Map<Object, MapEntryExpression> entries = new LinkedHashMap<>();
@@ -4875,60 +4900,239 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
             }
             entries.put(key, entry);
         }
-        List<String> collectedNames = new ArrayList<>();
-        List<AnnotationNode> annotations = param.getAnnotations(NAMED_PARAMS_CLASSNODE);
-        if (annotations != null && !annotations.isEmpty()) {
-            AnnotationNode an = null;
-            for (AnnotationNode next : annotations) {
-                if (next.getClassNode().getName().equals(NamedParams.class.getName())) {
-                    an = next;
-                }
-            }
-            if (an != null) {
-                Expression value = an.getMember("value");
-                if (value instanceof AnnotationConstantExpression) {
-                    processNamedParam((AnnotationConstantExpression) value, entries, args, collectedNames);
-                } else if (value instanceof ListExpression le) {
-                    for (Expression next : le.getExpressions()) {
-                        if (next instanceof AnnotationConstantExpression) {
-                            processNamedParam((AnnotationConstantExpression) next, entries, args, collectedNames);
-                        }
-                    }
-                }
-            }
-        }
-        annotations = param.getAnnotations(NAMED_PARAM_CLASSNODE);
-        if (annotations != null && !annotations.isEmpty()) {
-            for (AnnotationNode next : annotations) {
-                if (next.getClassNode().getName().equals(NamedParam.class.getName())) {
-                    processNamedParam(next, entries, args, collectedNames);
-                }
-            }
+        Map<String, ClassNode> collectedNames = new LinkedHashMap<>();
+        for (AnnotationNode namedParam : namedParamAnnotations(param)) {
+            processNamedParam(namedParam, entries, args, collectedNames);
         }
         if (!collectedNames.isEmpty()) {
             for (Map.Entry<Object, MapEntryExpression> entry : entries.entrySet()) {
                 Object name = entry.getKey();
-                if (!collectedNames.contains(name)) {
+                if (collectedNames.containsKey(name)) continue;
+                if (nestedKeys && name instanceof String && ((String) name).indexOf('.') > 0) {
+                    checkNestedNamedParam((String) name, entry.getValue(), collectedNames); // GROOVY-12713
+                } else {
                     addStaticTypeError("unexpected named arg: " + name, entry.getValue());
                 }
             }
         }
     }
 
-    private void processNamedParam(final AnnotationConstantExpression value, final Map<Object, MapEntryExpression> entries, final MapExpression args, final List<String> collectedNames) {
-        AnnotationNode namedParam = (AnnotationNode) value.getValue();
-        if (!namedParam.getClassNode().getName().equals(NamedParam.class.getName())) return;
-        processNamedParam(namedParam, entries, args, collectedNames);
+    /**
+     * The {@code @NamedParam} annotations of a map parameter, written directly or inside {@code @NamedParams}.
+     */
+    private static List<AnnotationNode> namedParamAnnotations(final Parameter param) {
+        List<AnnotationNode> result = new ArrayList<>();
+        for (AnnotationNode next : param.getAnnotations(NAMED_PARAMS_CLASSNODE)) {
+            if (!next.getClassNode().getName().equals(NamedParams.class.getName())) continue;
+            Expression value = next.getMember("value");
+            if (value instanceof AnnotationConstantExpression) {
+                addNamedParamAnnotation((AnnotationConstantExpression) value, result);
+            } else if (value instanceof ListExpression le) {
+                for (Expression e : le.getExpressions()) {
+                    if (e instanceof AnnotationConstantExpression) {
+                        addNamedParamAnnotation((AnnotationConstantExpression) e, result);
+                    }
+                }
+            }
+        }
+        for (AnnotationNode next : param.getAnnotations(NAMED_PARAM_CLASSNODE)) {
+            if (next.getClassNode().getName().equals(NamedParam.class.getName())) {
+                result.add(next);
+            }
+        }
+        return result;
     }
 
-    private void processNamedParam(final AnnotationNode namedParam, final Map<Object, MapEntryExpression> entries, final MapExpression args, final List<String> collectedNames) {
+    private static void addNamedParamAnnotation(final AnnotationConstantExpression value, final List<AnnotationNode> result) {
+        AnnotationNode namedParam = (AnnotationNode) value.getValue();
+        if (namedParam.getClassNode().getName().equals(NamedParam.class.getName())) result.add(namedParam);
+    }
+
+    /**
+     * Checks a dotted key such as {@code 'address.city'}, which the nested {@code copyWith(Map)} of records and
+     * immutable classes accepts as a path. Each segment must be a named parameter of the type
+     * reached so far, and the value must suit the last segment's declared type. The walk stops, accepting the
+     * key, at a segment whose type is unknown or whose {@code copyWith(Map)} declares no named parameters; the
+     * runtime then checks the rest.
+     */
+    private void checkNestedNamedParam(final String key, final MapEntryExpression entry, final Map<String, ClassNode> rootNames) {
+        String[] segments = key.split("\\.");
+        Map<String, ClassNode> names = rootNames;
+        ClassNode leafType = null;
+        for (int i = 0, n = segments.length; i < n; i += 1) {
+            if (!names.containsKey(segments[i])) {
+                addStaticTypeError("unexpected named arg: " + key, entry);
+                return;
+            }
+            leafType = names.get(segments[i]);
+            if (i == n - 1) break;
+            names = copyWithNamedParams(leafType);
+            if (names == null) return;
+        }
+        if (leafType != null) {
+            ClassNode argumentType = getDeclaredOrInferredType(entry.getValueExpression());
+            if (!isAssignableTo(argumentType, leafType)) {
+                addStaticTypeError("argument for named param '" + key + "' has type '" + prettyPrintType(argumentType) + "' but expected '" + prettyPrintType(leafType) + "'.", entry);
+            }
+        }
+    }
+
+    /** Metadata of a closure that is the block of nested {@code copyWith}: the record or immutable type copied. */
+    private static final String COPY_WITH_BLOCK = "copyWith block";
+    /** Metadata of a variable or property expression that names a component path inside such a block: the component's type. */
+    private static final String COPY_WITH_PATH = "copyWith path";
+    /** The delegate of a {@code copyWith} block at run time, and what reading a component path inside it returns. */
+    private static final ClassNode COPY_WITH_RECORDER_TYPE = ClassHelper.make(CopyWithRecorder.class);
+
+    /**
+     * The block form of nested {@code copyWith}: {@code copyWith { address.city = 'x' }} on a type
+     * whose {@code copyWith(Map)} declares its components as named parameters. The closure's delegate is a
+     * {@link CopyWithRecorder}, which turns the assignments into the map form: it answers every property name, as a
+     * component path, and none of the copied type's methods, so a method call goes to the closure's owner.
+     */
+    private static boolean isCopyWithBlock(final MethodNode mn, final Parameter[] params, final ClassNode receiver) {
+        return isNestedCopyWith(mn) && params.length == 1 && CLOSURE_TYPE.equals(params[0].getType())
+                && copyWithNamedParams(receiver) != null;
+    }
+
+    /**
+     * The type copied by the {@code copyWith} block whose recorder answers a bare name here, or null. That is the
+     * innermost enclosing closure, or a block around it reached through closures that have no delegate of their own.
+     */
+    private ClassNode copyWithBlockType() {
+        for (TypeCheckingContext.EnclosingClosure enclosing : typeCheckingContext.getEnclosingClosureStack()) {
+            ClosureExpression closure = enclosing.getClosureExpression();
+            ClassNode blockType = closure.getNodeMetaData(COPY_WITH_BLOCK);
+            if (blockType != null) return blockType;
+            if (closure instanceof LambdaExpression || getDelegationMetadata(closure) != null) break;
+        }
+        return null;
+    }
+
+    /**
+     * The type a component path inside a {@code copyWith} block has: its component's type when it is the target of
+     * an assignment, which the recorder records, and otherwise the recorder that reading it returns at run time.
+     */
+    private ClassNode copyWithPathType(final Expression path, final ClassNode componentType) {
+        BinaryExpression enclosing = typeCheckingContext.getEnclosingBinaryExpression();
+        boolean assigned = enclosing != null && enclosing.getLeftExpression() == path && enclosing.getOperation().getType() == ASSIGN;
+        return assigned ? componentType : COPY_WITH_RECORDER_TYPE;
+    }
+
+    /**
+     * Inside a {@code copyWith} block, a bare name is a component of the copied type ({@code name = 'x'},
+     * {@code address.city = 'y'}) and {@code old} is the original object. The block's recorder answers every such
+     * name at run time, even one that also names a member of the enclosing class, so they are marked for dynamic
+     * dispatch; {@code old} is the real object and only its lookup is dynamic. Any other name would be a component
+     * path too, so it is an error: a member of the enclosing class needs a qualifier.
+     */
+    private boolean resolveCopyWithBlockVariable(final VariableExpression vexp, final String name) {
+        ClassNode blockType = copyWithBlockType();
+        if (blockType == null) return false;
+        if (!(vexp.getAccessedVariable() instanceof DynamicVariable)) {
+            vexp.setAccessedVariable(new DynamicVariable(name, false));
+        }
+        if ("old".equals(name)) {
+            vexp.putNodeMetaData(DYNAMIC_RESOLUTION, blockType);
+            storeType(vexp, blockType);
+            return true;
+        }
+        Map<String, ClassNode> components = copyWithNamedParams(blockType);
+        if (components == null || !components.containsKey(name)) {
+            addStaticTypeError("No such property: " + name + " for class: " + prettyPrintTypeName(blockType)
+                    + ". Inside copyWith { }, a qualifier is required to reference a member of the enclosing class.", vexp);
+            return true;
+        }
+        ClassNode componentType = components.get(name) != null ? components.get(name) : OBJECT_TYPE;
+        ClassNode type = copyWithPathType(vexp, componentType);
+        vexp.putNodeMetaData(DYNAMIC_RESOLUTION, type);
+        vexp.putNodeMetaData(COPY_WITH_PATH, componentType);
+        storeType(vexp, type);
+        return true;
+    }
+
+    /**
+     * Inside a {@code copyWith} block, a property of a component path ({@code address.city}) must be a component of
+     * that path's type, which the type's {@code copyWith(Map)} declares; the path stays dynamic, since the recorder
+     * answers it at run time.
+     */
+    private boolean resolveCopyWithBlockPath(final PropertyExpression expression) {
+        ClassNode blockType = copyWithBlockType();
+        String name = expression.getPropertyAsString();
+        if (blockType == null || name == null || !isCopyWithComponentPath(expression.getObjectExpression(), blockType)) return false;
+        Expression object = expression.getObjectExpression();
+        if (object.getNodeMetaData(COPY_WITH_PATH) == null) {
+            object.visit(this); // types and marks the path up to here, as existsProperty would have
+            if (object.getNodeMetaData(COPY_WITH_PATH) == null) return false;
+        }
+        ClassNode objectType = object.getNodeMetaData(COPY_WITH_PATH);
+        Map<String, ClassNode> components = copyWithNamedParams(objectType);
+        if (components == null || !components.containsKey(name)) {
+            addStaticTypeError("No such property: " + name + " for class: " + prettyPrintTypeName(objectType), expression);
+            return true;
+        }
+        ClassNode componentType = components.get(name) != null ? components.get(name) : OBJECT_TYPE;
+        ClassNode type = copyWithPathType(expression, componentType);
+        expression.putNodeMetaData(DYNAMIC_RESOLUTION, type);
+        expression.putNodeMetaData(COPY_WITH_PATH, componentType);
+        storeType(expression, type);
+        return true;
+    }
+
+    /** Whether a bare name or a chain of properties starts at a component of the block's type (not at {@code old}). */
+    private static boolean isCopyWithComponentPath(Expression expression, final ClassNode blockType) {
+        while (expression instanceof PropertyExpression pexp) expression = pexp.getObjectExpression();
+        if (!(expression instanceof VariableExpression vexp) || !(vexp.getAccessedVariable() instanceof DynamicVariable)) return false;
+        Map<String, ClassNode> components = copyWithNamedParams(blockType);
+        return components != null && components.containsKey(vexp.getName());
+    }
+
+    /**
+     * Inside a {@code copyWith} block, {@code path.modify { it... }} computes a component's new value from its
+     * current one: the closure's parameter and result are of the component's type and the call is answered by the
+     * recorder, even when the component's type has a {@code modify} method of its own.
+     */
+    private List<MethodNode> resolveCopyWithBlockModify(final MethodCallExpression call, final String name, final ArgumentListExpression arguments) {
+        ClassNode componentType = call.getObjectExpression().getNodeMetaData(COPY_WITH_PATH);
+        if (!"modify".equals(name) || componentType == null) return Collections.emptyList();
+        List<Expression> expressions = arguments.getExpressions();
+        if (expressions.size() != 1 || !(expressions.get(0) instanceof ClosureExpression closure)) return Collections.emptyList();
+        closure.putNodeMetaData(CLOSURE_ARGUMENTS, new ClassNode[]{componentType});
+        call.putNodeMetaData(DYNAMIC_RESOLUTION, OBJECT_TYPE);
+        Parameter block = new Parameter(GenericsUtils.makeClassSafeWithGenerics(CLOSURE_TYPE, new GenericsType(getWrapper(componentType))), "block");
+        MethodNode modify = new MethodNode("modify", 0, OBJECT_TYPE, new Parameter[]{block}, ClassNode.EMPTY_ARRAY, null);
+        modify.setDeclaringClass(COPY_WITH_RECORDER_TYPE); // a virtual method, as a type checking extension's makeDynamic would return
+        return List.of(modify);
+    }
+
+    /**
+     * The named parameters, by name, of {@code type}'s one-argument {@code copyWith(Map)}; null when the type is
+     * unknown or declares no such method with {@code @NamedParam}s.
+     */
+    private static Map<String, ClassNode> copyWithNamedParams(final ClassNode type) {
+        if (type == null) return null;
+        for (MethodNode method : type.getMethods("copyWith")) {
+            Parameter[] parameters = method.getParameters();
+            if (parameters.length != 1 || !isOrImplements(parameters[0].getType(), MAP_TYPE)) continue;
+            Map<String, ClassNode> names = new LinkedHashMap<>();
+            for (AnnotationNode namedParam : namedParamAnnotations(parameters[0])) {
+                ConstantExpression constX = (ConstantExpression) namedParam.getMember("value");
+                if (constX == null) continue;
+                ClassExpression typeX = (ClassExpression) namedParam.getMember("type");
+                names.put((String) constX.getValue(), typeX != null ? typeX.getType() : null);
+            }
+            if (!names.isEmpty()) return names;
+        }
+        return null;
+    }
+
+    private void processNamedParam(final AnnotationNode namedParam, final Map<Object, MapEntryExpression> entries, final MapExpression args, final Map<String, ClassNode> collectedNames) {
         String name = null;
         boolean required = false;
         ClassNode expectedType = null;
         ConstantExpression constX = (ConstantExpression) namedParam.getMember("value");
         if (constX != null) {
             name = (String) constX.getValue();
-            collectedNames.add(name);
         }
         constX = (ConstantExpression) namedParam.getMember("required");
         if (constX != null) {
@@ -4937,6 +5141,9 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
         ClassExpression typeX = (ClassExpression) namedParam.getMember("type");
         if (typeX != null) {
             expectedType = typeX.getType();
+        }
+        if (name != null) {
+            collectedNames.put(name, expectedType);
         }
         if (!entries.containsKey(name)) {
             if (required) {
@@ -5274,6 +5481,11 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
     }
 
     private void checkClosureWithDelegatesTo(final ClassNode receiver, final MethodNode mn, final ArgumentListExpression arguments, final Parameter[] params, final Expression expression, final Parameter param) {
+        if (isCopyWithBlock(mn, params, receiver)) { // GROOVY-12713
+            expression.putNodeMetaData(DELEGATION_METADATA, newDelegationMetadata(COPY_WITH_RECORDER_TYPE, Closure.DELEGATE_FIRST));
+            expression.putNodeMetaData(COPY_WITH_BLOCK, receiver);
+            return;
+        }
         List<AnnotationNode> annotations = param.getAnnotations(DELEGATES_TO);
         if (annotations != null && !annotations.isEmpty()) {
             for (AnnotationNode annotation : annotations) {
@@ -5613,6 +5825,9 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
                             int nArgs = list.stream().noneMatch(e -> e instanceof SpreadExpression) ? list.size() : -1;
                             mn = List.of(nArgs == 0 ? CLOSURE_CALL_NO_ARG : nArgs == 1 ? CLOSURE_CALL_ONE_ARG : CLOSURE_CALL_VARGS);
                         }
+                    }
+                    if (mn.isEmpty()) {
+                        mn = resolveCopyWithBlockModify(call, name, argumentList); // GROOVY-12713
                     }
                     if (mn.isEmpty()) {
                         mn = extension.handleMissingMethod(receiver, name, argumentList, args, call);
