@@ -25,11 +25,13 @@ import org.apache.groovy.ast.tools.AnnotatedNodeUtils;
 import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.AnnotationNode;
 import org.codehaus.groovy.ast.ClassNode;
+import org.codehaus.groovy.ast.CodeVisitorSupport;
 import org.codehaus.groovy.ast.ConstructorNode;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.PropertyNode;
 import org.codehaus.groovy.ast.expr.ArgumentListExpression;
+import org.codehaus.groovy.ast.expr.ClosureExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.ExpressionTransformer;
 import org.codehaus.groovy.ast.expr.MethodCallExpression;
@@ -42,14 +44,17 @@ import org.codehaus.groovy.control.CompilePhase;
 import org.codehaus.groovy.control.SourceUnit;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import static java.util.stream.Collectors.joining;
 import static org.apache.groovy.ast.tools.ClassNodeUtils.addGeneratedConstructor;
 import static org.apache.groovy.ast.tools.ClassNodeUtils.addGeneratedMethod;
+import static org.apache.groovy.ast.tools.ClassNodeUtils.formatTypeName;
 import static org.apache.groovy.ast.tools.ClassNodeUtils.isInnerClass;
 import static org.apache.groovy.ast.tools.VisibilityUtils.getVisibility;
 import static org.codehaus.groovy.ast.ClassHelper.MAP_TYPE;
@@ -58,6 +63,7 @@ import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveType;
 import static org.codehaus.groovy.ast.ClassHelper.make;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.args;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.asX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.block;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.boolX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.callThisX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.callX;
@@ -65,11 +71,13 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.castX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.classX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.constX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.ctorX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.declS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.defaultValueX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.getAllProperties;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.ifS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.isNullX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.list2args;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.localVarX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.param;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.plusX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.propX;
@@ -77,6 +85,7 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.stmt;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.ternaryX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.throwS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
+import static org.objectweb.asm.Opcodes.ACC_PRIVATE;
 
 /**
  * Handles generation of variant methods with named parameters via the {@link NamedVariant} annotation.
@@ -120,6 +129,18 @@ public class NamedVariantASTTransformation extends AbstractASTTransformation {
             }
         }
 
+        // a default value is evaluated by a generated member, where a parameter captured by a closure doesn't exist
+        for (Parameter mNodeParam : mNodeParams) {
+            if (mNodeParam.hasInitialExpression()) {
+                Parameter captured = findClosureCapturedParameter(mNodeParam.getInitialExpression(), mNodeParams);
+                if (captured != null) {
+                    addError("Error during " + NAMED_VARIANT + " processing. The default value of parameter '" + mNodeParam.getName() +
+                            "' can't reference parameter '" + captured.getName() + "' from within a closure.", mNodeParam);
+                    return;
+                }
+            }
+        }
+
         boolean autoDelegate = memberHasValue(anno, "autoDelegate", Boolean.TRUE);
         boolean coerce = memberHasValue(anno, "coerce", Boolean.TRUE);
         Parameter mapParam = param(GenericsUtils.nonGeneric(MAP_TYPE), "namedArgs");
@@ -139,8 +160,11 @@ public class NamedVariantASTTransformation extends AbstractASTTransformation {
             }
         }
 
+        List<Parameter> sharedParams = new ArrayList<>();
+        List<Expression> sharedArgs = new ArrayList<>();
         if (!annoFound && autoDelegate) { // the first param is the delegate
-            processDelegateParam(mNode, mapParam, args, propNames, mNodeParams[0], coerce);
+            Expression delegate = processDelegateParam(mNode, mapParam, propNames, mNodeParams[0]);
+            if (delegate != null) args.addExpression(delegate);
         } else {
             Map<Parameter, Expression> seen = new HashMap<>();
             for (Parameter mNodeParam : mNodeParams) {
@@ -149,15 +173,89 @@ public class NamedVariantASTTransformation extends AbstractASTTransformation {
                 } else if (AnnotatedNodeUtils.hasAnnotation(mNodeParam, NAMED_PARAM_TYPE)) {
                     if (!processExplicitNamedParam(mNode, mapParam, inner, args, propNames, mNodeParam, coerce, seen)) return;
                 } else if (AnnotatedNodeUtils.hasAnnotation(mNodeParam, NAMED_DELEGATE_TYPE)) {
-                    if (!processDelegateParam(mNode, mapParam, args, propNames, mNodeParam, coerce)) return;
+                    Expression delegate = processDelegateParam(mNode, mapParam, propNames, mNodeParam);
+                    if (delegate == null) return;
+                    if (isReferencedByDefault(mNodeParam, mNodeParams)) {
+                        // evaluate once and share the instance with the default value(s) that reference it
+                        if (mNode instanceof ConstructorNode) { // no statements allowed before this(...): pass to a helper constructor
+                            Parameter shared = param(mNodeParam.getType(), mNodeParam.getName());
+                            sharedParams.add(shared);
+                            sharedArgs.add(delegate);
+                            delegate = varX(shared);
+                        } else {
+                            VariableExpression local = localVarX(mNodeParam.getName(), mNodeParam.getType());
+                            inner.addStatement(declS(local, delegate));
+                            delegate = varX(local);
+                        }
+                        seen.put(mNodeParam, delegate);
+                    }
+                    args.addExpression(delegate);
                 } else {
-                    args.addExpression(asType(varX(mNodeParam), mNodeParam.getType(), coerce));
+                    if (mNodeParam.hasInitialExpression()) {
+                        // evaluated by a default-argument variant, where the shared delegate instance isn't available
+                        for (Parameter p : mNodeParams) {
+                            if (AnnotatedNodeUtils.hasAnnotation(p, NAMED_DELEGATE_TYPE) && references(mNodeParam.getInitialExpression(), p)) {
+                                addError("Error during " + NAMED_VARIANT + " processing. The default value of positional parameter '" + mNodeParam.getName() +
+                                        "' can't reference @" + NAMED_DELEGATE_TYPE.getNameWithoutPackage() + " parameter '" + p.getName() + "'.", mNodeParam);
+                                return;
+                            }
+                        }
+                    }
+                    Parameter genParam = mNodeParam;
+                    if (mNodeParam.hasInitialExpression()) {
+                        // own copy: default-argument expansion of the original method clears the shared parameter's default
+                        genParam = new Parameter(mNodeParam.getType(), mNodeParam.getName(), getDefaultValue(mNodeParam.getInitialExpression(), seen));
+                        seen.put(mNodeParam, varX(genParam));
+                    }
+                    args.addExpression(asType(varX(genParam), genParam.getType(), coerce));
                     if (hasDuplicates(this, mNode, propNames, mNodeParam.getName())) return;
-                    genParams.add(mNodeParam);
+                    genParams.add(genParam);
                 }
             }
         }
-        createMapVariant(this, mNode, anno, mapParam, genParams, cNode, inner, args, propNames);
+        createMapVariant(this, mNode, anno, mapParam, genParams, cNode, inner, args, propNames, sharedParams, sharedArgs);
+    }
+
+    private static boolean isReferencedByDefault(final Parameter param, final Parameter[] params) {
+        for (Parameter p : params) {
+            if (p.hasInitialExpression() && references(p.getInitialExpression(), param)) return true;
+        }
+        return false;
+    }
+
+    private static Parameter findClosureCapturedParameter(final Expression expression, final Parameter[] params) {
+        Parameter[] found = {null};
+        expression.visit(new CodeVisitorSupport() {
+            private int closureDepth;
+
+            @Override
+            public void visitClosureExpression(final ClosureExpression e) {
+                closureDepth += 1;
+                super.visitClosureExpression(e);
+                closureDepth -= 1;
+            }
+
+            @Override
+            public void visitVariableExpression(final VariableExpression e) {
+                if (closureDepth > 0 && found[0] == null) {
+                    for (Parameter p : params) {
+                        if (e.getAccessedVariable() == p) found[0] = p;
+                    }
+                }
+            }
+        });
+        return found[0];
+    }
+
+    private static boolean references(final Expression expression, final Parameter param) {
+        boolean[] found = {false};
+        expression.visit(new CodeVisitorSupport() {
+            @Override
+            public void visitVariableExpression(final VariableExpression e) {
+                if (e.getAccessedVariable() == param) found[0] = true;
+            }
+        });
+        return found[0];
     }
 
     // for backwards compatibility
@@ -238,16 +336,16 @@ public class NamedVariantASTTransformation extends AbstractASTTransformation {
         return true;
     }
 
-    private boolean processDelegateParam(final MethodNode mNode, final Parameter mapParam, final ArgumentListExpression args, final List<String> propNames, final Parameter fromParam, final boolean coerce) {
+    private Expression processDelegateParam(final MethodNode mNode, final Parameter mapParam, final List<String> propNames, final Parameter fromParam) {
         if (isInnerClass(fromParam.getType()) && mNode.isStatic()) {
             addError("Error during " + NAMED_VARIANT + " processing. Delegate type '" + fromParam.getType().getNameWithoutPackage() + "' is an inner class which is not supported.", mNode);
-            return false;
+            return null;
         }
 
         Set<String> names = new HashSet<>();
         List<PropertyNode> props = getAllProperties(names, fromParam.getType(), true, false, false, true, false, true);
         for (String name : names) {
-            if (hasDuplicates(this, mNode, propNames, name)) return false;
+            if (hasDuplicates(this, mNode, propNames, name)) return null;
         }
         for (PropertyNode prop : props) {
             // create annotation @NamedParam(value='name', type=PropertyType)
@@ -258,9 +356,9 @@ public class NamedVariantASTTransformation extends AbstractASTTransformation {
         }
 
         Expression[] subMapArgs = names.stream().map(name -> constX(name)).toArray(Expression[]::new);
-        Expression delegateMap = callX(varX(mapParam), "subMap", args(subMapArgs));
-        args.addExpression(castX(fromParam.getType(), delegateMap));
-        return true;
+        MethodCallExpression delegateMap = callX(varX(mapParam), "subMap", args(subMapArgs));
+        delegateMap.setImplicitThis(false); // required for use before this/super ctor call
+        return castX(fromParam.getType(), delegateMap);
     }
 
     private static boolean hasDuplicates(final ErrorCollecting xform, final MethodNode mNode, final List<String> propNames, final String next) {
@@ -273,6 +371,12 @@ public class NamedVariantASTTransformation extends AbstractASTTransformation {
     }
 
     static void createMapVariant(final ErrorCollecting xform, final MethodNode mNode, final AnnotationNode anno, final Parameter mapParam, final List<Parameter> genParams, final ClassNode cNode, final BlockStatement inner, final ArgumentListExpression args, final List<String> propNames) {
+        createMapVariant(xform, mNode, anno, mapParam, genParams, cNode, inner, args, propNames, List.of(), List.of());
+    }
+
+    private static void createMapVariant(final ErrorCollecting xform, final MethodNode mNode, final AnnotationNode anno, final Parameter mapParam, final List<Parameter> genParams, final ClassNode cNode, final BlockStatement inner, final ArgumentListExpression args, final List<String> propNames, final List<Parameter> sharedParams, final List<Expression> sharedArgs) {
+        boolean isCtor = mNode instanceof ConstructorNode;
+        String kind = isCtor ? "constructor" : "method";
         Parameter namedArgKey = param(STRING_TYPE, "namedArgKey");
         if (!(mNode instanceof ConstructorNode)) {
             inner.getStatements().add(0, ifS(isNullX(varX(mapParam)),
@@ -286,17 +390,54 @@ public class NamedVariantASTTransformation extends AbstractASTTransformation {
                 ));
 
         Parameter[] genParamsArray = genParams.toArray(Parameter.EMPTY_ARRAY);
-        // TODO account for default params giving multiple signatures
         if (cNode.hasMethod(mNode.getName(), genParamsArray)) {
             xform.addError("Error during " + NAMED_VARIANT + " processing. Class " + cNode.getNameWithoutPackage() +
                     " already has a named-arg " + (mNode instanceof ConstructorNode ? "constructor" : "method") +
                     " of type " + genParams, mNode);
             return;
         }
+        // the Verifier creates a variant of the named-arg method for each default argument: these must not clash either
+        for (ClassNode[] types : (Iterable<ClassNode[]>) TupleConstructorASTTransformation.variants(genParamsArray).skip(1)::iterator) {
+            Parameter[] variant = Arrays.stream(types).map(t -> param(t, "arg")).toArray(Parameter[]::new);
+            if (isCtor ? cNode.getDeclaredConstructor(variant) != null : cNode.getDeclaredMethod(mNode.getName(), variant) != null) {
+                xform.addError("Error during " + NAMED_VARIANT + " processing. Class " + cNode.getNameWithoutPackage() +
+                        " already has " + kind + " " + signature(isCtor ? cNode.getNameWithoutPackage() : mNode.getName(), variant) +
+                        " which duplicates a default-argument variant of the named-arg " + kind, mNode);
+                return;
+            }
+        }
 
         BlockStatement body = new BlockStatement();
         int modifiers = getVisibility(anno, mNode, mNode.getClass(), mNode.getModifiers());
-        if (mNode instanceof ConstructorNode) {
+        if (isCtor && !sharedParams.isEmpty()) {
+            // Map ctor -> private helper ctor that receives the shared delegate(s) as parameters
+            Map<Parameter, Expression> renames = new HashMap<>();
+            List<Parameter> helperParams = new ArrayList<>();
+            helperParams.add(mapParam);
+            ArgumentListExpression helperCallArgs = new ArgumentListExpression(varX(mapParam));
+            for (Parameter p : genParams.subList(1, genParams.size())) {
+                Parameter copy = param(p.getType(), p.getName()); // no default: helper gets no variants
+                renames.put(p, varX(copy));
+                helperParams.add(copy);
+                helperCallArgs.addExpression(varX(p));
+            }
+            helperParams.addAll(sharedParams);
+            sharedArgs.forEach(helperCallArgs::addExpression);
+            Parameter[] helperParamsArray = helperParams.toArray(Parameter.EMPTY_ARRAY);
+            if (cNode.getDeclaredConstructor(helperParamsArray) != null) {
+                xform.addError("Error during " + NAMED_VARIANT + " processing. Class " + cNode.getNameWithoutPackage() +
+                        " already has constructor " + signature(cNode.getNameWithoutPackage(), helperParamsArray) +
+                        " which is needed because a default value references a @" + NAMED_DELEGATE_TYPE.getNameWithoutPackage() + " parameter", mNode);
+                return;
+            }
+            ArgumentListExpression targetArgs = new ArgumentListExpression();
+            args.getExpressions().forEach(e -> targetArgs.addExpression(replaceVariables(e, renames)));
+            BlockStatement helperBody = block(stmt(ctorX(ClassNode.THIS, targetArgs)), inner);
+            addGeneratedConstructor(cNode, ACC_PRIVATE, helperParamsArray, mNode.getExceptions(), helperBody);
+
+            body.addStatement(stmt(ctorX(ClassNode.THIS, helperCallArgs)));
+            addGeneratedConstructor(cNode, modifiers, genParamsArray, mNode.getExceptions(), body);
+        } else if (isCtor) {
             body.addStatement(stmt(ctorX(ClassNode.THIS, args)));
             body.addStatement(inner);
             addGeneratedConstructor(cNode,
@@ -306,8 +447,8 @@ public class NamedVariantASTTransformation extends AbstractASTTransformation {
                     body
             );
         } else {
+            inner.addStatement(stmt(callThisX(mNode.getName(), args))); // in scope of any shared delegate local
             body.addStatement(inner);
-            body.addStatement(stmt(callThisX(mNode.getName(), args)));
             addGeneratedMethod(cNode,
                     mNode.getName(),
                     modifiers,
@@ -319,19 +460,30 @@ public class NamedVariantASTTransformation extends AbstractASTTransformation {
         }
     }
 
+    private static String signature(final String name, final Parameter[] params) {
+        return name + "(" + Arrays.stream(params).map(p -> formatTypeName(p.getType())).collect(joining(",")) + ")";
+    }
+
     private static Expression getDefaultValue(final Expression defaultValue, final Map<Parameter, Expression> seen) {
         if (defaultValue != null && seen != null && !seen.isEmpty()) { // GROOVY-10561, GROOVY-10889, GROOVY-11325
-            ExpressionTransformer variableTransformer = (expression) -> {
-                if (expression instanceof VariableExpression) { // maybe it's a reference to a previous parameter
-                    return seen.getOrDefault(((VariableExpression) expression).getAccessedVariable(), expression);
-                }
-                return expression;
-            };
-            return (defaultValue instanceof VariableExpression
-                    ? variableTransformer.transform(defaultValue)
-                    : defaultValue.transformExpression(variableTransformer));
+            return replaceVariables(defaultValue, seen);
         }
         return defaultValue;
+    }
+
+    // replaces references to the given parameters, at any depth
+    private static Expression replaceVariables(final Expression expression, final Map<Parameter, Expression> replacements) {
+        ExpressionTransformer transformer = new ExpressionTransformer() {
+            @Override
+            public Expression transform(final Expression e) {
+                if (e instanceof VariableExpression v) { // maybe it's a reference to a previous parameter
+                    Expression replacement = replacements.get(v.getAccessedVariable());
+                    return replacement != null ? replacement : e;
+                }
+                return e.transformExpression(this);
+            }
+        };
+        return transformer.transform(expression);
     }
 
     private static Expression namedParamValue(final Parameter mapParam, final String name, final ClassNode type, final boolean coerce, Expression defaultValue) {

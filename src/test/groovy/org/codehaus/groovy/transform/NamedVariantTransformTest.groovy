@@ -447,4 +447,195 @@ final class NamedVariantTransformTest {
             assert pair[1] == Collections.emptySet()
         '''
     }
+
+    @Test // GROOVY-12762
+    void testDefaultArgumentVariantsOfNamedArgVariant() {
+        assertScript shell, '''
+            @ToString(includeNames=true)
+            class Color {
+                int r, g, b
+            }
+
+            @NamedVariant
+            String m(@NamedDelegate Color color, Number alpha = 4.5) {
+                "$color $alpha"
+            }
+
+            assert m(r:1, g:2, b:3) == 'Color(r:1, g:2, b:3) 4.5'
+            assert m(r:1, g:2, b:3, 0.0) == 'Color(r:1, g:2, b:3) 0.0'
+            assert m(r:1, g:2, b:3, null) == 'Color(r:1, g:2, b:3) null'
+
+            @NamedVariant
+            String q(@NamedParam String name, String suffix = 'X') {
+                "$name $suffix"
+            }
+
+            assert q(name:'a') == 'a X'
+            assert q(name:'a', '') == 'a '
+
+            class K {
+                String s
+                @NamedVariant
+                K(@NamedParam String n, int x = 3) {
+                    s = "$n $x"
+                }
+            }
+
+            assert new K(n:'a').s == 'a 3'
+            assert new K([n:'a'], 0).s == 'a 0'
+        '''
+    }
+
+    @Test // GROOVY-12762
+    void testDefaultArgumentVariantClashesWithDeclaredMember() {
+        def err = shouldFail shell, '''
+            class W {
+                String m(Map m) { 'user' }
+                @NamedVariant
+                String m(@NamedParam String n, int x = 3) { "$n $x" }
+            }
+        '''
+        assert err.message.contains('Class W already has method m(java.util.Map) which duplicates a default-argument variant of the named-arg method')
+
+        err = shouldFail shell, '''
+            class K {
+                K(Map m) { }
+                @NamedVariant
+                K(@NamedParam String n, int x = 3) { }
+            }
+        '''
+        assert err.message.contains('Class K already has constructor K(java.util.Map) which duplicates a default-argument variant of the named-arg constructor')
+    }
+
+    @Test // GROOVY-12762
+    void testDefaultArgumentReferenceToNamedDelegate() {
+        for (mode in ['', '@CompileStatic']) {
+            assertScript shell, """
+                @ToString(includeNames=true)
+                class Color {
+                    int r, g, b
+                }
+
+                $mode
+                class C {
+                    @NamedVariant
+                    String s(@NamedDelegate Color c, @NamedParam int x, @NamedParam String z = c.toString()) {
+                        "\$c \$x \$z"
+                    }
+                    @NamedVariant
+                    boolean same(@NamedDelegate Color c, @NamedParam Color d = c) {
+                        c.is(d)
+                    }
+                }
+
+                assert new C().s(r:1, g:2, b:3, x:5) == 'Color(r:1, g:2, b:3) 5 Color(r:1, g:2, b:3)'
+                assert new C().s(r:1, g:2, b:3, x:5, z:'q') == 'Color(r:1, g:2, b:3) 5 q'
+                assert new C().same(r:1, g:2, b:3)
+
+                $mode
+                class K {
+                    String z
+                    boolean same
+                    @NamedVariant
+                    K(@NamedDelegate Color c, @NamedParam String z = c.toString(), @NamedParam Color d = c, int p = 7) {
+                        this.z = "\$z \$p"
+                        same = c.is(d)
+                    }
+                }
+
+                assert new K(r:1, g:2, b:3).z == 'Color(r:1, g:2, b:3) 7'
+                assert new K([r:1, g:2, b:3], 9).z == 'Color(r:1, g:2, b:3) 9'
+                assert new K(r:1, g:2, b:3).same
+            """
+        }
+    }
+
+    @Test // GROOVY-12762
+    void testDefaultArgumentReferenceToNamedDelegateNeedsHelperConstructor() {
+        def err = shouldFail shell, '''
+            class Color {
+                int r, g, b
+            }
+            class K {
+                private K(Map m, Color c) { }
+                @NamedVariant
+                K(@NamedDelegate Color c, @NamedParam String z = c.toString()) { }
+            }
+        '''
+        assert err.message.contains('Class K already has constructor K(java.util.Map,Color) which is needed because a default value references a @NamedDelegate parameter')
+    }
+
+    @Test // GROOVY-12762
+    void testPositionalDefaultArgumentReferenceToNamedDelegate() {
+        def err = shouldFail shell, '''
+            class Color {
+                int r, g, b
+            }
+            @NamedVariant
+            boolean p(@NamedDelegate Color c, Color d = c) {
+                c.is(d)
+            }
+        '''
+        assert err.message.contains("The default value of positional parameter 'd' can't reference @NamedDelegate parameter 'c'.")
+    }
+
+    @Test // GROOVY-12762
+    void testNestedDefaultArgumentReferenceToParam() {
+        assertScript shell, '''
+            @NamedVariant
+            String n(@NamedParam int x, @NamedParam int y = x * 2 + 1) {
+                "$x $y"
+            }
+
+            assert n(x: 5) == '5 11'
+            assert n(x: 5, y: 0) == '5 0'
+        '''
+    }
+
+    @Test // GROOVY-12762
+    void testDefaultArgumentClosureReferenceToParam() {
+        def err = shouldFail shell, '''
+            @NamedVariant
+            String s(@NamedParam int x, @NamedParam Closure z = { "v$x" }) {
+                z()
+            }
+        '''
+        assert err.message.contains("The default value of parameter 'z' can't reference parameter 'x' from within a closure.")
+
+        err = shouldFail shell, '''
+            @NamedVariant
+            String s(@NamedParam int x, @NamedParam String z = { "v$x" }()) {
+                z
+            }
+        '''
+        assert err.message.contains("The default value of parameter 'z' can't reference parameter 'x' from within a closure.")
+
+        assertScript shell, '''
+            @NamedVariant
+            String s(@NamedParam int x, @NamedParam Closure z = { 'v' }) {
+                "$x ${z()}"
+            }
+
+            assert s(x: 1) == '1 v'
+        '''
+    }
+
+    @Test // GROOVY-12762
+    void testNamedDelegateConstructor() {
+        assertScript shell, '''
+            @ToString
+            class Color {
+                int r, g, b
+            }
+            class K {
+                String s
+                @NamedVariant
+                K(@NamedDelegate Color c, @NamedParam String z = 'q') {
+                    s = "$c $z"
+                }
+            }
+
+            assert new K(r:1, g:2, b:3).s == 'Color(1, 2, 3) q'
+        '''
+    }
 }
