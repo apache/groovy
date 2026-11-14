@@ -238,10 +238,10 @@ public class GroovyMain {
         @Option(names = {"-p"}, description = "Process files line by line and print result (see also -n)")
         private boolean lineByLinePrint;
 
-        @Option(names = {"-pa", "--parameters"}, description = "Generate metadata for reflection on method parameter names (jdk8+ only)")
+        @Option(names = {"-pa", "--parameters"}, description = "Generate metadata for reflection on method parameter names")
         private boolean parameterMetadata;
 
-        @Option(names = {"-pr", "--enable-preview"}, description = "Enable preview Java features (jdk12+ only)")
+        @Option(names = {"-pr", "--enable-preview"}, description = "Enable preview Java features (Java 12 or later)")
         private boolean previewFeatures;
 
         @Option(names = "-l", arity = "0..1", paramLabel = "<[host:]port>", description = "Listen on a port and process inbound lines (default: 1960). Binds the loopback address unless a host is given; use 0.0.0.0 to accept connections from other hosts")

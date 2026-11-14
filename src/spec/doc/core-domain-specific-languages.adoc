@@ -1156,7 +1156,7 @@ include::../test/builder/NodeBuilderTest.groovy[tags=node_builder_gpath_assert,i
 
 include::../../../subprojects/groovy-json/src/spec/doc/_json-builder.adoc[leveloffset=+3]
 
-include::../../../subprojects/groovy-json/src/spec/doc/_streaming-jason-builder.adoc[leveloffset=+3]
+include::../../../subprojects/groovy-json/src/spec/doc/_streaming-json-builder.adoc[leveloffset=+3]
 
 include::../../../subprojects/groovy-swing/src/spec/doc/_swing-builder.adoc[leveloffset=+3]
 

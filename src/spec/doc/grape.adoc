@@ -58,7 +58,7 @@ this:
 
 [source,groovy]
 -----------------------------------------------------------------
-@GrabResolver(name='restlet', root='http://maven.restlet.org/')
+@GrabResolver(name='restlet', root='https://maven.restlet.talend.com')
 @Grab(group='org.restlet', module='org.restlet', version='1.1.6')
 -----------------------------------------------------------------
 
