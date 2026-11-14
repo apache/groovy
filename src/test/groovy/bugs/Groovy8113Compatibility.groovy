@@ -38,41 +38,53 @@ import java.util.concurrent.atomic.AtomicInteger
 import static org.junit.jupiter.api.Assertions.assertEquals
 import static org.junit.jupiter.api.Assertions.assertFalse
 import static org.junit.jupiter.api.Assertions.assertTrue
+import static org.junit.jupiter.api.Assertions.fail
 
 /**
- * Name-taking overloads stay on the call path, and a class whose simple
- * name is a generated script name plus {@code Customizer} still loads.
+ * Anonymous evaluate and parse record a generated name on the
+ * {@link GroovyCodeSource} they create, and a class whose simple name is a
+ * generated script name plus {@code Customizer} still loads.
  */
 final class Groovy8113Compatibility {
 
     @Test
-    void evaluateStringStillCallsNameTakingOverload() {
+    void evaluateStringRecordsGeneratedNameOnCodeSource() {
         // GROOVY-8113
-        int[] calls = [0]
+        int[] seen = [0]
+        int[] marked = [0]
         GroovyShell shell = new GroovyShell() {
             @Override
-            Object evaluate(String scriptText, String fileName, String codeBase) {
-                calls[0]++
-                return super.evaluate(scriptText, fileName, codeBase)
+            Script parse(GroovyCodeSource codeSource, Binding binding) {
+                seen[0]++
+                if (codeSource.isNameGenerated()) {
+                    marked[0]++
+                }
+                return super.parse(codeSource, binding)
             }
         }
         assertEquals(2, shell.evaluate('1 + 1'))
-        assertEquals(1, calls[0])
+        assertTrue(seen[0] >= 1)
+        assertEquals(seen[0], marked[0])
     }
 
     @Test
-    void parseClassStringStillCallsNameTakingOverload() {
+    void parseClassStringRecordsGeneratedNameOnCodeSource() {
         // GROOVY-8113
-        int[] calls = [0]
+        int[] seen = [0]
+        int[] marked = [0]
         GroovyClassLoader loader = new GroovyClassLoader() {
             @Override
-            Class parseClass(String text, String fileName) {
-                calls[0]++
-                return super.parseClass(text, fileName)
+            Class parseClass(GroovyCodeSource codeSource) {
+                seen[0]++
+                if (codeSource.isNameGenerated()) {
+                    marked[0]++
+                }
+                return super.parseClass(codeSource)
             }
         }
         Class<?> parsed = loader.parseClass('3 + 4')
-        assertEquals(1, calls[0])
+        assertEquals(1, seen[0])
+        assertEquals(1, marked[0])
         assertTrue(parsed.name ==~ /Script_[0-9a-fA-F]+/)
         assertEquals(7, parsed.getDeclaredConstructor().newInstance().run())
     }
@@ -104,6 +116,18 @@ final class Groovy8113Compatibility {
         file.write('println 2\n')
         GroovyCodeSource fromFile = (GroovyCodeSource) method.invoke(null, true, file.absolutePath)
         assertFalse(fromFile.isNameGenerated())
+
+        GroovyCodeSource fromUri = (GroovyCodeSource) method.invoke(null, true, file.toURI().toString())
+        assertFalse(fromUri.isNameGenerated())
+
+        try {
+            method.invoke(null, true, 'C:\\Users\\RUNNER~1\\AppData\\Local\\Temp\\Groovy8113Missing.groovy')
+            fail('a missing Windows path should fail as a file')
+        } catch (java.lang.reflect.InvocationTargetException e) {
+            assertTrue(e.cause instanceof GroovyRuntimeException)
+            assertTrue(e.cause.message.startsWith('Unable to get script from:'))
+            assertFalse(e.cause.message.contains('URI'))
+        }
     }
 
     @Test
@@ -146,7 +170,7 @@ final class Groovy8113Compatibility {
     }
 
     @Test
-    void callerChosenNameIsNotMarkedFromAnotherThread() throws Exception {
+    void callerChosenNameIsNotMarkedGenerated() {
         // GROOVY-8113
         AtomicInteger marked = new AtomicInteger()
         GroovyShell shell = new GroovyShell() {
@@ -158,33 +182,7 @@ final class Groovy8113Compatibility {
                 return null
             }
         }
-        Thread other = new Thread({ shell.noteGeneratedScriptName('Script1.groovy') })
-        other.start()
-        other.join()
         shell.parse('2', 'Script1.groovy')
-        assertEquals(0, marked.get())
-    }
-
-    @Test
-    void overrideThatSkipsMarkingLeavesNoStaleName() {
-        // GROOVY-8113
-        AtomicInteger marked = new AtomicInteger()
-        GroovyShell shell = new GroovyShell() {
-            @Override
-            Object evaluate(String scriptText, String fileName, String codeBase) {
-                return fileName
-            }
-
-            @Override
-            Script parse(GroovyCodeSource codeSource, Binding binding) {
-                if (codeSource.isNameGenerated()) {
-                    marked.incrementAndGet()
-                }
-                return null
-            }
-        }
-        String generated = (String) shell.evaluate('ignored')
-        shell.parse('2', generated)
         assertEquals(0, marked.get())
     }
 

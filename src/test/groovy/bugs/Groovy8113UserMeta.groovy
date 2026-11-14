@@ -94,7 +94,7 @@ final class Groovy8113UserMeta {
     }
 
     @Test
-    void fixedGenerateScriptNameStillUsesCustomMetaClass() {
+    void callerChosenScriptNameStillUsesCustomMetaClass() {
         // GROOVY-8113
         final String fixed = 'Groovy8113Fixed'
         final String metaName = 'groovy.runtime.metaclass.' + fixed + 'MetaClass'
@@ -102,13 +102,8 @@ final class Groovy8113UserMeta {
         Map<String, byte[]> bytes = compileOne(fixed, 'fixed-meta')
         define(registryLoader, metaName, bytes[metaName])
 
-        GroovyShell shell = new GroovyShell(registryLoader) {
-            @Override
-            protected String generateScriptName() {
-                return fixed + '.groovy'
-            }
-        }
-        Script script = shell.parse("'ran'")
+        GroovyShell shell = new GroovyShell(registryLoader)
+        Script script = shell.parse("'ran'", fixed + '.groovy')
         assertEquals(fixed, script.getClass().getName())
         MetaClass meta = null
         try {

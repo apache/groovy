@@ -19,7 +19,6 @@
 package groovy.lang;
 
 import groovy.util.CharsetToolkit;
-import org.apache.groovy.lang.annotation.Incubating;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.FieldNode;
@@ -107,8 +106,6 @@ public class GroovyClassLoader extends URLClassLoader {
     private final CompilerConfiguration config;
     private final String sourceEncoding;
     private Boolean recompile;
-    /** Generated file name awaiting the next name-taking parse on this thread. */
-    private final ThreadLocal<String> pendingGeneratedScriptName = new ThreadLocal<>();
 
     static {
         registerAsParallelCapable();
@@ -322,7 +319,6 @@ public class GroovyClassLoader extends URLClassLoader {
     public Class parseClass(final String text, final String fileName) throws CompilationFailedException {
         GroovyCodeSource gcs = new GroovyCodeSource(text, fileName, "/groovy/script");
         gcs.setCachable(false);
-        markGeneratedName(gcs, fileName);
         return parseClass(gcs);
     }
 
@@ -333,13 +329,10 @@ public class GroovyClassLoader extends URLClassLoader {
      * @return the main class defined in the given script
      */
     public Class parseClass(final String text) throws CompilationFailedException {
-        String fileName = "Script_" + genEncodingString(text) + ".groovy";
-        noteGeneratedScriptName(fileName);
-        try {
-            return parseClass(text, fileName);
-        } finally {
-            clearGeneratedScriptName(fileName);
-        }
+        GroovyCodeSource gcs = new GroovyCodeSource(text, "Script_" + genEncodingString(text) + ".groovy", "/groovy/script");
+        gcs.setCachable(false);
+        gcs.setNameGenerated(true);
+        return parseClass(gcs);
     }
 
     /**
@@ -706,49 +699,6 @@ public class GroovyClassLoader extends URLClassLoader {
         if (isGeneratedCustomizerProbe(name)) {
             throw new IntrospectionProbeMiss(name);
         }
-    }
-
-    /**
-     * Records that {@code fileName} was generated on the current thread.
-     * The next name-taking {@link #parseClass(String, String)} on this thread
-     * that receives it marks that source generated. A subclass override of
-     * that overload is still invoked; the flag is applied when that overload
-     * creates the code source.
-     * <p>
-     * Intended for Groovy's own script and template engines.
-     *
-     * @param fileName the generated script file name
-     * @since 7.0.0
-     */
-    @Incubating
-    public void noteGeneratedScriptName(final String fileName) {
-        pendingGeneratedScriptName.set(fileName);
-    }
-
-    /**
-     * Clears the generated-name note on the current thread when it is still
-     * {@code fileName}.
-     * <p>
-     * Intended for Groovy's own script and template engines.
-     *
-     * @param fileName the note to drop, or {@code null} to drop whatever is pending
-     * @since 7.0.0
-     */
-    @Incubating
-    public void clearGeneratedScriptName(final String fileName) {
-        if (fileName == null || fileName.equals(pendingGeneratedScriptName.get())) {
-            pendingGeneratedScriptName.remove();
-        }
-    }
-
-    private void markGeneratedName(final GroovyCodeSource gcs, final String fileName) {
-        if (fileName == null) {
-            return;
-        }
-        if (fileName.equals(pendingGeneratedScriptName.get())) {
-            gcs.setNameGenerated(true);
-        }
-        pendingGeneratedScriptName.remove();
     }
 
     /**

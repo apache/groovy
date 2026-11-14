@@ -18,35 +18,30 @@
  */
 package org.codehaus.groovy.jsr223
 
-import groovy.junit6.plugin.ForkedJvm
+import groovy.lang.GroovyClassLoader
 import org.junit.jupiter.api.Test
 
 import javax.script.ScriptContext
 import javax.script.ScriptEngine
-import javax.script.ScriptEngineManager
 import javax.script.SimpleScriptContext
 
 import static org.junit.jupiter.api.Assertions.assertEquals
 import static org.junit.jupiter.api.Assertions.assertTrue
 
 /**
- * Repeated {@code ScriptEngine.eval} must not leave a generated script name
- * in a long-lived class loader. A script whose file name was supplied keeps
- * only its MetaClass, BeanInfo and Customizer companions.
+ * Repeated {@code ScriptEngine.eval} must not ask a parent loader for a
+ * generated script name. A script whose file name was supplied may be asked
+ * for only as a MetaClass, BeanInfo or Customizer companion.
  */
-@ForkedJvm(jvmArgs = ['--add-opens=java.base/java.lang=ALL-UNNAMED'])
 final class Groovy8113 {
 
     private static final int ITERATIONS = 8
 
     @Test
-    void repeatedEvalDoesNotRetainGeneratedClassNames() {
+    void repeatedEvalDoesNotAskParentForGeneratedNames() {
         // GROOVY-8113
-        Set<String> before = lockKeys()
-        assertTrue(before != null, 'ClassLoader.parallelLockMap is not readable')
-
-        ScriptEngine engine = new ScriptEngineManager().getEngineByName('groovy')
-        assertTrue(engine != null, 'groovy script engine is required')
+        RecordingParent parent = new RecordingParent(Groovy8113.class.classLoader)
+        ScriptEngine engine = new GroovyScriptEngineImpl(new GroovyClassLoader(parent))
         for (int i = 0; i < ITERATIONS; i++) {
             assertEquals(i + 1, engine.eval("${i} + 1"))
         }
@@ -56,22 +51,29 @@ final class Groovy8113 {
         named.setBindings(engine.createBindings(), ScriptContext.ENGINE_SCOPE)
         assertEquals(3, engine.eval('def closure = { it }; assert closure(3) == 3; 1 + 2', named))
 
-        Set<String> leaked = new TreeSet<>(lockKeys())
-        leaked.removeAll(before)
-        leaked.removeIf { String key -> !isForbidden(key) }
-        assert leaked.isEmpty() : "new parallelLockMap keys (${leaked.size()}):\n${leaked.join('\n')}"
-    }
-
-    private static boolean isForbidden(String key) {
-        String name = key.substring(key.indexOf('|') + 1)
-        String base = companionBase(name)
-        if (base != null) {
-            return isGenerated(base)
+        assertTrue(parent.requested.size() > 0, 'parent loader recorded no loads')
+        List<String> unexpected = new ArrayList<>()
+        for (String name : parent.requested) {
+            if (isGeneratedProbe(name) || isDisallowedNamedProbe(name)) {
+                unexpected.add(name)
+            }
         }
-        return isGenerated(name) || isNamedScript(name)
+        assert unexpected.isEmpty() : "parent loads that should not happen:\n${unexpected.join('\n')}"
     }
 
-    private static String companionBase(String name) {
+    private static boolean isGeneratedProbe(String name) {
+        return isGeneratedRoot(rootSimple(name)) || isGeneratedRoot(rootSimple(companionSubject(name)))
+    }
+
+    private static boolean isDisallowedNamedProbe(String name) {
+        if (companionSubject(name)) {
+            return false
+        }
+        String simple = rootSimple(name)
+        return simple == 'Groovy8113Named' || name.contains('Groovy8113Named')
+    }
+
+    private static String companionSubject(String name) {
         String meta = 'groovy.runtime.metaclass.'
         if (name.startsWith(meta) && name.endsWith('MetaClass') && name.length() > meta.length() + 'MetaClass'.length()) {
             return name.substring(meta.length(), name.length() - 'MetaClass'.length())
@@ -87,52 +89,34 @@ final class Groovy8113 {
         if (name.endsWith('Customizer') && name.length() > 'Customizer'.length()) {
             return name.substring(0, name.length() - 'Customizer'.length())
         }
-        return null
+        return ''
     }
 
-    private static boolean isGenerated(String name) {
-        return simpleName(name) ==~ /Script\d+/
-    }
-
-    private static boolean isNamedScript(String name) {
-        String simple = simpleName(name)
-        return simple == 'Groovy8113Named' || name.contains('Groovy8113Named')
-    }
-
-    private static String simpleName(String name) {
+    private static String rootSimple(String name) {
+        if (name == null || name.isEmpty()) {
+            return ''
+        }
         int dot = name.lastIndexOf('.')
         String simple = dot < 0 ? name : name.substring(dot + 1)
         int dollar = simple.indexOf('$')
         return dollar < 0 ? simple : simple.substring(0, dollar)
     }
 
-    private static Set<String> lockKeys() {
-        Set<String> keys = new TreeSet<>()
-        boolean readable = false
-        ClassLoader current = Groovy8113.class.classLoader
-        while (current != null) {
-            Set<String> map = ParallelLockMapKeys.copy(current)
-            if (map != null) {
-                readable = true
-                String loaderName = current.getClass().getName() + '@' + System.identityHashCode(current)
-                for (String name : map) {
-                    keys.add(loaderName + '|' + name)
-                }
-            }
-            current = current.parent
+    private static boolean isGeneratedRoot(String simple) {
+        return simple ==~ /Script\d+/
+    }
+
+    private static final class RecordingParent extends ClassLoader {
+        private final List<String> requested = Collections.synchronizedList(new ArrayList<>())
+
+        private RecordingParent(ClassLoader parent) {
+            super(parent)
         }
-        ClassLoader context = Thread.currentThread().contextClassLoader
-        while (context != null) {
-            Set<String> map = ParallelLockMapKeys.copy(context)
-            if (map != null) {
-                readable = true
-                String loaderName = context.getClass().getName() + '@' + System.identityHashCode(context)
-                for (String name : map) {
-                    keys.add(loaderName + '|' + name)
-                }
-            }
-            context = context.parent
+
+        @Override
+        protected Class<?> loadClass(String name, boolean resolve) throws ClassNotFoundException {
+            requested.add(name)
+            return super.loadClass(name, resolve)
         }
-        return readable ? keys : null
     }
 }

@@ -97,11 +97,10 @@ public class GroovySocketServer implements Runnable {
     private static GroovyCodeSource getCodeSource(boolean scriptFile, String scriptFilenameOrText) {
         if (scriptFile) {
             try {
-                if (URI_PATTERN.matcher(scriptFilenameOrText).matches()) {
+                if (isScriptUri(scriptFilenameOrText)) {
                     return new GroovyCodeSource(new URI(scriptFilenameOrText));
-                } else {
-                    return new GroovyCodeSource(GroovyMain.searchForGroovyScriptFile(scriptFilenameOrText));
                 }
+                return new GroovyCodeSource(GroovyMain.searchForGroovyScriptFile(scriptFilenameOrText));
             } catch (IOException e) {
                 throw new GroovyRuntimeException("Unable to get script from: " + scriptFilenameOrText, e);
             } catch (URISyntaxException e) {
@@ -125,6 +124,18 @@ public class GroovySocketServer implements Runnable {
     // RFC2396
     // scheme        = alpha *( alpha | digit | "+" | "-" | "." )
     private static final Pattern URI_PATTERN = Pattern.compile("\\p{Alpha}[-+.\\p{Alnum}]*:.*");
+
+    /**
+     * True for a hierarchical URI such as {@code file:} or {@code http:}.
+     * A Windows drive path ({@code C:\...} or {@code C:/...}) matches a naive
+     * scheme pattern but is a filesystem path, so it is opened as a file.
+     */
+    private static boolean isScriptUri(final String value) {
+        if (value.length() >= 2 && Character.isLetter(value.charAt(0)) && value.charAt(1) == ':') {
+            return false;
+        }
+        return URI_PATTERN.matcher(value).matches();
+    }
 
     /**
     * This creates and starts the socket server on a new Thread. There is no need to call run or spawn

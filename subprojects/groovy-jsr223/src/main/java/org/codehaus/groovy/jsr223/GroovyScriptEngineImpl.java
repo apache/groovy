@@ -50,6 +50,7 @@ import groovy.lang.Binding;
 import groovy.lang.Closure;
 import groovy.lang.DelegatingMetaClass;
 import groovy.lang.GroovyClassLoader;
+import groovy.lang.GroovyCodeSource;
 import groovy.lang.MetaClass;
 import groovy.lang.MissingMethodException;
 import groovy.lang.MissingPropertyException;
@@ -498,17 +499,13 @@ public class GroovyScriptEngineImpl extends AbstractScriptEngine implements Comp
         }
 
         GeneratedScriptName generated = generatedScriptName(context);
+        GroovyCodeSource source = new GroovyCodeSource(script, generated.name, "/groovy/script");
+        source.setCachable(false);
         // A FILENAME attribute is the caller's name. Only the counter name is generated.
         if (generated.generated) {
-            loader.noteGeneratedScriptName(generated.name);
+            source.setNameGenerated(true);
         }
-        try {
-            clazz = loader.parseClass(script, generated.name);
-        } finally {
-            if (generated.generated) {
-                loader.clearGeneratedScriptName(generated.name);
-            }
-        }
+        clazz = loader.parseClass(source);
         classMap.put(script, clazz);
         return clazz;
     }
