@@ -574,12 +574,30 @@ groovy -Dgrape.root=/repo/grapes yourscript.groovy
 ==== Customize Ivy settings (GrapeIvy only)
 
 When using GrapeIvy, you can customize the Ivy settings that Grape uses by creating a
-`~/.groovy/grapeConfig.xml` file. If no such file exists,
-https://github.com/apache/groovy/blob/master/src/resources/groovy/grape/defaultGrapeConfig.xml[here]
-are the default settings used by Grape.
+`~/.groovy/grapeConfig.xml` file. If no such file exists, Grape uses the
+https://github.com/apache/groovy/blob/master/subprojects/groovy-grape-ivy/src/main/resources/groovy/grape/ivy/defaultGrapeConfig.xml[default Ivy settings]
+shipped in the `groovy-grape-ivy` module.
+
+`-Dgrape.config` selects a different file:
+
+* `default` — the shipped default settings
+* `relaxed` — the shipped relaxed settings, which use plain Ivy resolvers
+* `classpath:<resource>` — a resource loaded by the GrapeIvy class loader, then by the thread context class loader
+* any other value — a filesystem path
+
+An unresolvable value is ignored and the shipped default is used.
+
+The shipped default and relaxed settings give the Maven Central resolver a
+connection timeout of 30 seconds and a read timeout of 60 seconds (the
+`timeout-constraint` named `grape`). The read timeout applies to each read, so
+a long download is not cut off, but a transfer that stalls fails instead of
+holding the grab, and Ivy's artifact lock, indefinitely. A custom
+`grapeConfig.xml` replaces the shipped file, so copy that constraint across if
+you still want it. `GrapeIvy.addResolver` attaches the same constraint to a
+resolver it adds when the loaded settings define it.
 
 For more information on how to customize these settings, please refer to
-the https://ant.apache.org/ivy/history/latest-milestone/index.html[Ivy
+the https://ant.apache.org/ivy/history/latest-milestone/settings.html[Ivy settings
 documentation].
 
 This configuration file is not used by the GrapeMaven engine; with
@@ -634,18 +652,18 @@ Launching a Jetty server to serve Groovy templates:
 
 [source,groovy]
 --------------------------------------------------------------------------------------------------
-@Grab('org.eclipse.jetty.aggregate:jetty-server:8.1.19.v20160209')
-@Grab('org.eclipse.jetty.aggregate:jetty-servlet:8.1.19.v20160209')
-@Grab('javax.servlet:javax.servlet-api:3.0.1')
+@Grab('org.eclipse.jetty.ee11:jetty-ee11-servlet:12.1.15')
 import org.eclipse.jetty.server.Server
-import org.eclipse.jetty.servlet.ServletContextHandler
+import org.eclipse.jetty.ee11.servlet.ServletContextHandler
 import groovy.servlet.TemplateServlet
 
 def runServer(duration) {
     def server = new Server(8080)
-    def context = new ServletContextHandler(server, "/", ServletContextHandler.SESSIONS)
-    context.resourceBase = "."
-    context.addServlet(TemplateServlet, "*.gsp")
+    def context = new ServletContextHandler(ServletContextHandler.SESSIONS)
+    context.contextPath = '/'
+    context.baseResourceAsString = '.'
+    context.addServlet(TemplateServlet, '*.gsp')
+    server.handler = context
     server.start()
     sleep duration
     server.stop()
@@ -654,12 +672,12 @@ def runServer(duration) {
 runServer(10000)
 --------------------------------------------------------------------------------------------------
 
-Grape will download Jetty and its dependencies on first launch of this
-script, and cache them. We create a new Jetty Server on port 8080,
-then expose Groovy’s TemplateServlet at the root of the context — Groovy
-comes with its own powerful template engine mechanism. We start the
-server and let it run for a certain duration. Each time someone will hit
-+http://localhost:8080/somepage.gsp+, it will display the somepage.gsp
-template to the user — those template pages should be situated in the
-same directory as this server script.
+Grape downloads Jetty and its dependencies on the first launch of this
+script and caches them. `groovy.servlet.TemplateServlet` is a Jakarta Servlet,
+so the container is Jetty 12.1's `ee11` module (Jakarta EE 11) rather than the
+Jetty 8 and `javax.servlet` coordinates used by older editions of this example.
+The script creates a server on port 8080 and exposes `TemplateServlet` at `*.gsp`.
+Groovy's installation supplies `groovy-servlet`. The server runs for the given
+duration. A request to +http://localhost:8080/somepage.gsp+ renders `somepage.gsp`
+from the same directory as the script.
 

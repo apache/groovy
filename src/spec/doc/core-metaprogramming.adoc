@@ -1270,6 +1270,63 @@ The generated constructor will be roughly like this:
 include::../test/CodeGenerationASTTransformsTest.groovy[tags=mapconstructor_equiv,indent=0]
 ----
 
+[[xform-NamedVariant]]
+===== `@groovy.transform.NamedVariant`
+
+`@NamedVariant`, added in Groovy 2.5.0, generates an overload whose first parameter is a `Map`,
+so the method or constructor can be called with named arguments. The annotated method is kept
+and is what the generated method calls. The generated method has the same visibility and return
+type as the original; `@VisibilityOptions` can change the visibility of the generated one.
+
+With no `@NamedParam` or `@NamedDelegate` on any parameter, every parameter is a named argument.
+`autoDelegate` (since Groovy 2.5.3) set to `true` treats the first parameter as a delegate instead.
+`@NamedParam` and `@NamedDelegate` select parameters explicitly and may be mixed. A delegate type
+must be one Groovy can produce from a `Map` with `as`. Duplicate names, whether from named
+parameters or from properties of a delegate, are a compile error.
+
+[source,groovy]
+----
+import groovy.transform.NamedVariant
+
+@NamedVariant
+int makeSense(int dollars, int cents) {
+    100 * dollars + cents
+}
+
+assert makeSense(dollars: 2, cents: 50) == 250
+----
+
+A default is used only when the map has no entry for that name. A value that is present is
+passed through, including values that are false under <<{core-semantics}#the-groovy-truth,Groovy truth>>,
+such as `0`, `false` or `''`.
+
+[source,groovy]
+----
+import groovy.transform.NamedParam
+import groovy.transform.NamedVariant
+
+@NamedVariant
+String greet(@NamedParam String name, String suffix = '!') {
+    name + suffix
+}
+
+assert greet(name: 'Ada') == 'Ada!'
+assert greet(name: 'Ada', '') == 'Ada'
+----
+
+A trailing positional parameter with a default also produces the usual default-argument
+overloads of the named-argument method. A positional argument supplied beside the named
+arguments, including `0` or `null`, is that positional parameter and does not fall back
+to the default.
+
+`coerce` (since Groovy 3.0.6), when `true`, converts each map value with `as`. Otherwise the
+value is passed on for ordinary assignment.
+
+Joint compilation exposes the all-`Map` form to Java callers in the same compilation unit
+(`returnType methodName(Map namedArgs)`, or `ClassName(Map)` for a constructor). A method that
+mixes named and positional parameters has a richer signature at run time. Java code that needs
+the richer form should call it from Groovy, or through a hand-written method that delegates.
+
 [[xform-Canonical]]
 ===== `@groovy.transform.Canonical`
 
