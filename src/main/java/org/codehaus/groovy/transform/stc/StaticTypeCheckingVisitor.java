@@ -438,7 +438,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     protected static final ClassNode NAMED_PARAMS_CLASSNODE = ClassHelper.make(NamedParams.class);
     /** Cached {@link NamedParam} annotation type. */
     protected static final ClassNode NAMED_PARAM_CLASSNODE = ClassHelper.make(NamedParam.class);
-    /** Deprecated alias for {@link #LinkedHashMap_TYPE}. */
+    /** Deprecated alias for {@link StaticTypeCheckingSupport#LinkedHashMap_TYPE}. */
     @Deprecated(forRemoval = true, since = "4.0.0")
     protected static final ClassNode LINKEDHASHMAP_CLASSNODE = LinkedHashMap_TYPE;
     /** Cached {@link Enumeration} type. */
