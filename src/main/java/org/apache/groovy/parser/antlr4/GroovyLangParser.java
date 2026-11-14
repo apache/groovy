@@ -32,6 +32,12 @@ import org.apache.groovy.util.SystemUtil;
 public class GroovyLangParser extends GroovyParser {
     private static final boolean GROOVY_PARSER_PROFILING_ENABLED = SystemUtil.getBooleanSafe("groovy.antlr4.profile");
 
+    /**
+     * Creates a parser over {@code input} and installs the shared parser ATN.
+     * Profiling is enabled when {@code groovy.antlr4.profile} is true.
+     *
+     * @param input the token stream
+     */
     public GroovyLangParser(TokenStream input) {
         super(input);
 
