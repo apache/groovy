@@ -626,9 +626,9 @@ final class ConsoleLanguageHost implements AutoCloseable {
     }
 
     /**
-     * Reports whether the completion popup is visible.
+     * Reports whether a completion menu is open.
      *
-     * @return {@code true} when a completion menu is showing
+     * @return {@code true} while the popup is showing or armed
      */
     @PackageScope
     boolean completionShowing() {
@@ -636,7 +636,7 @@ final class ConsoleLanguageHost implements AutoCloseable {
     }
 
     /**
-     * Inserts {@code item} at the caret and hides the popup.
+     * Inserts {@code item} at the caret. The popup is left as it is.
      *
      * @param item the candidate that was chosen
      */
@@ -707,8 +707,12 @@ final class ConsoleLanguageHost implements AutoCloseable {
     }
 
     /**
-     * Replaces the identifier around the caret with {@code insert}. A shared
-     * prefix is left in place and only the rest of {@code insert} is written.
+     * Writes {@code insert} at the caret. When the characters before the caret
+     * are a non-empty prefix of {@code insert}, those characters stay and the
+     * remainder is written there, replacing any identifier characters after
+     * the caret. When {@code insert} does not start with that prefix, the
+     * whole identifier is removed and {@code insert} is written in its place.
+     * When there is no identifier, {@code insert} is inserted at the caret.
      *
      * @param pane the editor
      * @param insert the completion text

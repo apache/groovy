@@ -72,7 +72,12 @@ class FXChildren {
 
     /**
      * Attaches {@code child} to {@code parent} by the JavaFX relationship for
-     * that pair. A null child, a binding, an axis, or a non-node value is ignored.
+     * that pair. A null child, an {@link ObservableValue}, a
+     * {@link BorderPanePositionFactory.Position}, or an {@link Axis} is ignored.
+     * A {@link TreeItem} given to a {@link TreeView} that already has a root
+     * is rejected. A {@link Node}, {@link Tab}, {@link MenuItem},
+     * {@link TableColumn}, {@link TreeItem}, or {@link Scene} that the cases
+     * above do not attach is rejected. Any other value is ignored.
      *
      * @param parent the node that should own {@code child}
      * @param child the nested value
