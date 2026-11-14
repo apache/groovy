@@ -410,9 +410,9 @@ public class MetaClassHelper {
      *
      * @param <M> the candidate type. Each element is read as {@link ParameterTypes}
      * @param candidates the overload candidates to filter
-     * @param arguments the call arguments. A {@link MethodClosure} is kept only when
-     *                  the functional-interface parameter at the same index has an abstract
-     *                  method that the closure can be called with
+     * @param arguments the call arguments. A candidate is kept only when the
+     *                  functional-interface parameter at the index of each
+     *                  {@link MethodClosure} has an abstract method the closure can be called with
      * @return the candidates that accept those method closures, or {@code candidates}
      *         itself when none of them fit
      * @since 6.0.1
