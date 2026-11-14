@@ -107,8 +107,7 @@ listed; defaults to no. |No
 |stacktrace |if true each compile error message will contain a
 stacktrace |No
 
-|indy |Enable compilation with the ``invoke dynamic'' support when using
-Groovy 2.0 and beyond and running on JDK 7 |No
+|indy |Legacy flag. Invokedynamic is always enabled. `true` is accepted and changes nothing; `false` fails the build. |No
 
 |scriptBaseClass |Sets the base class for Groovy scripts |No
 
@@ -135,13 +134,13 @@ and a caret) or `short` (one `file:line:column: severity: message` line per diag
 |tolerance |The number of non-fatal errors to collect before compilation is abandoned.
 Zero means unlimited. Defaults to 10. |No
 
-|parameters |Generates metadata for reflection on method parameter names on JDK 8 and above.
+|parameters |Generates metadata for reflection on method parameter names.
 Defaults to false. |No
 
-|previewFeatures |Enables the JEP preview features on JDK 12 and above.
+|previewFeatures |Enables the preview features of the JDK running the build (Java 12 or later).
 Defaults to false. |No
 
-|targetBytecode |Sets the bytecode compatibility level. |No
+|targetBytecode |Sets the bytecode compatibility level. Allowed values are `17` through `28`. When omitted, the level is the JDK running the compiler if that release is in range, otherwise `17`. |No
 
 |javahome |Sets the `java.home` value to use, default is the current JDK's home. |No
 
@@ -168,7 +167,7 @@ the compilation fails. |No
   ...
 </path>
 <groovyc srcdir="${dir.sources}" destdir="${dir.classes}" classpathref="classpath.main"
-         fork="true" includeantruntime="false" configscript="config.groovy" targetBytecode="1.8"/>
+         fork="true" includeantruntime="false" configscript="config.groovy" targetBytecode="17"/>
 -----------------------------------------------------------------------
 
 [[groovyc-ant-task-nested-elements]]
@@ -211,13 +210,13 @@ Joint compilation is enabled by using an embedded `javac` element, as shown in t
 
 [source,xml]
 -----------------------------------------------------------------------
-<groovyc srcdir="${testSourceDirectory}" destdir="${testClassesDirectory}" targetBytecode="1.8">
+<groovyc srcdir="${testSourceDirectory}" destdir="${testClassesDirectory}" targetBytecode="17">
   <classpath>
     <pathelement path="${mainClassesDirectory}"/>
     <pathelement path="${testClassesDirectory}"/>
     <path refid="testPath"/>
   </classpath>
-  <javac debug="true" source="1.8" target="1.8" />
+  <javac debug="true" source="17" target="17" />
 </groovyc>
 -----------------------------------------------------------------------
 

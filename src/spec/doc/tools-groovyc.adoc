@@ -41,7 +41,7 @@ a number of command line switches:
 |=======================================================================
 | Short version | Long version | Description | Example
 | -cp | -classpath, --classpath | Specify the compilation classpath. Must be the first argument. | groovyc -cp lib/dep.jar MyClass.groovy
-| | --sourcepath | Directory where to find source files. Not used anymore. Specifying this parameter will have no effect. |
+| -sourcepath | --sourcepath | Accepted, and ignored. The compiler does not search this path. |
 | | --temp | Temporary directory for the compiler |
 | | --encoding | Encoding of the source files | groovyc --encoding utf-8 script.groovy
 | | --help | Displays help for the command line groovyc tool | groovyc --help
@@ -52,13 +52,18 @@ a number of command line switches:
 | -w | --warningLevel | Sets how many warnings are reported after a successful compile: `0` (none), `1` (likely errors, the default), `2` (possible errors) or `3` (all). See <<section-groovyc-warnings,Compiler warnings>>. | groovyc -w 2 MyClass.groovy
 | -j | --jointCompilation* | Enables joint compilation | groovyc -j A.groovy B.java
 | -b | --basescript | Base class name for scripts (must derive from Script)|
-| | --configscript | Advanced compiler configuration script | groovyc --configscript config/config.groovy src/Person.groovy
+| -cf | --configscript | Advanced compiler configuration script | groovyc --configscript config/config.groovy src/Person.groovy
 | | --error-format | How errors and warnings are rendered: `full` (the default, with the source line and a caret) or `short` (one `file:line:column: severity: message` line per diagnostic, for editors and CI log parsers). | groovyc --error-format=short Person.groovy
 | -t | --tolerance | The number of non-fatal errors to collect before compilation is abandoned. Defaults to `10`; use `0` for unlimited. | groovyc -t 0 Person.groovy
-| -Jproperty=value | | Properties to be passed to `javac` if joint compilation is enabled | groovyc -j -Jtarget=1.6 -Jsource=1.6 A.groovy B.java
-| -Fflag | | Flags to be passed to `javac` if joint compilation is enabled | groovyc -j -Fnowarn A.groovy B.java
-| -pa | --parameters | Generates metadata for reflection on method parameter names. Requires Java 8+. | groovyc --parameters Person.groovy
-| -pr | --enable-preview | Enable preview Java features (jdk12+ only). | groovy --enable-preview Person.groovy
+| -Jname=value | | Passes `-name value` to `javac` when joint compilation is enabled | groovyc -j -Jrelease=17 A.groovy B.java
+| -Fflag | | Flag passed to `javac` when joint compilation is enabled | groovyc -j -Fnowarn A.groovy B.java
+| -pa | --parameters | Generates metadata for reflection on method parameter names. Defaults to false. | groovyc --parameters Person.groovy
+| -pr | --enable-preview | Enables preview features of the JDK running the compiler (Java 12 or later). Must follow `-cp` and precede the other arguments. | groovyc --enable-preview Person.groovy
+| -de | --debug | Prints extra information when compilation fails. | groovyc --debug Person.groovy
+| -s | --stubDirectory | Directory for the Java stubs written during joint compilation. | groovyc -j -s stubs A.groovy B.java
+| -ks | --keepStubs | Keeps the joint-compilation stubs instead of deleting them. | groovyc -j --keepStubs A.groovy B.java
+| | --compile-static | Compiles with `@CompileStatic`. | groovyc --compile-static Person.groovy
+| | --type-checked | Compiles with `@TypeChecked`. | groovyc --type-checked Person.groovy
 | @argfile | | Read options and source files from specified file. | groovyc @conf/args
 |=======================================================================
 
@@ -157,10 +162,10 @@ different to the JRE, or the JUnit runtime.
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>org.codehaus.groovy</groupId>
+            <groupId>org.apache.groovy</groupId>
             <artifactId>groovy-all</artifactId>
-            <version>2.5.0</version>
-            <type>pom</type> <!-- required JUST since Groovy 2.5.0 -->
+            <version>${groovy.version}</version>
+            <type>pom</type>
         </dependency>
     </dependencies>
     <build>
@@ -172,7 +177,7 @@ different to the JRE, or the JUnit runtime.
                         <id>compile</id>
                         <phase>compile</phase>
                         <configuration>
-                            <tasks>
+                            <target>
                                 <mkdir dir="${basedir}/src/main/groovy"/>
                                 <taskdef name="groovyc"
                                     classname="org.codehaus.groovy.ant.Groovyc">
@@ -183,7 +188,7 @@ different to the JRE, or the JUnit runtime.
                                     srcdir="${basedir}/src/main/groovy/" listfiles="true">
                                     <classpath refid="maven.compile.classpath"/>
                                 </groovyc>
-                            </tasks>
+                            </target>
                         </configuration>
                         <goals>
                             <goal>run</goal>
@@ -193,7 +198,7 @@ different to the JRE, or the JUnit runtime.
                         <id>test-compile</id>
                         <phase>test-compile</phase>
                         <configuration>
-                            <tasks>
+                            <target>
                                 <mkdir dir="${basedir}/src/test/groovy"/>
                                 <taskdef name="groovyc"
                                     classname="org.codehaus.groovy.ant.Groovyc">
@@ -204,7 +209,7 @@ different to the JRE, or the JUnit runtime.
                                     srcdir="${basedir}/src/test/groovy/" listfiles="true">
                                     <classpath refid="maven.test.classpath"/>
                                 </groovyc>
-                            </tasks>
+                            </target>
                         </configuration>
                         <goals>
                             <goal>run</goal>
@@ -228,7 +233,9 @@ execute the test phase, compiling Groovy source and Groovy test source
 and finally executing the unit tests. If you run `mvn jar` it will
 execute the jar phase bundling up all of your compiled production
 classes into a jar after all the unit tests pass. For more detail on
-Maven build phases consult the Maven2 documentation.
+Maven build phases consult the Maven documentation. Groovy 4 and later
+are published under the groupId `org.apache.groovy`. The `<target>` element
+is the configuration used by Maven AntRun Plugin 3; AntRun 1 used `<tasks>`.
 
 === GMaven and GMavenPlus
 [[section-gmaven]]
