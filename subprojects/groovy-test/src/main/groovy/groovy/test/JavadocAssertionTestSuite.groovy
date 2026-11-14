@@ -72,8 +72,11 @@ class JavadocAssertionTestSuite extends TestSuite {
     private static final IFileNameFinder finder = Class.forName('groovy.ant.FileNameFinder',true,this.classLoader).getConstructor().newInstance()
 
     /**
-     * Builds a suite from {@code ./src/}, including {@code **&#47;*.java} and
-     * {@code **&#47;*.groovy}.
+     * Builds a suite from the directory named by the
+     * {@code javadocAssertion.src.dir} system property, or {@code ./src/}
+     * when that property is unset. Files are included by
+     * {@code javadocAssertion.src.pattern}, or {@code **&#47;*.java,**&#47;*.groovy}
+     * when that property is unset.
      *
      * @return the suite
      */
@@ -83,8 +86,9 @@ class JavadocAssertionTestSuite extends TestSuite {
     }
 
     /**
-     * Builds a suite for {@code basedir}, including {@code **&#47;*.java} and
-     * {@code **&#47;*.groovy}.
+     * Builds a suite for {@code basedir}. Files are included by the
+     * {@code javadocAssertion.src.pattern} system property, or
+     * {@code **&#47;*.java,**&#47;*.groovy} when that property is unset.
      *
      * @param basedir the directory to scan
      * @return the suite
@@ -96,7 +100,8 @@ class JavadocAssertionTestSuite extends TestSuite {
 
     /**
      * Builds a suite for {@code basedir}, keeping files that match
-     * {@code includePattern}. Nothing is excluded.
+     * {@code includePattern}. Excludes files matching the
+     * {@code javadocAssertion.src.excludesPattern} system property, which is empty by default.
      *
      * @param basedir the directory to scan
      * @param includePattern ant-style include pattern
