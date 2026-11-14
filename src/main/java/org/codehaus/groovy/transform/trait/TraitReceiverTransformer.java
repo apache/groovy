@@ -97,7 +97,8 @@ class TraitReceiverTransformer extends ClassCodeExpressionTransformer {
 
     private boolean inClosure;
     private boolean inLambdaOnly; // in a lambda that is not in a closure
-    private boolean inLambda;
+    private boolean inLambda; // directly in a lambda, not in a closure within one
+    private boolean withinLambda; // in a lambda, directly or in a closure within one
     private Expression assignmentTarget; // the expression being assigned, incremented or decremented, which is not a read
 
     /**
@@ -199,6 +200,9 @@ class TraitReceiverTransformer extends ClassCodeExpressionTransformer {
             }
             if (accessedVariable instanceof FieldNode || accessedVariable instanceof PropertyNode) {
                 if (isClosurePropertyReference(vexp)) {
+                    if (withinLambda) {
+                        return implementingInstanceProperty(vexp);
+                    }
                     return exp; // GROOVY-12598: resolve through the closure's delegate and owner
                 }
                 if (knownFields.contains(vexp.getName())) {
@@ -273,14 +277,16 @@ class TraitReceiverTransformer extends ClassCodeExpressionTransformer {
             mce.setImplicitThis(false);
             mce.setMethodTarget(ClassHelper.CLOSURE_TYPE.getMethods("rehydrate").get(0));
             mce.setSourcePosition(exp);
-            boolean oldInClosure = inClosure, oldInLambdaOnly = inLambdaOnly, oldInLambda = inLambda;
+            boolean oldInClosure = inClosure, oldInLambdaOnly = inLambdaOnly, oldInLambda = inLambda, oldWithinLambda = withinLambda;
             inLambdaOnly = exp instanceof LambdaExpression && (!inClosure || inLambdaOnly);
             inClosure = true;
-            inLambda = oldInLambda || exp instanceof LambdaExpression;
+            inLambda = exp instanceof LambdaExpression; // the innermost construct decides
+            withinLambda = oldWithinLambda || inLambda;
             ((ClosureExpression) exp).getCode().visit(this);
             inClosure = oldInClosure;
             inLambdaOnly = oldInLambdaOnly;
             inLambda = oldInLambda;
+            withinLambda = oldWithinLambda;
             // The rewrite we do is causing some troubles with type checking, which will
             // not be able to perform closure parameter type inference
             // so we store the replacement, which will be done *after* type checking.
@@ -321,7 +327,8 @@ class TraitReceiverTransformer extends ClassCodeExpressionTransformer {
         if (operation.getType() == Types.ASSIGN) {
             String leftFieldName = null;
             if (leftExpression instanceof VariableExpression && isClosurePropertyReference((VariableExpression) leftExpression)) {
-                return binX(leftExpression, operation, transform(rightExpression)); // GROOVY-12598
+                return binX(withinLambda ? implementingInstanceProperty((VariableExpression) leftExpression) : leftExpression,
+                        operation, transform(rightExpression)); // GROOVY-12598
             }
             if (leftExpression instanceof VariableExpression && ((VariableExpression) leftExpression).getAccessedVariable() instanceof FieldNode) {
                 leftFieldName = ((VariableExpression) leftExpression).getAccessedVariable().getName();
@@ -409,6 +416,18 @@ class TraitReceiverTransformer extends ClassCodeExpressionTransformer {
         Variable accessedVariable = vexp.getAccessedVariable();
         return !accessedVariable.isInStaticContext() && (accessedVariable instanceof PropertyNode
             || (accessedVariable instanceof FieldNode && traitClass.getProperty(vexp.getName()) != null));
+    }
+
+    /**
+     * Makes the reference to a declared instance property for a closure within a
+     * lambda: the property of the implementing instance, as {@code this.name} is.
+     * The name is not left for the closure to resolve, as a closure within a
+     * statically compiled lambda cannot yet resolve it through its owner.
+     */
+    private Expression implementingInstanceProperty(final VariableExpression vexp) {
+        PropertyExpression propertyExpression = propX(varX(weaved), vexp.getName());
+        propertyExpression.setSourcePosition(vexp);
+        return propertyExpression;
     }
 
     /**

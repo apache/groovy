@@ -20,11 +20,14 @@ package org.codehaus.groovy.transform.traitx
 
 import groovy.junit6.plugin.ForkedJvm
 import groovy.transform.AnnotationCollector
+import groovy.transform.CompileStatic
 import groovy.transform.SelfType
 import org.codehaus.groovy.ast.ClassHelper
 import org.codehaus.groovy.ast.expr.ClassExpression
 import org.codehaus.groovy.ast.expr.ListExpression
+import org.codehaus.groovy.control.CompilerConfiguration
 import org.codehaus.groovy.control.MultipleCompilationErrorsException
+import org.codehaus.groovy.control.customizers.ASTTransformationCustomizer
 import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.RepeatedTest
 import org.junit.jupiter.api.Test
@@ -2779,6 +2782,75 @@ final class TraitASTTransformationTest {
         """
     }
 
+    @CompileModesTest
+    void testPropertyInClosureWithinLambdaUsesTheAccessor(String mode) {
+        assertScript shell, """
+            import java.util.function.Supplier
+
+            $mode
+            trait T {
+                String name = 'trait'
+                String read() { Supplier<String> s = () -> { def c = { -> name }; c() }; s.get() }
+                String readThis() { Supplier<String> s = () -> { def c = { -> this.name }; c() }; s.get() }
+                void write(String v) { Runnable r = () -> { def c = { -> name = v }; c() }; r.run() }
+                void writeThis(String v) { Runnable r = () -> { def c = { -> this.name = v }; c() }; r.run() }
+                String lambdaInClosure() { def c = { -> Supplier<String> s = () -> name; s.get() }; c() }
+                String readDirect() { this.name }
+            }
+            class C implements T {
+                List<String> log = []
+                String getName() { log << 'get'; 'class' }
+                void setName(String s) { log << "set \$s".toString() }
+            }
+
+            def c = new C()
+            assert c.read() == 'class'
+            assert c.readThis() == 'class'
+            c.write('x')
+            c.writeThis('y')
+            assert c.log == ['get', 'get', 'set x', 'set y']
+            assert c.lambdaInClosure() == 'trait'
+            assert c.readDirect() == 'trait'
+        """
+    }
+
+    // an increment or a decrement of a static accessor-only property is not rewritten:
+    // it is an operation on the property of the implementing class
+    @CompileModesTest
+    void testIncrementOfStaticAccessorIsNotACallOfTheTraitAccessor(String mode) {
+        boolean sc = mode.contains('CompileStatic')
+        for (op in ['count++', '++count', 'count--', '--count', 'this.count++']) {
+            assertScript shell, """
+                class L { static List<String> log = [] }
+                $mode
+                trait T {
+                    private static int v = 0
+                    static int getCount() { L.log << 'T.get'; v }
+                    static void setCount(int n) { L.log << 'T.set'; v = n }
+                    static void update() { $op }
+                    static void plus() { count += 1 }
+                }
+                $mode
+                class C implements T {
+                    static int getCount() { L.log << 'C.get'; 0 }
+                    static void setCount(int n) { L.log << 'C.set' }
+                }
+                $mode
+                class D implements T {
+                }
+
+                C.update()
+                assert L.log == ${sc ? "['T.get', 'C.set']" : "['C.get', 'C.set']"}
+                L.log.clear()
+                C.plus()
+                assert L.log == ['T.get', 'T.set']
+                L.log.clear()
+                D.update()
+                assert L.log == ['T.get', 'T.set']
+            """
+        }
+    }
+
     // GROOVY-12608
     @CompileModesTest
     void testSuperTraitStaticAccessorAsPropertyInClosure(String mode) {
@@ -2947,6 +3019,58 @@ final class TraitASTTransformationTest {
 
             assert new C().get(new P()) == 42
         """
+    }
+
+    // GROOVY-12608: a lambda in statically compiled trait code refers to the accessor directly,
+    // also where the lambda is passed as a closure whose delegate has a property of that name
+    @Test
+    void testSuperTraitStaticAccessorAsPropertyInStaticallyCompiledLambdaWithDelegate() {
+        assertScript shell, """
+            class P {
+                int cnt = 42
+            }
+            @CompileStatic
+            trait T {
+                private static int count = 1
+                static int getCnt() { count }
+            }
+            @CompileStatic
+            trait U extends T {
+                int get(P p) { p.with((x) -> cnt) }
+            }
+            @CompileStatic
+            class C implements U {
+            }
+
+            assert new C().get(new P()) == 1
+        """
+    }
+
+    // GROOVY-12608: static compilation that is not requested by an annotation is not seen
+    // when the trait is transformed, so the lambda is left to resolve the name and cannot
+    @Test
+    void testSuperTraitStaticAccessorAsPropertyInLambdaStaticallyCompiledByCustomizer() {
+        def config = new CompilerConfiguration()
+        config.addCompilationCustomizers(new ASTTransformationCustomizer(CompileStatic))
+        def script = { String member -> """
+            trait T {
+                private static int count = 1
+                static int getCnt() { count }
+            }
+            trait U extends T {
+                $member
+            }
+            class C implements U {
+            }
+            new C().m()
+        """ }
+        def customized = new GroovyShell(config)
+        assert customized.evaluate(script('int m() { cnt }')) == 1
+        assert customized.evaluate(script('int m() { def c = { -> cnt }; (int) c() }')) == 1
+        assert customized.evaluate(script('int m() { java.util.function.Supplier<Integer> s = () -> getCnt(); s.get() }')) == 1
+        shouldFail(MissingFieldException) {
+            customized.evaluate(script('int m() { java.util.function.Supplier<Integer> s = () -> cnt; s.get() }'))
+        }
     }
 
     // GROOVY-12587
