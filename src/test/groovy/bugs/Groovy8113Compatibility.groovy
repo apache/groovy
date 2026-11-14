@@ -26,6 +26,7 @@ import groovy.lang.Script
 import groovy.ui.GroovySocketServer
 import org.junit.jupiter.api.Test
 
+import java.lang.reflect.InvocationTargetException
 import java.lang.reflect.Method
 import java.util.ArrayList
 import java.util.List
@@ -123,7 +124,7 @@ final class Groovy8113Compatibility {
         try {
             method.invoke(null, true, 'C:\\Users\\RUNNER~1\\AppData\\Local\\Temp\\Groovy8113Missing.groovy')
             fail('a missing Windows path should fail as a file')
-        } catch (java.lang.reflect.InvocationTargetException e) {
+        } catch (InvocationTargetException e) {
             assertTrue(e.cause instanceof GroovyRuntimeException)
             assertTrue(e.cause.message.startsWith('Unable to get script from:'))
             assertFalse(e.cause.message.contains('URI'))
