@@ -59,7 +59,16 @@ public class ReadWriteLockASTTransformation extends AbstractASTTransformation {
     private static final ClassNode READ_LOCK_TYPE = make(WithReadLock.class);
     private static final ClassNode WRITE_LOCK_TYPE = make(WithWriteLock.class);
     private static final ClassNode LOCK_TYPE = make(ReentrantReadWriteLock.class);
+    /**
+     * Name of the private static final {@link ReentrantReadWriteLock}
+     * added when a static method does not name its own lock field.
+     */
     public static final String DEFAULT_STATIC_LOCKNAME = "$REENTRANTLOCK";
+    /**
+     * Name of the private final {@link ReentrantReadWriteLock}
+     * added when an instance method does not name its own lock field.
+     * A {@code value} equal to this name, ignoring case, also selects the default field.
+     */
     public static final String DEFAULT_INSTANCE_LOCKNAME = "$reentrantlock";
 
     @Override

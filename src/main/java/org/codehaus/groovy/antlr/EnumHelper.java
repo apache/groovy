@@ -28,8 +28,24 @@ import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.ListExpression;
 import org.objectweb.asm.Opcodes;
 
+/**
+ * Builds enum class nodes and their constant fields.
+ */
 public class EnumHelper {
 
+    /**
+     * Creates an enum class named {@code name}. When {@code outerClass} is
+     * null the class is top-level; otherwise it is a static inner class
+     * whose binary name is the outer class name, {@code $}, and
+     * {@code name}. The JVM enum flag is set. The superclass
+     * is {@code Enum} parameterized by the new class.
+     *
+     * @param name simple name of the enum
+     * @param modifiers access flags combined with the enum flags
+     * @param interfaces interfaces the enum implements
+     * @param outerClass enclosing class, or null for a top-level enum
+     * @return the new enum class node
+     */
     public static ClassNode makeEnumNode(final String name, final int modifiers, final ClassNode[] interfaces, final ClassNode outerClass) {
         ClassNode enumClass;
         if (outerClass == null) {
@@ -46,6 +62,16 @@ public class EnumHelper {
         return enumClass;
     }
 
+    /**
+     * Adds a public static final enum constant named {@code name}. A
+     * non-null initializer that is not already a {@link ListExpression} is
+     * wrapped in a one-element list.
+     *
+     * @param enumClass enum that receives the constant
+     * @param name constant name
+     * @param init constructor arguments, a list of them, or null
+     * @return the field added to {@code enumClass}
+     */
     public static FieldNode addEnumConstant(final ClassNode enumClass, final String name, Expression init) {
         if (init != null && !(init instanceof ListExpression)) {
             ListExpression list = new ListExpression();

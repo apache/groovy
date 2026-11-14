@@ -39,11 +39,21 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+/**
+ * Base for a generated default-Groovy-method adapter. The name, declaring class, and
+ * return type are fixed here; parameter types are stored by {@link MetaMethod}.
+ */
 public abstract class GeneratedMetaMethod extends MetaMethod {
     private final String name;
     private final CachedClass declaringClass;
     private final Class returnType;
 
+    /**
+     * @param name method name
+     * @param declaringClass class that declares the method
+     * @param returnType method return type
+     * @param parameters parameter types passed to {@link MetaMethod}
+     */
     public GeneratedMetaMethod(String name, CachedClass declaringClass, Class returnType, Class[] parameters) {
         super(parameters);
         this.name = name;
@@ -108,6 +118,11 @@ public abstract class GeneratedMetaMethod extends MetaMethod {
         MetaMethod create(int index, String name, CachedClass declaringClass, Class returnType, Class[] parameters);
     }
 
+    /**
+     * Placeholder for a generated adapter. The first call to {@link #proxy()} builds the
+     * real meta-method, through {@link ProxyFactory} when the class name is a generated
+     * {@code dgm$} index, and otherwise by loading that class and calling its constructor.
+     */
     public static class Proxy extends GeneratedMetaMethod {
         /** Binary name of the generated factory; a constant so native image can resolve it at build time. */
         private static final String FACTORY_CLASS_NAME = "org.codehaus.groovy.runtime.DgmProxyFactory";
@@ -118,6 +133,13 @@ public abstract class GeneratedMetaMethod extends MetaMethod {
         private volatile MetaMethod proxy;
         private final String className;
 
+        /**
+         * @param className internal name of the adapter {@link #proxy()} will load
+         * @param name method name
+         * @param declaringClass declaring class passed to {@link GeneratedMetaMethod}
+         * @param returnType return type passed to {@link GeneratedMetaMethod}
+         * @param parameters parameter types passed to {@link MetaMethod}
+         */
         public Proxy(String className, String name, CachedClass declaringClass, Class returnType, Class[] parameters) {
             super(name, declaringClass, returnType, parameters);
             this.className = className;
@@ -177,6 +199,14 @@ public abstract class GeneratedMetaMethod extends MetaMethod {
             return proxy().invoke(object, arguments);
         }
 
+        /**
+         * Returns the generated adapter, creating it on the first call. Creation is
+         * synchronized. A failure to load or construct the adapter is wrapped in
+         * {@link GroovyRuntimeException} after the cause is printed.
+         *
+         * @return the real meta-method for this proxy
+         * @throws GroovyRuntimeException when the adapter cannot be created
+         */
         public final MetaMethod proxy() {
             if (proxy == null) {
                 synchronized(this) {
@@ -209,12 +239,25 @@ public abstract class GeneratedMetaMethod extends MetaMethod {
         }
     }
 
+    /**
+     * One generated default-Groovy-method adapter, as written to {@code META-INF/dgminfo}.
+     * {@code parameters[0]} is the receiver type.
+     */
     public static class DgmMethodRecord implements Serializable {
         @Serial
         private static final long serialVersionUID = -5639988016452884450L;
+        /**
+         * Internal name of the generated adapter, {@code org/codehaus/groovy/runtime/dgm$}
+         * plus its index.
+         */
         public String className;
+        /** Name of the extension method. */
         public String methodName;
+        /** Return type of the extension method. */
         public Class returnType;
+        /**
+         * Native parameter types of the extension method, with the receiver at index 0.
+         */
         public Class[] parameters;
 
         private static final Class[] PRIMITIVE_CLASSES = {
@@ -228,6 +271,16 @@ public abstract class GeneratedMetaMethod extends MetaMethod {
                 Object[].class, String[].class, Class[].class, Byte[].class, CharSequence[].class,
         };
 
+        /**
+         * Writes {@code records} to {@code file}. Primitive classes take the first ids, then
+         * each distinct return type and parameter type. A blank UTF string ends the class
+         * table. Each record then stores its class name, method name, return-type id, and
+         * parameter-type ids.
+         *
+         * @param records the adapters to persist
+         * @param file path of the file to write
+         * @throws IOException when the file cannot be written
+         */
         public static void saveDgmInfo(List<DgmMethodRecord> records, String file) throws IOException {
             try (DataOutputStream out =
                          new DataOutputStream(
@@ -279,6 +332,15 @@ public abstract class GeneratedMetaMethod extends MetaMethod {
             }
         }
 
+        /**
+         * Reads {@code META-INF/dgminfo} from this class's loader. A record is omitted when
+         * its return type or any parameter type could not be loaded. Primitive classes are
+         * taken from the fixed table rather than loaded by name.
+         *
+         * @return the records whose classes all loaded
+         * @throws IOException when the resource cannot be read
+         * @throws NullPointerException when {@code META-INF/dgminfo} is missing
+         */
         public static List<DgmMethodRecord> loadDgmInfo() throws IOException {
             ClassLoader loader = DgmMethodRecord.class.getClassLoader();
 

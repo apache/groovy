@@ -56,6 +56,9 @@ import static org.codehaus.groovy.transform.stc.StaticTypesMarker.DIRECT_METHOD_
  */
 @GroovyASTTransformation(phase = CompilePhase.INSTRUCTION_SELECTION)
 public class NullCheckASTTransformation extends AbstractASTTransformation {
+    /**
+     * {@link ClassNode} for {@link NullCheck}. {@link #visit} ignores any other annotation.
+     */
     public static final ClassNode NULL_CHECK_TYPE = ClassHelper.make(NullCheck.class);
     private static final String NULL_CHECK_NAME = "@" + NULL_CHECK_TYPE.getNameWithoutPackage();
     private static final ClassNode EXCEPTION = ClassHelper.make(IllegalArgumentException.class);
@@ -88,6 +91,14 @@ public class NullCheckASTTransformation extends AbstractASTTransformation {
         return memberHasValue(anno, "includeGenerated", true);
     }
 
+    /**
+     * Reports whether {@code cNode} carries {@link NullCheck} with {@code includeGenerated}
+     * set to the constant {@code true}. No such annotation, or a non-constant member,
+     * returns {@code false}. Only the first {@link NullCheck} on the class is read.
+     *
+     * @param cNode the class whose annotations are inspected
+     * @return {@code true} when generated members should receive null checks
+     */
     public static boolean hasIncludeGenerated(ClassNode cNode) {
         List<AnnotationNode> annotations = cNode.getAnnotations(NULL_CHECK_TYPE);
         if (annotations.isEmpty()) return false;
@@ -126,6 +137,13 @@ public class NullCheckASTTransformation extends AbstractASTTransformation {
         mn.setCode(newCode);
     }
 
+    /**
+     * Builds {@code throw new IllegalArgumentException(variableName + " cannot be null")},
+     * and marks the {@code String} constructor as the direct call target.
+     *
+     * @param variableName name inserted into the exception message
+     * @return the throw statement inserted for a null parameter
+     */
     public static ThrowStatement makeThrowStmt(final String variableName) {
         ConstructorCallExpression newException = ctorX(EXCEPTION, constX(variableName + " cannot be null"));
         newException.putNodeMetaData(DIRECT_METHOD_CALL_TARGET, EXCEPTION_STRING_CTOR); // GROOVY-10178

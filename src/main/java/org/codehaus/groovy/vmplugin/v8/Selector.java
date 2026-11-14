@@ -502,6 +502,24 @@ public abstract class Selector {
 
         private static final Class<?>[] SET_PROPERTY_PARAMS = {String.class, Object.class};
 
+        /**
+         * Forwards the arguments to {@link MethodSelector}.
+         * {@code propertyName} is stored as the selected name. The original
+         * {@code safeNavigation} flag is kept, and null-safe dispatch is enabled
+         * only when that flag is true and {@code arguments[0]} is null. When {@code spreadCall} is true,
+         * {@code arguments[1]} is expanded after the receiver and a primitive array
+         * in that expansion is boxed.
+         *
+         * @param callSite the call site being linked
+         * @param sender the class that contains the call
+         * @param propertyName the property being written
+         * @param callType the call kind
+         * @param safeNavigation whether the call was written with {@code ?.}
+         * @param thisCall whether the receiver is {@code this}
+         * @param spreadCall whether the argument list is spread
+         * @param arguments receiver at index 0 and the assigned value at index 1,
+         *                  or the spread array at index 1 when {@code spreadCall} is true
+         */
         public SetPropertySelector(CacheableCallSite callSite, Class<?> sender, String propertyName, CallType callType, boolean safeNavigation, boolean thisCall, boolean spreadCall, Object[] arguments) {
             super(callSite, sender, propertyName, callType, safeNavigation, thisCall, spreadCall, arguments);
         }

@@ -164,6 +164,11 @@ public class RecordTypeASTTransformation extends AbstractASTTransformation imple
     static final String TO_LIST = "toList";
     static final String TO_MAP = "toMap";
 
+    /**
+     * Redirect node for {@link RecordBase}. {@code makeWithoutCaching} with generics
+     * omitted builds a fresh node that redirects to the cached class, so this is not
+     * the shared {@link ClassNode}.
+     */
     public static final ClassNode MY_TYPE = makeWithoutCaching(RecordBase.class, false);
     private static final String MY_TYPE_NAME = MY_TYPE.getNameWithoutPackage();
 
@@ -179,6 +184,12 @@ public class RecordTypeASTTransformation extends AbstractASTTransformation imple
         this.compilationUnit = unit;
     }
 
+    /**
+     * Returns the compilation unit's transform loader when {@code compilationUnit}
+     * has been set, and otherwise the source unit's class loader.
+     *
+     * @return the loader used to resolve transform helpers
+     */
     protected GroovyClassLoader getTransformLoader() {
         return compilationUnit != null ? compilationUnit.getTransformLoader() : sourceUnit.getClassLoader();
     }

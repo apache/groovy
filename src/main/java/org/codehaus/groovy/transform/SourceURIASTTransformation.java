@@ -108,6 +108,17 @@ public class SourceURIASTTransformation extends AbstractASTTransformation {
         return callX(URI_TYPE, "create", args(constX(uri.toString())));
     }
 
+    /**
+     * Returns the URI of the current source, or {@code null} when the source has none.
+     * A relative URI is returned unchanged when the annotation member
+     * {@code allowRelative} is the constant {@code true}. Otherwise a relative URI
+     * is replaced with {@code uri.resolve(new File(".").toURI())}. That argument is
+     * an absolute file URI of the working directory, so {@link URI#resolve(URI)}
+     * returns the working-directory URI and the original relative path is not appended.
+     *
+     * @param node the {@code @SourceURI} annotation, read only for {@code allowRelative}
+     * @return the source URI, possibly replaced as above, or {@code null}
+     */
     protected URI getSourceURI(AnnotationNode node) {
         URI uri = sourceUnit.getSource().getURI();
 

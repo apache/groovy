@@ -32,6 +32,21 @@ public class ExtensionMethodNode extends MethodNode {
     private final MethodNode extensionMethodNode;
     private final boolean isStaticExtension; // true if it's a static method
 
+    /**
+     * Builds a synthetic method the type checker can select in place of
+     * {@code extensionMethodNode}. The declaration passed here is what
+     * callers see; {@link #getExtensionMethodNode} keeps the original.
+     *
+     * @param extensionMethodNode original extension method
+     * @param name name presented to the type checker
+     * @param modifiers access flags of the synthetic method
+     * @param returnType return type presented to the type checker
+     * @param parameters parameters presented to the type checker
+     * @param exceptions exceptions presented to the type checker
+     * @param code method body forwarded to {@link MethodNode}
+     * @param isStaticExtension {@code true} when the original method is a
+     *        static extension
+     */
     public ExtensionMethodNode(
             MethodNode extensionMethodNode,
             String name, int modifiers, ClassNode returnType, Parameter[] parameters, ClassNode[] exceptions, Statement code, boolean isStaticExtension) {
@@ -40,6 +55,18 @@ public class ExtensionMethodNode extends MethodNode {
         this.isStaticExtension = isStaticExtension;
     }
 
+    /**
+     * Builds a non-static extension node by passing false as the
+     * static-extension flag to the other constructor.
+     *
+     * @param extensionMethodNode original extension method
+     * @param name name presented to the type checker
+     * @param modifiers access flags of the synthetic method
+     * @param returnType return type presented to the type checker
+     * @param parameters parameters presented to the type checker
+     * @param exceptions exceptions presented to the type checker
+     * @param code method body forwarded to {@link MethodNode}
+     */
     public ExtensionMethodNode(
             MethodNode extensionMethodNode,
             String name, int modifiers, ClassNode returnType, Parameter[] parameters, ClassNode[] exceptions, Statement code) {

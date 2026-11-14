@@ -70,6 +70,9 @@ public abstract class AbstractExtensionMethodCache {
     private final boolean disabling = disabledString != null;
     private final Set<String> disabledNames = disabling ? new HashSet<>(Arrays.asList(disabledString.split(","))) : null;
 
+    /**
+     * Registers this cache so {@link #invalidateAllCaches()} can drop it.
+     */
     protected AbstractExtensionMethodCache() {
         INSTANCES.add(this);
     }

@@ -59,14 +59,45 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.throwS;
  */
 public abstract class AbstractInterruptibleASTTransformation extends ClassCodeVisitorSupport implements ASTTransformation, Opcodes {
 
+    /**
+     * Name of the annotation member that controls a check at method entry.
+     */
     protected static final String CHECK_METHOD_START_MEMBER = "checkOnMethodStart";
     private static final String APPLY_TO_ALL_CLASSES = "applyToAllClasses";
     private static final String APPLY_TO_ALL_MEMBERS = "applyToAllMembers";
+    /**
+     * Name of the annotation member that names the exception to throw.
+     */
     protected static final String THROWN_EXCEPTION_TYPE = "thrown";
+    /**
+     * Source unit being transformed. Set at the start of each {@link #visit}.
+     */
     protected SourceUnit source;
+    /**
+     * Whether to wrap a method body with the interrupt check. Taken from
+     * the annotation, and true when the member is omitted. Subclasses
+     * consult this from their method visitor.
+     */
     protected boolean checkOnMethodStart;
+    /**
+     * Whether every class in the source unit is visited. True only when
+     * the annotation's {@code applyToAllMembers} and
+     * {@code applyToAllClasses} members are both true. When false, only
+     * the annotated class, or the script class, is visited.
+     */
     protected boolean applyToAllClasses;
+    /**
+     * Whether every member is visited. Taken from the annotation, and true
+     * when the member is omitted. When false, {@link #visit} limits itself
+     * to the annotated method, field, or declaration and forces
+     * {@link #applyToAllClasses} false.
+     */
     protected boolean applyToAllMembers;
+    /**
+     * Exception constructed by the interrupt check. Taken from the
+     * annotation's {@code thrown} member, or {@link InterruptedException}
+     * when that member is omitted.
+     */
     protected ClassNode thrownExceptionType;
 
     @Override
@@ -74,6 +105,12 @@ public abstract class AbstractInterruptibleASTTransformation extends ClassCodeVi
         return source;
     }
 
+    /**
+     * Returns the annotation type this transformation accepts.
+     * {@link #visit} rejects a call whose annotation is a different type.
+     *
+     * @return the annotation class node this transform handles
+     */
     protected abstract ClassNode type();
 
     /**
@@ -86,6 +123,15 @@ public abstract class AbstractInterruptibleASTTransformation extends ClassCodeVi
      */
     protected abstract String getErrorMessage();
 
+    /**
+     * Copies {@code checkOnMethodStart}, {@code applyToAllMembers},
+     * {@code applyToAllClasses}, and {@code thrown} from {@code node}.
+     * Omitted members default to true, true, true, and
+     * {@link InterruptedException}. {@code applyToAllClasses} is forced
+     * false when {@code applyToAllMembers} is false.
+     *
+     * @param node annotation that triggered this transformation
+     */
     protected void setupTransform(AnnotationNode node) {
         checkOnMethodStart = getBooleanAnnotationParameter(node, CHECK_METHOD_START_MEMBER, true);
         applyToAllMembers = getBooleanAnnotationParameter(node, APPLY_TO_ALL_MEMBERS, true);
@@ -144,6 +190,19 @@ public abstract class AbstractInterruptibleASTTransformation extends ClassCodeVi
         }
     }
 
+    /**
+     * Reads a boolean annotation member. A missing member yields
+     * {@code defaultValue}. A constant is converted with Groovy's
+     * {@code as Boolean} coercion.
+     *
+     * Fails with {@link GroovyBugError} when the member is present but is not a.
+     *
+     * @param node annotation to read
+     * @param parameterName member name
+     * @param defaultValue used when the member is absent
+     * @return the member as a boolean, or {@code defaultValue}
+     *         constant, or cannot be coerced to {@code boolean}
+     */
     protected static boolean getBooleanAnnotationParameter(AnnotationNode node, String parameterName, boolean defaultValue) {
         Expression member = node.getMember(parameterName);
         if (member != null) {
@@ -160,6 +219,17 @@ public abstract class AbstractInterruptibleASTTransformation extends ClassCodeVi
         return defaultValue;
     }
 
+    /**
+     * Reads a class annotation member. A missing member yields
+     * {@code defaultValue}. A class expression yields its type.
+     *
+     * Fails with {@link GroovyBugError} when the member is present but is not a class expression.
+     *
+     * @param node annotation to read
+     * @param parameterName member name
+     * @param defaultValue used when the member is absent
+     * @return the member's class node, or {@code defaultValue}
+     */
     protected static ClassNode getClassAnnotationParameter(AnnotationNode node, String parameterName, ClassNode defaultValue) {
         Expression member = node.getMember(parameterName);
         if (member != null) {
@@ -176,6 +246,13 @@ public abstract class AbstractInterruptibleASTTransformation extends ClassCodeVi
         return defaultValue;
     }
 
+    /**
+     * Throws a bug error prefixed with {@code Internal error:}.
+     *
+     * Fails with {@link GroovyBugError} always.
+     *
+     * @param message detail appended to that prefix
+     */
     protected static void internalError(String message) {
         throw new GroovyBugError("Internal error: " + message);
     }

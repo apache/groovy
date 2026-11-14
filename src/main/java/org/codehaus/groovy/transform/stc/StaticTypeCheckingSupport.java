@@ -191,13 +191,22 @@ public abstract class StaticTypeCheckingSupport {
     protected static final ClassNode ArrayList_TYPE = makeWithoutCaching(ArrayList.class);
     /** Cached {@link BaseStream} type. */
     protected static final ClassNode BaseStream_TYPE = makeWithoutCaching(BaseStream.class);
+    /** Same node as {@code ClassHelper.COLLECTION_TYPE}. */
     protected static final ClassNode Collection_TYPE = COLLECTION_TYPE; // TODO: deprecate?
+    /** Same node as {@code ClassHelper.DEPRECATED_TYPE}. */
     protected static final ClassNode Deprecated_TYPE = DEPRECATED_TYPE; // TODO: deprecate?
     /** Cached {@link LinkedHashMap} type. */
     protected static final ClassNode LinkedHashMap_TYPE = makeWithoutCaching(LinkedHashMap.class);
     /** Cached {@link LinkedHashSet} type. */
     protected static final ClassNode LinkedHashSet_TYPE = makeWithoutCaching(LinkedHashSet.class);
 
+    /**
+     * Numeric rank of the primitive number types and their wrappers.
+     * {@code byte}/{@code Byte} is 0, {@code short}/{@code Short} is 1,
+     * {@code int}/{@code Integer} is 2, {@code long}/{@code Long} is 3,
+     * {@code float}/{@code Float} is 4 and {@code double}/{@code Double} is 5.
+     * A lower rank is a narrower type.
+     */
     protected static final Map<ClassNode, Integer> NUMBER_TYPES = Maps.of(
             byte_TYPE,    0,
             Byte_TYPE,    0,
@@ -213,6 +222,11 @@ public abstract class StaticTypeCheckingSupport {
             Double_TYPE,  5
     );
 
+    /**
+     * Numeric-operator method names mapped to their syntax token, from
+     * {@code plus} to {@code rightShiftUnsigned}. Used when both the receiver
+     * and the single argument of such a call are numbers.
+     */
     protected static final Map<String, Integer> NUMBER_OPS = Maps.of(
             "plus",       PLUS,
             "minus",      MINUS,
@@ -229,6 +243,11 @@ public abstract class StaticTypeCheckingSupport {
             "rightShiftUnsigned", RIGHT_SHIFT_UNSIGNED
     );
 
+    /**
+     * The lowest upper bound of {@link String} and {@code GString}.
+     * {@link #isGStringOrGStringStringLUB(ClassNode)} treats a node equal to
+     * this one as that bound.
+     */
     protected static final ClassNode GSTRING_STRING_CLASSNODE = lowestUpperBound(
             STRING_TYPE,
             GSTRING_TYPE

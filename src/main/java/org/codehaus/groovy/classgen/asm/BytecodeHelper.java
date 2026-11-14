@@ -928,6 +928,12 @@ public class BytecodeHelper {
             this.type = type;
         }
 
+        /**
+         * Dispatches on the stored type. {@code boolean}, {@code char}, {@code byte},
+         * {@code int}, and {@code short} use {@link #handleIntType()}. {@code double},
+         * {@code float}, {@code long}, and {@code void} use their own handlers. Any other
+         * type uses {@link #handleRefType()}.
+         */
         public void handle() {
             if (isPrimitiveDouble(type)) {
                 handleDoubleType();
@@ -949,10 +955,13 @@ public class BytecodeHelper {
             }
         }
 
+        /** Emits the instruction for a {@code double}. */
         protected abstract void handleDoubleType();
 
+        /** Emits the instruction for a {@code float}. */
         protected abstract void handleFloatType();
 
+        /** Emits the instruction for a {@code long}. */
         protected abstract void handleLongType();
 
         /**
@@ -960,8 +969,10 @@ public class BytecodeHelper {
          */
         protected abstract void handleIntType();
 
+        /** Emits the instruction for {@code void}. */
         protected abstract void handleVoidType();
 
+        /** Emits the instruction for a reference type. */
         protected abstract void handleRefType();
     }
 }

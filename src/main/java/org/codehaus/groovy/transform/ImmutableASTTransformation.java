@@ -96,8 +96,17 @@ public class ImmutableASTTransformation extends AbstractASTTransformation implem
 
     private static final ClassNode HMAP_TYPE = makeWithoutCaching(HashMap.class, false);
     private static final Class<? extends Annotation> MY_CLASS = ImmutableBase.class;
+    /**
+     * Redirect node for {@link ImmutableBase}. {@code makeWithoutCaching} with
+     * generics omitted builds a fresh node that redirects to the cached class,
+     * so this is not the shared {@link ClassNode}.
+     */
     public static final ClassNode MY_TYPE = makeWithoutCaching(MY_CLASS, false);
     private static final String MY_TYPE_NAME = MY_TYPE.getNameWithoutPackage();
+    /**
+     * Node-metadata key set to {@link Boolean#TRUE} on a field whose property was
+     * made immutable. {@code @IndexedProperty} reads it and skips the generated setter.
+     */
     public static final String IMMUTABLE_BREADCRUMB = "_IMMUTABLE_BREADCRUMB";
 
     private CompilationUnit compilationUnit;
@@ -386,6 +395,29 @@ public class ImmutableASTTransformation extends AbstractASTTransformation implem
         throw new RuntimeException(createErrorMessage(clazz.getName(), fieldName, typeName, "constructing"));
     }
 
+    /**
+     * Returns {@code field} when it may be stored in an immutable object, or a
+     * defensive copy when it is a collection declared as a {@link Collection}.
+     * {@code null}, an enum constant, a built-in or marked immutable class, a name
+     * present in {@code knownImmutableFieldNames}, and a runtime class present in
+     * {@code knownImmutableClasses} are returned as given. So is a runtime class
+     * that carries an annotation whose class name starts with
+     * {@code groovy.transform.Immutable}. A {@link Collection} whose declared field
+     * type is a {@link Collection} is returned as
+     * {@link DefaultGroovyMethods#asImmutable(Collection)}, an unmodifiable copy;
+     * the original collection is not modified. A collection whose declared type is
+     * itself built-in, marked immutable, or listed in {@code knownImmutableClasses}
+     * is returned as given. A missing declared field is ignored and the value is
+     * then rejected.
+     *
+     * @param clazz the immutable class that declares {@code fieldName}
+     * @param fieldName the property or field being assigned
+     * @param field the value being assigned; {@code null} is accepted and returned
+     * @param knownImmutableFieldNames field names that skip the check
+     * @param knownImmutableClasses runtime classes, and some declared collection types, that skip the check
+     * @return {@code field}, or an unmodifiable copy of a declared collection
+     * @throws RuntimeException when the value is not accepted as immutable
+     */
     public static Object checkImmutable(final Class<?> clazz, final String fieldName, final Object field, final List<String> knownImmutableFieldNames, final List<Class> knownImmutableClasses) {
         if (field == null || field instanceof Enum || builtinOrMarkedImmutableClass(field.getClass()) || knownImmutableFieldNames.contains(fieldName) || knownImmutableClasses.contains(field.getClass())) {
             return field;

@@ -124,6 +124,13 @@ public class TailRecursiveASTTransformation extends AbstractASTTransformation {
     @SuppressWarnings("Instanceof")
     private void replaceReturnsWithTernariesToIfStatements(MethodNode method) {
         Closure<Boolean> whenReturnWithTernary = new Closure<Boolean>(this, this) {
+            /**
+             * Reports whether {@code node} is a return whose expression is a ternary.
+             * Any other node, including a return of something else, returns {@code false}.
+             *
+             * @param node the statement being considered for replacement
+             * @return {@code true} only for a return of a {@link TernaryExpression}
+             */
             public Boolean doCall(ASTNode node) {
                 if (!(node instanceof ReturnStatement)) {
                     return false;
@@ -133,6 +140,14 @@ public class TailRecursiveASTTransformation extends AbstractASTTransformation {
             }
         };
         Closure<Statement> replaceWithIfStatement = new Closure<Statement>(this, this) {
+            /**
+             * Replaces a return of a ternary with an if/else whose branches return
+             * the true and false expressions. A return that is not a ternary is
+             * returned unchanged.
+             *
+             * @param statement the return to convert
+             * @return the if/else, or {@code statement} when its expression is not a ternary
+             */
             public Statement doCall(ReturnStatement statement) {
                 return ternaryToIfStatement.convert(statement);
             }
@@ -215,11 +230,29 @@ public class TailRecursiveASTTransformation extends AbstractASTTransformation {
     @SuppressWarnings("Instanceof")
     private void replaceRecursiveReturnsOutsideClosures(final MethodNode method, final Map<Integer, Map<String, Object>> positionMapping) {
         Closure<Boolean> whenRecursiveReturn = new Closure<Boolean>(this, this) {
+            /**
+             * Reports a recursive return that is outside a closure.
+             * Returns {@code true} when {@code inClosure} is false and {@code statement}
+             * is a return of a call that {@code RecursivenessTester} treats as recursive
+             * in the method being transformed.
+             *
+             * @param statement the statement being considered
+             * @param inClosure whether the statement is nested in a closure
+             * @return {@code true} for a recursive return outside a closure
+             */
             public Boolean doCall(Statement statement, boolean inClosure) {
                 return !inClosure && isRecursiveReturnStatement(statement, method);
             }
         };
         Closure<Statement> replaceWithContinueBlock = new Closure<Statement>(this, this) {
+            /**
+             * Turns a recursive return into assignments of the iteration variables
+             * followed by {@code continue} of the loop label. A return whose expression
+             * is not a direct method call is returned unchanged.
+             *
+             * @param statement the return to convert
+             * @return the iteration block, or {@code statement} when it is not a method call
+             */
             public Statement doCall(ReturnStatement statement) {
                 return new ReturnStatementToIterationConverter().convert(statement, positionMapping);
             }
@@ -244,11 +277,30 @@ public class TailRecursiveASTTransformation extends AbstractASTTransformation {
     @SuppressWarnings("Instanceof")
     private void replaceRecursiveReturnsInsideClosures(final MethodNode method, final Map<Integer, Map<String, Object>> positionMapping) {
         Closure<Boolean> whenRecursiveReturn = new Closure<Boolean>(this, this) {
+            /**
+             * Reports a recursive return that is inside a closure.
+             * Returns {@code true} when {@code inClosure} is true and {@code statement}
+             * is a return of a call that {@code RecursivenessTester} treats as recursive
+             * in the method being transformed.
+             *
+             * @param statement the statement being considered
+             * @param inClosure whether the statement is nested in a closure
+             * @return {@code true} for a recursive return inside a closure
+             */
             public Boolean doCall(Statement statement, boolean inClosure) {
                 return inClosure && isRecursiveReturnStatement(statement, method);
             }
         };
         Closure<Statement> replaceWithThrowLoopException = new Closure<Statement>(this, this) {
+            /**
+             * Turns a recursive return into assignments of the iteration variables
+             * followed by a throw of the loop exception, so the surrounding loop can
+             * resume from inside a closure. A return whose expression is not a direct
+             * method call is returned unchanged.
+             *
+             * @param statement the return to convert
+             * @return the iteration block, or {@code statement} when it is not a method call
+             */
             public Statement doCall(ReturnStatement statement) {
                 return new ReturnStatementToIterationConverter(AstHelper.recurByThrowStatement()).convert(statement, positionMapping);
             }

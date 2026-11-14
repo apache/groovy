@@ -59,12 +59,24 @@ public class VariableAccessReplacer {
      */
     public void replaceIn(ASTNode root) {
         Closure<Boolean> whenParam = new Closure<Boolean>(this, this) {
+            /**
+             * Selects a variable whose name is a key of {@code nameAndTypeMapping}.
+             *
+             * @param expr the variable access being tested
+             * @return {@code true} when that name has a replacement
+             */
             public Boolean doCall(VariableExpression expr) {
                 return nameAndTypeMapping.containsKey(expr.getName());
             }
 
         };
         Closure<VariableExpression> replaceWithLocalVariable = new Closure<VariableExpression>(this, this) {
+            /**
+             * Builds the replacement variable and notifies the listener.
+             *
+             * @param expr the variable access being replaced
+             * @return the variable reference created from the mapping for {@code expr}'s name
+             */
             public VariableExpression doCall(VariableExpression expr) {
                 VariableExpression newVar = AstHelper.createVariableReference(nameAndTypeMapping.get(expr.getName()));
                 getListener().variableReplaced(expr, newVar);
