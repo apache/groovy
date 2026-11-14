@@ -62,6 +62,13 @@ class SeriesFactory extends AbstractFactory {
         }
     }
 
+    /**
+     * Converts {@code data} to chart points. A map uses each entry as
+     * {@code (x, y)}. A list uses each item as a point.
+     *
+     * @param data a map or a list
+     * @return the points
+     */
     static List<XYChart.Data> toData(Object data) {
         if (data instanceof Map) {
             return data.collect { Object x, Object y -> new XYChart.Data(x, y) }

@@ -30,6 +30,11 @@ import org.codehaus.groovy.runtime.InvokerHelper
  */
 class XYChartFactory extends NodeFactory {
 
+    /**
+     * Creates a factory for {@code chartClass}.
+     *
+     * @param chartClass the chart type this factory builds
+     */
     XYChartFactory(Class chartClass) {
         super(chartClass)
     }

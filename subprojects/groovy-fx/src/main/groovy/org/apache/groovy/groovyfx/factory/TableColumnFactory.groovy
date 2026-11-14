@@ -33,6 +33,9 @@ import javafx.scene.control.cell.PropertyValueFactory
  */
 class TableColumnFactory extends NodeFactory {
 
+    /**
+     * Creates a factory for {@link TableColumn}.
+     */
     TableColumnFactory() {
         super(TableColumn)
     }

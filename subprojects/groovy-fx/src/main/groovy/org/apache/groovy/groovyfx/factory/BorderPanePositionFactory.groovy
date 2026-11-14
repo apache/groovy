@@ -48,6 +48,11 @@ class BorderPanePositionFactory extends AbstractFactory {
 
     final String position
 
+    /**
+     * Creates a factory for the border-pane position {@code position}.
+     *
+     * @param position the position name, such as {@code top}
+     */
     BorderPanePositionFactory(String position) {
         this.position = position
     }

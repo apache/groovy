@@ -35,6 +35,12 @@ class PassThruFactory extends AbstractFactory {
     final Class restrictedType
     final boolean leaf
 
+    /**
+     * Stores the type this factory accepts and whether its nodes are leaves.
+     *
+     * @param restrictedType the node type {@code newInstance} accepts
+     * @param leaf {@code true} when the node does not take children
+     */
     PassThruFactory(Class restrictedType, boolean leaf) {
         this.restrictedType = restrictedType
         this.leaf = leaf
