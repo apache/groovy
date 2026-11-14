@@ -89,6 +89,14 @@ class Main {
      */
     @Deprecated(since = '7.0.0')
     protected static class ExtraConsoleCommands extends DefaultExtraConsoleCommands {
+        /**
+         * Forwards the working directory, engine, and reader to
+         * {@link DefaultExtraConsoleCommands}.
+         *
+         * @param workDir the user state directory
+         * @param scriptEngine the shell engine
+         * @param reader the line reader
+         */
         ExtraConsoleCommands(Path workDir, GroovyEngine scriptEngine, LineReader reader) {
             super(workDir, scriptEngine, reader)
         }

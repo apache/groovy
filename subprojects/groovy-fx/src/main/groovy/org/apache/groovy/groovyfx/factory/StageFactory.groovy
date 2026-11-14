@@ -34,6 +34,9 @@ class StageFactory extends NodeFactory {
     private static final String PRIMARY_STAGE_USED = 'groovyfx.primaryStageUsed'
     private static final String SHOW_ON_COMPLETION = 'groovyfx.showOnCompletion'
 
+    /**
+     * Creates a factory for {@link Stage}.
+     */
     StageFactory() {
         super(Stage)
     }

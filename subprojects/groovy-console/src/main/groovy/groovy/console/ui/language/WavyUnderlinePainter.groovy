@@ -45,6 +45,9 @@ final class WavyUnderlinePainter extends DefaultHighlighter.DefaultHighlightPain
     /** How far the wave rises and falls from its center. */
     private static final int AMPLITUDE = 1
 
+    /**
+     * Paints the diagnostic underline in red.
+     */
     WavyUnderlinePainter() {
         super(WAVE)
     }

@@ -71,21 +71,52 @@ class JavadocAssertionTestSuite extends TestSuite {
     private static final JavadocAssertionTestBuilder testBuilder = new JavadocAssertionTestBuilder()
     private static final IFileNameFinder finder = Class.forName('groovy.ant.FileNameFinder',true,this.classLoader).getConstructor().newInstance()
 
+    /**
+     * Builds a suite from {@code ./src/}, including {@code **&#47;*.java} and
+     * {@code **&#47;*.groovy}.
+     *
+     * @return the suite
+     */
     static Test suite() {
         String basedir = System.getProperty(SYSPROP_SRC_DIR, "./src/")
         return suite(basedir)
     }
 
+    /**
+     * Builds a suite for {@code basedir}, including {@code **&#47;*.java} and
+     * {@code **&#47;*.groovy}.
+     *
+     * @param basedir the directory to scan
+     * @return the suite
+     */
     static Test suite(String basedir) {
         String includePattern = System.getProperty(SYSPROP_SRC_PATTERN, "**/*.java,**/*.groovy")
         return suite(basedir, includePattern)
     }
 
+    /**
+     * Builds a suite for {@code basedir}, keeping files that match
+     * {@code includePattern}. Nothing is excluded.
+     *
+     * @param basedir the directory to scan
+     * @param includePattern ant-style include pattern
+     * @return the suite
+     */
     static Test suite(String basedir, String includePattern) {
         String excludePattern = System.getProperty(SYSPROP_SRC_EXCLUDES_PATTERN, "")
         return suite(basedir, includePattern, excludePattern)
     }
 
+    /**
+     * Builds a suite from the Javadoc examples under {@code basedir}.
+     * {@code basedir} must exist. A file whose generated test class is null
+     * is skipped.
+     *
+     * @param basedir the directory to scan
+     * @param includePattern ant-style include pattern
+     * @param excludePattern ant-style exclude pattern
+     * @return the suite
+     */
     static Test suite(String basedir, String includePattern, String excludePattern) {
         assert new File(basedir).exists()
 
@@ -103,6 +134,12 @@ class JavadocAssertionTestSuite extends TestSuite {
         return suite
     }
 
+    /**
+     * Runs the suite named by {@code args}: one argument is the base directory,
+     * two add the include pattern, three add the exclude pattern.
+     *
+     * @param args base directory, then optional include and exclude patterns
+     */
     static void main(String[] args) {
         switch(args.length) {
             case 3:

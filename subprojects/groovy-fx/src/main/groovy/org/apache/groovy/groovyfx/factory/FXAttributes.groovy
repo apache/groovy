@@ -48,6 +48,14 @@ class FXAttributes {
     private FXAttributes() {
     }
 
+    /**
+     * Sets each entry of {@code attributes} on {@code node}, binding an
+     * {@code ObservableValue}, replacing an {@code ObservableList}, and coercing
+     * paint, insets, and font values.
+     *
+     * @param node the JavaFX bean
+     * @param attributes attribute names and values; empty is ignored
+     */
     static void apply(Object node, Map attributes) {
         if (!attributes) return
         MetaClass metaClass = InvokerHelper.getMetaClass(node)
@@ -87,6 +95,15 @@ class FXAttributes {
         ((Property) property).bind(value)
     }
 
+    /**
+     * Converts {@code value} when {@code type} is a paint, insets, or font.
+     * A null type or value is returned unchanged. Any other type is returned
+     * unchanged so Groovy can coerce it while setting the property.
+     *
+     * @param type the property type, or null
+     * @param value the attribute value
+     * @return the value to set
+     */
     static Object coerce(Class type, Object value) {
         if (type == null || value == null) return value
         if (Paint.isAssignableFrom(type) && value instanceof CharSequence) return Paint.valueOf(value.toString())
