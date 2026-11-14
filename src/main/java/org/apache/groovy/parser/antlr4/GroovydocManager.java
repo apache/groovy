@@ -52,6 +52,17 @@ public class GroovydocManager {
     private static final Pattern SPACES_PATTERN = Pattern.compile("\\s+");
     private final boolean groovydocEnabled, runtimeGroovydocEnabled;
 
+    /**
+     * Stores which groovydoc attachments are active. When
+     * {@code groovydocEnabled} is true, a doc comment is stored as node
+     * metadata. When {@code runtimeGroovydocEnabled} is true, a comment
+     * that begins with the runtime prefix (a block-comment opener plus
+     * {@code @}) is also attached as a {@code Groovydoc} annotation.
+     *
+     * @param groovydocEnabled whether to keep the comment as node metadata
+     * @param runtimeGroovydocEnabled whether to attach a runtime
+     *        {@code Groovydoc} annotation
+     */
     public GroovydocManager(final boolean groovydocEnabled, final boolean runtimeGroovydocEnabled) {
         this.groovydocEnabled = groovydocEnabled;
         this.runtimeGroovydocEnabled = runtimeGroovydocEnabled;

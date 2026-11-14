@@ -53,6 +53,16 @@ public class ReevaluatingReference<T> {
     private MethodHandle returnRef;
 
 
+    /**
+     * Stores the suppliers and a weak reference to {@code clazz}, then loads the
+     * first payload. {@code valueSupplier} supplies it and {@code validationSupplier}
+     * supplies the {@link SwitchPoint} that guards the cached handle. Invalidating
+     * that switch point makes the next {@link #getPayload()} load a replacement.
+     *
+     * @param clazz payload class passed to {@code MethodHandles.constant}; held only weakly
+     * @param valueSupplier supplies a payload, including the one loaded now
+     * @param validationSupplier supplies the switch point for a payload
+     */
     public ReevaluatingReference(Class clazz, Supplier<T> valueSupplier, Function<T, SwitchPoint> validationSupplier) {
         this.valueSupplier = valueSupplier;
         this.validationSupplier = validationSupplier;
@@ -68,6 +78,14 @@ public class ReevaluatingReference<T> {
         return payload;
     }
 
+    /**
+     * Returns the payload from the guarded handle. When the switch point has been
+     * invalidated, the fallback loads a new payload, installs a new guarded handle,
+     * and returns that payload. A payload may be {@code null} when the supplier
+     * returns null. Any throwable from the handle is rethrown unchecked.
+     *
+     * @return the current payload
+     */
     public T getPayload() {
         T ref = null;
         try {

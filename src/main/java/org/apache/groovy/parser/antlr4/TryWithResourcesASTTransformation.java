@@ -56,6 +56,10 @@ import static org.codehaus.groovy.runtime.DefaultGroovyMethods.asBoolean;
  */
 public class TryWithResourcesASTTransformation {
 
+    /**
+     * @param astBuilder builder used to report a parse failure when a resource
+     *                   is not a variable declaration
+     */
     public TryWithResourcesASTTransformation(final AstBuilder astBuilder) {
         this.astBuilder = astBuilder;
     }

@@ -20,27 +20,59 @@ package org.apache.groovy.parser.antlr4;
 
 import java.util.Objects;
 
+/**
+ * Line and column attached to a parser syntax error. {@link #toString}
+ * renders {@code  @ line N, column M}, or an empty string when either
+ * coordinate is {@code -1}.
+ */
 public class PositionInfo {
     private int line;
     private int column;
 
+    /**
+     * Stores a source location. Coordinates are the caret position used by
+     * the syntax error, including any offset the caller already applied.
+     *
+     * @param line 1-based line, or {@code -1} when the location is omitted
+     * @param column 1-based column, or {@code -1} when the location is omitted
+     */
     public PositionInfo(int line, int column) {
         this.line = line;
         this.column = column;
     }
 
+    /**
+     * Returns the stored line.
+     *
+     * @return the 1-based line, or {@code -1} when omitted
+     */
     public int getLine() {
         return line;
     }
 
+    /**
+     * Replaces the stored line.
+     *
+     * @param line 1-based line, or {@code -1} to omit the location
+     */
     public void setLine(int line) {
         this.line = line;
     }
 
+    /**
+     * Returns the stored column.
+     *
+     * @return the 1-based column, or {@code -1} when omitted
+     */
     public int getColumn() {
         return column;
     }
 
+    /**
+     * Replaces the stored column.
+     *
+     * @param column 1-based column, or {@code -1} to omit the location
+     */
     public void setColumn(int column) {
         this.column = column;
     }

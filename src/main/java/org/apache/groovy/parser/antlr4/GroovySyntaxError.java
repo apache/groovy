@@ -36,12 +36,24 @@ import org.codehaus.groovy.syntax.SyntaxException;
  * </p>
  */
 public class GroovySyntaxError extends AssertionError {
+    /** {@code source} value for an error raised by the lexer. */
     public static final int LEXER = 0;
+    /** {@code source} value for an error raised by the parser. */
     public static final int PARSER = 1;
     private final int source;
     private final int line;
     private final int column;
 
+    /**
+     * Creates an error with no cause. {@code source} must be {@link #LEXER} or {@link #PARSER}.
+     * {@code line} and {@code column} are stored as given; callers supply 1-based caret coordinates.
+     *
+     * @param message the diagnostic text
+     * @param source {@link #LEXER} or {@link #PARSER}
+     * @param line the line stored for this error
+     * @param column the column stored for this error
+     * @throws IllegalArgumentException if {@code source} is neither {@link #LEXER} nor {@link #PARSER}
+     */
     public GroovySyntaxError(String message, int source, int line, int column) {
         super(message, null);
 
@@ -54,13 +66,29 @@ public class GroovySyntaxError extends AssertionError {
         this.column = column;
     }
 
+    /**
+     * Returns the recogniser that raised this error.
+     *
+     * @return {@link #LEXER} or {@link #PARSER}
+     */
     public int getSource() {
         return source;
     }
+
+    /**
+     * Returns the line passed to the constructor.
+     *
+     * @return the stored line
+     */
     public int getLine() {
         return line;
     }
 
+    /**
+     * Returns the column passed to the constructor.
+     *
+     * @return the stored column
+     */
     public int getColumn() {
         return column;
     }

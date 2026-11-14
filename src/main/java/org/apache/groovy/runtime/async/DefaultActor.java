@@ -134,6 +134,20 @@ public final class DefaultActor<T> implements Actor<T> {
         return CURRENT.get();
     }
 
+    /**
+     * Starts a reactor whose handler is {@code handler} and whose context is ignored.
+     * {@code handler} and {@code options} must be non-null. The value returned by
+     * {@code handler} is bound as the reply of {@link Actor#sendAndGet(Object)}.
+     * Construction submits the worker to {@code options}' executor, or to
+     * {@link AsyncSupport#getExecutor()} when that executor is null.
+     *
+     * @param <T> the message type
+     * @param <R> the type {@code handler} returns and {@code sendAndGet} binds
+     * @param handler applied to each message
+     * @param options mailbox, executor, and failure options
+     * @return a running actor
+     * @throws NullPointerException if {@code handler} or {@code options} is {@code null}
+     */
     public static <T, R> Actor<T> reactor(Function<T, R> handler, ActorOptions options) {
         Objects.requireNonNull(handler, "handler must not be null");
         Objects.requireNonNull(options, "options must not be null");
@@ -141,12 +155,42 @@ public final class DefaultActor<T> implements Actor<T> {
         return new DefaultActor<>(new ReactorProcessor<>(adapted), options);
     }
 
+    /**
+     * Starts a reactor that calls {@code handler} with the actor context and the message.
+     * Both arguments must be non-null. The handler's return value is bound as the reply
+     * of {@link Actor#sendAndGet(Object)}. The worker is submitted as
+     * {@link #reactor(Function, ActorOptions)} submits it.
+     *
+     * @param <T> the message type
+     * @param <R> the type {@code handler} returns and {@code sendAndGet} binds
+     * @param handler applied to the context and each message
+     * @param options mailbox, executor, and failure options
+     * @return a running actor
+     * @throws NullPointerException if {@code handler} or {@code options} is {@code null}
+     */
     public static <T, R> Actor<T> reactor(ReactorHandler<T, R> handler, ActorOptions options) {
         Objects.requireNonNull(handler, "handler must not be null");
         Objects.requireNonNull(options, "options must not be null");
         return new DefaultActor<>(new ReactorProcessor<>(handler), options);
     }
 
+    /**
+     * Starts a stateful actor at {@code initialState}. {@code initialState} may be null.
+     * {@code handler} and {@code options} must be non-null. The handler is called with
+     * the committed state and the message; the context is not passed to it. The value
+     * it returns is committed as the next state and bound as the reply of
+     * {@link Actor#sendAndGet(Object)} only after a successful dispatch. A stash or a
+     * thrown exception discards that pending state. The worker is submitted as
+     * {@link #reactor(Function, ActorOptions)} submits it.
+     *
+     * @param <T> the message type
+     * @param <S> the state type
+     * @param initialState state seen by the first handler call; may be {@code null}
+     * @param handler computes the next state from the current state and the message
+     * @param options mailbox, executor, and failure options
+     * @return a running actor
+     * @throws NullPointerException if {@code handler} or {@code options} is {@code null}
+     */
     public static <T, S> Actor<T> stateful(S initialState, BiFunction<S, T, S> handler, ActorOptions options) {
         Objects.requireNonNull(handler, "handler must not be null");
         Objects.requireNonNull(options, "options must not be null");
@@ -154,6 +198,22 @@ public final class DefaultActor<T> implements Actor<T> {
         return new DefaultActor<>(new StatefulProcessor<>(initialState, adapted), options);
     }
 
+    /**
+     * Starts a stateful actor at {@code initialState} whose handler receives the context,
+     * the committed state, and the message. {@code initialState} may be null.
+     * {@code handler} and {@code options} must be non-null. The returned state is
+     * committed and bound as the {@link Actor#sendAndGet(Object)} reply only after a
+     * successful dispatch; a stash or a thrown exception discards it. The worker is
+     * submitted as {@link #reactor(Function, ActorOptions)} submits it.
+     *
+     * @param <T> the message type
+     * @param <S> the state type
+     * @param initialState state seen by the first handler call; may be {@code null}
+     * @param handler computes the next state from the context, current state, and message
+     * @param options mailbox, executor, and failure options
+     * @return a running actor
+     * @throws NullPointerException if {@code handler} or {@code options} is {@code null}
+     */
     public static <T, S> Actor<T> stateful(S initialState, StatefulHandler<S, T> handler, ActorOptions options) {
         Objects.requireNonNull(handler, "handler must not be null");
         Objects.requireNonNull(options, "options must not be null");
