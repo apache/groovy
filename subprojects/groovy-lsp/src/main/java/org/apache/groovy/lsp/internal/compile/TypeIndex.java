@@ -34,6 +34,9 @@ import java.util.Map;
  */
 public final class TypeIndex {
 
+    /**
+     * Index that contains no types.
+     */
     public static final TypeIndex EMPTY = new TypeIndex(Map.of(), Map.of());
 
     private final Map<String, List<TypeHit>> bySimpleName;

@@ -94,6 +94,10 @@ public class CompilationUnit extends ProcessingUnit {
 
     /** The source units from which this unit is built. */
     protected Map<String, SourceUnit> sources = new LinkedHashMap<>();
+    /**
+     * Sources passed to {@link #addSource(SourceUnit)} that have not yet been
+     * copied into {@link #sources}. {@link #dequeued()} polls this queue.
+     */
     protected Queue<SourceUnit> queuedSources = new LinkedList<>();
 
     /** The classes generated during classgen. */
@@ -121,7 +125,15 @@ public class CompilationUnit extends ProcessingUnit {
     /** A callback for use during {@link #compile()} */
     protected ProgressCallback progressCallback;
 
+    /**
+     * Resolver handed to {@link #resolveVisitor} for on-demand class lookup.
+     * Replaced through {@link #setClassNodeResolver(ClassNodeResolver)}.
+     */
     protected ClassNodeResolver classNodeResolver = new ClassNodeResolver();
+    /**
+     * Visitor that resolves types. The unit runs it once over class headers
+     * and once over class bodies.
+     */
     protected ResolveVisitor resolveVisitor = new ResolveVisitor(this);
 
     /** The AST transformations state data. */

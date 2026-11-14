@@ -354,7 +354,7 @@ public class DefaultGroovyStaticMethods {
      * starts with {@code prefix}. {@code self} is ignored.
      *
      * @param self ignored; present so the method is a category on {@link File}
-     * @param prefix the prefix passed to {@link Files#createTempDirectory(String)}
+     * @param prefix the directory-name prefix passed to {@code Files.createTempDirectory}
      * @return the new directory
      * @throws IOException if the directory cannot be created
      */
@@ -365,7 +365,7 @@ public class DefaultGroovyStaticMethods {
     /**
      * Creates a directory in the default temporary-file directory. {@code self}
      * is ignored. {@code suffix} is appended to {@code prefix} because
-     * {@link Files#createTempDirectory(String)} takes no separate suffix.
+     * {@code Files.createTempDirectory} takes no separate suffix.
      *
      * @param self ignored; present so the method is a category on {@link File}
      * @param prefix the leading part of the directory-name prefix

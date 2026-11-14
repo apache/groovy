@@ -45,7 +45,11 @@ import static org.codehaus.groovy.runtime.DefaultGroovyMethods.asBoolean;
  */
 public class GroovydocManager {
 
-    public static final String DOC_COMMENT = GroovydocHolder.DOC_COMMENT; // keys for meta data
+    /**
+     * Metadata key for the doc comment stored on a node. Same string as
+     * {@code GroovydocHolder.DOC_COMMENT}.
+     */
+    public static final String DOC_COMMENT = GroovydocHolder.DOC_COMMENT;
     private static final String GROOVYDOC_PREFIX = "/**";
     private static final String RUNTIME_GROOVYDOC_PREFIX = GROOVYDOC_PREFIX + "@";
     private static final String VALUE = "value";
