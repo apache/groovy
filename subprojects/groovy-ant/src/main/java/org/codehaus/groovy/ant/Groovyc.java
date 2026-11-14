@@ -257,7 +257,7 @@ public class Groovyc extends MatchingTask {
     private boolean parameters;
 
     /**
-     * If true, enables preview features of the JDK running the build (Java 12 or later). Defaults to false.
+     * If true, enables preview features of the JDK running the build. Defaults to false.
      */
     private boolean previewFeatures;
 
@@ -961,7 +961,7 @@ public class Groovyc extends MatchingTask {
     }
 
     /**
-     * If true, enables preview features of the JDK running the build (Java 12 or later).
+     * If true, enables preview features of the JDK running the build.
      *
      * @param previewFeatures set to true to enable preview features
      */

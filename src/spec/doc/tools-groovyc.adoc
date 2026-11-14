@@ -58,7 +58,7 @@ a number of command line switches:
 | -Jname=value | | Passes `-name value` to `javac` when joint compilation is enabled | groovyc -j -Jrelease=17 A.groovy B.java
 | -Fflag | | Flag passed to `javac` when joint compilation is enabled | groovyc -j -Fnowarn A.groovy B.java
 | -pa | --parameters | Generates metadata for reflection on method parameter names. Defaults to false. | groovyc --parameters Person.groovy
-| -pr | --enable-preview | Enables preview features of the JDK running the compiler (Java 12 or later). Must follow `-cp` and precede the other arguments. | groovyc --enable-preview Person.groovy
+| -pr | --enable-preview | Enables preview features of the JDK running the compiler. Must follow `-cp` and precede the other arguments. | groovyc --enable-preview Person.groovy
 | -de | --debug | Prints extra information when compilation fails. | groovyc --debug Person.groovy
 | -s | --stubDirectory | Directory for the Java stubs written during joint compilation. | groovyc -j -s stubs A.groovy B.java
 | -ks | --keepStubs | Keeps the joint-compilation stubs instead of deleting them. | groovyc -j --keepStubs A.groovy B.java

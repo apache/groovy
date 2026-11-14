@@ -137,7 +137,7 @@ Zero means unlimited. Defaults to 10. |No
 |parameters |Generates metadata for reflection on method parameter names.
 Defaults to false. |No
 
-|previewFeatures |Enables the preview features of the JDK running the build (Java 12 or later).
+|previewFeatures |Enables the preview features of the JDK running the build.
 Defaults to false. |No
 
 |targetBytecode |Sets the bytecode compatibility level. Allowed values are `17` through `28`. When omitted, the level is the JDK running the compiler if that release is in range, otherwise `17`. |No
