@@ -33,6 +33,13 @@ public class TernaryExpression extends Expression {
     private final Expression truthExpression;
     private final Expression falseExpression;
 
+    /**
+     * Creates {@code booleanExpression ? truthExpression : falseExpression}.
+     *
+     * @param booleanExpression the condition
+     * @param truthExpression the expression used when the condition is true
+     * @param falseExpression the expression used when the condition is false
+     */
     public TernaryExpression(final BooleanExpression booleanExpression,
             final Expression truthExpression, final Expression falseExpression) {
         this.booleanExpression = booleanExpression;
@@ -40,14 +47,29 @@ public class TernaryExpression extends Expression {
         this.falseExpression = falseExpression;
     }
 
+    /**
+     * The condition of this conditional.
+     *
+     * @return the boolean expression passed to the constructor
+     */
     public BooleanExpression getBooleanExpression() {
         return booleanExpression;
     }
 
+    /**
+     * The expression used when the condition is true.
+     *
+     * @return the true branch
+     */
     public Expression getTrueExpression() {
         return truthExpression;
     }
 
+    /**
+     * The expression used when the condition is false.
+     *
+     * @return the false branch
+     */
     public Expression getFalseExpression() {
         return falseExpression;
     }

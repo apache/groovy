@@ -30,10 +30,20 @@ public class SpreadMapExpression extends Expression {
 
     private final Expression expression;
 
+    /**
+     * Creates a spread-map expression for {@code expression}, as in {@code *:m}.
+     *
+     * @param expression the map being spread
+     */
     public SpreadMapExpression(final Expression expression) {
         this.expression = expression;
     }
 
+    /**
+     * Returns the expression being spread.
+     *
+     * @return the spread operand
+     */
     public Expression getExpression() {
         return expression;
     }

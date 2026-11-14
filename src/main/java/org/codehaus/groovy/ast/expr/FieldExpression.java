@@ -32,6 +32,13 @@ public class FieldExpression extends Expression {
     private final FieldNode field;
     private boolean useRef;
 
+    /**
+     * Creates an access to {@code field}.
+     *
+     * Fails with {@link NullPointerException} if {@code field} is {@code null}.
+     *
+     * @param field the field being read or written
+     */
     public FieldExpression(final FieldNode field) {
         this.field = requireNonNull(field);
     }
@@ -46,10 +53,20 @@ public class FieldExpression extends Expression {
         return this;
     }
 
+    /**
+     * The field this expression reads or writes.
+     *
+     * @return the field passed to the constructor
+     */
     public FieldNode getField() {
         return field;
     }
 
+    /**
+     * The name of {@link #getField()}.
+     *
+     * @return that field's name
+     */
     public String getFieldName() {
         return field.getName();
     }
@@ -69,14 +86,32 @@ public class FieldExpression extends Expression {
         field.setType(type);
     }
 
+    /**
+     * Whether the field's declared type is dynamic.
+     *
+     * @return what {@link FieldNode#isDynamicTyped()} reports for this field
+     */
     public boolean isDynamicTyped() {
         return field.isDynamicTyped();
     }
 
+    /**
+     * Whether a holder field is read or written as the {@code Reference}
+     * itself. {@code false}, the default, loads or stores the value inside that
+     * reference.
+     *
+     * @return {@code true} when the reference wrapper is used directly
+     */
     public boolean isUseReferenceDirectly() {
         return useRef;
     }
 
+    /**
+     * Records whether a holder field is loaded or stored as its
+     * {@code Reference} instead of the value that reference contains.
+     *
+     * @param useRef {@code true} to use the reference wrapper directly
+     */
     public void setUseReferenceDirectly(final boolean useRef) {
         this.useRef = useRef;
     }

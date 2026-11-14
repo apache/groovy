@@ -34,6 +34,9 @@ import static org.objectweb.asm.Opcodes.ACC_MANDATED;
  */
 public class Parameter extends AnnotatedNode implements Variable {
 
+    /**
+     * A shared empty parameter list, for methods and closures that declare no parameters.
+     */
     public static final Parameter[] EMPTY_ARRAY = {};
 
     private ClassNode type;
