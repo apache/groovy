@@ -23,5 +23,8 @@ package org.codehaus.groovy.control;
  * operations complete.
  */
 public interface HasCleanup {
+    /**
+     * Releases resources held for the operation that just finished.
+     */
     void cleanup();
 }

@@ -24,5 +24,12 @@ package org.codehaus.groovy.transform;
  * The default priority is zero.
  */
 public interface TransformWithPriority {
+    /**
+     * Returns the order of this transform among others in the same phase.
+     * Higher values run first. The default used by transforms that do not
+     * implement this interface is zero.
+     *
+     * @return the priority
+     */
     int priority();
 }
