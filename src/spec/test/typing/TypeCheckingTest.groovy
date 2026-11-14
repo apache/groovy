@@ -1189,6 +1189,14 @@ import groovy.transform.stc.FirstParam
             }
             // end::stc_generics_raw_element_fail[]
         ''', 'Cannot return value of type java.lang.Object for method returning java.lang.Integer'
+
+        shouldFailWithMessages '''
+            // tag::stc_generics_raw_bound_fail[]
+            List<? extends Map<String, Object>> rows(List<? extends Map> raw) {
+                raw                                     // fails
+            }
+            // end::stc_generics_raw_bound_fail[]
+        ''', 'Incompatible generic argument types. Cannot assign java.util.List<? extends java.util.Map> to: java.util.List<? extends java.util.Map<java.lang.String, java.lang.Object>>'
     }
 
     @Test
@@ -1231,6 +1239,68 @@ import groovy.transform.stc.FirstParam
     }
 
     @Test
+    void testGenericMethodCallWithWildcardArgument() {
+        assertScript '''
+            // tag::stc_generics_method_wildcard[]
+            <T extends Number> T first(List<T> list) { list.get(0) }
+
+            Number firstOf(List<? extends Integer> ints) {
+                first(ints)                             // <1>
+            }
+            // end::stc_generics_method_wildcard[]
+            assert firstOf([4, 5]) == 4
+        '''
+
+        shouldFailWithMessages '''
+            // tag::stc_generics_method_wildcard_fail[]
+            <T extends Integer> T narrow(List<T> list) { list.get(0) }
+
+            def narrowOf(List<? extends Number> numbers) {
+                narrow(numbers)                         // fails
+            }
+            // end::stc_generics_method_wildcard_fail[]
+        ''', '#narrow(java.util.List<T>) with arguments [java.util.List<? extends java.lang.Number>]'
+    }
+
+    @Test
+    void testGenericMethodCallWithTarget() {
+        assertScript '''
+            // tag::stc_generics_method_target[]
+            List<Number> numbers() {
+                Collections.singletonList(1)            // <1>
+            }
+            // end::stc_generics_method_target[]
+            assert numbers() == [1]
+        '''
+
+        shouldFailWithMessages '''
+            // tag::stc_generics_method_target_fail[]
+            List<Number> numbers() {
+                Collections.singletonList('one')        // fails
+            }
+            // end::stc_generics_method_target_fail[]
+        ''', 'Incompatible generic argument types. Cannot assign java.util.List<java.lang.String> to: java.util.List<java.lang.Number>'
+
+        assertScript '''
+            // tag::stc_generics_spread_target[]
+            List<CharSequence> names(List<File> files) {
+                files*.name                             // <1>
+            }
+            // end::stc_generics_spread_target[]
+            assert names([new File('a.txt')]) == ['a.txt']
+        '''
+
+        shouldFailWithMessages '''
+            // tag::stc_generics_spread_target_fail[]
+            List<CharSequence> names(List<File> files) {
+                List<String> names = files*.name
+                names                                   // fails
+            }
+            // end::stc_generics_spread_target_fail[]
+        ''', 'Incompatible generic argument types. Cannot assign java.util.List<java.lang.String> to: java.util.List<java.lang.CharSequence>'
+    }
+
+    @Test
     void testCheckedExceptionsAreNotChecked() {
         assertScript '''
             // tag::stc_checked_exceptions[]
@@ -1266,5 +1336,80 @@ import groovy.transform.stc.FirstParam
             }
             // end::stc_generics_class_fail[]
         ''', 'Incompatible generic argument types. Cannot assign java.lang.Class<java.lang.Integer> to: java.lang.Class<java.lang.Number>'
+    }
+
+    @Test
+    void testClassTypeArgumentAndConversion() {
+        assertScript '''
+            import org.codehaus.groovy.runtime.typehandling.GroovyCastException
+            import static groovy.test.GroovyAssert.shouldFail
+
+            // tag::stc_generics_class_conversion[]
+            class Plugin {
+                Class<? extends CharSequence> textType = 'java.lang.String'     // <1>
+            }
+
+            Class<? extends Number> numberType(Object value) {
+                Class<? extends Number> type = value                            // <2>
+                type
+            }
+            // end::stc_generics_class_conversion[]
+
+            assert new Plugin().textType == String
+            assert numberType('java.lang.Integer') == Integer
+            assert numberType(String) == String // a Class is kept as it is
+            def listOfString = new ArrayList<String>() {}.getClass().genericSuperclass
+            shouldFail(GroovyCastException) { numberType(listOfString) }
+        '''
+
+        shouldFailWithMessages '''
+            // tag::stc_generics_class_unknown_fail[]
+            Class<? extends CharSequence> textType(String name) {
+                Class.forName(name)                     // fails
+            }
+            // end::stc_generics_class_unknown_fail[]
+        ''', 'Incompatible generic argument types. Cannot assign java.lang.Class<?> to: java.lang.Class<? extends java.lang.CharSequence>'
+
+        assertScript '''
+            // tag::stc_generics_class_assubclass[]
+            Class<? extends CharSequence> textType(String name) {
+                Class.forName(name).asSubclass(CharSequence)
+            }
+            // end::stc_generics_class_assubclass[]
+            assert textType('java.lang.String') == String
+        '''
+    }
+
+    @Test
+    void testClassOfValue() {
+        assertScript '''
+            // tag::stc_generics_getclass[]
+            Class<? extends Number> numberType(Number number) { number.getClass() }     // <1>
+            Class<? extends List> listType(List<String> strings) { strings.class }      // <2>
+            // end::stc_generics_getclass[]
+            assert numberType(1) == Integer
+            assert listType(new ArrayList<String>()) == ArrayList
+        '''
+
+        assertScript '''
+            // tag::stc_generics_getclass_instanceof[]
+            Class<? extends CharSequence> textType(Object value) {
+                if (value instanceof CharSequence) {
+                    return value.getClass()             // <1>
+                }
+                String
+            }
+            // end::stc_generics_getclass_instanceof[]
+            assert textType(new StringBuilder()) == StringBuilder
+            assert textType(1) == String
+        '''
+
+        shouldFailWithMessages '''
+            // tag::stc_generics_getclass_fail[]
+            Class<Number> exactType(Number number) {
+                number.getClass()                       // fails
+            }
+            // end::stc_generics_getclass_fail[]
+        ''', 'Incompatible generic argument types. Cannot assign java.lang.Class<? extends java.lang.Number> to: java.lang.Class<java.lang.Number>'
     }
 }
