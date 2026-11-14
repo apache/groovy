@@ -78,6 +78,7 @@ import java.util.stream.LongStream;
 
 /**
  * Class providing various type conversions, coercions and boxing/unboxing operations.
+ *
  * @since Groovy 1.8.0
  */
 public class DefaultTypeTransformation {
@@ -1408,6 +1409,16 @@ public class DefaultTypeTransformation {
         return (value instanceof String || value instanceof GString) && value.toString().length() == 1;
     }
 
+    /**
+     * Copies {@code a} into an {@code int} array. An array whose runtime class name
+     * is {@code "[I"} is returned as itself. Anything else is cast to
+     * {@code Object[]}; a {@code null} element stays {@code 0}, and every other
+     * element must be a {@link Number}. A null array fails immediately.
+     *
+     * @param a an {@code int[]} or an array of numbers
+     * @return the converted array
+     * @deprecated since 2.3.0
+     */
     @Deprecated(since = "2.3.0")
     public static int[] convertToIntArray(Object a) {
         int[] ans = null;
@@ -1428,6 +1439,16 @@ public class DefaultTypeTransformation {
         return ans;
     }
 
+    /**
+     * Copies {@code a} into a {@code boolean} array. A {@code boolean[]} is returned
+     * as itself. Anything else is cast to {@code Object[]}; a {@code null} element
+     * stays {@code false}, and every other element is cast to {@link Boolean}.
+     * A null array fails immediately.
+     *
+     * @param a a {@code boolean[]} or an array of booleans
+     * @return the converted array
+     * @deprecated since 2.3.0
+     */
     @Deprecated(since = "2.3.0")
     public static boolean[] convertToBooleanArray(Object a) {
         boolean[] ans = null;
@@ -1446,6 +1467,16 @@ public class DefaultTypeTransformation {
         return ans;
     }
 
+    /**
+     * Copies {@code a} into a {@code byte} array. A {@code byte[]} is returned as
+     * itself. Anything else is cast to {@code Object[]}; a {@code null} element
+     * stays {@code 0}, and every other element must be a {@link Number}.
+     * A null array fails immediately.
+     *
+     * @param a a {@code byte[]} or an array of numbers
+     * @return the converted array
+     * @deprecated since 2.3.0
+     */
     @Deprecated(since = "2.3.0")
     public static byte[] convertToByteArray(Object a) {
         byte[] ans = null;
@@ -1465,6 +1496,16 @@ public class DefaultTypeTransformation {
         return ans;
     }
 
+    /**
+     * Copies {@code a} into a {@code short} array. A {@code short[]} is returned as
+     * itself. Anything else is cast to {@code Object[]}, and every element,
+     * including a {@code null} element, is cast to {@link Number} and converted
+     * with {@link Number#shortValue()}. A null array fails immediately.
+     *
+     * @param a a {@code short[]} or an array of numbers
+     * @return the converted array
+     * @deprecated since 2.3.0
+     */
     @Deprecated(since = "2.3.0")
     public static short[] convertToShortArray(Object a) {
         short[] ans = null;
@@ -1482,6 +1523,16 @@ public class DefaultTypeTransformation {
         return ans;
     }
 
+    /**
+     * Copies {@code a} into a {@code char} array. A {@code char[]} is returned as
+     * itself. Anything else is cast to {@code Object[]}; a {@code null} element
+     * stays {@code '\0'}, and every other element is cast to {@link Character}.
+     * A null array fails immediately.
+     *
+     * @param a a {@code char[]} or an array of characters
+     * @return the converted array
+     * @deprecated since 2.3.0
+     */
     @Deprecated(since = "2.3.0")
     public static char[] convertToCharArray(Object a) {
         char[] ans = null;
@@ -1502,6 +1553,16 @@ public class DefaultTypeTransformation {
         return ans;
     }
 
+    /**
+     * Copies {@code a} into a {@code long} array. A {@code long[]} is returned as
+     * itself. Anything else is cast to {@code Object[]}; a {@code null} element
+     * stays {@code 0L}, and every other element must be a {@link Number}.
+     * A null array fails immediately.
+     *
+     * @param a a {@code long[]} or an array of numbers
+     * @return the converted array
+     * @deprecated since 2.3.0
+     */
     @Deprecated(since = "2.3.0")
     public static long[] convertToLongArray(Object a) {
         long[] ans = null;
@@ -1522,6 +1583,16 @@ public class DefaultTypeTransformation {
         return ans;
     }
 
+    /**
+     * Copies {@code a} into a {@code float} array. A {@code float[]} is returned as
+     * itself. Anything else is cast to {@code Object[]}; a {@code null} element
+     * stays {@code 0.0f}, and every other element must be a {@link Number}.
+     * A null array fails immediately.
+     *
+     * @param a a {@code float[]} or an array of numbers
+     * @return the converted array
+     * @deprecated since 2.3.0
+     */
     @Deprecated(since = "2.3.0")
     public static float[] convertToFloatArray(Object a) {
         float[] ans = null;
@@ -1542,6 +1613,16 @@ public class DefaultTypeTransformation {
         return ans;
     }
 
+    /**
+     * Copies {@code a} into a {@code double} array. A {@code double[]} is returned
+     * as itself. Anything else is cast to {@code Object[]}; a {@code null} element
+     * stays {@code 0.0d}, and every other element must be a {@link Number}.
+     * A null array fails immediately.
+     *
+     * @param a a {@code double[]} or an array of numbers
+     * @return the converted array
+     * @deprecated since 2.3.0
+     */
     @Deprecated(since = "2.3.0")
     public static double[] convertToDoubleArray(Object a) {
         double[] ans = null;
@@ -1562,6 +1643,18 @@ public class DefaultTypeTransformation {
         return ans;
     }
 
+    /**
+     * Converts {@code a} to a primitive array whose component type is {@code type}.
+     * The eight primitive {@code Class} objects select the matching converter.
+     * Any other type, including {@code null}, returns {@code a} unchanged. A null
+     * array fails when {@code type} is a primitive class.
+     *
+     * @param a the array passed to the selected converter; {@code null} is returned
+     *        unchanged when {@code type} is not a primitive class
+     * @param type a primitive class such as {@link Integer#TYPE}, or some other class
+     * @return the converted array, or {@code a} when {@code type} is not primitive
+     * @deprecated since 2.3.0
+     */
     @Deprecated(since = "2.3.0")
     public static Object convertToPrimitiveArray(Object a, Class type) {
         if (type == Byte.TYPE) {
@@ -1592,6 +1685,16 @@ public class DefaultTypeTransformation {
         }
     }
 
+    /**
+     * Returns the single character of a length-1 string. A {@link GString} is
+     * reduced with {@code toString()} first. A value that is neither a {@link String}
+     * nor a {@link GString} is cast to {@link Character}, so {@code null} is returned
+     * as {@code null}. A string whose length is not 1 is rejected.
+     *
+     * @param value a length-1 string, or a {@link Character}
+     * @return the character
+     * @deprecated since 2.3.0
+     */
     @Deprecated(since = "2.3.0")
     public static Character getCharFromSizeOneString(Object value) {
         if (value instanceof GString) value = value.toString();

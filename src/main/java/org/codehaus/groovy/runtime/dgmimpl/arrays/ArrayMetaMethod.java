@@ -27,9 +27,21 @@ import java.lang.reflect.Modifier;
 
 /** Shared meta-method base for array {@code getAt} and {@code putAt}. */
 public abstract class ArrayMetaMethod extends MetaMethod {
+    /** Cached {@link Integer} class, the index type for array {@code getAt} and {@code putAt}. */
     protected static final CachedClass   INTEGER_CLASS = ReflectionCache.getCachedClass(Integer.class);
+    /** One-element parameter list containing {@link #INTEGER_CLASS}. */
     protected static final CachedClass[] INTEGER_CLASS_ARR = {INTEGER_CLASS};
 
+    /**
+     * Maps a negative index from the end of the array. An index that is still negative
+     * after adding {@code size} is rejected. A non-negative index is returned unchanged,
+     * even when it is past the end.
+     *
+     * @param i the requested index, which may be negative
+     * @param size the array length added to a negative index
+     * @return {@code i} when {@code i} is non-negative, otherwise {@code i + size}
+     * @throws ArrayIndexOutOfBoundsException when {@code i + size} is still negative
+     */
     protected static int normaliseIndex(int i, int size) {
         int temp = i;
         if (i < 0) {

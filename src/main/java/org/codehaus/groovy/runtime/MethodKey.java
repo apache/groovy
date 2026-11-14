@@ -70,6 +70,16 @@ public abstract class MethodKey {
         return false;
     }
 
+    /**
+     * Compares sender, super-call flag, name, parameter count, and parameter types.
+     * The senders are compared with {@code !=}. Each parameter type is compared
+     * by identity, not by {@link Class#equals(Object)}.
+     *
+     * @param that the other key
+     * @return {@code true} when the sender, super-call flag, name, count, and each
+     *         parameter type match
+     * @throws NullPointerException if {@code that} is {@code null}
+     */
     public boolean equals(MethodKey that) {
       int size;
       if (sender!=that.sender) return false;
@@ -101,10 +111,23 @@ public abstract class MethodKey {
         return super.toString() + "[name:" + name + "; params:" + getParamterTypes();
     }
 
+    /**
+     * Returns the method name passed to the constructor.
+     *
+     * @return the method name
+     */
     public String getName() {
         return name;
     }
 
+    /**
+     * Returns the parameter types in index order.
+     * A count of zero or less yields {@link Collections#EMPTY_LIST}, which cannot
+     * be modified. Otherwise the result is a new {@link ArrayList} and is not a
+     * view of this key.
+     *
+     * @return the parameter types
+     */
     public List getParamterTypes() {
         int size = getParameterCount();
         if (size <= 0) {
@@ -117,9 +140,31 @@ public abstract class MethodKey {
         return params;
     }
 
+    /**
+     * Returns how many parameter types this key has.
+     *
+     * @return the parameter count
+     */
     public abstract int getParameterCount();
+
+    /**
+     * Returns the parameter type at {@code index}.
+     * {@link #equals(MethodKey)} compares these classes by identity.
+     *
+     * @param index zero-based parameter index
+     * @return the class at that index
+     */
     public abstract Class getParameterType(int index);
 
+    /**
+     * Computes an uncached hash from the name, each parameter type, the super-call
+     * flag, and the sender. Each step multiplies by 37. A parameter contributes
+     * {@code 1 + type.hashCode()}, the super-call flag contributes 1 or 0, and the
+     * sender contributes {@code 1 + sender.hashCode()}. {@link #hashCode()} caches
+     * this value and substitutes {@code 0xcafebabe} when the computed value is 0.
+     *
+     * @return the uncached hash, which may be 0
+     */
     protected int createHashCode() {
         int answer = name.hashCode();
         int size = getParameterCount();

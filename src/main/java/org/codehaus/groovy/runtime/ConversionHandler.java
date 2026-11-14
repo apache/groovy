@@ -144,10 +144,26 @@ public abstract class ConversionHandler implements InvocationHandler, Serializab
         return delegate instanceof Map && ((Map) delegate).containsKey(method.getName());
     }
 
+    /**
+     * Reports whether {@code method} is a Java interface default method.
+     * {@link #invoke} calls such a method with {@code invokespecial} unless
+     * the delegate map overrides that name.
+     *
+     * @param method method being invoked on the proxy
+     * @return {@code true} when {@code method} is a default method
+     */
     protected boolean isDefaultMethod(final Method method) {
         return method.isDefault();
     }
 
+    /**
+     * Reports whether {@code method} should be invoked on this handler
+     * rather than forwarded to the delegate. Methods declared on
+     * {@link Object} take that path.
+     *
+     * @param method method being invoked on the proxy
+     * @return {@code true} when {@code method} is declared on {@link Object}
+     */
     protected boolean checkMethod(final Method method) {
         return isCoreObjectMethod(method);
     }

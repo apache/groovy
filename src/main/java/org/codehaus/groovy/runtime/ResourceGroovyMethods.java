@@ -147,6 +147,12 @@ public class ResourceGroovyMethods extends DefaultGroovyMethodsSupport {
             @Serial
             private static final long serialVersionUID = 7688764529326404277L;
 
+            /**
+             * Adds the length of the file being visited to the running directory size.
+             *
+             * @param args arguments from {@code eachFileRecurse}; {@code args[0]} is the
+             *             {@link File} whose {@link File#length()} is added
+             */
             public void doCall(Object[] args) {
                 size[0] += ((File) args[0]).length();
             }
@@ -1814,6 +1820,7 @@ public class ResourceGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param newPathName The new pathname for the named file
      * @return <code>true</code> if and only if the renaming succeeded;
      * <code>false</code> otherwise
+     *
      * @since 1.7.4
      */
     public static boolean renameTo(final File self, String newPathName) {

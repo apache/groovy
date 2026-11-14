@@ -47,6 +47,7 @@ import static java.util.Arrays.stream;
 
 /**
  * Formatting methods
+ *
  * @since Groovy 4.0.0
  */
 public class FormatHelper {
@@ -61,6 +62,10 @@ public class FormatHelper {
     // heuristic size to pre-allocate stringbuffers for collections of items
     private static final int ITEM_ALLOCATE_SIZE = 5;
 
+    /**
+     * The registry returned by {@link GroovySystem#getMetaClassRegistry()} when this
+     * class is initialized. The formatting methods in this class do not read it.
+     */
     public static final MetaClassRegistry metaRegistry = GroovySystem.getMetaClassRegistry();
     private static final String GROOVY_TO_STRING = "groovyToString";
     private static final Class[] EMPTY_TYPES = {};

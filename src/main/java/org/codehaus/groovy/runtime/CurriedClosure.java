@@ -104,6 +104,14 @@ public final class CurriedClosure<V> extends Closure<V> {
         }
     }
 
+    /**
+     * Curries {@code arguments} at index {@code 0} of {@code uncurriedClosure}.
+     *
+     * @param uncurriedClosure the closure the curried arguments are injected into
+     * @param arguments values placed at the front of each later call
+     * @throws IllegalArgumentException when a non-vararg closure is given more
+     *         arguments than it can accept
+     */
     @GroovyABI(since = "1.0.0")
     public CurriedClosure(final Closure<V> uncurriedClosure, final Object... arguments) {
         this(0, uncurriedClosure, arguments);
@@ -133,6 +141,18 @@ public final class CurriedClosure<V> extends Closure<V> {
         return super.call(argument);
     }
 
+    /**
+     * Inserts the curried arguments into {@code arguments} at the curry index.
+     * A vararg closure normalizes a negative index against the combined length and
+     * rejects an index outside {@code 0..arguments.length}. A non-vararg closure
+     * rejects a call that supplies fewer arguments than the curry index requires,
+     * then inserts at {@code min(index, arguments.length)}.
+     *
+     * @param arguments arguments supplied by the call, which may be empty
+     * @return a new array with the curried values inserted
+     * @throws IllegalArgumentException when the index is outside the vararg range, or
+     *         when a non-vararg curry is given fewer arguments than it requires
+     */
     public Object[] getUncurriedArguments(final Object... arguments) {
         if (isVararg()) {
             int normalizedIndex = index < 0 ? index + arguments.length + curriedArguments.length : index;

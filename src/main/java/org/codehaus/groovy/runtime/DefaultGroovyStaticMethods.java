@@ -337,14 +337,42 @@ public class DefaultGroovyStaticMethods {
         return ResourceBundle.getBundle(bundleName, locale, targetCL);
     }
 
+    /**
+     * Creates a directory in the default temporary-file directory, using the
+     * prefix {@code groovy-generated-tmpdir-}. {@code self} is ignored.
+     *
+     * @param self ignored; present so the method is a category on {@link File}
+     * @return the new directory
+     * @throws IOException if the directory cannot be created
+     */
     public static File createTempDir(File self) throws IOException {
         return createTempDir(self, "groovy-generated-", "tmpdir-");
     }
 
+    /**
+     * Creates a directory in the default temporary-file directory whose name
+     * starts with {@code prefix}. {@code self} is ignored.
+     *
+     * @param self ignored; present so the method is a category on {@link File}
+     * @param prefix the prefix passed to {@link Files#createTempDirectory(String)}
+     * @return the new directory
+     * @throws IOException if the directory cannot be created
+     */
     public static File createTempDir(File self, final String prefix) throws IOException {
         return createTempDirNio(prefix);
     }
 
+    /**
+     * Creates a directory in the default temporary-file directory. {@code self}
+     * is ignored. {@code suffix} is appended to {@code prefix} because
+     * {@link Files#createTempDirectory(String)} takes no separate suffix.
+     *
+     * @param self ignored; present so the method is a category on {@link File}
+     * @param prefix the leading part of the directory-name prefix
+     * @param suffix appended to {@code prefix} before the directory is created
+     * @return the new directory
+     * @throws IOException if the directory cannot be created
+     */
     public static File createTempDir(File self, final String prefix, final String suffix) throws IOException {
         // more secure Files api doesn't support suffix, so just append it to the prefix
         return createTempDirNio(prefix + suffix);

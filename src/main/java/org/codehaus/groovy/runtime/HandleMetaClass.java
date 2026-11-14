@@ -34,10 +34,28 @@ public class HandleMetaClass extends DelegatingMetaClass {
     private Object object;
     private static final Object NONE = new Object();
 
+    /**
+     * Delegates to {@code mc} with no instance attached.
+     * {@link #replaceDelegate()} then installs an {@link ExpandoMetaClass} on the class.
+     * Equivalent to {@link #HandleMetaClass(MetaClass, Object) HandleMetaClass(mc, null)}.
+     *
+     * @param mc the meta class to delegate to
+     */
     public HandleMetaClass(MetaClass mc) {
         this(mc, null);
     }
 
+    /**
+     * Delegates to {@code mc} and records whether {@code obj} still needs a per-instance
+     * meta class. A null {@code obj} leaves replacement to the class, as
+     * {@link #HandleMetaClass(MetaClass)} does. A non-null {@code obj} is remembered
+     * when the meta class of {@code obj}'s class is {@code mc}, or when {@code mc} is
+     * not an {@link ExpandoMetaClass}. Otherwise the instance is treated as already
+     * having its own meta class and {@link #replaceDelegate()} leaves it alone.
+     *
+     * @param mc the meta class to delegate to
+     * @param obj the instance whose meta class may be replaced, or {@code null} for the class
+     */
     public HandleMetaClass(MetaClass mc, Object obj) {
         super(mc);
         if (obj != null) {
@@ -54,6 +72,20 @@ public class HandleMetaClass extends DelegatingMetaClass {
         delegate.initialize();
     }
 
+    /**
+     * Ensures the delegate is an {@link ExpandoMetaClass} when a replacement is still
+     * pending, then returns that delegate.
+     * With no instance, a delegate that is not already an expando meta class is replaced
+     * by {@code new ExpandoMetaClass(theClass, true, true)}, initialized, and registered
+     * on the class; an existing expando delegate is registered again.
+     * With a pending instance, a new {@code ExpandoMetaClass(theClass, false, true)} is
+     * created, expando methods are copied when the previous delegate is an
+     * {@link ExpandoMetaClass}, and the new meta class is set on that instance.
+     * After an instance replacement, further calls do not replace again.
+     * The delegate is cast to {@link GroovyObject}.
+     *
+     * @return the delegate after any replacement
+     */
     public GroovyObject replaceDelegate() {
         if (object == null) {
             if (!(delegate instanceof ExpandoMetaClass)) {
