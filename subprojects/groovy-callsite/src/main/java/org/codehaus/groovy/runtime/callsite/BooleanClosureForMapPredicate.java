@@ -44,11 +44,11 @@ public class BooleanClosureForMapPredicate<K, V> implements Predicate<Map.Entry<
         numberOfArguments = wrapped.getMaximumNumberOfParameters();
     }
 
-    @Override
     /**
      * Invokes the wrapped closure with the entry's key and value when the
      * closure accepts two arguments, and with the entry itself otherwise.
      */
+    @Override
     public boolean test(Map.Entry<K, V> entry) {
         if (numberOfArguments == 2) {
             return bmi.invoke(wrapped, entry.getKey(), entry.getValue());

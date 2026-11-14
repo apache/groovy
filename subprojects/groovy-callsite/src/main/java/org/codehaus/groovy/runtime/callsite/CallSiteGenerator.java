@@ -193,8 +193,8 @@ public class CallSiteGenerator {
     /**
      * Writes a PogoMetaMethodSite subclass into {@code cw}. Dots in {@code name}
      * become slashes in the internal class name.
-     * The class stores the reflective constructor in {@code __constructor__}
-     * and defines array and fixed-arity {@code call} and {@code callCurrent}
+     * The class declares a public static {@code __constructor__} field and does not
+     * initialize it. It also defines array and fixed-arity {@code call} and {@code callCurrent}
      * methods for Groovy object and plain object receivers.
      *
      * @return the generated class bytes
@@ -221,8 +221,8 @@ public class CallSiteGenerator {
     /**
      * Writes a PojoMetaMethodSite subclass into {@code cw}. Dots in {@code name}
      * become slashes in the internal class name.
-     * The class stores the reflective constructor in {@code __constructor__}
-     * and defines array and fixed-arity {@code call} methods for a plain
+     * The class declares a public static {@code __constructor__} field and does not
+     * initialize it. It also defines array and fixed-arity {@code call} methods for a plain
      * object receiver.
      *
      * @return the generated class bytes
@@ -245,8 +245,8 @@ public class CallSiteGenerator {
     /**
      * Writes a StaticMetaMethodSite subclass into {@code cw}. Dots in {@code name}
      * become slashes in the internal class name.
-     * The class stores the reflective constructor in {@code __constructor__}
-     * and defines array and fixed-arity {@code call} and {@code callStatic}
+     * The class declares a public static {@code __constructor__} field and does not
+     * initialize it. It also defines array and fixed-arity {@code call} and {@code callStatic}
      * methods.
      *
      * @return the generated class bytes

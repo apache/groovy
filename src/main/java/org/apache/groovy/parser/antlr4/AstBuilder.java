@@ -4906,9 +4906,9 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
 
     /**
      * Builds an equality {@link BinaryExpression} ({@code ==}, {@code !=}, {@code ===},
-     * {@code !==}, or {@code <=>}). The operands go through {@code createBinaryExpression},
-     * which reassociates a repaired parenthesized-name {@code +} or {@code -} so the textual
-     * left-to-right grouping is kept. The source position is the whole context.
+     * {@code !==}, or {@code <=>}). The operands are combined by
+     * {@code createBinaryExpression}. No regrouping applies to this operator.
+     * The source position is the whole context.
      */
     @Override
     public BinaryExpression visitEqualityExprAlt(final EqualityExprAltContext ctx) {
@@ -4918,10 +4918,9 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
     }
 
     /**
-     * Builds a regex {@link BinaryExpression} ({@code =~} or {@code ==~}). The operands go
-     * through {@code createBinaryExpression}, which reassociates a repaired parenthesized-name
-     * {@code +} or {@code -} so the textual left-to-right grouping is kept. The source position
-     * is the whole context.
+     * Builds a regex {@link BinaryExpression} ({@code =~} or {@code ==~}).
+     * The operands are combined by {@code createBinaryExpression}.
+     * No regrouping applies to this operator. The source position is the whole context.
      */
     @Override
     public BinaryExpression visitRegexExprAlt(final RegexExprAltContext ctx) {
@@ -4931,11 +4930,11 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
     }
 
     /**
-     * Builds a bitwise {@link BinaryExpression} for {@code &}. The operands go through
-     * {@code createBinaryExpression}, which reassociates a repaired parenthesized-name {@code +}
-     * or {@code -} so the textual left-to-right grouping is kept. When the expression is marked
-     * as inside a conditional, the node is positioned on the operator token; otherwise the
-     * position is the whole context.
+     * Builds a bitwise {@link BinaryExpression} for {@code &}.
+     * The operands are combined by {@code createBinaryExpression}.
+     * No regrouping applies to this operator. When the expression is marked
+     * as inside a conditional, the node is positioned on the operator token;
+     * otherwise the position is the whole context.
      */
     @Override
     public BinaryExpression visitAndExprAlt(final AndExprAltContext ctx) {
@@ -4943,11 +4942,11 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
     }
 
     /**
-     * Builds a bitwise {@link BinaryExpression} for {@code ^}. The operands go through
-     * {@code createBinaryExpression}, which reassociates a repaired parenthesized-name {@code +}
-     * or {@code -} so the textual left-to-right grouping is kept. When the expression is marked
-     * as inside a conditional, the node is positioned on the operator token; otherwise the
-     * position is the whole context.
+     * Builds a bitwise {@link BinaryExpression} for {@code ^}.
+     * The operands are combined by {@code createBinaryExpression}.
+     * No regrouping applies to this operator. When the expression is marked
+     * as inside a conditional, the node is positioned on the operator token;
+     * otherwise the position is the whole context.
      */
     @Override
     public BinaryExpression visitExclusiveOrExprAlt(final ExclusiveOrExprAltContext ctx) {
@@ -4955,11 +4954,11 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
     }
 
     /**
-     * Builds a bitwise {@link BinaryExpression} for {@code |}. The operands go through
-     * {@code createBinaryExpression}, which reassociates a repaired parenthesized-name {@code +}
-     * or {@code -} so the textual left-to-right grouping is kept. When the expression is marked
-     * as inside a conditional, the node is positioned on the operator token; otherwise the
-     * position is the whole context.
+     * Builds a bitwise {@link BinaryExpression} for {@code |}.
+     * The operands are combined by {@code createBinaryExpression}.
+     * No regrouping applies to this operator. When the expression is marked
+     * as inside a conditional, the node is positioned on the operator token;
+     * otherwise the position is the whole context.
      */
     @Override
     public BinaryExpression visitInclusiveOrExprAlt(final InclusiveOrExprAltContext ctx) {
@@ -4967,10 +4966,9 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
     }
 
     /**
-     * Builds a logical {@link BinaryExpression} for {@code &&}. The operands go through
-     * {@code createBinaryExpression}, which reassociates a repaired parenthesized-name {@code +}
-     * or {@code -} so the textual left-to-right grouping is kept. The source position is the
-     * whole context.
+     * Builds a logical {@link BinaryExpression} for {@code &&}.
+     * The operands are combined by {@code createBinaryExpression}.
+     * No regrouping applies to this operator. The source position is the whole context.
      */
     @Override
     public BinaryExpression visitLogicalAndExprAlt(final LogicalAndExprAltContext ctx) {
@@ -4980,10 +4978,9 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
     }
 
     /**
-     * Builds a logical {@link BinaryExpression} for {@code ||}. The operands go through
-     * {@code createBinaryExpression}, which reassociates a repaired parenthesized-name {@code +}
-     * or {@code -} so the textual left-to-right grouping is kept. The source position is the
-     * whole context.
+     * Builds a logical {@link BinaryExpression} for {@code ||}.
+     * The operands are combined by {@code createBinaryExpression}.
+     * No regrouping applies to this operator. The source position is the whole context.
      */
     @Override
     public BinaryExpression visitLogicalOrExprAlt(final LogicalOrExprAltContext ctx) {
@@ -4993,10 +4990,9 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
     }
 
     /**
-     * Builds an implication {@link BinaryExpression} for {@code ==>}. The operands go through
-     * {@code createBinaryExpression}, which reassociates a repaired parenthesized-name {@code +}
-     * or {@code -} so the textual left-to-right grouping is kept. The source position is the
-     * whole context.
+     * Builds an implication {@link BinaryExpression} for {@code ==>}.
+     * The operands are combined by {@code createBinaryExpression}.
+     * No regrouping applies to this operator. The source position is the whole context.
      */
     @Override
     public BinaryExpression visitImplicationExprAlt(final ImplicationExprAltContext ctx) {

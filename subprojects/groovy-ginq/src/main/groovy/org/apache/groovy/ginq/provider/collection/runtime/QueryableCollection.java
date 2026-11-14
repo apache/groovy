@@ -648,10 +648,12 @@ class QueryableCollection<T> implements Queryable<T>, Serializable {
 
     /**
      * Averages the non-null mapped numbers. The sum is divided by how many non-null
-     * values there were, at scale 16 with half-up rounding.
+     * values there were, at scale 16 with half-up rounding. The division throws
+     * {@code ArithmeticException} when every mapped value is null.
      *
      * @param mapper the number to average
      * @return the average
+     * @throws ArithmeticException when no mapped value is non-null
      */
     @Override
     public BigDecimal avg(Function<? super T, ? extends Number> mapper) {

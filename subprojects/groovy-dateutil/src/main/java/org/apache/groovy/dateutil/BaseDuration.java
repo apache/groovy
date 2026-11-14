@@ -95,19 +95,53 @@ public abstract class BaseDuration implements Comparable<BaseDuration> {
         this(0, 0, days, hours, minutes, seconds, millis);
     }
 
-    /** Returns the stored year count. */
+    /**
+     * Returns the stored year count.
+     *
+     * @return the stored year count
+     */
     public int getYears()   { return this.years; }
-    /** Returns the stored month count. */
+
+    /**
+     * Returns the stored month count.
+     *
+     * @return the stored month count
+     */
     public int getMonths()  { return this.months; }
-    /** Returns the stored day count. */
+
+    /**
+     * Returns the stored day count.
+     *
+     * @return the stored day count
+     */
     public int getDays()    { return this.days; }
-    /** Returns the stored hour count. */
+
+    /**
+     * Returns the stored hour count.
+     *
+     * @return the stored hour count
+     */
     public int getHours()   { return this.hours; }
-    /** Returns the stored minute count. */
+
+    /**
+     * Returns the stored minute count.
+     *
+     * @return the stored minute count
+     */
     public int getMinutes() { return this.minutes; }
-    /** Returns the stored second count. */
+
+    /**
+     * Returns the stored second count.
+     *
+     * @return the stored second count
+     */
     public int getSeconds() { return this.seconds; }
-    /** Returns the stored millisecond count. */
+
+    /**
+     * Returns the stored millisecond count.
+     *
+     * @return the stored millisecond count
+     */
     public int getMillis()  { return this.millis; }
 
     /**

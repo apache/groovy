@@ -42,11 +42,11 @@ public class BooleanClosurePredicate<T> implements Predicate<T> {
         this.bmi = new BooleanReturningMethodInvoker("call");
     }
 
-    @Override
     /**
      * Invokes the wrapped closure with {@code arg} and returns the boolean
      * result.
      */
+    @Override
     public boolean test(T arg) {
         return bmi.invoke(wrapped, arg);
     }
