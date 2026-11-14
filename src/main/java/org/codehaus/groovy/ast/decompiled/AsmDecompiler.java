@@ -89,7 +89,8 @@ public abstract class AsmDecompiler {
             throw new GroovyRuntimeException(e);
         }
 
-        SoftReference<ClassStub> ref = stubCache.get(uri);
+        boolean cacheable = cacheableScheme(uri);
+        SoftReference<ClassStub> ref = cacheable ? stubCache.get(uri) : null;
         ClassStub stub = (ref != null ? ref.get() : null);
         if (stub == null) {
             DecompilingVisitor visitor = new DecompilingVisitor();
@@ -99,9 +100,22 @@ public abstract class AsmDecompiler {
             }
 
             stub = visitor.result;
-            stubCache.put(uri, new SoftReference<>(stub));
+            if (cacheable) {
+                stubCache.put(uri, new SoftReference<>(stub));
+            }
         }
         return stub;
+    }
+
+    /**
+     * In-memory class output ({@code x-groovy-mem}) can replace the bytes
+     * behind one URL, so those URLs are parsed on every call. Every other
+     * scheme is cached, including {@code file}, {@code jar}, {@code jrt},
+     * and container schemes such as {@code bundleresource}, {@code vfs},
+     * and {@code wsjar}.
+     */
+    private static boolean cacheableScheme(final URI uri) {
+        return !"x-groovy-mem".equalsIgnoreCase(uri.getScheme());
     }
 
     /**

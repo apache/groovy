@@ -26,6 +26,7 @@ import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.control.messages.ExceptionMessage;
 import org.codehaus.groovy.control.messages.SimpleMessage;
 
+import javax.tools.JavaFileManager;
 import javax.tools.JavaFileObject;
 import javax.tools.StandardJavaFileManager;
 import javax.tools.ToolProvider;
@@ -108,7 +109,19 @@ public class JavacJavaCompiler implements JavaCompiler {
         Locale locale = Locale.ENGLISH;
         Charset charset = Charset.forName(config.getSourceEncoding());
         javax.tools.JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
-        try (StandardJavaFileManager fileManager = compiler.getStandardFileManager(null, locale, charset)) {
+        StandardJavaFileManager standard = compiler.getStandardFileManager(null, locale, charset);
+        InMemoryJavaFileManager memManager = null;
+        try {
+            JavaFileManager fileManager = standard;
+            if (config.isMemClassOutput()) {
+                if (!(cu instanceof JavaAwareCompilationUnit jacu) || jacu.memClassOutputBytes() == null) {
+                    throw new IllegalStateException("memClassOutput requires JavaAwareCompilationUnit");
+                }
+                memManager = new InMemoryJavaFileManager(standard, jacu.memClassOutputBytes(),
+                        cu.getJavaCompilationUnitSet(), jacu.memClassOutputStore());
+                fileManager = memManager;
+            }
+
             Set<JavaFileObject> compilationUnitSet = cu.getJavaCompilationUnitSet(); // java stubs already added
 
             Map<String, Object> options = config.getJointCompilationOptions();
@@ -126,7 +139,7 @@ public class JavacJavaCompiler implements JavaCompiler {
             }
 
             // add java source files to compile
-            fileManager.getJavaFileObjectsFromFiles(
+            standard.getJavaFileObjectsFromFiles(
                     files.stream().map(File::new).toList()
             ).forEach(compilationUnitSet::add);
 
@@ -141,6 +154,12 @@ public class JavacJavaCompiler implements JavaCompiler {
             compilationTask.setLocale(locale);
 
             return compilationTask.call();
+        } finally {
+            if (memManager != null) {
+                memManager.close();
+            } else {
+                standard.close();
+            }
         }
     }
 
@@ -160,20 +179,29 @@ public class JavacJavaCompiler implements JavaCompiler {
     private List<String> makeParameters(final ClassLoader classLoader) {
         List<String> params = new ArrayList<>();
 
-        File targetDir = config.getTargetDirectory();
-        if (targetDir == null) targetDir = new File(".");
+        // memClassOutput captures CLASS_OUTPUT in InMemoryJavaFileManager.
+        // -d would name a directory that mode does not write.
+        // Annotation processing is off unless the joint options ask for it,
+        // so a processor discovered on the classpath cannot write into the
+        // working directory.
+        if (!config.isMemClassOutput()) {
+            File targetDir = config.getTargetDirectory();
+            if (targetDir == null) targetDir = new File(".");
 
-        params.add("-d");
-        params.add(targetDir.getAbsolutePath());
+            params.add("-d");
+            params.add(targetDir.getAbsolutePath());
+        }
 
         Map<String, Object> options = config.getJointCompilationOptions();
         boolean classpath = false;
         boolean release = false;
+        boolean processing = false;
 
         if (options.get("flags") instanceof String[] flags) {
             for (String flag : flags) {
                 if (flag == null) continue;
                 if (!release) release = isReleaseParameter(flag.split("=")[0]);
+                processing |= requestsAnnotationProcessing(flag);
 
                 params.add("-" + flag);
             }
@@ -185,10 +213,15 @@ public class JavacJavaCompiler implements JavaCompiler {
                 if (name == null) continue;
                 if (!release && isReleaseParameter(name)) release = true;
                 else if (!classpath) classpath = isClasspathParameter(name);
+                processing |= requestsAnnotationProcessing(name);
 
                 params.add("-" + name);
                 params.add(namedValues[i + 1]);
             }
+        }
+
+        if (config.isMemClassOutput() && !processing) {
+            params.add("-proc:none");
         }
 
         // GROOVY-11790
@@ -204,6 +237,11 @@ public class JavacJavaCompiler implements JavaCompiler {
             for (ClassLoader loader = classLoader; loader != null; loader = loader.getParent()) {
                 if (loader instanceof URLClassLoader ucl) {
                     for (URL u : ucl.getURLs()) {
+                        // Not a directory or jar. The file manager serves these
+                        // bytes on CLASS_PATH; javac cannot open the URL itself.
+                        if (MemClassOutputClasspath.isInMemory(u)) {
+                            continue;
+                        }
                         try {
                             paths.add(new File(u.toURI()).getPath());
                         } catch (URISyntaxException ignore) {
@@ -225,6 +263,15 @@ public class JavacJavaCompiler implements JavaCompiler {
         }
 
         return params;
+    }
+
+    private static boolean requestsAnnotationProcessing(final String name) {
+        String option = name.startsWith("-") ? name.substring(1) : name;
+        return option.equals("processor")
+                || option.equals("processorpath")
+                || option.equals("processor-module-path")
+                || option.equals("proc")
+                || option.startsWith("proc:");
     }
 
     private static boolean isClasspathParameter(final String param) {

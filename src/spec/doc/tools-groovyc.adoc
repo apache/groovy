@@ -298,6 +298,22 @@ Java source files with the Groovy compiler, the Java source files will be compil
 if they were Groovy sources. In some situations, this might work since most of the Java
 syntax is compatible with Groovy, but there are a number of places where semantics could be different.
 
+Two joint-compilation options keep the intermediate files off disk. Both are
+set on `CompilerConfiguration.jointCompilationOptions`:
+
+* `memStub` keeps the generated Java stubs in memory, so `stubDir` is not required.
+  It is read at the start of each compile.
+* `memClassOutput` keeps the class files javac produces in memory as well.
+  It requires `memStub`, and only the default javac joint compiler implements it.
+  The bytes are published on that compilation unit's class loader. Compiling
+  the same classes again needs a new loader: a class the loader has already
+  defined is not replaced. A later compilation unit sees the bytes when the
+  host publishes them; Java sources in that later unit resolve the classes
+  on the classpath. A parent loader or an earlier classpath entry hides the
+  bytes, because resource lookup searches those first. Annotation processing
+  is off unless the options name a processor. `groovyc` and the Ant task do
+  not set either option; disk stubs and a target directory remain the default.
+
 [[section-android]]
 == Android support
 

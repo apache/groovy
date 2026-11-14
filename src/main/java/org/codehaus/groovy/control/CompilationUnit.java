@@ -334,18 +334,8 @@ public class CompilationUnit extends ProcessingUnit {
         }, Phases.CLASS_GENERATION);
 
         addPhaseOperation(groovyClass -> {
-            String name = groovyClass.getName().replace('.', File.separatorChar) + ".class";
-            File path = new File(getConfiguration().getTargetDirectory(), name);
-
-            // ensure the path is ready for the file
-            File directory = path.getParentFile();
-            if (directory != null && !directory.exists()) {
-                directory.mkdirs();
-            }
-
-            // create the file and write out the data
-            try (FileOutputStream stream = new FileOutputStream(path)) {
-                stream.write(groovyClass.getBytes());
+            try {
+                writeClassFile(groovyClass);
             } catch (IOException e) {
                 getErrorCollector().addError(Message.create(e.getMessage(), this));
             }
@@ -375,6 +365,33 @@ public class CompilationUnit extends ProcessingUnit {
                 classNode.removeNodeMetaData(DYNAMIC_OUTER_NODE_CALLBACK);
             }
         }, Phases.INSTRUCTION_SELECTION);
+    }
+
+    /**
+     * Writes one generated class file to {@link CompilerConfiguration#getTargetDirectory()}.
+     * Called during {@link Phases#OUTPUT} for each generated class.
+     * Joint compilation overrides this when class files are kept in memory.
+     * An override that keeps the bytes itself should not call this method,
+     * or the class file is written into the target directory as well.
+     *
+     * @param groovyClass the generated class
+     * @throws IOException if the class file cannot be written
+     * @since 7.0.0
+     */
+    protected void writeClassFile(final GroovyClass groovyClass) throws IOException {
+        String name = groovyClass.getName().replace('.', File.separatorChar) + ".class";
+        File path = new File(getConfiguration().getTargetDirectory(), name);
+
+        // ensure the path is ready for the file
+        File directory = path.getParentFile();
+        if (directory != null && !directory.exists()) {
+            directory.mkdirs();
+        }
+
+        // create the file and write out the data
+        try (FileOutputStream stream = new FileOutputStream(path)) {
+            stream.write(groovyClass.getBytes());
+        }
     }
 
     private void applyCompilationCustomizers() {
