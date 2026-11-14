@@ -31,12 +31,22 @@ public class BooleanClosurePredicate<T> implements Predicate<T> {
     private final BooleanReturningMethodInvoker bmi;
     private final Closure wrapped;
 
+    /**
+     * Wraps {@code wrapped} so {@link #test} invokes its {@code call} method
+     * through a cached boolean invoker.
+     *
+     * @param wrapped closure evaluated as a predicate
+     */
     public BooleanClosurePredicate(Closure wrapped) {
         this.wrapped = wrapped;
         this.bmi = new BooleanReturningMethodInvoker("call");
     }
 
     @Override
+    /**
+     * Invokes the wrapped closure with {@code arg} and returns the boolean
+     * result.
+     */
     public boolean test(T arg) {
         return bmi.invoke(wrapped, arg);
     }

@@ -111,6 +111,12 @@ public class AstBuilderTransformation extends MethodCallTransformation {
             }
         }
 
+        /**
+         * Turns the closure argument back into source, appends that source to the
+         * other arguments, and rewrites the call to {@code buildFromBlock} with
+         * spread, safe navigation, and implicit-this cleared. Returns {@code false}
+         * after the rewrite.
+         */
         @Override
         protected boolean handleTargetMethodCallExpression(MethodCallExpression call) {
             ClosureExpression closureExpression = getClosureArgument(call);

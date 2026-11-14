@@ -64,18 +64,32 @@ public record TextDocument(URI uri, String languageId, int version, String text)
         return indent;
     }
 
+    /**
+     * Returns the URI stored for this snapshot.
+     */
     public URI getUri() {
         return uri;
     }
 
+    /**
+     * Returns the LSP language id stored for this snapshot, or {@code null}
+     * when none was provided.
+     */
     public String getLanguageId() {
         return languageId;
     }
 
+    /**
+     * Returns the LSP version number stored for this snapshot.
+     */
     public int getVersion() {
         return version;
     }
 
+    /**
+     * Returns the full text of this snapshot. A null text supplied at
+     * construction is stored as an empty string.
+     */
     public String getText() {
         return text;
     }

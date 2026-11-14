@@ -23,15 +23,30 @@ import groovy.lang.GroovyRuntimeException;
 import groovy.lang.MetaClass;
 import org.codehaus.groovy.runtime.ScriptBytecodeAdapter;
 
+/**
+ * Call site that reads a property through a {@link GroovyObject}'s
+ * {@link MetaClass} while that meta class is still the one captured here.
+ */
 public class PogoMetaClassGetPropertySite extends AbstractCallSite {
     private final MetaClass metaClass;
 
+    /**
+     * Copies the parent site and remembers the meta class used for property reads.
+     *
+     * @param parent the site whose name and index are copied
+     * @param metaClass the meta class this site accepts
+     */
     public PogoMetaClassGetPropertySite(CallSite parent, MetaClass metaClass) {
         super(parent);
         this.metaClass = metaClass;
     }
 
     @Override
+    /**
+     * Returns a newly created get-property site when {@code receiver} is not a
+     * {@link GroovyObject} or its meta class is not the one captured here.
+     * Otherwise returns this site.
+     */
     public final CallSite acceptGetProperty(Object receiver) {
         if (!(receiver instanceof GroovyObject) || ((GroovyObject)receiver).getMetaClass() != metaClass)
             return createGetPropertySite(receiver);
@@ -40,6 +55,11 @@ public class PogoMetaClassGetPropertySite extends AbstractCallSite {
     }
 
     @Override
+    /**
+     * Returns a newly created Groovy-object get-property site when
+     * {@code receiver} is not a {@link GroovyObject} or its meta class is not
+     * the one captured here. Otherwise returns this site.
+     */
     public final CallSite acceptGroovyObjectGetProperty(Object receiver) {
         if (!(receiver instanceof GroovyObject) || ((GroovyObject)receiver).getMetaClass() != metaClass)
             return createGroovyObjectGetPropertySite(receiver);
@@ -48,6 +68,10 @@ public class PogoMetaClassGetPropertySite extends AbstractCallSite {
     }
 
     @Override
+    /**
+     * Reads this site's property through the captured meta class.
+     * A {@link GroovyRuntimeException} is unwrapped.
+     */
     public final Object getProperty(Object receiver) throws Throwable {
         try {
             return metaClass.getProperty(receiver, name);

@@ -72,6 +72,11 @@ class WindowImpl<T, U extends Comparable<? super U>> extends QueryableCollection
     }
 
     @Override
+    /**
+     * Returns the value extracted from the row {@code lead} places after the
+     * current row. A zero offset reads the current row. An index outside the
+     * window returns {@code def}.
+     */
     public <V> V lead(Function<? super T, ? extends V> extractor, long lead, V def) {
         V field;
         if (0 == lead) {
@@ -85,16 +90,27 @@ class WindowImpl<T, U extends Comparable<? super U>> extends QueryableCollection
     }
 
     @Override
+    /**
+     * Returns the value extracted from the row {@code lag} places before the
+     * current row, or {@code def} when that row is outside the window.
+     */
     public <V> V lag(Function<? super T, ? extends V> extractor, long lag, V def) {
         return lead(extractor, -lag, def);
     }
 
     @Override
+    /**
+     * Returns the value extracted from the first row of the window.
+     */
     public <V> V firstValue(Function<? super T, ? extends V> extractor) {
         return nthValue(extractor, 0);
     }
 
     @Override
+    /**
+     * Returns the value extracted from the last row of the window, or
+     * {@code null} when the window is empty.
+     */
     public <V> V lastValue(Function<? super T, ? extends V> extractor) {
         final int size = list.size();
         if (0 == size) {
@@ -104,6 +120,11 @@ class WindowImpl<T, U extends Comparable<? super U>> extends QueryableCollection
     }
 
     @Override
+    /**
+     * Returns the value extracted from the zero-based row {@code index}.
+     * A negative index throws {@link IllegalArgumentException}. An index past
+     * the last row returns {@code null}.
+     */
     public <V> V nthValue(Function<? super T, ? extends V> extractor, long index) {
         if (index < 0) {
             throw new IllegalArgumentException("index cannot be less than 0: " + index);

@@ -142,6 +142,13 @@ public class CallSiteGenerator {
         return mv;
     }
 
+    /**
+     * Writes a fixed-arity call method for {@code cachedMethod} when it has
+     * four parameters or fewer. Wider methods are skipped. The generated method
+     * checks that the call is still valid, invokes the target, turns a void
+     * result into null, boxes a primitive result, and falls back to the default
+     * call path when the guard fails.
+     */
     public static void genCallWithFixedParams(ClassWriter cw, String name, final String superClass, CachedMethod cachedMethod, String receiverType ) {
         if (cachedMethod.getParamsCount() > 4) return;
 
@@ -151,6 +158,11 @@ public class CallSiteGenerator {
         writeMethod(cw, name, pc + 2, superClass, cachedMethod, receiverType, pdescb, false);
     }
 
+    /**
+     * Writes the array form of a call method for {@code cachedMethod}.
+     * Arguments are unpacked from the {@code Object[]} parameter, then invoked,
+     * boxed, and guarded the same way as the fixed-arity form.
+     */
     public static void genCallXxxWithArray(ClassWriter cw, final String name, final String superClass, CachedMethod cachedMethod, String receiverType) {
         writeMethod(cw,name,3,superClass,cachedMethod,receiverType,"[Ljava/lang/Object;",true);
     }
@@ -178,6 +190,15 @@ public class CallSiteGenerator {
         cw.visit(CompilerConfiguration.DEFAULT.getBytecodeVersion(), Opcodes.ACC_PUBLIC | Opcodes.ACC_SYNTHETIC, internalName, null, superName, null);
     }
 
+    /**
+     * Writes a PogoMetaMethodSite subclass into {@code cw}. Dots in {@code name}
+     * become slashes in the internal class name.
+     * The class stores the reflective constructor in {@code __constructor__}
+     * and defines array and fixed-arity {@code call} and {@code callCurrent}
+     * methods for Groovy object and plain object receivers.
+     *
+     * @return the generated class bytes
+     */
     public static byte[] genPogoMetaMethodSite(CachedMethod cachedMethod, ClassWriter cw, String name) {
         String internalName = name.replace('.', '/');
         classHeader(cw, internalName, "org/codehaus/groovy/runtime/callsite/PogoMetaMethodSite");
@@ -197,6 +218,15 @@ public class CallSiteGenerator {
         return cw.toByteArray();
     }
 
+    /**
+     * Writes a PojoMetaMethodSite subclass into {@code cw}. Dots in {@code name}
+     * become slashes in the internal class name.
+     * The class stores the reflective constructor in {@code __constructor__}
+     * and defines array and fixed-arity {@code call} methods for a plain
+     * object receiver.
+     *
+     * @return the generated class bytes
+     */
     public static byte[] genPojoMetaMethodSite(CachedMethod cachedMethod, ClassWriter cw, String name) {
         String internalName = name.replace('.', '/');
         classHeader(cw, internalName, "org/codehaus/groovy/runtime/callsite/PojoMetaMethodSite");
@@ -212,6 +242,15 @@ public class CallSiteGenerator {
         return cw.toByteArray();
     }
 
+    /**
+     * Writes a StaticMetaMethodSite subclass into {@code cw}. Dots in {@code name}
+     * become slashes in the internal class name.
+     * The class stores the reflective constructor in {@code __constructor__}
+     * and defines array and fixed-arity {@code call} and {@code callStatic}
+     * methods.
+     *
+     * @return the generated class bytes
+     */
     public static byte[] genStaticMetaMethodSite(CachedMethod cachedMethod, ClassWriter cw, String name) {
         String internalName = name.replace('.', '/');
         classHeader(cw, internalName, "org/codehaus/groovy/runtime/callsite/StaticMetaMethodSite");
@@ -233,6 +272,12 @@ public class CallSiteGenerator {
         return new ClassWriter(ClassWriter.COMPUTE_MAXS | ClassWriter.COMPUTE_FRAMES);
     }
 
+    /**
+     * Loads a pogo call-site class for {@code cachedMethod} through the loader
+     * cached for its declaring class, and returns the constructor that accepts
+     * the parent site, meta class, meta method, parameter types, and reflective
+     * constructor.
+     */
     public static Constructor compilePogoMethod(CachedMethod cachedMethod) {
         ClassWriter cw = makeClassWriter();
 
@@ -246,6 +291,12 @@ public class CallSiteGenerator {
                 CallSite.class, MetaClassImpl.class, MetaMethod.class, Class[].class, Constructor.class);
     }
 
+    /**
+     * Loads a pojo call-site class for {@code cachedMethod} through the loader
+     * cached for its declaring class, and returns the constructor that accepts
+     * the parent site, meta class, meta method, parameter types, and reflective
+     * constructor.
+     */
     public static Constructor compilePojoMethod(CachedMethod cachedMethod) {
         ClassWriter cw = makeClassWriter();
 
@@ -259,6 +310,12 @@ public class CallSiteGenerator {
                 CallSite.class, MetaClassImpl.class, MetaMethod.class, Class[].class, Constructor.class);
     }
 
+    /**
+     * Loads a static call-site class for {@code cachedMethod} through the loader
+     * cached for its declaring class, and returns the constructor that accepts
+     * the parent site, meta class, meta method, parameter types, and reflective
+     * constructor.
+     */
     public static Constructor compileStaticMethod(CachedMethod cachedMethod) {
         ClassWriter cw = makeClassWriter();
 
@@ -272,6 +329,12 @@ public class CallSiteGenerator {
                 CallSite.class, MetaClassImpl.class, MetaMethod.class, Class[].class, Constructor.class);
     }
 
+    /**
+     * Returns whether {@code method} can be compiled to a direct call site.
+     * The declaring class, the method, and every parameter type must be public,
+     * {@link AndroidSupport} must not report an Android runtime, and encoding
+     * the method name as a class name must leave it unchanged.
+     */
     public static boolean isCompilable (CachedMethod method) {
         return (Modifier.isPublic(method.cachedClass.getModifiers()) && method.isPublic() && publicParams(method))
                 && !AndroidSupport.isRunningAndroid() && containsOnlyValidChars(method.getName());

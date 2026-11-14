@@ -23,10 +23,22 @@ import groovy.lang.MetaClass;
 import org.codehaus.groovy.reflection.CachedField;
 import org.codehaus.groovy.runtime.GroovyCategorySupport;
 
+/**
+ * Call site that reads a field through a cached {@link CachedField} while the
+ * receiver is a {@link GroovyObject} whose meta class is the one captured
+ * here and no category is active on the current thread.
+ */
 public class GetEffectivePogoFieldSite extends AbstractCallSite {
     private final MetaClass metaClass;
     private final CachedField effective;
 
+    /**
+     * Copies the parent site and remembers the meta class and field to read.
+     *
+     * @param site the site whose name and index are copied
+     * @param metaClass the meta class this site was built from
+     * @param effective the field read when the receiver still matches
+     */
     public GetEffectivePogoFieldSite(final CallSite site, final MetaClass metaClass, final CachedField effective) {
         super(site);
         this.metaClass = metaClass;
@@ -34,26 +46,47 @@ public class GetEffectivePogoFieldSite extends AbstractCallSite {
     }
 
     @Override
+    /**
+     * Returns a newly created get-property site when {@code receiver} is not a
+     * {@link GroovyObject} with {@code metaClass}, or a category is active.
+     * Otherwise returns this site.
+     */
     public final CallSite acceptGetProperty(final Object receiver) {
         return isEffective(receiver) ? this : createGetPropertySite(receiver);
     }
 
     @Override
+    /**
+     * Returns a newly created Groovy-object get-property site when
+     * {@code receiver} is not a {@link GroovyObject} with {@code metaClass},
+     * or a category is active. Otherwise returns this site.
+     */
     public final CallSite acceptGroovyObjectGetProperty(final Object receiver) {
         return isEffective(receiver) ? this : createGroovyObjectGetPropertySite(receiver);
     }
 
     @Override
+    /**
+     * Reads the cached field when {@code receiver} still matches this site.
+     * Otherwise creates a get-property site and reads through that.
+     */
     public final Object callGetProperty(final Object receiver) throws Throwable {
         return isEffective(receiver) ? getProperty(receiver) : createGetPropertySite(receiver).getProperty(receiver);
     }
 
     @Override
+    /**
+     * Reads the cached field when {@code receiver} still matches this site.
+     * Otherwise creates a Groovy-object get-property site and reads through that.
+     */
     public final Object callGroovyObjectGetProperty (final Object receiver) throws Throwable {
         return isEffective(receiver) ? getProperty(receiver) : createGroovyObjectGetPropertySite(receiver).getProperty(receiver);
     }
 
     @Override
+    /**
+     * Reads the field through the cached {@link CachedField}.
+     */
     public final Object getProperty(final Object receiver) {
         return effective.getProperty(receiver);
     }

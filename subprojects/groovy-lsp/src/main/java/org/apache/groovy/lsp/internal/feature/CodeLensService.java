@@ -63,6 +63,12 @@ public final class CodeLensService {
         lenses.add(lens);
     }
 
+    /**
+     * Builds a lens for each class and non-synthetic method declared in
+     * {@code document}. The lens is labeled with the number of references to
+     * that name and runs {@code groovy.lsp.showReferences}. An empty list is
+     * returned when the document, its module, or {@code snapshot} is missing.
+     */
     public List<CodeLens> codeLenses(final CompiledDocument document, final CompilationSnapshot snapshot,
                                      final PositionEncoding encoding) {
         List<CodeLens> lenses = new ArrayList<>();

@@ -80,6 +80,12 @@ public class Attributes extends NodeChildren {
     @Override
     public Iterator iterator() {
         return new NodeIterator(nodeIterator()) {
+            /**
+             * Returns the next attribute from {@code iter}. An attribute already in
+             * the iterator is returned as it is. A node contributes an attribute when
+             * it has a value for this attribute name, qualified by the selected
+             * namespace prefix. Returns {@code null} when the iterator is exhausted.
+             */
             @Override
             protected Object getNextNode(final Iterator iter) {
                 while (iter.hasNext()) {

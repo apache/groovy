@@ -22,12 +22,27 @@ import groovy.lang.GroovyRuntimeException;
 import groovy.lang.MetaClass;
 import org.codehaus.groovy.runtime.ScriptBytecodeAdapter;
 
+/**
+ * Call site that invokes a constructor through a {@link MetaClass} when
+ * the receiver is that meta class's class.
+ */
 public class ConstructorMetaClassSite extends MetaClassSite {
+    /**
+     * Copies the parent site and the meta class used for construction.
+     *
+     * @param site the site whose name and index are copied
+     * @param metaClass the meta class whose class this site accepts as the receiver
+     */
     public ConstructorMetaClassSite(CallSite site, MetaClass metaClass) {
         super(site, metaClass);
     }
 
     @Override
+    /**
+     * Invokes the meta class constructor when {@code receiver} is that meta
+     * class's class. A {@link GroovyRuntimeException} is unwrapped. Any other
+     * receiver is handled by the default constructor call.
+     */
     public Object callConstructor(Object receiver, Object[] args) throws Throwable {
         if (receiver == metaClass.getTheClass()) {
             try {

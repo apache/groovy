@@ -52,6 +52,12 @@ import java.util.Map;
  */
 public final class HierarchyService {
 
+    /**
+     * Returns a call-hierarchy item for the method at {@code position}:
+     * the declaration under the caret, or the target of a resolved call.
+     * The list is empty when the document has no compiled module, nothing
+     * resolves, or the method has no source range.
+     */
     public List<CallHierarchyItem> prepareCallHierarchy(final TextDocument document,
                                                         final CompilationSnapshot snapshot,
                                                         final Position position,
@@ -69,6 +75,11 @@ public final class HierarchyService {
         return item == null ? List.of() : List.of(item);
     }
 
+    /**
+     * Collects calls to the method identified by {@code item} from every
+     * compiled document. Call sites are grouped by the method that encloses
+     * them.
+     */
     public List<CallHierarchyIncomingCall> incomingCalls(final CallHierarchyItem item,
                                                          final CompilationSnapshot snapshot,
                                                          final PositionEncoding encoding) {
@@ -86,6 +97,13 @@ public final class HierarchyService {
                 .toList();
     }
 
+    /**
+     * Collects calls inside the method identified by {@code item}.
+     * A resolved call is grouped by its target. A constructor call is
+     * attributed to that type's first declared constructor. Targets without
+     * a source location are skipped. The list is empty when the method or
+     * its body cannot be resolved.
+     */
     public List<CallHierarchyOutgoingCall> outgoingCalls(final CallHierarchyItem item,
                                                          final CompilationSnapshot snapshot,
                                                          final PositionEncoding encoding) {
@@ -121,6 +139,11 @@ public final class HierarchyService {
                 .toList();
     }
 
+    /**
+     * Returns a type-hierarchy item for the class at {@code position}.
+     * The list is empty when the document has no compiled module or the caret
+     * is not on a class that has a source location.
+     */
     public List<TypeHierarchyItem> prepareTypeHierarchy(final TextDocument document,
                                                         final CompilationSnapshot snapshot,
                                                         final Position position,
@@ -138,6 +161,11 @@ public final class HierarchyService {
         return item == null ? List.of() : List.of(item);
     }
 
+    /**
+     * Returns hierarchy items for the superclass, other than {@code Object},
+     * and for the interfaces directly implemented by the type identified by
+     * {@code item}. Types without a source location are omitted.
+     */
     public List<TypeHierarchyItem> supertypes(final TypeHierarchyItem item, final CompilationSnapshot snapshot,
                                               final PositionEncoding encoding) {
         ClassNode type = typeFromItem(item, snapshot);
@@ -157,6 +185,11 @@ public final class HierarchyService {
         return result;
     }
 
+    /**
+     * Returns hierarchy items for classes in the snapshot that implement or
+     * extend the type identified by {@code item}. Types without a source
+     * location are omitted.
+     */
     public List<TypeHierarchyItem> subtypes(final TypeHierarchyItem item, final CompilationSnapshot snapshot,
                                             final PositionEncoding encoding) {
         ClassNode type = typeFromItem(item, snapshot);

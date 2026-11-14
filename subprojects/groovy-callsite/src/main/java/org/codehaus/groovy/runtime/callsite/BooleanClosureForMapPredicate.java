@@ -33,6 +33,11 @@ public class BooleanClosureForMapPredicate<K, V> implements Predicate<Map.Entry<
     private final Closure wrapped;
     private final int numberOfArguments;
 
+    /**
+     * Wraps {@code wrapped} and records how many parameters it accepts.
+     *
+     * @param wrapped closure evaluated for each map entry
+     */
     public BooleanClosureForMapPredicate(Closure wrapped) {
         this.wrapped = wrapped;
         bmi = new BooleanReturningMethodInvoker("call");
@@ -40,6 +45,10 @@ public class BooleanClosureForMapPredicate<K, V> implements Predicate<Map.Entry<
     }
 
     @Override
+    /**
+     * Invokes the wrapped closure with the entry's key and value when the
+     * closure accepts two arguments, and with the entry itself otherwise.
+     */
     public boolean test(Map.Entry<K, V> entry) {
         if (numberOfArguments == 2) {
             return bmi.invoke(wrapped, entry.getKey(), entry.getValue());
