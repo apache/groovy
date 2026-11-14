@@ -5848,6 +5848,36 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
 
     // GROOVY-12755
     @Test
+    void testClosureCallHasDeclaredReturnTypeOfClosure() {
+        assertScript '''
+            List<Class<?>> call(String x) {
+                Closure<List<Class<?>>> c = { String s -> Collections.singletonList(s.getClass()) }
+                c.call(x)
+            }
+            List<Class<?>> implicitCall(String x) {
+                Closure<List<Class<?>>> c = { String s -> Collections.singletonList(s.getClass()) }
+                c(x)
+            }
+            List<Class<?>> spread(List<String> list) {
+                Closure<List<Class<?>>> c = { List<String> l -> l*.getClass() }
+                List<Class<?>> classes = c.call(list)
+                classes
+            }
+            List<Number> numbers() {
+                Closure<List<Number>> c = { -> Arrays.asList(1, 2) }
+                List<Number> list = c.call()
+                list.set(0, 1.5d)
+                list
+            }
+            assert call('x') == [String]
+            assert implicitCall('x') == [String]
+            assert spread(['x']) == [String]
+            assert numbers() == [1.5d, 2]
+        '''
+    }
+
+    // GROOVY-12755
+    @Test
     void testTargetTypeDoesNotAdmitWildcardArgumentForItsTypeArgument() {
         shouldFailWithMessages '''
             public <T extends Number> List<T> same(List<T> list) { list }

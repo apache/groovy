@@ -2251,25 +2251,37 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
             return;
         }
         ClassNode right = wrapTypeIfNecessary(rightExpressionType);
-        // A type variable is not "missing" generics: its bound is known.
-        // Raw types and uninferred diamonds still skip the check.
-        boolean unresolved = missesGenericsTypes(right);
-        boolean incompatible = !unresolved && (
-                !GenericsUtils.buildWildcardType(leftExpressionType).isCompatibleWith(right)
-                || concreteArgumentContainsWildcard(leftExpressionType, right)
-                || typeVariableArgumentGetsWildcard(leftExpressionType, right)
-                || upperBoundEscapes(leftExpressionType, right));
-        boolean typeVariableEscapes = unresolved && (typeVariableBoundEscapes(leftExpressionType, right)
-                || concreteArgumentContainsWildcard(leftExpressionType, right)
-                || upperBoundEscapes(leftExpressionType, right));
-        if (incompatible || typeVariableEscapes) {
-            if (isApplicableForTargetType(leftExpressionType, rightExpression)
-                    || isSpreadApplicableForTargetType(leftExpressionType, right, rightExpression)) {
+        if (hasIncompatibleGenerics(leftExpressionType, right)) {
+            if (isTypedByTarget(leftExpressionType, right, rightExpression)) {
                 rightExpression.setNodeMetaData(TARGET_TYPED, leftExpressionType); // the expression has the type of its target
             } else {
                 addStaticTypeError("Incompatible generic argument types. Cannot assign " + prettyPrintType(rightExpressionType) + " to: " + prettyPrintType(leftExpressionType), rightExpression);
             }
         }
+    }
+
+    private static boolean hasIncompatibleGenerics(final ClassNode targetType, final ClassNode type) {
+        // A type variable is not "missing" generics: its bound is known.
+        // Raw types and uninferred diamonds still skip the check.
+        boolean unresolved = missesGenericsTypes(type);
+        boolean incompatible = !unresolved && (
+                !GenericsUtils.buildWildcardType(targetType).isCompatibleWith(type)
+                || concreteArgumentContainsWildcard(targetType, type)
+                || typeVariableArgumentGetsWildcard(targetType, type)
+                || upperBoundEscapes(targetType, type));
+        boolean typeVariableEscapes = unresolved && (typeVariableBoundEscapes(targetType, type)
+                || concreteArgumentContainsWildcard(targetType, type)
+                || upperBoundEscapes(targetType, type));
+        return incompatible || typeVariableEscapes;
+    }
+
+    /**
+     * Whether an expression whose own type does not fit the target is typed by the target:
+     * a call of a generic method or a spread expression, in an assignment or return context.
+     */
+    private boolean isTypedByTarget(final ClassNode targetType, final ClassNode type, final Expression expression) {
+        return isApplicableForTargetType(targetType, expression)
+                || isSpreadApplicableForTargetType(targetType, type, expression);
     }
 
     /**
@@ -3821,6 +3833,14 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
             // GROOVY-9995: return ctor call with diamond operator
             if (expression instanceof ConstructorCallExpression) {
                 inferDiamondType((ConstructorCallExpression) expression, inferredReturnType != null ? inferredReturnType : /*GROOVY-10080:*/dynamicType());
+            }
+            if (inferredReturnType != null
+                    && inferredReturnType.equals(type)
+                    && inferredReturnType.isUsingGenerics()
+                    && !GenericsUtils.hasUnresolvedGenerics(inferredReturnType)
+                    && hasIncompatibleGenerics(inferredReturnType, wrapTypeIfNecessary(type))
+                    && isTypedByTarget(inferredReturnType, wrapTypeIfNecessary(type), expression)) {
+                type = inferredReturnType; // a generic call or spread expression typed by the declared return type
             }
             if (inferredReturnType != null
                     && !inferredReturnType.equals(type)
