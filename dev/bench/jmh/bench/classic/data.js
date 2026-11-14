@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1794553968261,
+  "lastUpdate": 1794640438965,
   "repoUrl": "https://github.com/apache/groovy",
   "entries": {
     "Benchmark": [
@@ -117202,6 +117202,850 @@ window.BENCHMARK_DATA = {
           {
             "name": "org.apache.groovy.bench.StaticMethodCallIndyColdBench.staticSum_java ( {\"n\":\"20000\"} )",
             "value": 354.8037250000001,
+            "unit": "us/op",
+            "extra": "iterations: 1\nforks: 80\nthreads: 1"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "Paul King",
+            "username": "paulk-asert",
+            "email": "paulk@asert.com.au"
+          },
+          "committer": {
+            "name": "Paul King",
+            "username": "paulk-asert",
+            "email": "paulk@asert.com.au"
+          },
+          "id": "0b455da1f570a2ecdf51620215396ba6f6460672",
+          "message": "GROOVY-12762: @NamedVariant: default values aren't handled correctly by the named-arg variant\n\n- give the named-arg variant its own copies of positional parameters with\n  default values, so its default-argument variants are generated, and\n  report a clash of such a variant with a declared member as an error\n- build a @NamedDelegate referenced by a default value once and share it\n  (a local in methods, a private helper constructor for constructors);\n  a positional default value that references a @NamedDelegate is an error\n- rewrite references to earlier parameters in default values at any depth\n- report a default value that references a parameter from within a\n  closure as an error instead of failing in class generation\n- don't treat the delegate's subMap call as an implicit-this call, so a\n  @NamedVariant constructor with a @NamedDelegate compiles dynamically",
+          "timestamp": "2026-11-13T02:27:16Z",
+          "url": "https://github.com/apache/groovy/commit/0b455da1f570a2ecdf51620215396ba6f6460672"
+        },
+        "date": 1794640432710,
+        "tool": "jmh",
+        "benches": [
+          {
+            "name": "org.apache.groovy.bench.ClosureDoCallBench.each_mono ( {\"pack\":\"false\"} )",
+            "value": 6211.587276386907,
+            "unit": "ops/ms",
+            "extra": "iterations: 5\nforks: 2\nthreads: 1"
+          },
+          {
+            "name": "org.apache.groovy.bench.ClosureDoCallBench.each_mono ( {\"pack\":\"true\"} )",
+            "value": 66509.53734306639,
+            "unit": "ops/ms",
+            "extra": "iterations: 5\nforks: 2\nthreads: 1"
+          },
+          {
+            "name": "org.apache.groovy.bench.ClosureDoCallBench.it_mono ( {\"pack\":\"false\"} )",
+            "value": 39872.19054599838,
+            "unit": "ops/ms",
+            "extra": "iterations: 5\nforks: 2\nthreads: 1"
+          },
+          {
+            "name": "org.apache.groovy.bench.ClosureDoCallBench.it_mono ( {\"pack\":\"true\"} )",
+            "value": 39512.888521024994,
+            "unit": "ops/ms",
+            "extra": "iterations: 5\nforks: 2\nthreads: 1"
+          },
+          {
+            "name": "org.apache.groovy.bench.ClosureDoCallBench.one_mega ( {\"pack\":\"false\"} )",
+            "value": 17202.931508580627,
+            "unit": "ops/ms",
+            "extra": "iterations: 5\nforks: 2\nthreads: 1"
+          },
+          {
+            "name": "org.apache.groovy.bench.ClosureDoCallBench.one_mega ( {\"pack\":\"true\"} )",
+            "value": 8504.89847639191,
+            "unit": "ops/ms",
+            "extra": "iterations: 5\nforks: 2\nthreads: 1"
+          },
+          {
+            "name": "org.apache.groovy.bench.ClosureDoCallBench.one_mono ( {\"pack\":\"false\"} )",
+            "value": 39974.213381502974,
+            "unit": "ops/ms",
+            "extra": "iterations: 5\nforks: 2\nthreads: 1"
+          },
+          {
+            "name": "org.apache.groovy.bench.ClosureDoCallBench.one_mono ( {\"pack\":\"true\"} )",
+            "value": 39813.41303589485,
+            "unit": "ops/ms",
+            "extra": "iterations: 5\nforks: 2\nthreads: 1"
+          },
+          {
+            "name": "org.apache.groovy.bench.ClosureDoCallBench.two_mono ( {\"pack\":\"false\"} )",
+            "value": 39948.93500329727,
+            "unit": "ops/ms",
+            "extra": "iterations: 5\nforks: 2\nthreads: 1"
+          },
+          {
+            "name": "org.apache.groovy.bench.ClosureDoCallBench.two_mono ( {\"pack\":\"true\"} )",
+            "value": 38656.445373015704,
+            "unit": "ops/ms",
+            "extra": "iterations: 5\nforks: 2\nthreads: 1"
+          },
+          {
+            "name": "org.apache.groovy.bench.ClosurePackBench.squared_mega ( {\"pack\":\"false\"} )",
+            "value": 3793.3941917884395,
+            "unit": "ops/ms",
+            "extra": "iterations: 5\nforks: 2\nthreads: 1"
+          },
+          {
+            "name": "org.apache.groovy.bench.ClosurePackBench.squared_mega ( {\"pack\":\"true\"} )",
+            "value": 2819.8926206643696,
+            "unit": "ops/ms",
+            "extra": "iterations: 5\nforks: 2\nthreads: 1"
+          },
+          {
+            "name": "org.apache.groovy.bench.ClosurePackBench.squared_mono ( {\"pack\":\"false\"} )",
+            "value": 10541.38449369485,
+            "unit": "ops/ms",
+            "extra": "iterations: 5\nforks: 2\nthreads: 1"
+          },
+          {
+            "name": "org.apache.groovy.bench.ClosurePackBench.squared_mono ( {\"pack\":\"true\"} )",
+            "value": 8089.0541692188735,
+            "unit": "ops/ms",
+            "extra": "iterations: 5\nforks: 2\nthreads: 1"
+          },
+          {
+            "name": "org.apache.groovy.bench.ClosurePackBench.sum_mega ( {\"pack\":\"false\"} )",
+            "value": 2077.8843122983862,
+            "unit": "ops/ms",
+            "extra": "iterations: 5\nforks: 2\nthreads: 1"
+          },
+          {
+            "name": "org.apache.groovy.bench.ClosurePackBench.sum_mega ( {\"pack\":\"true\"} )",
+            "value": 5218.640944159496,
+            "unit": "ops/ms",
+            "extra": "iterations: 5\nforks: 2\nthreads: 1"
+          },
+          {
+            "name": "org.apache.groovy.bench.ClosurePackBench.sum_mono ( {\"pack\":\"false\"} )",
+            "value": 4600.714298790544,
+            "unit": "ops/ms",
+            "extra": "iterations: 5\nforks: 2\nthreads: 1"
+          },
+          {
+            "name": "org.apache.groovy.bench.ClosurePackBench.sum_mono ( {\"pack\":\"true\"} )",
+            "value": 8456.264319453518,
+            "unit": "ops/ms",
+            "extra": "iterations: 5\nforks: 2\nthreads: 1"
+          },
+          {
+            "name": "org.apache.groovy.bench.GeneratedHashCodeBench.generated_hashcode_on_instance_with_null_properties",
+            "value": 50000.55337450037,
+            "unit": "ops/ms",
+            "extra": "iterations: 5\nforks: 2\nthreads: 1"
+          },
+          {
+            "name": "org.apache.groovy.bench.NonCapturingLambdaBench.capturingLambdaApply",
+            "value": 62744.75580474428,
+            "unit": "ops/ms",
+            "extra": "iterations: 5\nforks: 2\nthreads: 1"
+          },
+          {
+            "name": "org.apache.groovy.bench.NonCapturingLambdaBench.nonCapturingLambdaApply",
+            "value": 2627430.545737759,
+            "unit": "ops/ms",
+            "extra": "iterations: 5\nforks: 2\nthreads: 1"
+          },
+          {
+            "name": "org.apache.groovy.bench.NonCapturingLambdaBench.streamMapNonCapturing",
+            "value": 11821.4764289949,
+            "unit": "ops/ms",
+            "extra": "iterations: 5\nforks: 2\nthreads: 1"
+          },
+          {
+            "name": "org.apache.groovy.bench.NonCapturingLambdaBench.streamReduceNonCapturing",
+            "value": 17935.025666618625,
+            "unit": "ops/ms",
+            "extra": "iterations: 5\nforks: 2\nthreads: 1"
+          },
+          {
+            "name": "org.apache.groovy.bench.SameClassesGuardBench.cs_arity2",
+            "value": 667450.1344489714,
+            "unit": "ops/ms",
+            "extra": "iterations: 5\nforks: 2\nthreads: 1"
+          },
+          {
+            "name": "org.apache.groovy.bench.SameClassesGuardBench.cs_arity5",
+            "value": 673609.7734622278,
+            "unit": "ops/ms",
+            "extra": "iterations: 5\nforks: 2\nthreads: 1"
+          },
+          {
+            "name": "org.apache.groovy.bench.SameClassesGuardBench.dynamic_arity1",
+            "value": 127216.6911129561,
+            "unit": "ops/ms",
+            "extra": "iterations: 5\nforks: 2\nthreads: 1"
+          },
+          {
+            "name": "org.apache.groovy.bench.SameClassesGuardBench.dynamic_arity2",
+            "value": 117341.67919814037,
+            "unit": "ops/ms",
+            "extra": "iterations: 5\nforks: 2\nthreads: 1"
+          },
+          {
+            "name": "org.apache.groovy.bench.SameClassesGuardBench.dynamic_arity3",
+            "value": 111915.90416501943,
+            "unit": "ops/ms",
+            "extra": "iterations: 5\nforks: 2\nthreads: 1"
+          },
+          {
+            "name": "org.apache.groovy.bench.SameClassesGuardBench.dynamic_arity4",
+            "value": 113870.02172451276,
+            "unit": "ops/ms",
+            "extra": "iterations: 5\nforks: 2\nthreads: 1"
+          },
+          {
+            "name": "org.apache.groovy.bench.SameClassesGuardBench.dynamic_arity5",
+            "value": 109087.18968809102,
+            "unit": "ops/ms",
+            "extra": "iterations: 5\nforks: 2\nthreads: 1"
+          },
+          {
+            "name": "org.apache.groovy.bench.SameClassesGuardMhBench.collector_arity1",
+            "value": 231462.04873453663,
+            "unit": "ops/ms",
+            "extra": "iterations: 5\nforks: 2\nthreads: 1"
+          },
+          {
+            "name": "org.apache.groovy.bench.SameClassesGuardMhBench.collector_arity2",
+            "value": 199237.1462150199,
+            "unit": "ops/ms",
+            "extra": "iterations: 5\nforks: 2\nthreads: 1"
+          },
+          {
+            "name": "org.apache.groovy.bench.SameClassesGuardMhBench.collector_arity4",
+            "value": 148869.42443776497,
+            "unit": "ops/ms",
+            "extra": "iterations: 5\nforks: 2\nthreads: 1"
+          },
+          {
+            "name": "org.apache.groovy.bench.SameClassesGuardMhBench.specialised_arity1",
+            "value": 254742.2863480454,
+            "unit": "ops/ms",
+            "extra": "iterations: 5\nforks: 2\nthreads: 1"
+          },
+          {
+            "name": "org.apache.groovy.bench.SameClassesGuardMhBench.specialised_arity2",
+            "value": 237973.65157487793,
+            "unit": "ops/ms",
+            "extra": "iterations: 5\nforks: 2\nthreads: 1"
+          },
+          {
+            "name": "org.apache.groovy.bench.SameClassesGuardMhBench.specialised_arity4",
+            "value": 196814.336935799,
+            "unit": "ops/ms",
+            "extra": "iterations: 5\nforks: 2\nthreads: 1"
+          },
+          {
+            "name": "org.apache.groovy.bench.SameClassesGuardMhBench.specialised_bindTo_arity4",
+            "value": 197222.93863426265,
+            "unit": "ops/ms",
+            "extra": "iterations: 5\nforks: 2\nthreads: 1"
+          },
+          {
+            "name": "org.apache.groovy.bench.ScopedInvalidationBench.hotLoop_afterUnrelatedBurst",
+            "value": 0.7209039876852004,
+            "unit": "ops/ms",
+            "extra": "iterations: 5\nforks: 2\nthreads: 1"
+          },
+          {
+            "name": "org.apache.groovy.bench.ScopedInvalidationBench.hotLoop_baseline",
+            "value": 0.9251099181294716,
+            "unit": "ops/ms",
+            "extra": "iterations: 5\nforks: 2\nthreads: 1"
+          },
+          {
+            "name": "org.apache.groovy.bench.ScopedInvalidationBench.hotLoop_categoryEnterLeave",
+            "value": 0.020815505410492378,
+            "unit": "ops/ms",
+            "extra": "iterations: 5\nforks: 2\nthreads: 1"
+          },
+          {
+            "name": "org.apache.groovy.bench.ScopedInvalidationBench.hotLoop_sameTypeMetaClassChurn",
+            "value": 0.0793232164981303,
+            "unit": "ops/ms",
+            "extra": "iterations: 5\nforks: 2\nthreads: 1"
+          },
+          {
+            "name": "org.apache.groovy.bench.ScopedInvalidationBench.hotLoop_unrelatedMetaClassChurn",
+            "value": 0.093552563292949,
+            "unit": "ops/ms",
+            "extra": "iterations: 5\nforks: 2\nthreads: 1"
+          },
+          {
+            "name": "org.apache.groovy.bench.ScopedInvalidationBench.parentChild_baseline",
+            "value": 0.535848920084644,
+            "unit": "ops/ms",
+            "extra": "iterations: 5\nforks: 2\nthreads: 1"
+          },
+          {
+            "name": "org.apache.groovy.bench.ScopedInvalidationBench.parentChild_parentMetaClassChurn",
+            "value": 0.0499688173531451,
+            "unit": "ops/ms",
+            "extra": "iterations: 5\nforks: 2\nthreads: 1"
+          },
+          {
+            "name": "org.apache.groovy.bench.StaticMethodCallIndyBench.instanceChain_groovy",
+            "value": 144.87957493387975,
+            "unit": "ops/ms",
+            "extra": "iterations: 5\nforks: 2\nthreads: 1"
+          },
+          {
+            "name": "org.apache.groovy.bench.StaticMethodCallIndyBench.instanceFib_groovy",
+            "value": 1.4631443755272773,
+            "unit": "ops/ms",
+            "extra": "iterations: 5\nforks: 2\nthreads: 1"
+          },
+          {
+            "name": "org.apache.groovy.bench.StaticMethodCallIndyBench.instanceSum_groovy",
+            "value": 523.6106528194827,
+            "unit": "ops/ms",
+            "extra": "iterations: 5\nforks: 2\nthreads: 1"
+          },
+          {
+            "name": "org.apache.groovy.bench.StaticMethodCallIndyBench.staticChain_groovy",
+            "value": 156.92497701494054,
+            "unit": "ops/ms",
+            "extra": "iterations: 5\nforks: 2\nthreads: 1"
+          },
+          {
+            "name": "org.apache.groovy.bench.StaticMethodCallIndyBench.staticChain_groovyCS",
+            "value": 2519.82618551854,
+            "unit": "ops/ms",
+            "extra": "iterations: 5\nforks: 2\nthreads: 1"
+          },
+          {
+            "name": "org.apache.groovy.bench.StaticMethodCallIndyBench.staticChain_java",
+            "value": 2513.0827477474145,
+            "unit": "ops/ms",
+            "extra": "iterations: 5\nforks: 2\nthreads: 1"
+          },
+          {
+            "name": "org.apache.groovy.bench.StaticMethodCallIndyBench.staticFib_groovy",
+            "value": 1.5049689071817371,
+            "unit": "ops/ms",
+            "extra": "iterations: 5\nforks: 2\nthreads: 1"
+          },
+          {
+            "name": "org.apache.groovy.bench.StaticMethodCallIndyBench.staticFib_groovyCS",
+            "value": 3.4773548560939282,
+            "unit": "ops/ms",
+            "extra": "iterations: 5\nforks: 2\nthreads: 1"
+          },
+          {
+            "name": "org.apache.groovy.bench.StaticMethodCallIndyBench.staticFib_java",
+            "value": 3.478531274962356,
+            "unit": "ops/ms",
+            "extra": "iterations: 5\nforks: 2\nthreads: 1"
+          },
+          {
+            "name": "org.apache.groovy.bench.StaticMethodCallIndyBench.staticSum_groovy",
+            "value": 522.0677901202667,
+            "unit": "ops/ms",
+            "extra": "iterations: 5\nforks: 2\nthreads: 1"
+          },
+          {
+            "name": "org.apache.groovy.bench.StaticMethodCallIndyBench.staticSum_groovyCS",
+            "value": 3390.8022572335203,
+            "unit": "ops/ms",
+            "extra": "iterations: 5\nforks: 2\nthreads: 1"
+          },
+          {
+            "name": "org.apache.groovy.bench.StaticMethodCallIndyBench.staticSum_java",
+            "value": 3392.7127066843655,
+            "unit": "ops/ms",
+            "extra": "iterations: 5\nforks: 2\nthreads: 1"
+          },
+          {
+            "name": "org.apache.groovy.bench.dispatch.CallsiteBench.dispatch_1_monomorphic_groovy",
+            "value": 2085.0810213032573,
+            "unit": "ops/ms",
+            "extra": "iterations: 5\nforks: 2\nthreads: 1"
+          },
+          {
+            "name": "org.apache.groovy.bench.dispatch.CallsiteBench.dispatch_1_monomorphic_groovyCS",
+            "value": 15381.084155790963,
+            "unit": "ops/ms",
+            "extra": "iterations: 5\nforks: 2\nthreads: 1"
+          },
+          {
+            "name": "org.apache.groovy.bench.dispatch.CallsiteBench.dispatch_1_monomorphic_groovyColdReflect",
+            "value": 2085.2314037793653,
+            "unit": "ops/ms",
+            "extra": "iterations: 5\nforks: 2\nthreads: 1"
+          },
+          {
+            "name": "org.apache.groovy.bench.dispatch.CallsiteBench.dispatch_1_monomorphic_java",
+            "value": 35757.34746202231,
+            "unit": "ops/ms",
+            "extra": "iterations: 5\nforks: 2\nthreads: 1"
+          },
+          {
+            "name": "org.apache.groovy.bench.dispatch.CallsiteBench.dispatch_3_polymorphic_groovy",
+            "value": 245.1653705745386,
+            "unit": "ops/ms",
+            "extra": "iterations: 5\nforks: 2\nthreads: 1"
+          },
+          {
+            "name": "org.apache.groovy.bench.dispatch.CallsiteBench.dispatch_3_polymorphic_groovyCS",
+            "value": 15280.031407483573,
+            "unit": "ops/ms",
+            "extra": "iterations: 5\nforks: 2\nthreads: 1"
+          },
+          {
+            "name": "org.apache.groovy.bench.dispatch.CallsiteBench.dispatch_3_polymorphic_groovyColdReflect",
+            "value": 248.96623348419752,
+            "unit": "ops/ms",
+            "extra": "iterations: 5\nforks: 2\nthreads: 1"
+          },
+          {
+            "name": "org.apache.groovy.bench.dispatch.CallsiteBench.dispatch_3_polymorphic_java",
+            "value": 2066.4816125116845,
+            "unit": "ops/ms",
+            "extra": "iterations: 5\nforks: 2\nthreads: 1"
+          },
+          {
+            "name": "org.apache.groovy.bench.dispatch.CallsiteBench.dispatch_8_megamorphic_groovy",
+            "value": 189.0725328750044,
+            "unit": "ops/ms",
+            "extra": "iterations: 5\nforks: 2\nthreads: 1"
+          },
+          {
+            "name": "org.apache.groovy.bench.dispatch.CallsiteBench.dispatch_8_megamorphic_groovyCS",
+            "value": 15170.921314122723,
+            "unit": "ops/ms",
+            "extra": "iterations: 5\nforks: 2\nthreads: 1"
+          },
+          {
+            "name": "org.apache.groovy.bench.dispatch.CallsiteBench.dispatch_8_megamorphic_java",
+            "value": 1728.1363239988,
+            "unit": "ops/ms",
+            "extra": "iterations: 5\nforks: 2\nthreads: 1"
+          },
+          {
+            "name": "org.apache.groovy.bench.AckermannBench.groovy ( {\"n\":\"5\"} )",
+            "value": 0.12178415637546006,
+            "unit": "ms/op",
+            "extra": "iterations: 5\nforks: 2\nthreads: 1"
+          },
+          {
+            "name": "org.apache.groovy.bench.AckermannBench.groovy ( {\"n\":\"6\"} )",
+            "value": 0.5056663767343761,
+            "unit": "ms/op",
+            "extra": "iterations: 5\nforks: 2\nthreads: 1"
+          },
+          {
+            "name": "org.apache.groovy.bench.AckermannBench.groovy ( {\"n\":\"7\"} )",
+            "value": 2.104641216516815,
+            "unit": "ms/op",
+            "extra": "iterations: 5\nforks: 2\nthreads: 1"
+          },
+          {
+            "name": "org.apache.groovy.bench.AckermannBench.java ( {\"n\":\"5\"} )",
+            "value": 0.05132688806043938,
+            "unit": "ms/op",
+            "extra": "iterations: 5\nforks: 2\nthreads: 1"
+          },
+          {
+            "name": "org.apache.groovy.bench.AckermannBench.java ( {\"n\":\"6\"} )",
+            "value": 0.2193847409347655,
+            "unit": "ms/op",
+            "extra": "iterations: 5\nforks: 2\nthreads: 1"
+          },
+          {
+            "name": "org.apache.groovy.bench.AckermannBench.java ( {\"n\":\"7\"} )",
+            "value": 1.1072480417704167,
+            "unit": "ms/op",
+            "extra": "iterations: 5\nforks: 2\nthreads: 1"
+          },
+          {
+            "name": "org.apache.groovy.bench.AryBench.groovy ( {\"n\":\"10\"} )",
+            "value": 0.004889546946442889,
+            "unit": "ms/op",
+            "extra": "iterations: 5\nforks: 2\nthreads: 1"
+          },
+          {
+            "name": "org.apache.groovy.bench.AryBench.groovy ( {\"n\":\"100\"} )",
+            "value": 0.01160314688471161,
+            "unit": "ms/op",
+            "extra": "iterations: 5\nforks: 2\nthreads: 1"
+          },
+          {
+            "name": "org.apache.groovy.bench.AryBench.groovy ( {\"n\":\"1000\"} )",
+            "value": 0.059779407842555234,
+            "unit": "ms/op",
+            "extra": "iterations: 5\nforks: 2\nthreads: 1"
+          },
+          {
+            "name": "org.apache.groovy.bench.AryBench.groovy ( {\"n\":\"1000000\"} )",
+            "value": 105.35910528394739,
+            "unit": "ms/op",
+            "extra": "iterations: 5\nforks: 2\nthreads: 1"
+          },
+          {
+            "name": "org.apache.groovy.bench.AryBench.groovyCS ( {\"n\":\"10\"} )",
+            "value": 0.005697060022222444,
+            "unit": "ms/op",
+            "extra": "iterations: 5\nforks: 2\nthreads: 1"
+          },
+          {
+            "name": "org.apache.groovy.bench.AryBench.groovyCS ( {\"n\":\"100\"} )",
+            "value": 0.015519986766280353,
+            "unit": "ms/op",
+            "extra": "iterations: 5\nforks: 2\nthreads: 1"
+          },
+          {
+            "name": "org.apache.groovy.bench.AryBench.groovyCS ( {\"n\":\"1000\"} )",
+            "value": 0.06048646558732573,
+            "unit": "ms/op",
+            "extra": "iterations: 5\nforks: 2\nthreads: 1"
+          },
+          {
+            "name": "org.apache.groovy.bench.AryBench.groovyCS ( {\"n\":\"1000000\"} )",
+            "value": 105.409666515,
+            "unit": "ms/op",
+            "extra": "iterations: 5\nforks: 2\nthreads: 1"
+          },
+          {
+            "name": "org.apache.groovy.bench.AryBench.java ( {\"n\":\"10\"} )",
+            "value": 0.007723594858104999,
+            "unit": "ms/op",
+            "extra": "iterations: 5\nforks: 2\nthreads: 1"
+          },
+          {
+            "name": "org.apache.groovy.bench.AryBench.java ( {\"n\":\"100\"} )",
+            "value": 0.020364676134568535,
+            "unit": "ms/op",
+            "extra": "iterations: 5\nforks: 2\nthreads: 1"
+          },
+          {
+            "name": "org.apache.groovy.bench.AryBench.java ( {\"n\":\"1000\"} )",
+            "value": 0.09053308100730888,
+            "unit": "ms/op",
+            "extra": "iterations: 5\nforks: 2\nthreads: 1"
+          },
+          {
+            "name": "org.apache.groovy.bench.AryBench.java ( {\"n\":\"1000000\"} )",
+            "value": 105.08670991078948,
+            "unit": "ms/op",
+            "extra": "iterations: 5\nforks: 2\nthreads: 1"
+          },
+          {
+            "name": "org.apache.groovy.bench.CachedMethodInvokerBench.burst_defaultThreshold ( {\"calls\":\"1000\",\"prefix\":\"abc\",\"receiver\":\"abcdef\"} )",
+            "value": 19.209707192860336,
+            "unit": "us/op",
+            "extra": "iterations: 5\nforks: 1\nthreads: 1"
+          },
+          {
+            "name": "org.apache.groovy.bench.CachedMethodInvokerBench.burst_defaultThreshold ( {\"calls\":\"1500\",\"prefix\":\"abc\",\"receiver\":\"abcdef\"} )",
+            "value": 166.64398493916764,
+            "unit": "us/op",
+            "extra": "iterations: 5\nforks: 1\nthreads: 1"
+          },
+          {
+            "name": "org.apache.groovy.bench.CachedMethodInvokerBench.burst_reflective ( {\"calls\":\"1000\",\"prefix\":\"abc\",\"receiver\":\"abcdef\"} )",
+            "value": 11.638933235661588,
+            "unit": "us/op",
+            "extra": "iterations: 5\nforks: 1\nthreads: 1"
+          },
+          {
+            "name": "org.apache.groovy.bench.CachedMethodInvokerBench.burst_reflective ( {\"calls\":\"1500\",\"prefix\":\"abc\",\"receiver\":\"abcdef\"} )",
+            "value": 17.75785700881756,
+            "unit": "us/op",
+            "extra": "iterations: 5\nforks: 1\nthreads: 1"
+          },
+          {
+            "name": "org.apache.groovy.bench.CachedMethodInvokerBench.generate_reflective_fresh ( {\"prefix\":\"abc\",\"receiver\":\"abcdef\"} )",
+            "value": 0.06544668404490388,
+            "unit": "us/op",
+            "extra": "iterations: 5\nforks: 1\nthreads: 1"
+          },
+          {
+            "name": "org.apache.groovy.bench.CachedMethodInvokerBench.generate_then_invoke ( {\"prefix\":\"abc\",\"receiver\":\"abcdef\"} )",
+            "value": 40.981947605252415,
+            "unit": "us/op",
+            "extra": "iterations: 5\nforks: 1\nthreads: 1"
+          },
+          {
+            "name": "org.apache.groovy.bench.CachedMethodInvokerBench.mega_generated ( {\"prefix\":\"abc\",\"receiver\":\"abcdef\"} )",
+            "value": 45.628948822291974,
+            "unit": "ns/op",
+            "extra": "iterations: 5\nforks: 1\nthreads: 1"
+          },
+          {
+            "name": "org.apache.groovy.bench.CachedMethodInvokerBench.mega_reflective ( {\"prefix\":\"abc\",\"receiver\":\"abcdef\"} )",
+            "value": 61.82170228210974,
+            "unit": "ns/op",
+            "extra": "iterations: 5\nforks: 1\nthreads: 1"
+          },
+          {
+            "name": "org.apache.groovy.bench.CachedMethodInvokerBench.startsWith_generated ( {\"prefix\":\"abc\",\"receiver\":\"abcdef\"} )",
+            "value": 7.945070077422537,
+            "unit": "ns/op",
+            "extra": "iterations: 5\nforks: 1\nthreads: 1"
+          },
+          {
+            "name": "org.apache.groovy.bench.CachedMethodInvokerBench.startsWith_java ( {\"prefix\":\"abc\",\"receiver\":\"abcdef\"} )",
+            "value": 5.705445183603532,
+            "unit": "ns/op",
+            "extra": "iterations: 5\nforks: 1\nthreads: 1"
+          },
+          {
+            "name": "org.apache.groovy.bench.CachedMethodInvokerBench.startsWith_reflective ( {\"prefix\":\"abc\",\"receiver\":\"abcdef\"} )",
+            "value": 15.115051075339974,
+            "unit": "ns/op",
+            "extra": "iterations: 5\nforks: 1\nthreads: 1"
+          },
+          {
+            "name": "org.apache.groovy.bench.CalibrationBench.allocationChurn",
+            "value": 57.224585914560656,
+            "unit": "us/op",
+            "extra": "iterations: 3\nforks: 2\nthreads: 1"
+          },
+          {
+            "name": "org.apache.groovy.bench.CalibrationBench.cpuIntegerOps",
+            "value": 374.1054121633052,
+            "unit": "us/op",
+            "extra": "iterations: 3\nforks: 2\nthreads: 1"
+          },
+          {
+            "name": "org.apache.groovy.bench.CalibrationBench.memoryPointerChase",
+            "value": 1189.681176368915,
+            "unit": "us/op",
+            "extra": "iterations: 3\nforks: 2\nthreads: 1"
+          },
+          {
+            "name": "org.apache.groovy.bench.FiboBench.groovy ( {\"n\":\"30\"} )",
+            "value": 7.220535687663748,
+            "unit": "ms/op",
+            "extra": "iterations: 5\nforks: 2\nthreads: 1"
+          },
+          {
+            "name": "org.apache.groovy.bench.FiboBench.groovy ( {\"n\":\"31\"} )",
+            "value": 11.692181484046253,
+            "unit": "ms/op",
+            "extra": "iterations: 5\nforks: 2\nthreads: 1"
+          },
+          {
+            "name": "org.apache.groovy.bench.FiboBench.groovy ( {\"n\":\"32\"} )",
+            "value": 19.087457959298227,
+            "unit": "ms/op",
+            "extra": "iterations: 5\nforks: 2\nthreads: 1"
+          },
+          {
+            "name": "org.apache.groovy.bench.FiboBench.groovy ( {\"n\":\"33\"} )",
+            "value": 30.576393609999997,
+            "unit": "ms/op",
+            "extra": "iterations: 5\nforks: 2\nthreads: 1"
+          },
+          {
+            "name": "org.apache.groovy.bench.FiboBench.groovy ( {\"n\":\"34\"} )",
+            "value": 49.38459553414634,
+            "unit": "ms/op",
+            "extra": "iterations: 5\nforks: 2\nthreads: 1"
+          },
+          {
+            "name": "org.apache.groovy.bench.FiboBench.java ( {\"n\":\"30\"} )",
+            "value": 3.421447541368555,
+            "unit": "ms/op",
+            "extra": "iterations: 5\nforks: 2\nthreads: 1"
+          },
+          {
+            "name": "org.apache.groovy.bench.FiboBench.java ( {\"n\":\"31\"} )",
+            "value": 5.512092533717007,
+            "unit": "ms/op",
+            "extra": "iterations: 5\nforks: 2\nthreads: 1"
+          },
+          {
+            "name": "org.apache.groovy.bench.FiboBench.java ( {\"n\":\"32\"} )",
+            "value": 8.745216434062446,
+            "unit": "ms/op",
+            "extra": "iterations: 5\nforks: 2\nthreads: 1"
+          },
+          {
+            "name": "org.apache.groovy.bench.FiboBench.java ( {\"n\":\"33\"} )",
+            "value": 14.429687349202183,
+            "unit": "ms/op",
+            "extra": "iterations: 5\nforks: 2\nthreads: 1"
+          },
+          {
+            "name": "org.apache.groovy.bench.FiboBench.java ( {\"n\":\"34\"} )",
+            "value": 22.95111513618175,
+            "unit": "ms/op",
+            "extra": "iterations: 5\nforks: 2\nthreads: 1"
+          },
+          {
+            "name": "org.apache.groovy.bench.DynamicDispatchColdBench.closure_groovy ( {\"n\":\"500\"} )",
+            "value": 304295.73711999995,
+            "unit": "us/op",
+            "extra": "iterations: 1\nforks: 25\nthreads: 1"
+          },
+          {
+            "name": "org.apache.groovy.bench.DynamicDispatchColdBench.closure_groovy ( {\"n\":\"20000\"} )",
+            "value": 353871.08535999997,
+            "unit": "us/op",
+            "extra": "iterations: 1\nforks: 25\nthreads: 1"
+          },
+          {
+            "name": "org.apache.groovy.bench.DynamicDispatchColdBench.dynamicMono_groovy ( {\"n\":\"500\"} )",
+            "value": 313992.65043999994,
+            "unit": "us/op",
+            "extra": "iterations: 1\nforks: 25\nthreads: 1"
+          },
+          {
+            "name": "org.apache.groovy.bench.DynamicDispatchColdBench.dynamicMono_groovy ( {\"n\":\"20000\"} )",
+            "value": 334854.58496,
+            "unit": "us/op",
+            "extra": "iterations: 1\nforks: 25\nthreads: 1"
+          },
+          {
+            "name": "org.apache.groovy.bench.DynamicDispatchColdBench.dynamicMono_groovyCS ( {\"n\":\"500\"} )",
+            "value": 222030.90871999998,
+            "unit": "us/op",
+            "extra": "iterations: 1\nforks: 25\nthreads: 1"
+          },
+          {
+            "name": "org.apache.groovy.bench.DynamicDispatchColdBench.dynamicMono_groovyCS ( {\"n\":\"20000\"} )",
+            "value": 221311.20471999998,
+            "unit": "us/op",
+            "extra": "iterations: 1\nforks: 25\nthreads: 1"
+          },
+          {
+            "name": "org.apache.groovy.bench.DynamicDispatchColdBench.dynamicMono_groovyColdReflect ( {\"n\":\"500\"} )",
+            "value": 316370.4809200001,
+            "unit": "us/op",
+            "extra": "iterations: 1\nforks: 25\nthreads: 1"
+          },
+          {
+            "name": "org.apache.groovy.bench.DynamicDispatchColdBench.dynamicMono_groovyColdReflect ( {\"n\":\"20000\"} )",
+            "value": 333163.88524000003,
+            "unit": "us/op",
+            "extra": "iterations: 1\nforks: 25\nthreads: 1"
+          },
+          {
+            "name": "org.apache.groovy.bench.DynamicDispatchColdBench.dynamicMono_java ( {\"n\":\"500\"} )",
+            "value": 242.79931999999994,
+            "unit": "us/op",
+            "extra": "iterations: 1\nforks: 25\nthreads: 1"
+          },
+          {
+            "name": "org.apache.groovy.bench.DynamicDispatchColdBench.dynamicMono_java ( {\"n\":\"20000\"} )",
+            "value": 1040.6101199999998,
+            "unit": "us/op",
+            "extra": "iterations: 1\nforks: 25\nthreads: 1"
+          },
+          {
+            "name": "org.apache.groovy.bench.DynamicDispatchColdBench.dynamicPoly_groovy ( {\"n\":\"500\"} )",
+            "value": 349997.20080000005,
+            "unit": "us/op",
+            "extra": "iterations: 1\nforks: 25\nthreads: 1"
+          },
+          {
+            "name": "org.apache.groovy.bench.DynamicDispatchColdBench.dynamicPoly_groovy ( {\"n\":\"20000\"} )",
+            "value": 420999.72276000003,
+            "unit": "us/op",
+            "extra": "iterations: 1\nforks: 25\nthreads: 1"
+          },
+          {
+            "name": "org.apache.groovy.bench.DynamicDispatchColdBench.dynamicPoly_groovyColdReflect ( {\"n\":\"500\"} )",
+            "value": 341071.70476000005,
+            "unit": "us/op",
+            "extra": "iterations: 1\nforks: 25\nthreads: 1"
+          },
+          {
+            "name": "org.apache.groovy.bench.DynamicDispatchColdBench.dynamicPoly_groovyColdReflect ( {\"n\":\"20000\"} )",
+            "value": 414362.36900000006,
+            "unit": "us/op",
+            "extra": "iterations: 1\nforks: 25\nthreads: 1"
+          },
+          {
+            "name": "org.apache.groovy.bench.DynamicDispatchColdBench.property_groovy ( {\"n\":\"500\"} )",
+            "value": 292312.93763999996,
+            "unit": "us/op",
+            "extra": "iterations: 1\nforks: 25\nthreads: 1"
+          },
+          {
+            "name": "org.apache.groovy.bench.DynamicDispatchColdBench.property_groovy ( {\"n\":\"20000\"} )",
+            "value": 337212.6718,
+            "unit": "us/op",
+            "extra": "iterations: 1\nforks: 25\nthreads: 1"
+          },
+          {
+            "name": "org.apache.groovy.bench.StaticMethodCallIndyColdBench.instanceSum_groovy ( {\"n\":\"500\"} )",
+            "value": 217846.4117625,
+            "unit": "us/op",
+            "extra": "iterations: 1\nforks: 80\nthreads: 1"
+          },
+          {
+            "name": "org.apache.groovy.bench.StaticMethodCallIndyColdBench.instanceSum_groovy ( {\"n\":\"2000\"} )",
+            "value": 216414.83257500004,
+            "unit": "us/op",
+            "extra": "iterations: 1\nforks: 80\nthreads: 1"
+          },
+          {
+            "name": "org.apache.groovy.bench.StaticMethodCallIndyColdBench.instanceSum_groovy ( {\"n\":\"20000\"} )",
+            "value": 219474.96637500013,
+            "unit": "us/op",
+            "extra": "iterations: 1\nforks: 80\nthreads: 1"
+          },
+          {
+            "name": "org.apache.groovy.bench.StaticMethodCallIndyColdBench.staticSum_groovy ( {\"n\":\"500\"} )",
+            "value": 4515.181875,
+            "unit": "us/op",
+            "extra": "iterations: 1\nforks: 80\nthreads: 1"
+          },
+          {
+            "name": "org.apache.groovy.bench.StaticMethodCallIndyColdBench.staticSum_groovy ( {\"n\":\"2000\"} )",
+            "value": 4781.955225000001,
+            "unit": "us/op",
+            "extra": "iterations: 1\nforks: 80\nthreads: 1"
+          },
+          {
+            "name": "org.apache.groovy.bench.StaticMethodCallIndyColdBench.staticSum_groovy ( {\"n\":\"20000\"} )",
+            "value": 6565.4765000000025,
+            "unit": "us/op",
+            "extra": "iterations: 1\nforks: 80\nthreads: 1"
+          },
+          {
+            "name": "org.apache.groovy.bench.StaticMethodCallIndyColdBench.staticSum_groovyCS ( {\"n\":\"500\"} )",
+            "value": 631.8559000000001,
+            "unit": "us/op",
+            "extra": "iterations: 1\nforks: 80\nthreads: 1"
+          },
+          {
+            "name": "org.apache.groovy.bench.StaticMethodCallIndyColdBench.staticSum_groovyCS ( {\"n\":\"2000\"} )",
+            "value": 742.9805750000002,
+            "unit": "us/op",
+            "extra": "iterations: 1\nforks: 80\nthreads: 1"
+          },
+          {
+            "name": "org.apache.groovy.bench.StaticMethodCallIndyColdBench.staticSum_groovyCS ( {\"n\":\"20000\"} )",
+            "value": 1435.1440625000005,
+            "unit": "us/op",
+            "extra": "iterations: 1\nforks: 80\nthreads: 1"
+          },
+          {
+            "name": "org.apache.groovy.bench.StaticMethodCallIndyColdBench.staticSum_java ( {\"n\":\"500\"} )",
+            "value": 18.690099999999994,
+            "unit": "us/op",
+            "extra": "iterations: 1\nforks: 80\nthreads: 1"
+          },
+          {
+            "name": "org.apache.groovy.bench.StaticMethodCallIndyColdBench.staticSum_java ( {\"n\":\"2000\"} )",
+            "value": 52.08230000000001,
+            "unit": "us/op",
+            "extra": "iterations: 1\nforks: 80\nthreads: 1"
+          },
+          {
+            "name": "org.apache.groovy.bench.StaticMethodCallIndyColdBench.staticSum_java ( {\"n\":\"20000\"} )",
+            "value": 421.63625,
             "unit": "us/op",
             "extra": "iterations: 1\nforks: 80\nthreads: 1"
           }
