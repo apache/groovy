@@ -26,6 +26,12 @@ import org.codehaus.groovy.runtime.ScriptBytecodeAdapter;
 
 import java.util.Map;
 
+/**
+ * Call site bound to one {@link CachedConstructor}.
+ * {@code callConstructor} invokes that constructor when the receiver is the meta-class's
+ * class, the meta-class version is unchanged, and the argument classes still match.
+ * Otherwise it falls back to the default constructor call.
+ */
 public class ConstructorSite extends MetaClassSite {
     final CachedConstructor constructor;
     final Class[] params;

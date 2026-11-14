@@ -23,6 +23,10 @@ import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.runtime.NullObject;
 import org.codehaus.groovy.runtime.ScriptBytecodeAdapter;
 
+/**
+ * Call site that sends a {@code null} receiver to {@link NullObject}
+ * before the default call or property read. A non-null receiver is passed through unchanged.
+ */
 public final class NullCallSite extends AbstractCallSite {
     public NullCallSite(CallSite callSite) {
         super(callSite);

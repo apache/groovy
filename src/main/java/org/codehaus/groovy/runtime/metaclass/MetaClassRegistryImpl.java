@@ -250,6 +250,13 @@ public class MetaClassRegistryImpl implements MetaClassRegistry {
         }
     }
 
+    /**
+     * Looks for a class called {@code groovy.runtime.metaclass.CustomMetaClassCreationHandle}
+     * and, if it exists, uses it as the meta-class creation handle.
+     * Otherwise uses the default.
+     *
+     * @see groovy.lang.MetaClassRegistry.MetaClassCreationHandle
+     */
     private void installMetaClassCreationHandle() {
            try {
                final Class customMetaClassHandle = Class.forName("groovy.runtime.metaclass.CustomMetaClassCreationHandle");
