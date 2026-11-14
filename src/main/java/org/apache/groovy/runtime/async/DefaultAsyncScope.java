@@ -177,9 +177,7 @@ public final class DefaultAsyncScope implements AsyncScope {
             parentScope.deregisterChildScope(this);
         }
         if (firstError != null) {
-            if (firstError instanceof RuntimeException re) throw re;
-            if (firstError instanceof Error err) throw err;
-            throw new RuntimeException(firstError);
+            throw AsyncSupport.rethrow(firstError);
         }
     }
 
@@ -291,7 +289,8 @@ public final class DefaultAsyncScope implements AsyncScope {
             }, timeout.toMillis(), TimeUnit.MILLISECONDS);
             result = withCurrent(scope, () -> body.apply(scope));
         } catch (Throwable thrown) {
-            Throwable bodyError = thrown;
+            // A checked exception from a Closure body arrives wrapped by its SAM coercion
+            Throwable bodyError = AsyncSupport.unwrapUndeclared(thrown);
             if (stopTimer(timer, timerState) && !(bodyError instanceof Error)) {
                 TimeoutException te = new TimeoutException("Scope timed out after " + timeout);
                 te.initCause(bodyError);
