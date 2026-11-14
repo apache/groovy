@@ -165,6 +165,8 @@ include::../test/TraitsSpecificationTest.groovy[tags=trait_with_property,indent=
 <4> it can be accessed using the regular property accessor
 <5> or using the regular getter syntax
 
+What a property name refers to inside the trait itself is covered in <<traits-member-access,Member access in trait code>>.
+
 == Fields
 === Private fields
 
@@ -686,7 +688,11 @@ of the trait's static members. A static member declared on a trait belongs to th
 single copy shared across all implementers.
 * Public static methods are _declarer-bound_ by default and are promoted onto the generated trait interface as
 JVM-native static methods, so both `Trait.m(...)` and `Impl.m(...)` resolve. A private static method stays internal
-to the trait and is not promoted.
+to the trait and is not promoted. Called as `Trait.m(...)`, the method runs without an implementing class, so it has
+no static state to use: reading or writing a static field or property that the trait declares throws a
+`MissingFieldException`. Reaching the static state of a super trait fails as well, though not always with that
+exception: calling a static method of the super trait, for example, throws a `MissingMethodException`. Call methods
+that use trait static state on an implementing class.
 * Static methods may be declared in, and called from, `@CompileStatic` and `@TypeChecked` code; they are not
 restricted to dynamic Groovy.
 * You should typically not mix static and instance methods of the same signature. The normal trait method-selection
@@ -748,6 +754,7 @@ include::../test/TraitsSpecificationTest.groovy[tags=virtual_default,indent=0]
 <6> the default is seen for `StrictEntity`
 <7> the override is seen by the trait's own `describe()` for `LenientEntity`
 <8> and externally via `Impl.m()`
+<9> called through the trait itself, where there is no implementing class, the trait's default is used
 
 Reach for `@Virtual` when the overridable thing is genuinely a property of the _type_ rather than of an instance —
 a policy or configuration default that answers a question about the class as a whole (Grails uses this for hooks
@@ -756,6 +763,10 @@ initialisation, static factory methods, building metadata), and that external ca
 `Impl.setting()`. For overridable static _data_ rather than behaviour, use a `@Virtual` accessor
 (`@Virtual static getSetting()`) rather than a static field, since a bare static-field read from trait code is not
 override-visible (see <<_inheritance_of_state_gotchas,Inheritance of state gotchas>>).
+
+`@Virtual` applies to calls made from a method body of the trait. A call made from a closure or a lambda in trait code
+invokes the trait's own method, as for a static method without `@Virtual`
+(see <<traits-member-access,Member access in trait code>>).
 
 A `@Virtual` static is deliberately *not* exposed on the trait interface (interface statics are declarer-bound by
 JVM rule, which is incompatible with override dispatch). It therefore has no qualified `Trait.m(...)` form: read a
@@ -811,6 +822,183 @@ getters and setters, like in this last example:
 ----
 include::../test/TraitsSpecificationTest.groovy[tags=intcouple_impl_override_directgetter,indent=0]
 ----
+
+[[traits-member-access]]
+== Member access in trait code
+
+This section states, as rules, which method, accessor or field a name in trait code refers to. The rules are the
+same for dynamic, `@TypeChecked` and `@CompileStatic` code: the compilation mode decides _when_ a name is resolved and
+what is reported for a name that cannot be resolved, but not _what_ a resolvable name refers to.
+
+=== Terms
+
+Trait code::
+The body of a method declared in a trait, including the bodies of closures and lambdas nested in it. In the rules
+below, a _method body_ means the code of the method outside any nested closure or lambda.
+
+Implementing class::
+For an instance member, the class of the object the trait code is running for. For a static member, the class that
+names the trait in its `implements` clause. A subclass of that class is not an implementing class in its own right:
+trait code called through the subclass runs for the class that implements the trait.
+
+Declared property::
+A property the trait declares with a property declaration, such as `String name`. The trait supplies its storage
+(its _backing field_) and, unless the trait declares them itself, its accessor methods.
+
+Accessor-only property::
+A property that exists only because the trait declares an accessor method, such as `String getTitle()`. It has no
+backing field.
+
+Forms of reference::
+For a property `p`, the _simple name_ `p`, the _qualified name_ `this.p`, and the _method form_ `getP()`, `isP()`
+or `setP(v)`, with or without `this.`. An assignment or a compound assignment of `p` is a reference of the same form
+as the name it is applied to. An increment or a decrement, such as `p++` or `--p`, is not covered by these rules
+(see <<Prefix and postfix operations>>).
+
+=== Instance members
+
+For instance members, a trait behaves as a superclass of the implementing class would
+(see <<The meaning of this>>).
+
+. *Methods are virtual.* A call `m()` or `this.m()` from trait code invokes the method the implementing class has for
+that signature: its own declaration if there is one, otherwise the trait's. This holds in a method body, a closure and
+a lambda, and it holds for accessor methods called in the method form.
+. *An accessor-only property is its accessor.* A simple or qualified name that refers to an accessor-only property is
+a call of the accessor, to which rule 1 applies.
+. *In a method body, a declared property is its backing field.* The simple name `p` and the qualified name `this.p`
+read or write the trait's backing field directly. No accessor is called, so an accessor that the implementing class
+declares is not used. This is what the same names mean in the class that declares a property.
+. *In a closure, a declared property is its accessor.* The simple name `p` is looked up through the closure's
+delegate and owner according to its resolve strategy, like any other name in a closure. With the default strategy and
+no delegate that has the property, the owner is asked, and it answers through its accessor. The qualified name
+`this.p` is not offered to the delegate: it is a call of the accessor on the implementing instance. Rule 1 applies to
+the accessor in both cases. This is what the same names mean in a closure in the class that declares a property.
+Where closures and lambdas are nested, the innermost one decides: this rule applies in a closure within a lambda, and
+rule 5 in a lambda within a closure.
+. *In a lambda, a declared property is its backing field.* Rule 3 applies to the simple name `p` in a lambda as it
+does in a method body. A statically compiled lambda has no delegate or owner to resolve the name through.
+
+[source,groovy]
+----
+include::../test/TraitsSpecificationTest.groovy[tags=member_access_instance,indent=0]
+----
+<1> a declared property
+<2> an accessor-only property
+<3> rule 3: the backing field of the trait
+<4> rule 1: the accessor of the implementing class
+<5> rule 4: the accessor of the implementing class, reached through the closure or called on `this`
+<6> rule 2: a call of the accessor, in a method body and in a closure alike
+<7> the implementing class declares accessors of its own
+<8> code outside the trait always goes through the accessor
+
+To let an implementing class supply the value that trait code sees, read the property in the method form, or declare
+it as an accessor-only property.
+
+=== Static members
+
+Static members of a trait belong to the implementing class. They are not shared between the classes that implement
+the trait, and they are not inherited the way instance members are.
+
+. *Static state is per implementing class.* Each implementing class has its own copy of every static field and
+declared static property of the trait.
+. *Static methods are not virtual.* A call `m()` or `this.m()` from trait code to a static method of the trait invokes
+the trait's own method, even when the implementing class declares a static method with the same signature. This holds
+in a method body, a closure and a lambda, and is what a static method call means in a class.
+. *`@Virtual` makes a static method virtual in method bodies.* A call from a method body to a static method the trait
+declares with `@Virtual` invokes the implementing class's static method with that signature if it declares one,
+and the trait's otherwise. A call from a closure or a lambda is not affected by `@Virtual`: rule 2 applies to it.
+. *A static accessor-only property is its accessor.* A simple or qualified name that refers to a static accessor-only
+property is a call of the accessor, to which rules 2 and 3 apply: the trait's own accessor, or for a `@Virtual`
+accessor in a method body, the implementing class's. An assignment `p = v` is a call of the setter, and a compound
+assignment `p op= v` is a call of the setter with the value of `getP() op v`. An increment or a decrement is not
+such a call (see <<Prefix and postfix operations>>).
+. *A declared static property is its backing field.* The simple name `p` and the qualified name `this.p` read or
+write the implementing class's copy of the trait's static field, in a method body, a closure and a lambda. No accessor
+is called.
+
+[source,groovy]
+----
+include::../test/TraitsSpecificationTest.groovy[tags=member_access_static,indent=0]
+----
+<1> a declared static property
+<2> a static accessor-only property
+<3> a `@Virtual` static accessor-only property
+<4> rule 5: the trait's static field, not the accessor of `Item`
+<5> rules 2 and 4: the trait's own accessor, called or read as a property
+<6> rules 3 and 4: the static method of the implementing class, called or read as a property
+<7> rule 3: `@Virtual` does not extend into a closure
+<8> rule 3: `Plain` declares no `getLabel()`, so the trait's is used
+
+[source,groovy]
+----
+include::../test/TraitsSpecificationTest.groovy[tags=member_access_static_state,indent=0]
+----
+<1> rule 5: updates the copy of `total` that belongs to the class `add` was called on
+<2> rule 1: `Apples` and `Pears` each have their own `total`
+<3> code outside the trait reads the property of each class
+
+=== Summary
+
+The table shows what trait code uses for a member named `p` (or `getP()`), when the implementing class also declares
+an accessor `getP()`. _Class_ means the implementing class's accessor and _trait_ means the trait's own accessor or
+backing field.
+
+[cols="3a,2a,2a,2a,2a"]
+|===
+| Member of the trait | Reference | In a method body | In a closure | In a lambda
+
+| Instance accessor-only property
+| `p`, `this.p`, `getP()`
+| class
+| class
+| class
+
+.2+| Declared instance property
+| `p`, `this.p`
+| trait (field)
+| class
+| trait (field)
+
+| `getP()`
+| class
+| class
+| class
+
+| Static accessor-only property
+| `p`, `this.p`, `getP()`
+| trait
+| trait
+| trait
+
+| `@Virtual` static accessor-only property
+| `p`, `this.p`, `getP()`
+| class
+| trait
+| trait
+
+| Declared static property
+| `p`, `this.p`, `getP()`
+| trait
+| trait
+| trait
+|===
+
+[NOTE]
+====
+Some parts of this table describe the rules rather than what every compilation mode does today:
+
+* A _name_ (`p` or `this.p`) of a static accessor-only property in a closure or a lambda is resolved by the closure,
+so that its delegate can supply the name. When no delegate does, dynamic and `@TypeChecked` code reach the
+implementing class's accessor, where the rules give the trait's own. For a `@Virtual` accessor, `@CompileStatic` code
+reaches the implementing class's accessor as well. The method form `getP()` follows the rules in every mode.
+* A statically compiled lambda in a trait method cannot yet call an instance method of the trait in the method form.
+* In a closure within a lambda, the simple name `p` of a declared property is not offered to the closure's delegate:
+it is a call of the accessor on the implementing instance, as `this.p` is.
+* In a lambda in a trait annotated with `@CompileStatic`, the name of a static accessor-only property of a super
+trait is a call of that accessor, also where the lambda is passed as a closure whose delegate has a property of that
+name. When static compilation is applied by a compilation customizer and not by an annotation, such a name in a
+lambda fails at run time with a `MissingFieldException`; the method form `getP()` works in both cases.
+====
 
 == Self types
 === Type constraints on traits
@@ -940,4 +1128,10 @@ include::../test/TraitsSpecificationTest.groovy[tags=prefix_postfix,indent=0]
 <2> `x` is defined within the trait, prefix decrement is not allowed
 
 A workaround is to use the `+=` operator instead.
+
+An increment or a decrement of an accessor-only property is allowed. For a static accessor-only property it is not
+a call of the trait's own accessors, as an assignment or a compound assignment is: it is an operation on the property
+of the implementing class, so a static getter or setter that the implementing class declares is used, also where the
+trait's accessors are not `@Virtual`. Under `@CompileStatic` the value is read with the trait's getter and written
+with the implementing class's setter. Use the `+=` operator where the trait's own accessors are wanted.
 

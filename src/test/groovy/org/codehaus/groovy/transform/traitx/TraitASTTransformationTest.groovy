@@ -20,11 +20,14 @@ package org.codehaus.groovy.transform.traitx
 
 import groovy.junit6.plugin.ForkedJvm
 import groovy.transform.AnnotationCollector
+import groovy.transform.CompileStatic
 import groovy.transform.SelfType
 import org.codehaus.groovy.ast.ClassHelper
 import org.codehaus.groovy.ast.expr.ClassExpression
 import org.codehaus.groovy.ast.expr.ListExpression
+import org.codehaus.groovy.control.CompilerConfiguration
 import org.codehaus.groovy.control.MultipleCompilationErrorsException
+import org.codehaus.groovy.control.customizers.ASTTransformationCustomizer
 import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.RepeatedTest
 import org.junit.jupiter.api.Test
@@ -2420,6 +2423,656 @@ final class TraitASTTransformationTest {
         """
     }
 
+    // GROOVY-12593
+    @CompileModesTest
+    void testTraitStaticPropertyNamedLikeFieldOfClass(String mode) {
+        for (name in ['name', 'module', 'componentType', 'packageName']) {
+            assertScript shell, """
+                $mode
+                trait T {
+                    static String $name = 'x'
+                    static String sm1() { $name = 'a'; $name }
+                    static String sm2() { this.$name = 'b'; $name }
+                    static String sm3() { $name += 'c'; $name }
+                    static String sm4() { Closure c = { -> $name = 'd' }; c.call(); $name }
+                    static String sm5() { Runnable r = () -> { $name = 'e' }; r.run(); $name }
+                    String im1() { $name = 'f'; $name }
+                    String im2() { this.$name = 'g'; $name }
+                }
+                $mode
+                class C implements T {
+                }
+
+                $mode void m() {
+                    assert C.sm1() == 'a'
+                    assert C.sm2() == 'b'
+                    assert C.sm3() == 'bc'
+                    assert C.sm4() == 'd'
+                    assert C.sm5() == 'e'
+                    assert C.$name == 'e'
+                    assert new C().im1() == 'f'
+                    assert new C().im2() == 'g'
+                    assert C.$name == 'g'
+                }
+                m()
+            """
+        }
+
+        assertScript shell, """
+            $mode
+            trait T {
+                static String name = 'x'
+            }
+            $mode
+            trait U extends T {
+                static void update(String value) { name = value }
+            }
+            $mode
+            class C implements U {
+            }
+
+            $mode void m() {
+                C.update('y')
+                assert C.name == 'y'
+            }
+            m()
+        """
+    }
+
+    // GROOVY-12597
+    @CompileModesTest
+    void testTraitStaticStateThroughTrait(String mode) {
+        assertScript shell, """
+            $mode
+            trait T {
+                private static boolean flag = true
+                static int count = 1
+                static boolean isReady() { flag }
+                static void setReady(boolean b) { flag = b }
+                static boolean viaClosure() { [1].collect { flag }[0] }
+                private static int peek() { count }
+                static int viaPrivate() { peek() }
+                static String pure() { 'pure' }
+            }
+            $mode
+            class C implements T {
+            }
+            $mode
+            class D extends C {
+            }
+
+            $mode
+            void expectNoState(String field, Closure action) {
+                try {
+                    action.call()
+                    assert false : 'expected MissingFieldException'
+                } catch (MissingFieldException e) {
+                    assert e.field == field
+                    assert e.type == T
+                    assert e.message == 'Cannot access static field ' + field + ' of trait T through the trait itself: ' +
+                        'trait static state belongs to each implementing class, so call the trait static method on an implementing class'
+                }
+            }
+
+            $mode void m() {
+                assert C.isReady() && C.ready && D.isReady()
+                assert C.viaClosure() && C.viaPrivate() == 1 && C.count == 1
+                C.setReady(false)
+                assert !C.isReady()
+
+                expectNoState('flag') { T.isReady() }
+                expectNoState('flag') { T.ready }
+                expectNoState('flag') { T.setReady(true) }
+                expectNoState('flag') { T.viaClosure() }
+                expectNoState('count') { T.viaPrivate() }
+                expectNoState('count') { T.getCount() }
+                expectNoState('count') { T.count }
+                assert T.pure() == 'pure'
+
+                assert !C.isReady()
+            }
+            m()
+        """
+    }
+
+    // GROOVY-12590
+    @CompileModesTest
+    void testTraitStaticAccessorReadAsProperty(String mode) {
+        assertScript shell, """
+            $mode
+            trait T {
+                static boolean flag = true
+                static boolean isReady() { flag }
+                static String sm() { ready ? 'yes' : 'no' }
+                static String st() { this.ready ? 'yes' : 'no' }
+                static Closure getG() { { -> flag } }
+                static Object sg() { g.call() }
+            }
+            $mode
+            class C implements T {
+            }
+            $mode
+            class D implements T {
+            }
+
+            $mode void m() {
+                assert C.sm() == 'yes'
+                assert C.st() == 'yes'
+                assert C.sg() == true
+                D.flag = false // each implementing class has its own trait state
+                assert C.sm() == 'yes'
+                assert D.sm() == 'no'
+                assert D.st() == 'no'
+                assert D.sg() == false
+            }
+            m()
+        """
+
+        assertScript shell, """
+            import java.util.function.Supplier
+
+            $mode
+            trait T {
+                static boolean flag = true
+                static boolean isReady() { flag }
+                String getName() { 'name' }
+                String im() { ready ? 'yes' : 'no' }
+                String iname() { name }
+                String ic() { def c = { -> ready ? 'yes' : 'no' }; c() }
+                static String sc() { def c = { -> ready ? 'yes' : 'no' }; c() }
+                static String sl() { Supplier<String> s = () -> ready ? 'yes' : 'no'; s.get() }
+            }
+            $mode
+            class C implements T {
+            }
+            $mode
+            class D implements T {
+            }
+
+            $mode void m() {
+                D.flag = false
+                assert new C().im() == 'yes'
+                assert new D().im() == 'no'
+                assert new C().iname() == 'name'
+                assert new C().ic() == 'yes'
+                assert new D().ic() == 'no'
+                assert C.sc() == 'yes'
+                assert D.sc() == 'no'
+                assert C.sl() == 'yes'
+                assert D.sl() == 'no'
+            }
+            m()
+        """
+    }
+
+    // GROOVY-12590
+    @CompileModesTest
+    void testTraitStaticAccessorWrittenAsProperty(String mode) {
+        assertScript shell, """
+            $mode
+            trait T {
+                static int count = 1
+                static int getCnt() { count }
+                static void setCnt(int n) { count = n }
+                static int set(int n) { cnt = n; count }
+                static int add(int n) { cnt += n; count }
+                static int post() { cnt++; count }
+                static int pre() { ++cnt; count }
+                int iset(int n) { cnt = n; count }
+                int iadd(int n) { cnt += n; count }
+                int ipost() { cnt++; count }
+            }
+            $mode
+            class C implements T {
+            }
+
+            $mode void m() {
+                assert C.set(10) == 10
+                assert C.add(5) == 15
+                assert C.post() == 16
+                assert C.pre() == 17
+                assert new C().iset(20) == 20
+                assert new C().iadd(5) == 25
+                assert new C().ipost() == 26
+            }
+            m()
+        """
+    }
+
+    // GROOVY-12590
+    @CompileModesTest
+    void testSuperTraitStaticAccessorAsProperty(String mode) {
+        assertScript shell, """
+            $mode
+            trait T {
+                static int count = 1
+                static int getCnt() { count }
+                static void setCnt(int n) { count = n }
+            }
+            $mode
+            trait U extends T {
+                static int s() { cnt }
+                int i() { cnt = 5; cnt++; cnt }
+            }
+            $mode
+            class C implements U {
+            }
+
+            $mode void m() {
+                assert C.s() == 1
+                assert new C().i() == 6
+                assert C.s() == 6
+            }
+            m()
+        """
+    }
+
+    // GROOVY-12614
+    @CompileModesTest
+    void testStaticAccessorReadAsPropertyIsCallOfTheAccessor(String mode) {
+        assertScript shell, """
+            $mode
+            trait T {
+                static String getLabel() { 'trait' }
+                static boolean isReady() { false }
+                static String sm() { label }
+                static String sm2() { this.label }
+                static String sm3() { getLabel() }
+                static boolean sm4() { ready }
+                String im() { label }
+                String im2() { this.label }
+                String im3() { "\$label" }
+            }
+            class C implements T {
+                static String getLabel() { 'class' }
+                static boolean isReady() { true }
+            }
+            class D implements T {
+            }
+
+            assert [C.sm(), C.sm2(), C.sm3(), C.sm4()] == ['trait', 'trait', 'trait', false]
+            assert [D.sm(), D.sm2(), D.sm3(), D.sm4()] == ['trait', 'trait', 'trait', false]
+            assert [new C().im(), new C().im2(), new C().im3()] == ['trait', 'trait', 'trait']
+            assert C.label == 'class' && C.ready && D.label == 'trait'
+        """
+    }
+
+    // GROOVY-12614
+    @CompileModesTest
+    void testStaticAccessorWrittenAsPropertyIsCallOfTheAccessor(String mode) {
+        assertScript shell, """
+            $mode
+            trait T {
+                private static List<String> log = []
+                private static int count = 1
+                static int getCnt() { log << 'trait get'; count }
+                static void setCnt(int n) { log << 'trait set'; count = n }
+                static List<String> assign() { cnt = 5; log }
+                static List<String> assignThis() { this.cnt = 6; log }
+                static List<String> compound() { cnt += 2; log }
+                static List<String> compoundThis() { this.cnt *= 3; log }
+                List<String> instanceAssign() { cnt = 7; log }
+                static int value() { count }
+            }
+            class C implements T {
+                static List<String> classLog = []
+                static int getCnt() { classLog << 'class get'; 100 }
+                static void setCnt(int n) { classLog << 'class set' }
+            }
+
+            assert C.assign() == ['trait set'] && C.value() == 5
+            assert C.assignThis() == ['trait set'] * 2 && C.value() == 6
+            assert C.compound() == ['trait set', 'trait set', 'trait get', 'trait set'] && C.value() == 8
+            assert C.compoundThis().size() == 6 && C.value() == 24
+            assert new C().instanceAssign().size() == 7 && C.value() == 7
+            assert C.classLog == []
+        """
+    }
+
+    // GROOVY-12614
+    @CompileModesTest
+    void testSuperTraitStaticAccessorAsPropertyIsCallOfTheAccessor(String mode) {
+        assertScript shell, """
+            $mode
+            trait T {
+                static String getLabel() { 'trait' }
+                @Virtual static String getKind() { 'trait' }
+            }
+            $mode
+            trait U extends T {
+                static String sm() { label }
+                static String sm2() { kind }
+                String im() { this.label }
+                String im2() { this.kind }
+            }
+            class C implements U {
+                static String getLabel() { 'class' }
+                static String getKind() { 'class' }
+            }
+            class D implements U {
+            }
+
+            assert [C.sm(), C.sm2(), new C().im(), new C().im2()] == ['trait', 'class', 'trait', 'class']
+            assert [D.sm(), D.sm2(), new D().im(), new D().im2()] == ['trait', 'trait', 'trait', 'trait']
+        """
+    }
+
+    @CompileModesTest
+    void testThisPropertyInClosureUsesTheAccessor(String mode) {
+        assertScript shell, """
+            $mode
+            trait T {
+                String name = 'trait'
+                String read() { def c = { -> this.name }; c() }
+                String readDirect() { this.name }
+                void write(String s) { def c = { -> this.name = s }; c() }
+            }
+            class C implements T {
+                List<String> log = []
+                String getName() { log << 'get'; 'class' }
+                void setName(String s) { log << "set \$s".toString() }
+            }
+
+            def c = new C()
+            assert c.read() == 'class'
+            assert c.readDirect() == 'trait'
+            c.write('x')
+            assert c.log == ['get', 'set x']
+            assert c.readDirect() == 'trait'
+        """
+    }
+
+    @CompileModesTest
+    void testPropertyInClosureWithinLambdaUsesTheAccessor(String mode) {
+        assertScript shell, """
+            import java.util.function.Supplier
+
+            $mode
+            trait T {
+                String name = 'trait'
+                String read() { Supplier<String> s = () -> { def c = { -> name }; c() }; s.get() }
+                String readThis() { Supplier<String> s = () -> { def c = { -> this.name }; c() }; s.get() }
+                void write(String v) { Runnable r = () -> { def c = { -> name = v }; c() }; r.run() }
+                void writeThis(String v) { Runnable r = () -> { def c = { -> this.name = v }; c() }; r.run() }
+                String lambdaInClosure() { def c = { -> Supplier<String> s = () -> name; s.get() }; c() }
+                String readDirect() { this.name }
+            }
+            class C implements T {
+                List<String> log = []
+                String getName() { log << 'get'; 'class' }
+                void setName(String s) { log << "set \$s".toString() }
+            }
+
+            def c = new C()
+            assert c.read() == 'class'
+            assert c.readThis() == 'class'
+            c.write('x')
+            c.writeThis('y')
+            assert c.log == ['get', 'get', 'set x', 'set y']
+            assert c.lambdaInClosure() == 'trait'
+            assert c.readDirect() == 'trait'
+        """
+    }
+
+    // an increment or a decrement of a static accessor-only property is not rewritten:
+    // it is an operation on the property of the implementing class
+    @CompileModesTest
+    void testIncrementOfStaticAccessorIsNotACallOfTheTraitAccessor(String mode) {
+        boolean sc = mode.contains('CompileStatic')
+        for (op in ['count++', '++count', 'count--', '--count', 'this.count++']) {
+            assertScript shell, """
+                class L { static List<String> log = [] }
+                $mode
+                trait T {
+                    private static int v = 0
+                    static int getCount() { L.log << 'T.get'; v }
+                    static void setCount(int n) { L.log << 'T.set'; v = n }
+                    static void update() { $op }
+                    static void plus() { count += 1 }
+                }
+                $mode
+                class C implements T {
+                    static int getCount() { L.log << 'C.get'; 0 }
+                    static void setCount(int n) { L.log << 'C.set' }
+                }
+                $mode
+                class D implements T {
+                }
+
+                C.update()
+                assert L.log == ${sc ? "['T.get', 'C.set']" : "['C.get', 'C.set']"}
+                L.log.clear()
+                C.plus()
+                assert L.log == ['T.get', 'T.set']
+                L.log.clear()
+                D.update()
+                assert L.log == ['T.get', 'T.set']
+            """
+        }
+    }
+
+    // GROOVY-12608
+    @CompileModesTest
+    void testSuperTraitStaticAccessorAsPropertyInClosure(String mode) {
+        assertScript shell, """
+            $mode
+            trait T {
+                private static int count = 1
+                static int getCnt() { count }
+                static void setCnt(int n) { count = n }
+                static boolean isReady() { count > 0 }
+            }
+            $mode
+            trait U extends T {
+                int ic() { def c = { -> cnt }; c() }
+                String ir() { def c = { -> ready ? 'yes' : 'no' }; c() }
+                int inner() { def c = { -> def d = { -> cnt }; d() }; c() }
+                int iset(int n) { def c = { -> cnt = n }; c(); cnt }
+                int ipost() { def c = { -> cnt++ }; c(); cnt }
+                static int sc() { def c = { -> cnt }; c() }
+                static int sadd(int n) { def c = { -> cnt += n }; c(); cnt }
+            }
+            $mode
+            trait V extends U {
+                int vc() { def c = { -> cnt }; c() }
+            }
+            $mode
+            class C implements V {
+            }
+            $mode
+            class D implements V {
+            }
+
+            $mode void m() {
+                D.cnt = 0 // each implementing class has its own trait state
+                assert new D().ic() == 0
+                assert D.sc() == 0
+                assert new D().ir() == 'no'
+                assert new C().ic() == 1
+                assert new C().ir() == 'yes'
+                assert new C().inner() == 1
+                assert C.sc() == 1
+                assert new C().iset(5) == 5
+                assert new C().ipost() == 6
+                assert C.sadd(2) == 8
+                assert new C().vc() == 8
+            }
+            m()
+        """
+
+        assertScript shell, """
+            import java.util.function.Supplier
+
+            $mode
+            trait T {
+                static int count = 1
+                static String s = 'x'
+            }
+            $mode
+            trait U extends T {
+                int ic() { def c = { -> count }; c() }
+                static int sc() { def c = { -> count }; c() }
+                static String sw() { def c = { -> s = 'y' }; c(); s }
+                String iw() { def c = { -> s = 'z' }; c(); s }
+                int il() { Supplier<Integer> s = () -> count; s.get() }
+                static int sl() { Supplier<Integer> s = () -> count; s.get() }
+                static int sset(int n) { Runnable r = () -> { count = n }; r.run(); count }
+            }
+            $mode
+            class C implements U {
+            }
+            $mode
+            class D implements U {
+            }
+
+            $mode void m() {
+                D.count = 2 // each implementing class has its own trait state
+                assert new C().ic() == 1
+                assert new D().ic() == 2
+                assert C.sc() == 1
+                assert D.sc() == 2
+                assert C.sw() == 'y'
+                assert new C().iw() == 'z'
+                assert D.s == 'x'
+                assert new C().il() == 1
+                assert new D().il() == 2
+                assert C.sl() == 1
+                assert D.sl() == 2
+                assert C.sset(3) == 3
+                assert D.count == 2
+            }
+            m()
+        """
+
+        // the closure's delegate still comes first
+        assertScript shell, """
+            class P {
+                int cnt = 42
+            }
+            $mode
+            trait T {
+                private static int count = 1
+                static int getCnt() { count }
+                static void setCnt(int n) { count = n }
+            }
+            $mode
+            trait U extends T {
+                int get(P p) { p.with { cnt } }
+                int set(P p, int n) { p.with { cnt = n }; cnt }
+                static int sget(P p) { p.with { cnt } }
+            }
+            $mode
+            class C implements U {
+            }
+
+            $mode void m() {
+                def p = new P()
+                assert new C().get(p) == 42
+                assert C.sget(p) == 42
+                assert new C().set(p, 7) == 1
+                assert p.cnt == 7
+            }
+            m()
+        """
+    }
+
+    // GROOVY-12608
+    @ParameterizedTest
+    @ValueSource(strings=['@TypeChecked','@CompileStatic'])
+    void testSuperTraitStaticSetterNotInheritedThroughOtherReceiver(String mode) {
+        def err = shouldFail shell, """
+            $mode
+            trait T {
+                private static int count = 1
+                static int getCnt() { count }
+                static void setCnt(int n) { count = n }
+            }
+            $mode
+            trait U extends T {
+                void copyTo(U other) { other.cnt = 5 }
+            }
+        """
+        assert err.message.contains('Cannot set read-only property: cnt')
+    }
+
+    // GROOVY-12608
+    @ParameterizedTest
+    @ValueSource(strings=['@CompileDynamic','@TypeChecked'])
+    void testSuperTraitStaticAccessorAsPropertyInLambdaWithDelegate(String mode) {
+        assertScript shell, """
+            class P {
+                int cnt = 42
+            }
+            $mode
+            trait T {
+                private static int count = 1
+                static int getCnt() { count }
+                static void setCnt(int n) { count = n }
+            }
+            $mode
+            trait U extends T {
+                int get(P p) { p.with((x) -> cnt) }
+            }
+            $mode
+            class C implements U {
+            }
+
+            assert new C().get(new P()) == 42
+        """
+    }
+
+    // GROOVY-12608: a lambda in statically compiled trait code refers to the accessor directly,
+    // also where the lambda is passed as a closure whose delegate has a property of that name
+    @Test
+    void testSuperTraitStaticAccessorAsPropertyInStaticallyCompiledLambdaWithDelegate() {
+        assertScript shell, """
+            class P {
+                int cnt = 42
+            }
+            @CompileStatic
+            trait T {
+                private static int count = 1
+                static int getCnt() { count }
+            }
+            @CompileStatic
+            trait U extends T {
+                int get(P p) { p.with((x) -> cnt) }
+            }
+            @CompileStatic
+            class C implements U {
+            }
+
+            assert new C().get(new P()) == 1
+        """
+    }
+
+    // GROOVY-12608: static compilation that is not requested by an annotation is not seen
+    // when the trait is transformed, so the lambda is left to resolve the name and cannot
+    @Test
+    void testSuperTraitStaticAccessorAsPropertyInLambdaStaticallyCompiledByCustomizer() {
+        def config = new CompilerConfiguration()
+        config.addCompilationCustomizers(new ASTTransformationCustomizer(CompileStatic))
+        def script = { String member -> """
+            trait T {
+                private static int count = 1
+                static int getCnt() { count }
+            }
+            trait U extends T {
+                $member
+            }
+            class C implements U {
+            }
+            new C().m()
+        """ }
+        def customized = new GroovyShell(config)
+        assert customized.evaluate(script('int m() { cnt }')) == 1
+        assert customized.evaluate(script('int m() { def c = { -> cnt }; (int) c() }')) == 1
+        assert customized.evaluate(script('int m() { java.util.function.Supplier<Integer> s = () -> getCnt(); s.get() }')) == 1
+        shouldFail(MissingFieldException) {
+            customized.evaluate(script('int m() { java.util.function.Supplier<Integer> s = () -> cnt; s.get() }'))
+        }
+    }
+
     // GROOVY-12587
     @CompileModesTest
     void testTraitStaticPropertyThroughThis(String mode) {
@@ -4146,6 +4799,285 @@ final class TraitASTTransformationTest {
         """
     }
 
+    // GROOVY-12609
+    @CompileModesTest
+    void testTraitAccessToInheritedStaticFieldInClosure(String mode) {
+        assertScript shell, """
+            $mode
+            trait A {
+                public static String shared = 'x'
+            }
+            $mode
+            trait B extends A {
+                static one() {
+                    def c = { A__shared }
+                    c()
+                }
+                static two() {
+                    def c = { A__shared = 'y'; A__shared += 'z' }
+                    c()
+                    A__shared
+                }
+                static three() {
+                    java.util.function.Supplier<String> s = () -> A__shared
+                    s.get()
+                }
+                Object four() {
+                    def c = { A__shared.toUpperCase() }
+                    c()
+                }
+            }
+            class C implements B {
+            }
+
+            assert C.one() == 'x'
+            assert C.three() == 'x'
+            assert new C().four() == 'X'
+            assert C.two() == 'yz'
+        """
+    }
+
+    // GROOVY-12609
+    @CompileModesTest
+    void testTraitAccessToInheritedInstanceField(String mode) {
+        assertScript shell, """
+            $mode
+            trait A<T> {
+                public String field = 'x'
+                public T value
+            }
+            $mode
+            trait B extends A<Integer> {
+                Object one() {
+                    A__field + this.A__field
+                }
+                Object two() {
+                    A__field = 'y'
+                    A__field += 'z'
+                    A__field
+                }
+                Object three() {
+                    def c = { A__field = A__field.toUpperCase() }
+                    c()
+                    java.util.function.Supplier<String> s = () -> A__field
+                    s.get()
+                }
+                int four() {
+                    A__value = 2
+                    def c = { A__value * 3 }
+                    c()
+                }
+            }
+            class C implements B {
+            }
+
+            assert new C().one() == 'xx'
+            assert new C().two() == 'yz'
+            assert new C().three() == 'X'
+            assert new C().four() == 6
+        """
+    }
+
+    // GROOVY-12609
+    @CompileModesTest
+    void testTraitAccessToIndirectlyInheritedFields(String mode) {
+        assertScript shell, """
+            $mode
+            trait V extends U {
+                static one() {
+                    def c = { T__shared }
+                    c()
+                }
+                Object two() {
+                    def c = { T__field }
+                    c()
+                }
+            }
+            $mode
+            trait U extends T {
+            }
+            $mode
+            trait T {
+                public static String shared = 'x'
+                public String field = 'y'
+            }
+            class C implements V {
+            }
+
+            assert C.one() == 'x'
+            assert new C().two() == 'y'
+        """
+    }
+
+    static trait TraitWithPublicFields {
+        public static String shared = 'x'
+        public String field = 'y'
+    }
+
+    // GROOVY-12609
+    @CompileModesTest
+    void testTraitAccessToPrecompiledInheritedFields(String mode) {
+        String prefix = TraitWithPublicFields.name.replace('.', '_') + '__'
+        assertScript shell, """
+            import ${this.class.name}.TraitWithPublicFields
+
+            $mode
+            trait B extends TraitWithPublicFields {
+                static one() {
+                    def c = { ${prefix}shared }
+                    c()
+                }
+                Object two() {
+                    ${prefix}field += 'z'
+                    def c = { ${prefix}field }
+                    c()
+                }
+            }
+            class C implements B {
+            }
+
+            assert C.one() == 'x'
+            assert new C().two() == 'yz'
+        """
+    }
+
+    // GROOVY-12609
+    @CompileModesTest
+    void testTraitAccessToInheritedInstanceFieldInStaticContext(String mode) {
+        def err = shouldFail shell, """
+            $mode
+            trait A {
+                public String field = 'x'
+            }
+            $mode
+            trait B extends A {
+                static one() {
+                    A__field
+                }
+            }
+            class C implements B {
+            }
+
+            C.one()
+        """
+        if (mode.endsWith('Dynamic')) {
+            assert err instanceof MissingPropertyException
+        } else {
+            assert err.message =~ /\[Static type checking\] - No such property: A__field for Class or static property for class: B/
+        }
+    }
+
+    // GROOVY-12605
+    @CompileModesTest
+    void testTraitStaticAccessorFromStaticMethod(String mode) {
+        assertScript shell, """
+            $mode
+            trait T {
+                static String value
+                static boolean isVr() { true }
+                static String getLabel() { 'label' }
+                static void setName(String name) { value = name }
+            }
+            $mode
+            class C implements T {
+                static test1() {
+                    assert vr
+                    assert label == 'label'
+                    name = 'name'
+                    assert value == 'name'
+                }
+                static test2() {
+                    assert [1].collect { vr && label == 'label' } == [true]
+                }
+                void test3() {
+                    assert vr
+                    assert label == 'label'
+                }
+            }
+            $mode
+            class D extends C {
+                static test4() {
+                    assert vr
+                    assert label == 'label'
+                }
+            }
+
+            C.test1()
+            C.test2()
+            new C().test3()
+            D.test4()
+        """
+    }
+
+    // GROOVY-12605
+    @CompileModesTest
+    void testSuperTraitStaticAccessorFromStaticMethod(String mode) {
+        assertScript shell, """
+            $mode
+            trait T {
+                static String label = 'label'
+                static boolean isVr() { true }
+            }
+            $mode
+            trait U extends T {
+            }
+            $mode
+            class C implements U {
+                static test() {
+                    assert vr
+                    assert label == 'label'
+                }
+            }
+
+            C.test()
+        """
+    }
+
+    // GROOVY-12605
+    @CompileModesTest
+    void testPrecompiledTraitStaticAccessorFromStaticMethod(String mode) {
+        def loader = new GroovyClassLoader(this.class.classLoader)
+        loader.parseClass """
+            import groovy.transform.*
+            $mode
+            trait T {
+                static boolean isVr() { true }
+            }
+            $mode
+            trait U extends T {
+            }
+        """
+        assertScript new GroovyShell(loader), """
+            import groovy.transform.*
+            $mode
+            class C implements U {
+                static test() {
+                    assert vr
+                }
+            }
+
+            C.test()
+        """
+    }
+
+    // GROOVY-12605: a private static trait method is not woven into the class
+    @CompileModesTest
+    void testTraitPrivateStaticAccessorFromStaticMethod(String mode) {
+        def err = shouldFail shell, """
+            $mode
+            trait T {
+                private static boolean isVr() { true }
+            }
+            $mode
+            class C implements T {
+                static test() {
+                    vr
+                }
+            }
+        """
+        assert err.message.contains("Apparent variable 'vr' was found in a static scope")
+    }
+
     // GROOVY-9386
     @CompileModesTest
     void testTraitPropertyInitializedByTap(String mode) {
@@ -4213,6 +5145,228 @@ final class TraitASTTransformationTest {
             }
 
             assert new C().m() == 'WORKS'
+        """
+    }
+
+    // GROOVY-12598
+    @CompileModesTest
+    void testTraitPropertyInDelegateFirstClosure(String mode) {
+        assertScript shell, """
+            $mode
+            trait T {
+                def cnt = 1
+                def read() {
+                    [cnt: 42].with { cnt }
+                }
+                def write() {
+                    def map = [cnt: 42]
+                    map.with { cnt = 5 }
+                    [map.cnt, cnt]
+                }
+                def readDT() {
+                    dt([cnt: 42]) { cnt }
+                }
+                def writeDT() {
+                    def map = [cnt: 42]
+                    dt(map) { cnt = 5 }
+                    [map.cnt, cnt]
+                }
+                def dt(Map map, @DelegatesTo(value=Map, strategy=Closure.DELEGATE_FIRST) Closure block) {
+                    block.resolveStrategy = Closure.DELEGATE_FIRST
+                    block.delegate = map
+                    block()
+                }
+            }
+            $mode
+            class C implements T {
+            }
+
+            def c = new C()
+            assert c.read() == 42
+            assert c.write() == [5, 1]
+            assert c.readDT() == 42
+            assert c.writeDT() == [5, 1]
+        """
+    }
+
+    // GROOVY-12598
+    @CompileModesTest
+    void testTraitAccessorPropertyInDelegateFirstClosure(String mode) {
+        assertScript shell, """
+            $mode
+            trait T {
+                def getCnt() { 1 }
+                def read() {
+                    [cnt: 42].with { cnt }
+                }
+                def write() {
+                    def map = [cnt: 42]
+                    map.with { cnt = 5 }
+                    map.cnt
+                }
+            }
+            $mode
+            class C implements T {
+            }
+
+            def c = new C()
+            assert c.read() == 42
+            assert c.write() == 5
+        """
+    }
+
+    // GROOVY-12598
+    @CompileModesTest
+    void testTraitPropertyInClosureFallsBackToOwner(String mode) {
+        assertScript shell, """
+            class P {
+                String name = 'P'
+            }
+            $mode
+            trait T {
+                String name = 'T'
+                int cnt = 1
+                def read() {
+                    new P().with { name + cnt }
+                }
+                def write() {
+                    def p = new P()
+                    p.with { name = 'X'; cnt = 2 }
+                    [p.name, name, cnt]
+                }
+                def ownerFirst() {
+                    def block = { name }
+                    block.delegate = new P()
+                    block()
+                }
+            }
+            $mode
+            class C implements T {
+            }
+
+            def c = new C()
+            assert c.read() == 'P1'
+            assert c.write() == ['X', 'T', 2]
+            assert c.ownerFirst() == 'T'
+        """
+    }
+
+    // GROOVY-12598
+    @CompileModesTest
+    void testTraitPropertyInClosureUsesAccessor(String mode) {
+        assertScript shell, """
+            $mode
+            trait T {
+                def cnt = 1
+                def read() {
+                    def block = { -> cnt }
+                    block()
+                }
+            }
+            $mode
+            class C implements T {
+                def getCnt() { 2 }
+            }
+
+            assert new C().read() == 2
+        """
+    }
+
+    // GROOVY-12598
+    @CompileModesTest
+    void testTraitPropertyInDelegateOnlyClosure(String mode) {
+        assertScript shell, """
+            class H {
+                static <V> V only(Map map, @DelegatesTo(value=Map, strategy=Closure.DELEGATE_ONLY) Closure<V> block) {
+                    block.resolveStrategy = Closure.DELEGATE_ONLY
+                    block.delegate = map
+                    block()
+                }
+            }
+            $mode
+            trait T {
+                def cnt = 1
+                def read() {
+                    H.only([cnt: 42]) { cnt }
+                }
+                def write() {
+                    def map = [cnt: 42]
+                    H.only(map) { cnt = 5 }
+                    [map.cnt, cnt]
+                }
+            }
+            $mode
+            class C implements T {
+            }
+
+            def c = new C()
+            assert c.read() == 42
+            assert c.write() == [5, 1]
+        """
+    }
+
+    // GROOVY-12598
+    @CompileModesTest
+    void testTraitPropertyInDelegateOnlyClosureNotOnDelegate(String mode) {
+        def err = shouldFail shell, """
+            class H {
+                static <V> V only(@DelegatesTo(value=Object, strategy=Closure.DELEGATE_ONLY) Closure<V> block) {
+                    block.resolveStrategy = Closure.DELEGATE_ONLY
+                    block.delegate = new Object()
+                    block()
+                }
+            }
+            $mode
+            trait T {
+                def cnt = 1
+                def read() {
+                    H.only { cnt }
+                }
+            }
+            $mode
+            class C implements T {
+            }
+
+            new C().read()
+        """
+        if (mode == '@CompileDynamic') {
+            assert err instanceof MissingPropertyException
+            assert err.message.contains('No such property: cnt for class: java.lang.Object')
+        } else {
+            assert err.message.contains('The variable [cnt] is undeclared')
+        }
+    }
+
+    // GROOVY-12598
+    @CompileModesTest
+    void testTraitPropertyInOwnerOnlyClosure(String mode) {
+        assertScript shell, """
+            class H {
+                static <V> V only(Map map, @DelegatesTo(value=Map, strategy=Closure.OWNER_ONLY) Closure<V> block) {
+                    block.resolveStrategy = Closure.OWNER_ONLY
+                    block.delegate = map
+                    block()
+                }
+            }
+            $mode
+            trait T {
+                def cnt = 1
+                def read() {
+                    H.only([cnt: 42]) { cnt }
+                }
+                def write() {
+                    def map = [cnt: 42]
+                    H.only(map) { cnt = 5 }
+                    [map.cnt, cnt]
+                }
+            }
+            $mode
+            class C implements T {
+            }
+
+            def c = new C()
+            assert c.read() == 1
+            assert c.write() == [42, 5]
         """
     }
 
@@ -4451,6 +5605,106 @@ final class TraitASTTransformationTest {
         '''
     }
 
+    // GROOVY-12596: "this.name" for a static accessor of the trait
+    @CompileModesTest
+    void testThisStaticAccessorOfTrait(String mode) {
+        assertScript shell, """
+            import java.util.function.Supplier
+
+            $mode
+            trait T {
+                private static boolean flag = true
+                private static String nm = 'T'
+                static boolean isReady() { flag }
+                static void setReady(boolean b) { flag = b }
+                static String getName() { nm }
+                static void setName(String n) { nm = n }
+                boolean im() { this.ready }
+                String ip() { this.name }
+                void is(String n) { this.name = n }
+                String ic() { def c = { -> this.name }; c() }
+                String il() { Supplier<String> s = () -> this.name; s.get() }
+                static boolean sm() { this.ready }
+            }
+            $mode
+            trait U extends T {
+                static String us() { this.name }
+                static void uss(String n) { this.name = n }
+                String ui() { this.name }
+            }
+            class C implements U {
+            }
+            class D implements U {
+            }
+
+            def c = new C(), d = new D()
+            assert c.im() && d.im()
+            D.ready = false // each implementing class has its own trait state
+            assert c.im() && C.sm()
+            assert !d.im() && !D.sm()
+            c.is('c')
+            assert c.ip() == 'c' && c.ic() == 'c' && c.il() == 'c'
+            assert d.ip() == 'T' && d.ic() == 'T' && d.il() == 'T'
+            D.uss('d')
+            assert D.us() == 'd' && d.ui() == 'd'
+            assert C.us() == 'c' && c.ui() == 'c'
+        """
+    }
+
+    // GROOVY-12596
+    @CompileModesTest
+    void testThisStaticAccessorOfTrait2(String mode) {
+        assertScript shell, """
+            import java.util.function.Supplier
+
+            $mode
+            trait T {
+                static boolean isReady() { true }
+                static String getName() { 'T' }
+                static void setName(String n) { assert n == 'x' }
+                boolean im() { this.ready }
+                String ip() { this.name }
+                void is() { this.name = 'x' }
+                String ic() { def c = { -> this.name }; c() }
+                String il() { Supplier<String> s = () -> this.name; s.get() }
+            }
+            $mode
+            trait U extends T {
+                static String us() { this.name }
+                static void uss() { this.name = 'x' }
+                String ui() { this.name }
+            }
+            class C implements U {
+            }
+
+            def c = new C()
+            assert c.im()
+            assert c.ip() == 'T'
+            c.is()
+            assert c.ic() == 'T'
+            assert c.il() == 'T'
+            assert C.us() == 'T'
+            C.uss()
+            assert c.ui() == 'T'
+        """
+    }
+
+    // GROOVY-12596: a static accessor of a trait is not read through another instance
+    @ParameterizedTest
+    @ValueSource(strings=['@TypeChecked','@CompileStatic'])
+    void testStaticAccessorOfTraitThroughInstance(String mode) {
+        def err = shouldFail shell, """
+            $mode
+            trait T {
+                static boolean isReady() { true }
+                boolean other(T that) { that.ready }
+            }
+            $mode
+            def m(T t) { t.ready }
+        """
+        assert err.message.count('static method of interface T can only be accessed with class qualifier') == 2
+    }
+
     // GROOVY-12613
     @CompileModesTest
     void testCompoundAssignmentEvaluatesTargetOnce(String mode) {
@@ -4634,6 +5888,79 @@ final class TraitASTTransformationTest {
             '''
         }
         assert err.message.contains('Postfix expressions on trait fields/properties are not supported in traits')
+    }
+
+    // GROOVY-12639
+    @Test
+    void testAssignmentOfTraitFieldConvertsValueInDynamicCode() {
+        assertScript shell, '''
+            trait T {
+                int i = 3
+                short s = 1
+                byte b = 1
+                String str
+                char ch
+                int[] arr
+                def m() { i /= 2; s += 1; b <<= 1; [i, s, b] }
+                def mc() { [1].each { i /= 2; s += 1 }; [i, s] }
+                def n() { i = 7.9G; s = 2; b = 3; str = 8; ch = 'c'; arr = [1, 2]; [i, s, b, str, ch, arr] }
+            }
+            class C implements T {
+            }
+
+            assert new C().m() == [1, 2, 2]
+            assert new C().mc() == [1, 2]
+            assert new C().n() == [7, 2, 3, '8', 'c' as char, [1, 2] as int[]]
+        '''
+    }
+
+    // GROOVY-12639
+    @CompileModesTest
+    void testAssignmentOfTraitFieldConvertsValue(String mode) {
+        assertScript shell, """
+            $mode
+            trait T {
+                short s = 1
+                byte b = 1
+                String str
+                char ch
+                int[] arr
+                static short ss = 1
+                def m() {
+                    s = 2; b = 3; str = 8; ch = 'c'; arr = [1, 2]; b <<= 1
+                    [1].each { s = 4 }
+                    [s, b, str, ch, arr]
+                }
+                static sm() { ss = 5; ss }
+            }
+            class C implements T {
+            }
+
+            assert new C().m() == [4, 6, '8', 'c' as char, [1, 2] as int[]]
+            assert C.sm() == 5
+        """
+    }
+
+    // GROOVY-12639
+    @ParameterizedTest
+    @ValueSource(strings=['@TypeChecked','@CompileStatic'])
+    void testAssignmentOfTraitFieldIsCheckedAsAnAssignment(String mode) {
+        for (pair in [['i /= 2', 'Cannot assign value of type java.math.BigDecimal to variable of type int'],
+                      ['i = 1.5G', 'Cannot assign value of type java.math.BigDecimal to variable of type int'],
+                      ['s += 1', 'Possible loss of precision from int to short'],
+                      ['s = 100000', 'Possible loss of precision from int to short'],
+                      ['[1].each { i += 1L }', 'Possible loss of precision from long to int']]) {
+            def err = shouldFail shell, """
+                $mode
+                trait T {
+                    int i = 3
+                    short s = 1
+                    def m() { ${pair[0]} }
+                }
+            """
+            assert err.message.contains(pair[1]) : "'${pair[0]}': ${err.message}"
+            assert !err.message.contains('$set')
+        }
     }
 
     // GROOVY-12638

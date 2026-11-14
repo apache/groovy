@@ -17,7 +17,11 @@
  *  under the License.
  */
 
+import groovy.transform.CompileStatic
+import groovy.transform.TypeChecked
 import org.codehaus.groovy.ast.ClassHelper
+import org.codehaus.groovy.control.CompilerConfiguration
+import org.codehaus.groovy.control.customizers.ASTTransformationCustomizer
 import org.codehaus.groovy.transform.trait.Traits
 import org.junit.jupiter.api.Test
 
@@ -570,6 +574,7 @@ class LenientEntity implements Configurable {
 assert StrictEntity.describe()  == 'nullable=false'        // <6>
 assert LenientEntity.describe() == 'nullable=true'         // <7>
 assert LenientEntity.nullableByDefault() == true           // <8>
+assert Configurable.describe()  == 'nullable=false'        // <9>
 // end::virtual_default[]
 '''
     }
@@ -942,6 +947,118 @@ assert new UnitCube().volume == 1d
 assert new UnitCylinder().volume == 0.7853981633974483d
 // end::selftype_sealed_volume[]
 '''
+    }
+
+    @Test
+    void testMemberAccessForInstanceMembers() {
+        assertScriptInAllModes '''
+// tag::member_access_instance[]
+trait Named {
+    String name = 'trait'                                   // <1>
+    String getTitle() { 'trait title' }                     // <2>
+
+    String nameInBody()     { name }                        // <3>
+    String thisNameInBody() { this.name }                   // <3>
+    String nameByGetter()   { getName() }                   // <4>
+    String nameInClosure()  { def c = { -> name }; c() }    // <5>
+    String thisNameInClosure() { def c = { -> this.name }; c() }  // <5>
+    String titleInBody()    { title }                       // <6>
+    String titleInClosure() { def c = { -> title }; c() }   // <6>
+}
+
+class Person implements Named {
+    String getName()  { 'class' }                           // <7>
+    String getTitle() { 'class title' }
+}
+
+def p = new Person()
+assert p.nameInBody()     == 'trait'
+assert p.thisNameInBody() == 'trait'
+assert p.nameByGetter()   == 'class'
+assert p.nameInClosure()  == 'class'
+assert p.thisNameInClosure() == 'class'
+assert p.titleInBody()    == 'class title'
+assert p.titleInClosure() == 'class title'
+assert p.name             == 'class'                        // <8>
+// end::member_access_instance[]
+'''
+    }
+
+    @Test
+    void testMemberAccessForStaticMembers() {
+        assertScriptInAllModes '''
+// tag::member_access_static[]
+import groovy.transform.Virtual
+
+trait Counted {
+    static int count = 1                                    // <1>
+    static String getKind() { 'trait' }                     // <2>
+    @Virtual static String getLabel() { 'trait' }           // <3>
+
+    static int countInBody()         { count }              // <4>
+    static String kindByCall()       { getKind() }          // <5>
+    static String kindByName()       { kind }               // <5>
+    static String kindInClosure()    { def c = { -> getKind() }; c() }   // <5>
+    static String labelByCall()      { getLabel() }         // <6>
+    static String labelByName()      { label }              // <6>
+    static String labelInClosure()   { def c = { -> getLabel() }; c() }  // <7>
+}
+
+class Item implements Counted {
+    static int getCount()    { 99 }
+    static String getKind()  { 'class' }
+    static String getLabel() { 'class' }
+}
+
+class Plain implements Counted { }
+
+assert Item.countInBody()    == 1
+assert Item.kindByCall()     == 'trait'
+assert Item.kindByName()     == 'trait'
+assert Item.kindInClosure()  == 'trait'
+assert Item.labelByCall()    == 'class'
+assert Item.labelByName()    == 'class'
+assert Plain.labelByName()   == 'trait'                     // <8>
+assert Item.labelInClosure() == 'trait'
+// end::member_access_static[]
+'''
+    }
+
+    @Test
+    void testMemberAccessStaticStateIsPerImplementingClass() {
+        assertScriptInAllModes '''
+// tag::member_access_static_state[]
+trait Tally {
+    static int total = 0
+    static void add(int n) { total += n }                   // <1>
+    static int total() { total }
+}
+
+class Apples implements Tally { }
+class Pears  implements Tally { }
+
+Apples.add(3)
+Pears.add(4)
+Apples.add(1)
+
+assert Apples.total() == 4                                  // <2>
+assert Pears.total()  == 4
+assert Apples.total == 4 && Pears.total == 4                // <3>
+// end::member_access_static_state[]
+'''
+    }
+
+    /**
+     * Runs the script as dynamic Groovy, then again with {@code @TypeChecked} and
+     * with {@code @CompileStatic} applied to every class in it.
+     */
+    private static void assertScriptInAllModes(String script) {
+        assertScript script
+        for (mode in [TypeChecked, CompileStatic]) {
+            def config = new CompilerConfiguration()
+            config.addCompilationCustomizers(new ASTTransformationCustomizer(mode))
+            assertScript new GroovyShell(config), script
+        }
     }
 
     static class PrintCategory {

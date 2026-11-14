@@ -1145,6 +1145,85 @@ To keep a narrowing, convert explicitly, as in
 type, such as `Supplier<Long>`, still requires the returned value's type to be
 compatible, so `Supplier<Long> s = () -> 1` remains an error (GROOVY-11414).
 
+### Groovy 7 — a trait's static accessor read as a property is a call of the accessor (GROOVY-12614)
+
+In the body of a trait method, the property form of a static accessor that
+the trait declares (`label` or `this.label` for `static String getLabel()`)
+is now a call of that accessor, exactly as the method form `getLabel()` is.
+A static method of a trait is not overridden by a static method of the
+implementing class unless the trait marks it `@Virtual`, so the property form
+no longer uses an accessor that the implementing class declares. Before,
+dynamic and `@TypeChecked` code used the implementing class's accessor for the
+property form and the trait's own for the method form, and `@CompileStatic`
+code used the trait's own for both. Assignments (`label = v`) and compound
+assignments (`label += v`) call the trait's setter and getter in the same way.
+
+**Who is affected.** Dynamic or `@TypeChecked` trait code that reads or
+assigns a static accessor of the trait in the property form and relies on an
+implementing class supplying its own static accessor of the same name. Mark
+the trait's accessor `@Virtual` to keep that behaviour:
+
+```groovy
+trait Described {
+    @Virtual static String getLabel() { 'default' }   // was: static String getLabel()
+    static String describe() { "label is $label" }
+}
+class Special implements Described {
+    static String getLabel() { 'special' }
+}
+assert Special.describe() == 'label is special'
+```
+
+A `@Virtual` static is not available through the trait itself, so
+`Described.label` and `Described.getLabel()` must be written with an
+implementing class instead.
+
+**What is unchanged.** The method form, a `@Virtual` accessor, a declared
+static property (`static String label = 'x'`, which trait code always reads
+from the trait's own field), instance accessors and properties, names in a
+closure or lambda (which the closure resolves), `++` and `--`, and access from
+outside the trait (`Special.label`).
+
+### Groovy 7 — a declared trait property in a closure is read and written through its accessor (GROOVY-12598)
+
+In a closure in a trait method, the name of an instance property that the
+trait declares is resolved by the closure, through its delegate and owner,
+and `this.name` is a call of the accessor on the implementing instance.
+Before, both went straight to the trait's backing field. This is what the
+same names mean in a closure in a class that declares the property.
+
+**Who is affected.** A trait that declares a property and uses it in a
+closure, when an implementing class declares its own accessor for that
+property, or when the closure's delegate has a property of the same name and
+the closure's resolve strategy consults the delegate first. In a closure
+within a lambda the name is the accessor of the implementing instance, and the
+delegate is not consulted. A getter or
+setter that the trait itself declares for the property and that uses the
+property in a closure now calls itself; use the property outside the closure
+there.
+
+**What is unchanged.** The property in a method body or a lambda, which is
+the trait's backing field; private and static fields of the trait; and
+`getName()` and `setName(v)`.
+
+### Groovy 7 — a lambda in a statically compiled trait reads a super trait's static accessor directly (GROOVY-12608)
+
+In a lambda in a trait annotated with `@CompileStatic`, the property form of
+a static accessor that a super trait declares (`cnt` for `static int getCnt()`)
+is now a call of that accessor. Before, such a lambda failed at run time with
+a `MissingMethodException`, unless it was passed as a closure whose delegate
+had a property of that name.
+
+**Who is affected.** A statically compiled trait that passes such a lambda
+where a closure is expected and relies on the closure's delegate to supply
+the name, as in `p.with((x) -> cnt)` where `p` has a `cnt` property: the
+lambda now reads the super trait's accessor. Use a closure (`p.with { cnt }`),
+which consults its delegate, or qualify the name (`x.cnt`).
+
+**What is unchanged.** Dynamic and `@TypeChecked` trait code, where the
+delegate of such a lambda still supplies the name; closures; and the method
+form `getCnt()`.
+
 ### Groovy 6.0.1 — statically compiled constructor references call the constructor directly (GROOVY-12488)
 
 Under `@CompileStatic`, a constructor reference such as `X::new` created the

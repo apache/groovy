@@ -131,6 +131,7 @@ import org.codehaus.groovy.transform.RecordTypeASTTransformation;
 import org.codehaus.groovy.transform.SealedASTTransformation;
 import org.codehaus.groovy.transform.StaticTypesTransformation;
 import org.codehaus.groovy.transform.sc.StaticCompilationMetadataKeys;
+import org.codehaus.groovy.transform.trait.TraitASTTransformation;
 import org.codehaus.groovy.transform.trait.Traits;
 import org.objectweb.asm.Opcodes;
 
@@ -1139,6 +1140,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 }
                 // GROOVY-12524: the write of leftExpression records the setter; keep the getter too
                 rememberExtensionPropertyGetter(leftExpression, readClone);
+                rememberDynamicRead(leftExpression, readClone);
                 expression.copyNodeMetaData(rightExpression);
                 return;
             }
@@ -1598,6 +1600,17 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
         MethodNode getter = read.getNodeMetaData(DIRECT_METHOD_CALL_TARGET);
         if (getter instanceof ExtensionMethodNode && getter.getParameters().length == 0) {
             target.putNodeMetaData(StaticCompilationMetadataKeys.EXTENSION_PROPERTY_GETTER, getter);
+        }
+    }
+
+    // GROOVY-12594: the target of a compound assignment, or the operand of ++ or --, is also its read; if
+    // the read was resolved dynamically and no setter was selected for the write, resolve the target dynamically as well
+    private static void rememberDynamicRead(final Expression target, final Expression read) {
+        Object dynamic = read.getNodeMetaData(DYNAMIC_RESOLUTION);
+        if (dynamic != null && target instanceof PropertyExpression
+                && target.getNodeMetaData(DYNAMIC_RESOLUTION) == null
+                && target.getNodeMetaData(DIRECT_METHOD_CALL_TARGET) == null) {
+            target.putNodeMetaData(DYNAMIC_RESOLUTION, dynamic);
         }
     }
 
@@ -2666,6 +2679,16 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
 
                 PropertyNode property = current.getProperty(propertyName);
                 property = allowStaticAccessToMember(property, staticOnly);
+                ClassNode setterReceiverType = receiverType;
+                if (!readMode && setters.isEmpty() && current != receiverType && isInTraitCode() && Traits.isTrait(current) && hasTraitCodeReceiver(pexp)) {
+                    // GROOVY-12608: trait code inherits the static setter of a super trait
+                    for (MethodNode method : current.getDeclaredMethods(setterName)) {
+                        if (method.isStatic() && method.isPublic() && method.getParameters().length == 1) {
+                            setters.add(method);
+                            setterReceiverType = current;
+                        }
+                    }
+                }
                 // prefer explicit getter/setter for out-of-scope references
                 if (property == null || !enclosingTypes.contains(current)) {
                     if (readMode) {
@@ -2692,7 +2715,7 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
                             }
                             BinaryExpression enclosingBinaryExpression = typeCheckingContext.getEnclosingBinaryExpression();
                             if (enclosingBinaryExpression != null) {
-                                putSetterInfo(enclosingBinaryExpression.getLeftExpression(), new SetterInfo(receiverType, setterName, setters));
+                                putSetterInfo(enclosingBinaryExpression.getLeftExpression(), new SetterInfo(setterReceiverType, setterName, setters));
                             }
                             storeReceiverData(pexp, receiver);
                             pexp.removeNodeMetaData(READONLY_PROPERTY);
@@ -3510,6 +3533,14 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
                 if (ensureValidSetter(rewrite, operand, rewrite.getRightExpression(), setterInfo)) {
                     return;
                 }
+            } else if (operand instanceof PropertyExpression pexp && operand.getNodeMetaData(READONLY_PROPERTY) != null) {
+                // GROOVY-12594: "x++" also reads x; as for "x op= y", if the read resolves dynamically, so does x
+                PropertyExpression read = propX(pexp.getObjectExpression(), pexp.getProperty(), pexp.isSafe());
+                read.setImplicitThis(pexp.isImplicitThis());
+                read.setSourcePosition(pexp);
+                read.visit(this);
+                rememberDynamicRead(operand, read);
+                if (operand.getNodeMetaData(DYNAMIC_RESOLUTION) != null) storeType(operand, getType(read));
             }
 
             ClassNode operandType = getType(operand);
@@ -5900,6 +5931,24 @@ out:                if (mn.size() != 1) {
         }
     }
 
+    /**
+     * Indicates whether the code being checked is trait code, which is moved to the
+     * trait's helper class before it is checked.
+     */
+    private boolean isInTraitCode() {
+        ClassNode enclosingType = typeCheckingContext.getEnclosingClassNode();
+        return Traits.isTrait(enclosingType.getOuterClass()) && enclosingType.getName().endsWith("$Helper");
+    }
+
+    /**
+     * Indicates whether the property is accessed through the receiver of trait code: implicit
+     * {@code this}, or the trait helper's {@code $self} or {@code $static$self} parameter.
+     */
+    private static boolean hasTraitCodeReceiver(final PropertyExpression pexp) {
+        return pexp.isImplicitThis() || (pexp.getObjectExpression() instanceof VariableExpression ve && ve.getAccessedVariable() instanceof Parameter
+                && (Traits.THIS_OBJECT.equals(ve.getName()) || Traits.STATIC_THIS_OBJECT.equals(ve.getName())));
+    }
+
     private static void addTraitType(final ClassNode receiver, final List<Receiver<String>> owners) {
         if (Traits.isTrait(receiver.getOuterClass()) && receiver.getName().endsWith("$Helper")) {
             ClassNode traitType = receiver.getOuterClass();
@@ -5949,12 +5998,28 @@ out:                if (mn.size() != 1) {
         ClassNode declaringClass = target.getDeclaringClass();
         if (declaringClass.isInterface() && target.isStatic()) {
             Expression objectExpression = getObjectExpression(call);
-            if (objectExpression != null) { ClassNode type = getType(objectExpression);
+            if (objectExpression != null && !(Traits.isTrait(declaringClass) && isTraitReceiver(objectExpression))) { ClassNode type = getType(objectExpression);
                 if (!isClassClassNodeWrappingConcreteType(type) || !type.getGenericsTypes()[0].getType().equals(declaringClass)) {
                     addStaticTypeError("static method of interface " + prettyPrintTypeName(declaringClass) + " can only be accessed with class qualifier", call);
                 }
             }
         }
+    }
+
+    /**
+     * Indicates whether the expression is the "$self" or "$static$self" parameter
+     * of a trait helper method, which stands for the implementing instance or class
+     * ("this.name" in trait code).
+     */
+    private static boolean isTraitReceiver(final Expression expression) { // GROOVY-12596
+        if (expression instanceof VariableExpression vexp) {
+            if (isTraitSelf(vexp) != null) return true;
+            if (Traits.STATIC_THIS_OBJECT.equals(vexp.getName()) && vexp.getAccessedVariable() instanceof Parameter parameter) {
+                ClassNode type = parameter.getType();
+                return isClassClassNodeWrappingConcreteType(type) && Traits.isTrait(type.getGenericsTypes()[0].getType());
+            }
+        }
+        return false;
     }
 
     private void checkSuperCallFromClosure(final Expression call, final MethodNode target) {
@@ -6843,6 +6908,14 @@ trying: for (ClassNode[] signature : signatures) {
         }
 
         source.visit(this);
+
+        if (expression.getNodeMetaData(TraitASTTransformation.FIELD_ASSIGNMENT) != null) {
+            // GROOVY-12639: a value written to a trait field is checked as an assignment to the field
+            ClassNode sourceType = isNullConstant(source) ? UNKNOWN_PARAMETER_TYPE : getInferredTypeFromTempInfo(source, getType(source));
+            BinaryExpression assignment = assignX(varX("value", target), source, expression);
+            typeCheckAssignment(assignment, assignment.getLeftExpression(), target, source, sourceType);
+            return;
+        }
 
         if (!expression.isCoerce() && !checkCast(target, source)) {
             addStaticTypeError("Inconvertible types: cannot cast " + prettyPrintType(getType(source)) + " to " + prettyPrintType(target), expression);
