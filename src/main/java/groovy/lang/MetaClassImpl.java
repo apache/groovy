@@ -1350,7 +1350,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
     }
 
     private Object invokeOuterMethod(final Class<?> sender, final Object object, final String methodName, final Object[] arguments, final MissingMethodException mme) {
-        if (sender == theClass ? isGroovyObject() : GroovyObject.class.isAssignableFrom(sender)) {
+        if ((sender == theClass || sender.isInterface()) ? isGroovyObject() : GroovyObject.class.isAssignableFrom(sender)) {
             var outerClass = getNonClosureOuter(sender); // check outer class nesting of call site
             if (outerClass != null && (sender == theClass || sender.isAssignableFrom(theClass))) {
                 MetaClass omc = registry.getMetaClass(outerClass);
@@ -2220,7 +2220,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
     }
 
     private Object getOuterProperty(final Class<?> sender, final Object object, final String name, final MissingPropertyException mpe) {
-        if (sender == theClass ? isGroovyObject() : GroovyObject.class.isAssignableFrom(sender)) {
+        if ((sender == theClass || sender.isInterface()) ? isGroovyObject() : GroovyObject.class.isAssignableFrom(sender)) {
             var outerClass = getNonClosureOuter(sender); // check outer class nesting of call site
             if (outerClass != null && (sender == theClass || sender.isAssignableFrom(theClass))) {
                 MetaClass omc = registry.getMetaClass(outerClass);
@@ -3192,7 +3192,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
 
     private void setOuterProperty(Class<?> sender, final Object object, final String name, final Object newValue, final MissingPropertyException mpe) {
         if (sender == null) sender = theClass; // GROOVY-11745
-        if (sender == theClass ? isGroovyObject() : GroovyObject.class.isAssignableFrom(sender)) {
+        if ((sender == theClass || sender.isInterface()) ? isGroovyObject() : GroovyObject.class.isAssignableFrom(sender)) {
             var outerClass = getNonClosureOuter(sender); // check outer class nesting of call site
             if (outerClass != null && (sender == theClass || sender.isAssignableFrom(theClass))) {
                 MetaClass omc = registry.getMetaClass(outerClass);
