@@ -191,9 +191,9 @@ public class InvokerHelper {
      * An {@link Enumeration} is copied, in iteration order, into a new
      * {@link ArrayList}. Any other value becomes a one-element list.
      *
+     * Throws {@code ClassCastException} if {@code value} is a primitive array.
      * @param value the value to adapt
      * @return a list for {@code value}
-     * @throws ClassCastException if {@code value} is a primitive array
      */
     public static List asList(Object value) {
         if (value == null) {
@@ -545,7 +545,6 @@ public class InvokerHelper {
      *
      * @param value the map to spread
      * @return a spread map of the map's entries
-     * @throws SpreadMapEvaluatingException if {@code value} is non-null and not a {@link Map}
      */
     public static SpreadMap spreadMap(Object value) {
         if (value instanceof Map map) {
@@ -625,7 +624,6 @@ public class InvokerHelper {
      *
      * @param expression the expression supplied to the error
      * @param message the message supplied to the error
-     * @throws AssertionError always; it is the error produced for these arguments
      */
     public static void assertFailed(final Object expression, final Object message) {
         throw createAssertError(expression, message);
@@ -725,8 +723,6 @@ public class InvokerHelper {
      * @param scriptClass the class to adapt, or {@code null}
      * @param context the binding supplied to the adapted script
      * @return the adapted {@link Script}
-     * @throws GroovyRuntimeException if adaptation fails for a reason other
-     *     than the three constructor-lookup failures above
      */
     @SuppressWarnings("unchecked")
     public static Script createScript(final Class scriptClass, final Binding context) {
@@ -1016,7 +1012,6 @@ public class InvokerHelper {
      * @param methodName the method to invoke
      * @param arguments the argument list, a single argument, or {@code null}
      * @return the result of the meta-class invocation
-     * @throws NullPointerException if {@code object} is {@code null}
      */
     public static Object invokeSuperMethod(Object object, String methodName, Object arguments) {
         if (object == null) {

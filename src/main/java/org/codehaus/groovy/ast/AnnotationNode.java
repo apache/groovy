@@ -112,8 +112,8 @@ public class AnnotationNode extends ASTNode {
      * No member values are stored until {@link #addMember(String, Expression)} or
      * {@link #setMember(String, Expression)} is called.
      *
+     * Throws {@code NullPointerException} if {@code type} is {@code null}.
      * @param type the annotation class; stored as given and not copied
-     * @throws NullPointerException if {@code type} is {@code null}
      */
     public AnnotationNode(final ClassNode type) {
         classNode = requireNonNull(type);
@@ -125,9 +125,9 @@ public class AnnotationNode extends ASTNode {
      * Members are kept in insertion order.
      * {@link #setMember(String, Expression)} overwrites a stored value instead of rejecting it.
      *
+     * Throws {@code GroovyBugError} if a non-null value is already stored for {@code name}.
      * @param name the annotation member name
      * @param value the member expression, stored without checking it against the annotation type
-     * @throws GroovyBugError if a non-null value is already stored for {@code name}
      */
     public void addMember(final String name, final Expression value) {
         ensureMembers();
@@ -271,10 +271,9 @@ public class AnnotationNode extends ASTNode {
      * A requested combination is allowed only when all of its bits are in the mask. A target of zero is
      * always allowed.
      *
+     * Throws {@code IllegalStateException} if the annotation class is neither primary nor resolved.
      * @param target bitmask of element kinds, usually one {@code *_TARGET} constant
      * @return {@code true} when every bit set in {@code target} is allowed
-     * @throws IllegalStateException if the annotation class is neither primary nor resolved
-     * @throws GroovyBugError if {@link Target} names an {@link ElementType} that has no bit
      */
     public boolean isTargetAllowed(final int target) {
         if (!(classNode.isPrimaryClassNode() || classNode.isResolved()))

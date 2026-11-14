@@ -2752,9 +2752,9 @@ faces:  if (method == null && asBoolean(getInterfaces())) { // GROOVY-11323
      * The annotation is stored here and not on the redirect target. A canonical class cannot carry type-use
      * annotations, so the call fails when this node is not a redirect and it is resolved or primary.
      *
+     * Throws {@code NullPointerException} if {@code annotation} is {@code null}.
+     *
      * @param annotation the type-use annotation to add
-     * @throws GroovyBugError if this node is a resolved or primary non-redirect
-     * @throws NullPointerException if {@code annotation} is {@code null}
      */
     public void addTypeAnnotation(final AnnotationNode annotation) {
         if (!isRedirectNode() && (isResolved() || isPrimaryClassNode())) {

@@ -357,8 +357,8 @@ public class ConcurrentReaderHashMap
    * The initial capacity fits those mappings at the default load factor
    * and is at least 16, then rounded up to a power of two.
    *
+   * Throws {@code NullPointerException} when {@code t} is null, or a key or value is null.
    * @param t mappings copied into the new map; keys and values must be non-null
-   * @throws NullPointerException when {@code t} is null, or a key or value is null
    */
   public ConcurrentReaderHashMap(Map t) {
         this(Math.max((int) (t.size() / DEFAULT_LOAD_FACTOR) + 1, 16),

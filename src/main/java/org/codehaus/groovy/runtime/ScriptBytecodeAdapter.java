@@ -1667,8 +1667,6 @@ public class ScriptBytecodeAdapter {
      *
      * @param expression the expression that failed
      * @param message the assertion message, or null or empty for a power assertion
-     * @throws AssertionError always; a null or empty message yields a
-     *     {@code PowerAssertionError}
      */
     public static void assertFailed(final Object expression, final Object message) {
         InvokerHelper.assertFailed(expression, message);
@@ -2051,9 +2049,9 @@ public class ScriptBytecodeAdapter {
      * Compiles {@code regex} into a {@link Pattern}. {@code regex} is converted with
      * {@code toString()} and passed to {@code StringGroovyMethods.bitwiseNegate}.
      *
+     * Throws {@code PatternSyntaxException} if {@code regex} is not a valid regular expression.
      * @param regex the expression to compile; its {@code toString()} result is compiled
      * @return the compiled pattern
-     * @throws java.util.regex.PatternSyntaxException if {@code regex} is not a valid regular expression
      */
     public static Pattern regexPattern(final Object regex) {
         return StringGroovyMethods.bitwiseNegate(regex.toString());
@@ -2078,8 +2076,6 @@ public class ScriptBytecodeAdapter {
      * @param spreads the values to expand, one per entry of {@code positions}
      * @param positions indexes in {@code args} at which each spread value is inserted
      * @return the flattened arguments
-     * @throws IllegalArgumentException when a spread value is not null, a list, an iterable, an
-     *     iterator, a stream, or an array
      */
     public static Object[] despreadList(final Object[] args, final Object[] spreads, final int[] positions) {
         List<Object> ret = new ArrayList<>();
@@ -2125,8 +2121,6 @@ public class ScriptBytecodeAdapter {
      *
      * @param value the map to spread
      * @return the spread map of {@code value}'s entries
-     * @throws groovy.lang.SpreadMapEvaluatingException if {@code value} is non-null and not a {@link Map}
-     * @throws NullPointerException if {@code value} is null
      */
     public static Object spreadMap(final Object value) {
         return InvokerHelper.spreadMap(value);

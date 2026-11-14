@@ -346,10 +346,10 @@ public class GStringImpl extends GString {
      * its rendering, the stored text is reused; otherwise the literal segments
      * and values are interpolated on every call.
      *
+     * Throws {@code StringIndexOutOfBoundsException} if {@code index} is negative or not less than the
+     * rendered length.
      * @param index UTF-16 index of the code unit to read, counting from zero
      * @return the code point that starts at {@code index}
-     * @throws StringIndexOutOfBoundsException if {@code index} is negative
-     *     or not less than the rendered length
      */
     public int codePointAt(int index) {
         return toString().codePointAt(index);
@@ -366,10 +366,10 @@ public class GStringImpl extends GString {
      * its rendering, the stored text is reused; otherwise the literal segments
      * and values are interpolated on every call.
      *
+     * Throws {@code StringIndexOutOfBoundsException} if {@code index} is less than 1 or greater than
+     * the rendered length.
      * @param index UTF-16 index just after the code point to read
      * @return the code point that ends at {@code index}
-     * @throws StringIndexOutOfBoundsException if {@code index} is less
-     *     than 1 or greater than the rendered length
      */
     public int codePointBefore(int index) {
         return toString().codePointBefore(index);
@@ -384,12 +384,11 @@ public class GStringImpl extends GString {
      * its rendering, the stored text is reused; otherwise the literal segments
      * and values are interpolated on every call.
      *
+     * Throws {@code IndexOutOfBoundsException} if {@code beginIndex} is negative, {@code endIndex} is
+     * greater than the rendered length, or {@code beginIndex} is greater than {@code endIndex}.
      * @param beginIndex first UTF-16 index of the range, inclusive
      * @param endIndex UTF-16 index at which the range stops, exclusive
      * @return the number of code points in that range
-     * @throws IndexOutOfBoundsException if {@code beginIndex} is negative,
-     *     {@code endIndex} is greater than the rendered length, or
-     *     {@code beginIndex} is greater than {@code endIndex}
      */
     public int codePointCount(int beginIndex, int endIndex) {
         return toString().codePointCount(beginIndex, endIndex);
@@ -405,14 +404,13 @@ public class GStringImpl extends GString {
      * its rendering, the stored text is reused; otherwise the literal segments
      * and values are interpolated on every call.
      *
+     * Throws {@code IndexOutOfBoundsException} if {@code index} is negative or greater than the
+     * rendered length, or if the walk would pass either end of the text.
      * @param index UTF-16 index at which the walk starts, from zero through
      *     the rendered length inclusive
      * @param codePointOffset number of code points to move. Positive moves
      *     toward the end and negative moves toward the start
      * @return the UTF-16 index where the walk stops
-     * @throws IndexOutOfBoundsException if {@code index} is negative or
-     *     greater than the rendered length, or if the walk would pass
-     *     either end of the text
      */
     public int offsetByCodePoints(int index, int codePointOffset) {
         return toString().offsetByCodePoints(index, codePointOffset);
@@ -428,14 +426,15 @@ public class GStringImpl extends GString {
      * its rendering, the stored text is reused; otherwise the literal segments
      * and values are interpolated on every call.
      *
+     * Throws {@code NullPointerException} if {@code dst} is null.
+     * Throws {@code StringIndexOutOfBoundsException} if the source range falls
+     * outside the rendered text, or if {@code dst} has no room for the copied
+     * units starting at {@code dstBegin}.
+     *
      * @param srcBegin first rendered index to copy, inclusive
      * @param srcEnd rendered index at which copying stops, exclusive
      * @param dst array that receives the copied code units
      * @param dstBegin index in {@code dst} of the first copied unit
-     * @throws StringIndexOutOfBoundsException if the source range falls
-     *     outside the rendered text, or if {@code dst} has no room for
-     *     the copied units starting at {@code dstBegin}
-     * @throws NullPointerException if {@code dst} is null
      */
     public void getChars(int srcBegin, int srcEnd, char[] dst, int dstBegin) {
         toString().getChars(srcBegin, srcEnd, dst, dstBegin);
@@ -448,9 +447,9 @@ public class GStringImpl extends GString {
      * its rendering, the stored text is reused; otherwise the literal segments
      * and values are interpolated on every call.
      *
+     * Throws {@code NullPointerException} if {@code charset} is null.
      * @param charset encoding used to turn the rendered text into bytes
      * @return a new array holding that encoding
-     * @throws NullPointerException if {@code charset} is null
      */
     public byte[] getBytes(Charset charset) {
         return toString().getBytes(charset);
@@ -465,9 +464,9 @@ public class GStringImpl extends GString {
      * its rendering, the stored text is reused; otherwise the literal segments
      * and values are interpolated on every call.
      *
+     * Throws {@code NullPointerException} if {@code sb} is null.
      * @param sb buffer whose current contents are compared
      * @return {@code true} when both sides have the same length and characters
-     * @throws NullPointerException if {@code sb} is null
      */
     public boolean contentEquals(StringBuffer sb) {
         return toString().contentEquals(sb);
@@ -484,9 +483,9 @@ public class GStringImpl extends GString {
      * its rendering, the stored text is reused; otherwise the literal segments
      * and values are interpolated on every call.
      *
+     * Throws {@code NullPointerException} if {@code cs} is null.
      * @param cs sequence compared with the rendered text
      * @return {@code true} when both sides have the same length and characters
-     * @throws NullPointerException if {@code cs} is null
      */
     public boolean contentEquals(CharSequence cs) {
         return toString().contentEquals(cs);
@@ -520,11 +519,11 @@ public class GStringImpl extends GString {
      * its rendering, the stored text is reused; otherwise the literal segments
      * and values are interpolated on every call.
      *
+     * Throws {@code NullPointerException} if {@code anotherString} is null.
      * @param anotherString string the rendered text is ordered against
      * @return a negative integer, zero, or a positive integer when the
      *     rendered text is less than, equal to, or greater than
      *     {@code anotherString}
-     * @throws NullPointerException if {@code anotherString} is null
      */
     public int compareTo(String anotherString) {
         return toString().compareTo(anotherString);
@@ -541,11 +540,11 @@ public class GStringImpl extends GString {
      * its rendering, the stored text is reused; otherwise the literal segments
      * and values are interpolated on every call.
      *
+     * Throws {@code NullPointerException} if {@code str} is null.
      * @param str string the rendered text is ordered against
      * @return a negative integer, zero, or a positive integer when the
      *     folded rendered text is less than, equal to, or greater than
      *     the folded {@code str}
-     * @throws NullPointerException if {@code str} is null
      */
     public int compareToIgnoreCase(String str) {
         return toString().compareToIgnoreCase(str);
@@ -563,13 +562,13 @@ public class GStringImpl extends GString {
      * its rendering, the stored text is reused; otherwise the literal segments
      * and values are interpolated on every call.
      *
+     * Throws {@code NullPointerException} if {@code other} is null.
      * @param toffset first rendered index of the region
      * @param other string that supplies the region to compare against
      * @param ooffset first index of the region in {@code other}
      * @param len number of UTF-16 code units to compare
      * @return {@code true} when the compared units match, or when {@code len}
      *     is negative and both offsets are non-negative
-     * @throws NullPointerException if {@code other} is null
      */
     public boolean regionMatches(int toffset, String other, int ooffset, int len) {
         return toString().regionMatches(toffset, other, ooffset, len);
@@ -590,6 +589,7 @@ public class GStringImpl extends GString {
      * its rendering, the stored text is reused; otherwise the literal segments
      * and values are interpolated on every call.
      *
+     * Throws {@code NullPointerException} if {@code other} is null.
      * @param ignoreCase {@code true} to fold case before comparing units
      * @param toffset first rendered index of the region
      * @param other string that supplies the region to compare against
@@ -597,7 +597,6 @@ public class GStringImpl extends GString {
      * @param len number of UTF-16 code units to compare
      * @return {@code true} when the regions match under that comparison, or
      *     when {@code len} is negative and both offsets are non-negative
-     * @throws NullPointerException if {@code other} is null
      */
     public boolean regionMatches(boolean ignoreCase, int toffset, String other, int ooffset, int len) {
         return toString().regionMatches(ignoreCase, toffset, other, ooffset, len);
@@ -614,10 +613,10 @@ public class GStringImpl extends GString {
      * its rendering, the stored text is reused; otherwise the literal segments
      * and values are interpolated on every call.
      *
+     * Throws {@code NullPointerException} if {@code prefix} is null.
      * @param prefix sequence that must occur at {@code toffset}
      * @param toffset UTF-16 index at which {@code prefix} must start
      * @return {@code true} when the rendered text has {@code prefix} there
-     * @throws NullPointerException if {@code prefix} is null
      */
     public boolean startsWith(String prefix, int toffset) {
         return toString().startsWith(prefix, toffset);
@@ -631,9 +630,9 @@ public class GStringImpl extends GString {
      * its rendering, the stored text is reused; otherwise the literal segments
      * and values are interpolated on every call.
      *
+     * Throws {@code NullPointerException} if {@code prefix} is null.
      * @param prefix sequence the rendered text must begin with
      * @return {@code true} when {@code prefix} is a prefix of the rendered text
-     * @throws NullPointerException if {@code prefix} is null
      */
     public boolean startsWith(String prefix) {
         return toString().startsWith(prefix);
@@ -647,9 +646,9 @@ public class GStringImpl extends GString {
      * its rendering, the stored text is reused; otherwise the literal segments
      * and values are interpolated on every call.
      *
+     * Throws {@code NullPointerException} if {@code suffix} is null.
      * @param suffix sequence the rendered text must end with
      * @return {@code true} when {@code suffix} is a suffix of the rendered text
-     * @throws NullPointerException if {@code suffix} is null
      */
     public boolean endsWith(String suffix) {
         return toString().endsWith(suffix);
@@ -744,9 +743,9 @@ public class GStringImpl extends GString {
      * its rendering, the stored text is reused; otherwise the literal segments
      * and values are interpolated on every call.
      *
+     * Throws {@code NullPointerException} if {@code str} is null.
      * @param str exact sequence to search for
      * @return the index of the first match, or {@code -1} when there is none
-     * @throws NullPointerException if {@code str} is null
      */
     public int indexOf(String str) {
         return toString().indexOf(str);
@@ -763,11 +762,11 @@ public class GStringImpl extends GString {
      * its rendering, the stored text is reused; otherwise the literal segments
      * and values are interpolated on every call.
      *
+     * Throws {@code NullPointerException} if {@code str} is null.
      * @param str exact sequence to search for
      * @param fromIndex UTF-16 index at which the search starts
      * @return the index of the first match at or after {@code fromIndex},
      *     or {@code -1} when there is none
-     * @throws NullPointerException if {@code str} is null
      */
     public int indexOf(String str, int fromIndex) {
         return toString().indexOf(str, fromIndex);
@@ -782,9 +781,9 @@ public class GStringImpl extends GString {
      * its rendering, the stored text is reused; otherwise the literal segments
      * and values are interpolated on every call.
      *
+     * Throws {@code NullPointerException} if {@code str} is null.
      * @param str exact sequence to search for
      * @return the index of the last match, or {@code -1} when there is none
-     * @throws NullPointerException if {@code str} is null
      */
     public int lastIndexOf(String str) {
         return toString().lastIndexOf(str);
@@ -803,11 +802,11 @@ public class GStringImpl extends GString {
      * its rendering, the stored text is reused; otherwise the literal segments
      * and values are interpolated on every call.
      *
+     * Throws {@code NullPointerException} if {@code str} is null.
      * @param str exact sequence to search for
      * @param fromIndex UTF-16 index at which the backward search starts
      * @return the index of the last match at or before {@code fromIndex},
      *     or {@code -1} when there is none
-     * @throws NullPointerException if {@code str} is null
      */
     public int lastIndexOf(String str, int fromIndex) {
         return toString().lastIndexOf(str, fromIndex);
@@ -823,11 +822,11 @@ public class GStringImpl extends GString {
      * its rendering, the stored text is reused; otherwise the literal segments
      * and values are interpolated on every call.
      *
+     * Throws {@code StringIndexOutOfBoundsException} if {@code beginIndex} is negative or greater than
+     * the rendered length.
      * @param beginIndex first rendered index to keep, inclusive
      * @return the tail of the rendered text, or the rendered string when
      *     {@code beginIndex} is zero
-     * @throws StringIndexOutOfBoundsException if {@code beginIndex} is
-     *     negative or greater than the rendered length
      */
     public String substring(int beginIndex) {
         return toString().substring(beginIndex);
@@ -842,13 +841,13 @@ public class GStringImpl extends GString {
      * its rendering, the stored text is reused; otherwise the literal segments
      * and values are interpolated on every call.
      *
+     * Throws {@code StringIndexOutOfBoundsException} if {@code beginIndex} is negative, {@code
+     * endIndex} is greater than the rendered length, or {@code beginIndex} is greater than {@code
+     * endIndex}.
      * @param beginIndex first rendered index to keep, inclusive
      * @param endIndex rendered index at which the slice stops, exclusive
      * @return the requested slice, or the rendered string when the range
      *     covers the whole text
-     * @throws StringIndexOutOfBoundsException if {@code beginIndex} is
-     *     negative, {@code endIndex} is greater than the rendered length,
-     *     or {@code beginIndex} is greater than {@code endIndex}
      */
     public String substring(int beginIndex, int endIndex) {
         return toString().substring(beginIndex, endIndex);
@@ -862,10 +861,10 @@ public class GStringImpl extends GString {
      * its rendering, the stored text is reused; otherwise the literal segments
      * and values are interpolated on every call.
      *
+     * Throws {@code NullPointerException} if {@code str} is null.
      * @param str text appended after the rendered text
      * @return the rendered text with {@code str} appended, or the rendered
      *     string when {@code str} is empty
-     * @throws NullPointerException if {@code str} is null
      */
     public String concat(String str) {
         return toString().concat(str);
@@ -898,11 +897,11 @@ public class GStringImpl extends GString {
      * its rendering, the stored text is reused; otherwise the literal segments
      * and values are interpolated on every call.
      *
+     * Throws {@code NullPointerException} if {@code regex} is null.
+     * Throws {@code PatternSyntaxException} if {@code regex} cannot be compiled.
+     *
      * @param regex regular expression matched against the entire rendering
      * @return {@code true} when the pattern matches the whole rendered text
-     * @throws java.util.regex.PatternSyntaxException if {@code regex}
-     *     cannot be compiled
-     * @throws NullPointerException if {@code regex} is null
      */
     public boolean matches(String regex) {
         return toString().matches(regex);
@@ -916,9 +915,9 @@ public class GStringImpl extends GString {
      * its rendering, the stored text is reused; otherwise the literal segments
      * and values are interpolated on every call.
      *
+     * Throws {@code NullPointerException} if {@code s} is null.
      * @param s sequence to search for
      * @return {@code true} when {@code s} occurs in the rendered text
-     * @throws NullPointerException if {@code s} is null
      */
     public boolean contains(CharSequence s) {
         return toString().contains(s);
@@ -935,14 +934,13 @@ public class GStringImpl extends GString {
      * its rendering, the stored text is reused; otherwise the literal segments
      * and values are interpolated on every call.
      *
+     * Throws {@code NullPointerException} if {@code regex} or {@code replacement} is null.
+     * Throws {@code PatternSyntaxException} if {@code regex} cannot be compiled.
+     *
      * @param regex regular expression whose first match is replaced
      * @param replacement text written over that match, with matcher
      *     substitution of dollar signs and backslashes
      * @return the rendered text after that one replacement
-     * @throws java.util.regex.PatternSyntaxException if {@code regex}
-     *     cannot be compiled
-     * @throws NullPointerException if {@code regex} or {@code replacement}
-     *     is null
      */
     public String replaceFirst(String regex, String replacement) {
         return toString().replaceFirst(regex, replacement);
@@ -959,14 +957,13 @@ public class GStringImpl extends GString {
      * its rendering, the stored text is reused; otherwise the literal segments
      * and values are interpolated on every call.
      *
+     * Throws {@code NullPointerException} if {@code regex} or {@code replacement} is null.
+     * Throws {@code PatternSyntaxException} if {@code regex} cannot be compiled.
+     *
      * @param regex regular expression whose matches are replaced
      * @param replacement text written over each match, with matcher
      *     substitution of dollar signs and backslashes
      * @return the rendered text after every replacement
-     * @throws java.util.regex.PatternSyntaxException if {@code regex}
-     *     cannot be compiled
-     * @throws NullPointerException if {@code regex} or {@code replacement}
-     *     is null
      */
     public String replaceAll(String regex, String replacement) {
         return toString().replaceAll(regex, replacement);
@@ -985,11 +982,10 @@ public class GStringImpl extends GString {
      * its rendering, the stored text is reused; otherwise the literal segments
      * and values are interpolated on every call.
      *
+     * Throws {@code NullPointerException} if {@code target} or {@code replacement} is null.
      * @param target literal sequence to replace
      * @param replacement literal sequence written in its place
      * @return the rendered text after those literal replacements
-     * @throws NullPointerException if {@code target} or {@code replacement}
-     *     is null
      */
     public String replace(CharSequence target, CharSequence replacement) {
         return toString().replace(target, replacement);
@@ -1009,13 +1005,13 @@ public class GStringImpl extends GString {
      * its rendering, the stored text is reused; otherwise the literal segments
      * and values are interpolated on every call.
      *
+     * Throws {@code NullPointerException} if {@code regex} is null.
+     * Throws {@code PatternSyntaxException} if {@code regex} cannot be compiled.
+     *
      * @param regex regular expression that separates the rendered text
      * @param limit maximum number of applications of the pattern, with
      *     the zero and negative cases above
      * @return the segments produced by that split
-     * @throws java.util.regex.PatternSyntaxException if {@code regex}
-     *     cannot be compiled
-     * @throws NullPointerException if {@code regex} is null
      */
     public String[] split(String regex, int limit) {
         return toString().split(regex, limit);
@@ -1031,11 +1027,11 @@ public class GStringImpl extends GString {
      * its rendering, the stored text is reused; otherwise the literal segments
      * and values are interpolated on every call.
      *
+     * Throws {@code NullPointerException} if {@code regex} is null.
+     * Throws {@code PatternSyntaxException} if {@code regex} cannot be compiled.
+     *
      * @param regex regular expression that separates the rendered text
      * @return the segments, without trailing empty strings
-     * @throws java.util.regex.PatternSyntaxException if {@code regex}
-     *     cannot be compiled
-     * @throws NullPointerException if {@code regex} is null
      */
     public String[] split(String regex) {
         return toString().split(regex);
@@ -1050,9 +1046,9 @@ public class GStringImpl extends GString {
      * its rendering, the stored text is reused; otherwise the literal segments
      * and values are interpolated on every call.
      *
+     * Throws {@code NullPointerException} if {@code locale} is null.
      * @param locale locale whose case mappings are applied
      * @return the lower-case form of the rendered text
-     * @throws NullPointerException if {@code locale} is null
      */
     public String toLowerCase(Locale locale) {
         return toString().toLowerCase(locale);
@@ -1082,9 +1078,9 @@ public class GStringImpl extends GString {
      * its rendering, the stored text is reused; otherwise the literal segments
      * and values are interpolated on every call.
      *
+     * Throws {@code NullPointerException} if {@code locale} is null.
      * @param locale locale whose case mappings are applied
      * @return the upper-case form of the rendered text
-     * @throws NullPointerException if {@code locale} is null
      */
     public String toUpperCase(Locale locale) {
         return toString().toUpperCase(locale);

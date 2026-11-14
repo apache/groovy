@@ -138,7 +138,6 @@ public abstract class PackedClosure extends Closure<Object> {
          * hoisted method propagates to the caller.
          *
          * @return the value returned by the hoisted method, or {@code null} when that method is void
-         * @throws MissingMethodException when the stored parameter count is greater than one
          */
         public Object doCall() { return dispatchAll(EMPTY); }
     }
@@ -200,7 +199,6 @@ public abstract class PackedClosure extends Closure<Object> {
          *
          * @param a value supplied for the closure's parameter
          * @return the value returned by the hoisted method, or {@code null} when that method is void
-         * @throws MissingMethodException when {@code a} cannot be coerced to the first parameter type
          */
         public Object doCall(final Object a) { return dispatchOne(coerceArg(a, parameterTypes[0])); }
     }
@@ -262,7 +260,6 @@ public abstract class PackedClosure extends Closure<Object> {
          * hoisted method propagates to the caller.
          *
          * @return the value returned by the hoisted method, or {@code null} when that method is void
-         * @throws MissingMethodException when the stored parameter count is greater than one
          */
         public Object doCall() { return dispatchAll(EMPTY); }
 
@@ -282,7 +279,6 @@ public abstract class PackedClosure extends Closure<Object> {
          *
          * @param a value supplied for the implicit parameter
          * @return the value returned by the hoisted method, or {@code null} when that method is void
-         * @throws MissingMethodException when {@code a} cannot be coerced to the implicit parameter's type
          */
         public Object doCall(final Object a) { return dispatchOne(coerceArg(a, parameterTypes[0])); }
     }
@@ -340,7 +336,6 @@ public abstract class PackedClosure extends Closure<Object> {
          * @param a value supplied for the first parameter
          * @param b value supplied for the second parameter
          * @return the value returned by the hoisted method, or {@code null} when that method is void
-         * @throws MissingMethodException when either argument cannot be coerced to its parameter type
          */
         public Object doCall(final Object a, final Object b) { return dispatchTwo(a, b); }
     }
@@ -401,7 +396,6 @@ public abstract class PackedClosure extends Closure<Object> {
          * @param b value supplied for the second parameter
          * @param c value supplied for the third parameter
          * @return the value returned by the hoisted method, or {@code null} when that method is void
-         * @throws MissingMethodException when the arguments cannot be adapted or coerced to the stored parameter types
          */
         public Object doCall(final Object a, final Object b, final Object c) { return dispatchAll(new Object[]{a, b, c}); }
     }
@@ -463,7 +457,6 @@ public abstract class PackedClosure extends Closure<Object> {
          * @param c value supplied for the third parameter
          * @param d value supplied for the fourth parameter
          * @return the value returned by the hoisted method, or {@code null} when that method is void
-         * @throws MissingMethodException when the arguments cannot be adapted or coerced to the stored parameter types
          */
         public Object doCall(final Object a, final Object b, final Object c, final Object d) { return dispatchAll(new Object[]{a, b, c, d}); }
     }
@@ -536,7 +529,6 @@ public abstract class PackedClosure extends Closure<Object> {
          *
          * @param args call arguments already packed into one array. {@code null} means none
          * @return the value returned by the hoisted method, or {@code null} when that method is void
-         * @throws MissingMethodException when the arguments cannot be adapted or coerced to the stored parameter types
          */
         public Object doCall(final Object... args) { return dispatchAll(args); }
     }
