@@ -401,6 +401,11 @@ public class TableSorter extends TableMap {
         final JTable tableView = table;
         tableView.setColumnSelectionAllowed(false);
         MouseAdapter listMouseListener = new MouseAdapter() {
+            /**
+             * On a single click over a column, flips the current direction when
+             * that column was sorted last and then sorts by the model column
+             * under the pointer, recording it. Other clicks are ignored.
+             */
             @Override
             public void mouseClicked(MouseEvent e) {
                 TableColumnModel columnModel = tableView.getColumnModel();

@@ -33,6 +33,13 @@ public class StaticMetaClassSite extends MetaClassSite {
     private final ClassInfo classInfo;
     private final int version;
 
+    /**
+     * Caches {@code metaClass} and the version of its class so a later call
+     * can tell whether that meta-class is still current.
+     *
+     * @param site the site whose name and index are reused
+     * @param metaClass the meta-class used for static invocation
+     */
     public StaticMetaClassSite(CallSite site, MetaClass metaClass) {
         super(site, metaClass);
         classInfo = ClassInfo.getClassInfo(metaClass.getTheClass());
@@ -44,6 +51,17 @@ public class StaticMetaClassSite extends MetaClassSite {
             && version == classInfo.getVersion(); // metaClass still be valid
     }
 
+    /**
+     * Invokes {@code name} as a static method when {@code receiver} is the
+     * cached class and that class's meta-class version is unchanged.
+     * Otherwise uses the default call. A {@link GroovyRuntimeException}
+     * from the static invocation is rethrown via
+     * {@link ScriptBytecodeAdapter#unwrap(GroovyRuntimeException)}.
+     *
+     * @param receiver the class the static method is invoked on
+     * @param args the call arguments
+     * @return the call result
+     */
     @Override
     public final Object call(Object receiver, Object[] args) throws Throwable {
         if (checkCall(receiver)) {
@@ -57,6 +75,17 @@ public class StaticMetaClassSite extends MetaClassSite {
         }
     }
 
+    /**
+     * Invokes {@code name} as a static method when {@code receiver} is still
+     * the cached class and the meta-class version matches. Otherwise uses
+     * the default static call. A {@link GroovyRuntimeException} from the
+     * static invocation is rethrown via
+     * {@link ScriptBytecodeAdapter#unwrap(GroovyRuntimeException)}.
+     *
+     * @param receiver the class the static method is invoked on
+     * @param args the call arguments
+     * @return the call result
+     */
     @Override
     public final Object callStatic(Class receiver, Object[] args) throws Throwable {
         if (checkCall(receiver)) {

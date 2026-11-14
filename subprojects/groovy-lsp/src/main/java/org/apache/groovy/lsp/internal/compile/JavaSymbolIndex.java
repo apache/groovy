@@ -46,6 +46,9 @@ import java.util.Map;
  */
 public final class JavaSymbolIndex {
 
+    /**
+     * An index with no types and no members.
+     */
     public static final JavaSymbolIndex EMPTY = new JavaSymbolIndex(Map.of(), Map.of(), Map.of());
 
     private final Map<String, JavaSymbol> byName;
@@ -184,6 +187,11 @@ public final class JavaSymbolIndex {
             this.source = sourceText(unit);
         }
 
+        /**
+         * Indexes a named class under its qualified name, then walks its
+         * members with that class as the enclosing owner. A class with an
+         * empty simple name is not indexed.
+         */
         @Override
         public Void visitClass(final ClassTree node, final Void unused) {
             String simpleName = text(node.getSimpleName());
@@ -203,12 +211,21 @@ public final class JavaSymbolIndex {
             }
         }
 
+        /**
+         * Records the method as a member of the enclosing type, then walks
+         * its body. Constructors and methods with an empty name are skipped,
+         * as are methods found outside a type.
+         */
         @Override
         public Void visitMethod(final MethodTree node, final Void unused) {
             addMember(text(node.getName()), node);
             return super.visitMethod(node, unused);
         }
 
+        /**
+         * Records the variable when its parent is a class, interface, enum,
+         * or record, so locals and parameters are left out of the member index.
+         */
         @Override
         public Void visitVariable(final VariableTree node, final Void unused) {
             Tree.Kind parent = getCurrentPath() == null || getCurrentPath().getParentPath() == null

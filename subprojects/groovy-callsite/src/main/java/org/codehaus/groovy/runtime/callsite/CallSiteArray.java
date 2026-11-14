@@ -36,10 +36,22 @@ import java.util.stream.IntStream;
  * deprecation/removal in a future Groovy version.
  */
 public final class CallSiteArray {
+    /**
+     * Empty argument array shared by sites that pass no arguments.
+     */
     public static final Object[] NOPARAM = new Object[0];
+    /**
+     * Sites for {@link #owner}, replaced in place when a site is specialized.
+     */
     public final CallSite[] array;
+    /**
+     * Class whose compiled call sites this array holds.
+     */
     public final Class owner;
 
+    /**
+     * Builds one {@link AbstractCallSite} per entry of {@code names}, in order.
+     */
     @GroovyABI(since = "1.6.0")
     public CallSiteArray(Class owner, final String[] names) {
         this.owner = owner;
@@ -48,18 +60,41 @@ public final class CallSiteArray {
                         .toArray(CallSite[]::new);
     }
 
+    /**
+     * Selects a site for {@code receiver} (null, a {@link Class}, a
+     * {@link GroovyObject}, or a plain object) and invokes it with {@code args}.
+     * A null receiver is not cached. Any other site is installed when the
+     * receiver's meta-class version stays unchanged while the site is created.
+     */
     public static Object defaultCall(CallSite callSite, Object receiver, Object[] args) throws Throwable {
         return createCallSite(callSite, receiver, args).call(receiver, args);
     }
 
+    /**
+     * Selects a {@code callCurrent} site for {@code receiver}, using the
+     * call-site array's owner as the sender, and invokes it with {@code args}.
+     * The site is installed when the receiver's meta-class version stays
+     * unchanged while the site is created.
+     */
     public static Object defaultCallCurrent(CallSite callSite, GroovyObject receiver, Object[] args) throws Throwable {
         return createCallCurrentSite(callSite, receiver, args, callSite.getArray().owner).callCurrent(receiver, args);
     }
 
+    /**
+     * Forces {@code receiver}'s static initializer to run, ignoring a failure
+     * to load the class, then selects a static site and invokes it with
+     * {@code args}. The site is installed when the meta-class version stays
+     * unchanged while the site is created.
+     */
     public static Object defaultCallStatic(CallSite callSite, Class receiver, Object[] args) throws Throwable {
         return createCallStaticSite(callSite, receiver, args).callStatic(receiver,args);
     }
 
+    /**
+     * Treats {@code receiver} as the class to construct, selects a constructor
+     * site, and invokes it with {@code args}. The site is installed when the
+     * meta-class version stays unchanged while the site is created.
+     */
     public static Object defaultCallConstructor(CallSite callSite, Object receiver, Object[] args) throws Throwable {
         return createCallConstructorSite(callSite, (Class) receiver, args).callConstructor(receiver, args);
     }

@@ -23,14 +23,25 @@ package org.apache.groovy.dateutil;
  * DEQUIRKED: {@code getAgo()}/{@code getFrom()} inherited from {@link BaseDuration}.
  */
 public class TimeDuration extends Duration {
+    /**
+     * Creates a duration of {@code hours}, {@code minutes}, {@code seconds}
+     * and {@code millis}, with the day count left at zero.
+     */
     public TimeDuration(final int hours, final int minutes, final int seconds, final int millis) {
         super(0, hours, minutes, seconds, millis);
     }
 
+    /**
+     * Creates a duration of {@code days}, {@code hours}, {@code minutes},
+     * {@code seconds} and {@code millis}.
+     */
     public TimeDuration(final int days, final int hours, final int minutes, final int seconds, final int millis) {
         super(days, hours, minutes, seconds, millis);
     }
 
+    /**
+     * Adds {@code rhs} field by field and returns the sum as a {@link TimeDuration}.
+     */
     @Override
     public Duration plus(final Duration rhs) {
         return new TimeDuration(getDays() + rhs.getDays(), getHours() + rhs.getHours(),
@@ -38,6 +49,10 @@ public class TimeDuration extends Duration {
                 getMillis() + rhs.getMillis());
     }
 
+    /**
+     * Keeps the years and months from {@code rhs} and adds the day and time
+     * fields, returning a {@link TimeDatumDependentDuration}.
+     */
     @Override
     public DatumDependentDuration plus(final DatumDependentDuration rhs) {
         return new TimeDatumDependentDuration(rhs.getYears(), rhs.getMonths(),
@@ -46,6 +61,10 @@ public class TimeDuration extends Duration {
                 getMillis() + rhs.getMillis());
     }
 
+    /**
+     * Subtracts {@code rhs} field by field and returns the difference as a
+     * {@link TimeDuration}.
+     */
     @Override
     public Duration minus(final Duration rhs) {
         return new TimeDuration(getDays() - rhs.getDays(), getHours() - rhs.getHours(),
@@ -53,6 +72,10 @@ public class TimeDuration extends Duration {
                 getMillis() - rhs.getMillis());
     }
 
+    /**
+     * Negates the years and months from {@code rhs} and subtracts the day and
+     * time fields, returning a {@link TimeDatumDependentDuration}.
+     */
     @Override
     public DatumDependentDuration minus(final DatumDependentDuration rhs) {
         return new TimeDatumDependentDuration(-rhs.getYears(), -rhs.getMonths(),

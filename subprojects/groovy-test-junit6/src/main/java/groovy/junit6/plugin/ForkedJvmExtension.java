@@ -63,6 +63,16 @@ public class ForkedJvmExtension implements InvocationInterceptor {
      */
     public static final String EXCLUDE_CLASSPATH_PROP = "groovy.junit6.forked.excludeClasspath";
 
+    /**
+     * Runs the test body in this JVM when the forked-JVM flag is already set,
+     * or when neither the test method nor the test class carries {@code ForkedJvm}.
+     * Otherwise skips the invocation here and runs the same method in a child
+     * process, then rethrows or aborts according to the child's result file.
+     *
+     * @param invocation the current test invocation
+     * @param invocationContext the method and target being intercepted
+     * @param extensionContext the JUnit context used to find {@code ForkedJvm}
+     */
     @Override
     public void interceptTestMethod(Invocation<Void> invocation,
                                     ReflectiveInvocationContext<Method> invocationContext,

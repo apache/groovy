@@ -211,11 +211,23 @@ final class LoopContractSupport {
             this.target = target;
         }
 
+        /**
+         * Returns {@code null}. This finder does not report compilation errors.
+         *
+         * @return {@code null}
+         */
         @Override
         protected SourceUnit getSourceUnit() {
             return null;
         }
 
+        /**
+         * Records {@code block} when it directly contains the target and no
+         * enclosing block has been recorded yet, and then does not descend.
+         * Otherwise visits nested blocks.
+         *
+         * @param block a block in the enclosing class
+         */
         @Override
         public void visitBlockStatement(final BlockStatement block) {
             if (found == null && block.getStatements().contains(target)) {
@@ -234,23 +246,46 @@ final class LoopContractSupport {
             this.target = target;
         }
 
+        /**
+         * Returns {@code null}. This finder does not report compilation errors.
+         *
+         * @return {@code null}
+         */
         @Override
         protected SourceUnit getSourceUnit() {
             return null;
         }
 
+        /**
+         * Marks the target found when {@code loop} is that statement, then
+         * visits the loop body.
+         *
+         * @param loop a while statement in the class
+         */
         @Override
         public void visitWhileLoop(final WhileStatement loop) {
             if (loop == target) found = true;
             super.visitWhileLoop(loop);
         }
 
+        /**
+         * Marks the target found when {@code loop} is that statement, then
+         * visits the loop body.
+         *
+         * @param loop a for statement in the class
+         */
         @Override
         public void visitForLoop(final ForStatement loop) {
             if (loop == target) found = true;
             super.visitForLoop(loop);
         }
 
+        /**
+         * Marks the target found when {@code loop} is that statement, then
+         * visits the loop body.
+         *
+         * @param loop a do-while statement in the class
+         */
         @Override
         public void visitDoWhileLoop(final DoWhileStatement loop) {
             if (loop == target) found = true;

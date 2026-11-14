@@ -132,6 +132,20 @@ public class ThrowsIfASTTransformation implements ASTTransformation {
         boolean exhaustive;
     }
 
+    /**
+     * Weaves one method's {@link ThrowsIf} arms a single time. Abstract methods,
+     * methods without a body, and a second visit of the same method are skipped.
+     * A constructor's leading {@code super} or {@code this} call stays first.
+     * When no arm is checked, each woven arm becomes a guard before the original
+     * body. When any arm is checked, every condition is snapshotted, woven guards
+     * test those snapshots, and the body is wrapped so a thrown exception is
+     * passed to {@link ThrowsIfSupport#onlyWhen} while a normal return calls
+     * {@link ThrowsIfSupport#mustThrow} for the non-woven arms. Variable scopes
+     * are resolved again after the body is replaced.
+     *
+     * @param nodes the triggering annotation and the method or constructor
+     * @param source the source unit being compiled
+     */
     @Override
     public void visit(final ASTNode[] nodes, final SourceUnit source) {
         if (nodes.length != 2) return;

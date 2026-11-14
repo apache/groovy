@@ -46,14 +46,32 @@ public abstract class BaseDuration implements Comparable<BaseDuration> {
     /** Estimated milliseconds in a month (ChronoUnit.MONTHS = 30.436875 days). */
     static final long MILLIS_PER_MONTH = ChronoUnit.MONTHS.getDuration().toMillis();
 
+    /** Whole years stored in this duration. */
     protected final int years;
+    /** Whole months stored in this duration. */
     protected final int months;
+    /** Whole days stored in this duration. */
     protected final int days;
+    /** Hours stored in this duration. */
     protected final int hours;
+    /** Minutes stored in this duration. */
     protected final int minutes;
+    /** Seconds stored in this duration. */
     protected final int seconds;
+    /** Milliseconds stored in this duration. */
     protected final int millis;
 
+    /**
+     * Stores every calendar and time component of the duration.
+     *
+     * @param years whole years
+     * @param months whole months
+     * @param days whole days
+     * @param hours hours
+     * @param minutes minutes
+     * @param seconds seconds
+     * @param millis milliseconds
+     */
     protected BaseDuration(final int years, final int months, final int days, final int hours, final int minutes, final int seconds, final int millis) {
         this.years = years;
         this.months = months;
@@ -64,16 +82,32 @@ public abstract class BaseDuration implements Comparable<BaseDuration> {
         this.millis = millis;
     }
 
+    /**
+     * Stores the day and time components. Years and months are zero.
+     *
+     * @param days whole days
+     * @param hours hours
+     * @param minutes minutes
+     * @param seconds seconds
+     * @param millis milliseconds
+     */
     protected BaseDuration(final int days, final int hours, final int minutes, final int seconds, final int millis) {
         this(0, 0, days, hours, minutes, seconds, millis);
     }
 
+    /** Returns the stored year count. */
     public int getYears()   { return this.years; }
+    /** Returns the stored month count. */
     public int getMonths()  { return this.months; }
+    /** Returns the stored day count. */
     public int getDays()    { return this.days; }
+    /** Returns the stored hour count. */
     public int getHours()   { return this.hours; }
+    /** Returns the stored minute count. */
     public int getMinutes() { return this.minutes; }
+    /** Returns the stored second count. */
     public int getSeconds() { return this.seconds; }
+    /** Returns the stored millisecond count. */
     public int getMillis()  { return this.millis; }
 
     /**
@@ -133,6 +167,11 @@ public abstract class BaseDuration implements Comparable<BaseDuration> {
      */
     public From getFrom() {
         return new From() {
+            /**
+             * Adds this duration's years, months, days, and time of day to the current time.
+             *
+             * @return that calendar date
+             */
             @Override
             public Date getNow() {
                 final Calendar cal = Calendar.getInstance();
@@ -148,11 +187,25 @@ public abstract class BaseDuration implements Comparable<BaseDuration> {
         };
     }
 
+    /**
+     * Orders durations by {@link #toMilliseconds()}, so years and months use the
+     * {@link ChronoUnit} estimates and the shorter units are exact.
+     *
+     * @param other the duration to compare with
+     * @return a negative, zero, or positive value when this duration is shorter, equal, or longer
+     */
     @Override
     public int compareTo(BaseDuration other) {
         return Long.compare(toMilliseconds(), other.toMilliseconds());
     }
 
+    /**
+     * Lists each non-zero component. Seconds and milliseconds are combined into one
+     * fractional-seconds term, with the millisecond part padded to three digits.
+     * A duration whose components are all zero is {@code "0"}.
+     *
+     * @return the component list
+     */
     @Override
     public String toString() {
         List<String> buffer = new ArrayList<>();
@@ -178,8 +231,18 @@ public abstract class BaseDuration implements Comparable<BaseDuration> {
 
     /** Helper for computing dates relative to the current time. */
     public abstract static class From {
+        /**
+         * Returns the date produced by applying the duration to the current time.
+         *
+         * @return that date, with the time of day preserved
+         */
         public abstract Date getNow();
 
+        /**
+         * Returns {@link #getNow()} unchanged, so the time of day is kept.
+         *
+         * @return the same date {@link #getNow()} produces
+         */
         public Date getToday() {
             return getNow();
         }

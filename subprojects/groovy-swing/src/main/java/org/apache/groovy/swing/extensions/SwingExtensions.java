@@ -190,16 +190,29 @@ public class SwingExtensions {
         return new Iterator<Object>() {
             private int index = 0;
 
+            /**
+             * Returns whether the cursor is still before the end of the model.
+             *
+             * @return {@code true} when {@code index} is less than the model size
+             */
             @Override
             public boolean hasNext() {
                 return index < self.getSize();
             }
 
+            /**
+             * Returns the element at the cursor and advances the cursor by one.
+             *
+             * @return that element
+             */
             @Override
             public Object next() {
                 return self.getElementAt(index++);
             }
 
+            /**
+             * Refuses removal. A {@code ListModel} is not modified through this iterator.
+             */
             @Override
             public void remove() {
                 throw new UnsupportedOperationException("ListModel is immutable.");
@@ -257,16 +270,30 @@ public class SwingExtensions {
         return new Iterator<Object>() {
             private int index = 0;
 
+            /**
+             * Returns whether the cursor is non-negative and still inside the model.
+             *
+             * @return {@code true} when another element can be read or removed
+             */
             @Override
             public boolean hasNext() {
                 return index > -1 && index < self.getSize();
             }
 
+            /**
+             * Returns the element at the cursor and advances the cursor by one.
+             *
+             * @return that element
+             */
             @Override
             public Object next() {
                 return self.getElementAt(index++);
             }
 
+            /**
+             * When the cursor is still inside the model, removes the element at that
+             * index and moves the cursor back one position.
+             */
             @Override
             public void remove() {
                 if (hasNext()) self.removeElementAt(index--);
@@ -374,16 +401,30 @@ public class SwingExtensions {
         return new Iterator<Object>() {
             private int index = 0;
 
+            /**
+             * Returns whether the cursor is non-negative and still inside the model.
+             *
+             * @return {@code true} when another item can be read or removed
+             */
             @Override
             public boolean hasNext() {
                 return index > -1 && index < self.getSize();
             }
 
+            /**
+             * Returns the item at the cursor and advances the cursor by one.
+             *
+             * @return that item
+             */
             @Override
             public Object next() {
                 return self.getElementAt(index++);
             }
 
+            /**
+             * When the cursor is still inside the model, removes the item at that
+             * index and moves the cursor back one position.
+             */
             @Override
             public void remove() {
                 if (hasNext()) self.removeElementAt(index--);
@@ -440,11 +481,21 @@ public class SwingExtensions {
         return new Iterator<Object>() {
             private int row = 0;
 
+            /**
+             * Returns whether the cursor is still before the last row.
+             *
+             * @return {@code true} when {@code row} is less than the row count
+             */
             @Override
             public boolean hasNext() {
                 return row < self.getRowCount();
             }
 
+            /**
+             * Copies every cell of the current row, then advances to the next row.
+             *
+             * @return the copied row
+             */
             @Override
             public Object next() {
                 int cols = self.getColumnCount();
@@ -456,6 +507,9 @@ public class SwingExtensions {
                 return rowData;
             }
 
+            /**
+             * Refuses removal. A {@link TableModel} is not modified through this iterator.
+             */
             @Override
             public void remove() {
                 throw new UnsupportedOperationException("TableModel is immutable.");
@@ -529,11 +583,21 @@ public class SwingExtensions {
         return new Iterator<Object>() {
             private int row = 0;
 
+            /**
+             * Returns whether the cursor is non-negative and still inside the model.
+             *
+             * @return {@code true} when another row can be read or removed
+             */
             @Override
             public boolean hasNext() {
                 return row > -1 && row < self.getRowCount();
             }
 
+            /**
+             * Copies every cell of the current row, then advances to the next row.
+             *
+             * @return the copied row
+             */
             @Override
             public Object next() {
                 int cols = self.getColumnCount();
@@ -545,6 +609,10 @@ public class SwingExtensions {
                 return rowData;
             }
 
+            /**
+             * When the cursor is still inside the model, removes the row at that
+             * index and moves the cursor back one position.
+             */
             @Override
             public void remove() {
                 if (hasNext()) self.removeRow(row--);
@@ -586,16 +654,30 @@ public class SwingExtensions {
         return new Iterator<TableColumn>() {
             private int index = 0;
 
+            /**
+             * Returns whether the cursor is non-negative and still inside the model.
+             *
+             * @return {@code true} when another column can be read or removed
+             */
             @Override
             public boolean hasNext() {
                 return index > -1 && index < self.getColumnCount();
             }
 
+            /**
+             * Returns the column at the cursor and advances the cursor by one.
+             *
+             * @return that column
+             */
             @Override
             public TableColumn next() {
                 return self.getColumn(index++);
             }
 
+            /**
+             * When the cursor is still inside the model, removes the column at that
+             * index and moves the cursor back one position.
+             */
             @Override
             public void remove() {
                 if (hasNext()) self.removeColumn(self.getColumn(index--));
@@ -1030,16 +1112,30 @@ public class SwingExtensions {
         return new Iterator<Component>() {
             private int index = 0;
 
+            /**
+             * Returns whether the cursor is non-negative and still inside the tab count.
+             *
+             * @return {@code true} when another tab can be read or removed
+             */
             @Override
             public boolean hasNext() {
                 return index > -1 && index < self.getTabCount();
             }
 
+            /**
+             * Returns the tab component at the cursor and advances the cursor by one.
+             *
+             * @return that component
+             */
             @Override
             public Component next() {
                 return self.getComponentAt(index++);
             }
 
+            /**
+             * When the cursor is still inside the tab count, removes the tab at that
+             * index and moves the cursor back one position.
+             */
             @Override
             public void remove() {
                 if (hasNext()) self.removeTabAt(index--);

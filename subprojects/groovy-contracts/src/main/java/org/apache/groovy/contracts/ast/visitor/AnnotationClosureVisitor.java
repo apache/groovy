@@ -347,6 +347,14 @@ public class AnnotationClosureVisitor extends BaseVisitor implements ASTNodeMeta
     }
 
     private static final class ConstantUnsharer implements ExpressionTransformer {
+        /**
+         * Returns a new {@link ConstantExpression} with the same value, type,
+         * source position, and metadata. Every other expression is rewritten
+         * by this transformer so nested constants are copied too.
+         *
+         * @param expression the expression being unshared
+         * @return a constant copy, or {@code expression} rewritten in place
+         */
         @Override
         public Expression transform(final Expression expression) {
             if (expression == null) return null;

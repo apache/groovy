@@ -37,6 +37,10 @@ public class ConstructorSite extends MetaClassSite {
     final Class[] params;
     private final int version;
 
+    /**
+     * Caches {@code constructor} and {@code params}, and records
+     * {@code metaClass}'s version for {@link #checkCall(Object, Object[])}.
+     */
     public ConstructorSite(CallSite site, MetaClassImpl metaClass, CachedConstructor constructor, Class[] params) {
         super(site, metaClass);
         this.constructor = constructor;
@@ -44,6 +48,14 @@ public class ConstructorSite extends MetaClassSite {
         this.version = metaClass.getVersion();
     }
 
+    /**
+     * When {@link #checkCall(Object, Object[])} passes, unwraps {@code args}
+     * and calls {@link CachedConstructor#doConstructorInvoke(Object[])},
+     * which coerces them. A {@link GroovyRuntimeException} is rethrown via
+     * {@link ScriptBytecodeAdapter#unwrap(GroovyRuntimeException)}.
+     * Otherwise falls back to
+     * {@link CallSiteArray#defaultCallConstructor(CallSite, Object, Object[])}.
+     */
     @Override
     public Object callConstructor(Object receiver, Object[] args) throws Throwable {
         if (checkCall(receiver, args)) {
@@ -57,12 +69,31 @@ public class ConstructorSite extends MetaClassSite {
             return CallSiteArray.defaultCallConstructor(this, receiver, args);
     }
 
+    /**
+     * Returns {@code true} when {@code receiver} is the meta-class's class,
+     * the meta-class version is still the version recorded at construction,
+     * and {@link MetaClassHelper#sameClasses(Class[], Object[])} matches the
+     * cached parameter classes to {@code args}.
+     */
     protected final boolean checkCall(Object receiver, Object[] args) {
         return receiver == metaClass.getTheClass() // metaclass match receiver
                 && ((MetaClassImpl) metaClass).getVersion() == version // metaClass still be valid
                 && MetaClassHelper.sameClasses(params, args);
     }
 
+    /**
+     * Chooses a constructor site from {@code args}.
+     * When {@link CachedConstructor#correctArguments(Object[])} returns the
+     * same array and {@code noWrappers(args)} is true, returns a
+     * {@link ConstructorSiteNoUnwrap} if {@code noCoerce} is true (its
+     * {@code callConstructor} calls
+     * {@link CachedConstructor#doConstructorInvoke(Object[])} and skips
+     * {@link MetaClassHelper#unwrap(Object[])}) and a
+     * {@link ConstructorSiteNoUnwrapNoCoerce} if {@code noCoerce} is false
+     * (its {@code callConstructor} calls {@link CachedConstructor#invoke(Object[])}
+     * with no unwrap and no coerce).
+     * If those argument checks fail, returns a {@link ConstructorSite}.
+     */
     public static ConstructorSite createConstructorSite(CallSite site, MetaClassImpl metaClass, CachedConstructor constructor, Class[] params, Object[] args) {
         if (constructor.correctArguments(args) == args) {
             if (noWrappers(args)) {
@@ -81,10 +112,23 @@ public class ConstructorSite extends MetaClassSite {
      */
     public static class ConstructorSiteNoUnwrap extends ConstructorSite {
 
+        /**
+         * Delegates to {@link ConstructorSite}, recording the same
+         * meta-class version.
+         */
         public ConstructorSiteNoUnwrap(CallSite site, MetaClassImpl metaClass, CachedConstructor constructor, Class[] params) {
             super(site, metaClass, constructor, params);
         }
 
+        /**
+         * When {@link #checkCall(Object, Object[])} passes, calls
+         * {@link CachedConstructor#doConstructorInvoke(Object[])}, which
+         * coerces, and skips {@link MetaClassHelper#unwrap(Object[])}. A
+         * {@link GroovyRuntimeException} is rethrown via
+         * {@link ScriptBytecodeAdapter#unwrap(GroovyRuntimeException)}.
+         * Otherwise falls back to
+         * {@link CallSiteArray#defaultCallConstructor(CallSite, Object, Object[])}.
+         */
         @Override
         public final Object callConstructor(Object receiver, Object[] args) throws Throwable {
             if (checkCall(receiver, args)) {
@@ -103,10 +147,22 @@ public class ConstructorSite extends MetaClassSite {
      */
     public static class ConstructorSiteNoUnwrapNoCoerce extends ConstructorSite {
 
+        /**
+         * Delegates to {@link ConstructorSite}, recording the same
+         * meta-class version.
+         */
         public ConstructorSiteNoUnwrapNoCoerce(CallSite site, MetaClassImpl metaClass, CachedConstructor constructor, Class[] params) {
             super(site, metaClass, constructor, params);
         }
 
+        /**
+         * When {@link #checkCall(Object, Object[])} passes, calls
+         * {@link CachedConstructor#invoke(Object[])} with no unwrap and no
+         * coerce. A {@link GroovyRuntimeException} is rethrown via
+         * {@link ScriptBytecodeAdapter#unwrap(GroovyRuntimeException)}.
+         * Otherwise falls back to
+         * {@link CallSiteArray#defaultCallConstructor(CallSite, Object, Object[])}.
+         */
         @Override
         public Object callConstructor(Object receiver, Object[] args) throws Throwable {
             if (checkCall(receiver, args)) {
@@ -120,13 +176,35 @@ public class ConstructorSite extends MetaClassSite {
         }
     }
 
+    /**
+     * Constructor site that, after the inherited {@link #checkCall(Object, Object[])}
+     * passes, invokes the cached constructor with an empty argument array
+     * and then applies {@code args[0]} as a property map. The constructor
+     * call itself neither unwraps nor coerces. Otherwise it falls back to
+     * the default constructor call.
+     */
     public static class NoParamSite extends ConstructorSiteNoUnwrapNoCoerce {
         private static final Object[] NO_ARGS = new Object[0];
 
+        /**
+         * Delegates to {@link ConstructorSiteNoUnwrapNoCoerce}, recording
+         * the same meta-class version.
+         */
         public NoParamSite(CallSite site, MetaClassImpl metaClass, CachedConstructor constructor, Class[] params) {
             super(site, metaClass, constructor, params);
         }
 
+        /**
+         * When {@link #checkCall(Object, Object[])} passes, calls
+         * {@link CachedConstructor#invoke(Object[])} with an empty argument
+         * array, then casts {@code args[0]} to {@link Map} and passes it to
+         * {@link MetaClassImpl#setProperties(Object, Map)}. That constructor
+         * call neither unwraps nor coerces. A {@link GroovyRuntimeException}
+         * from setting properties is rethrown via
+         * {@link ScriptBytecodeAdapter#unwrap(GroovyRuntimeException)}.
+         * Otherwise falls back to
+         * {@link CallSiteArray#defaultCallConstructor(CallSite, Object, Object[])}.
+         */
         @Override
         public final Object callConstructor(Object receiver, Object[] args) throws Throwable {
             if (checkCall(receiver, args)) {
@@ -142,11 +220,33 @@ public class ConstructorSite extends MetaClassSite {
         }
     }
 
+    /**
+     * Constructor site that, after the inherited {@link #checkCall(Object, Object[])}
+     * passes, invokes the cached constructor with only {@code args[0]} and
+     * then applies {@code args[1]} as a property map. Those constructor
+     * arguments are neither unwrapped nor coerced. Otherwise it falls back
+     * to the default constructor call.
+     */
     public static class NoParamSiteInnerClass extends ConstructorSiteNoUnwrapNoCoerce {
+        /**
+         * Delegates to {@link ConstructorSiteNoUnwrapNoCoerce}, recording
+         * the same meta-class version.
+         */
         public NoParamSiteInnerClass(CallSite site, MetaClassImpl metaClass, CachedConstructor constructor, Class[] params) {
             super(site, metaClass, constructor, params);
         }
 
+        /**
+         * When {@link #checkCall(Object, Object[])} passes, calls
+         * {@link CachedConstructor#invoke(Object[])} with a one-element
+         * array holding {@code args[0]}, then casts {@code args[1]} to
+         * {@link Map} and passes it to {@link MetaClassImpl#setProperties(Object, Map)}.
+         * Those constructor arguments are neither unwrapped nor coerced. A
+         * {@link GroovyRuntimeException} from setting properties is rethrown
+         * via {@link ScriptBytecodeAdapter#unwrap(GroovyRuntimeException)}.
+         * Otherwise falls back to
+         * {@link CallSiteArray#defaultCallConstructor(CallSite, Object, Object[])}.
+         */
         @Override
         public final Object callConstructor(Object receiver, Object[] args) throws Throwable {
             if (checkCall(receiver, args)) {

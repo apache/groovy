@@ -663,6 +663,9 @@ public final class GroovyLanguageEngine implements AutoCloseable {
         return toChanges(normalized, features.codeActions().organizeImports(compiled, encoding()));
     }
 
+    /**
+     * Closes the session this engine drives.
+     */
     @Override
     public void close() {
         context.close();

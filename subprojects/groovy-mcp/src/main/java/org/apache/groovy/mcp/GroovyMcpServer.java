@@ -205,6 +205,9 @@ public final class GroovyMcpServer implements AutoCloseable {
         }
     }
 
+    /**
+     * Closes the language engine on the first call. Later calls leave the session closed.
+     */
     @Override
     public synchronized void close() {
         if (closed) {

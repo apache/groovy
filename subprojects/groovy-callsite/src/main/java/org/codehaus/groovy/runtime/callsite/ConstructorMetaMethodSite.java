@@ -33,11 +33,21 @@ public class ConstructorMetaMethodSite extends MetaMethodSite {
 
     private final int version;
 
+    /**
+     * Caches {@code method} and {@code params}, and records {@code metaClass}'s
+     * version for {@link #callConstructor(Object, Object[])}.
+     */
     public ConstructorMetaMethodSite(CallSite site, MetaClassImpl metaClass, MetaMethod method, Class [] params) {
         super(site, metaClass, method, params);
         this.version = metaClass.getVersion();
     }
 
+    /**
+     * Unwraps {@code args} and invokes the cached meta-method on the
+     * meta-class's class, ignoring {@code receiver}. A
+     * {@link GroovyRuntimeException} is rethrown via
+     * {@link ScriptBytecodeAdapter#unwrap(GroovyRuntimeException)}.
+     */
     public final Object invoke(Object receiver, Object [] args) throws Throwable{
         MetaClassHelper.unwrap(args);
         try {
@@ -47,6 +57,16 @@ public class ConstructorMetaMethodSite extends MetaMethodSite {
         }
     }
 
+    /**
+     * When {@code receiver} is the meta-class's class, the meta-class version
+     * is unchanged, and {@link MetaClassHelper#sameClasses(Class[], Object[])}
+     * matches {@code args} to the cached parameter classes, unwraps {@code args}
+     * and invokes the cached meta-method on that class. A
+     * {@link GroovyRuntimeException} is rethrown via
+     * {@link ScriptBytecodeAdapter#unwrap(GroovyRuntimeException)}.
+     * Otherwise falls back to
+     * {@link CallSiteArray#defaultCallConstructor(CallSite, Object, Object[])}.
+     */
     @Override
     public final Object callConstructor(Object receiver, Object[] args) throws Throwable {
         if (receiver == metaClass.getTheClass() // metaclass match receiver

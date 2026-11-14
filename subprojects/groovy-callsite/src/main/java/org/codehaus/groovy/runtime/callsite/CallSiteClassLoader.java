@@ -45,10 +45,25 @@ public class CallSiteClassLoader extends ClassLoaderForClassArtifacts {
                 );
     }
 
+    /**
+     * Creates a loader for artifacts of {@code klazz}, using that class's loader as the parent.
+     *
+     * @param klazz the class whose loader, name, and protection domain are captured
+     */
     public CallSiteClassLoader(Class klazz) {
         super(klazz);
     }
 
+    /**
+     * Loads a known call-site or meta-class type from this class's defining loader.
+     * Any other name is delegated to the superclass, and a {@link ClassNotFoundException}
+     * from that delegation is retried on this class's defining loader.
+     *
+     * @param name the binary name to load
+     * @param resolve whether the class is linked after it is loaded
+     * @return the loaded class
+     * @throws ClassNotFoundException when neither loader can find {@code name}
+     */
     @Override
     protected synchronized Class loadClass(String name, boolean resolve) throws ClassNotFoundException {
         if (KNOWN_CLASSES.contains(name))

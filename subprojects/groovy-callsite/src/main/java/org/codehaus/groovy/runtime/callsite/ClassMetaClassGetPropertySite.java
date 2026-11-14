@@ -29,6 +29,12 @@ class ClassMetaClassGetPropertySite extends AbstractCallSite {
     private final ClassInfo classInfo;
     private final int version;
 
+    /**
+     * Captures {@code aClass}, its {@link ClassInfo}, that info's version, and the meta class.
+     *
+     * @param parent the site whose name and index are copied
+     * @param aClass the class object this site reads properties from
+     */
     public ClassMetaClassGetPropertySite(CallSite parent, Class aClass) {
         super(parent);
         this.aClass = aClass;
@@ -37,6 +43,11 @@ class ClassMetaClassGetPropertySite extends AbstractCallSite {
         metaClass = classInfo.getMetaClass();
     }
 
+    /**
+     * Returns a newly created get-property site when {@code receiver} is not
+     * the captured class or the {@link ClassInfo} version has changed.
+     * Otherwise returns this site.
+     */
     @Override
     public final CallSite acceptGetProperty(Object receiver) {
         if (receiver != aClass
@@ -46,6 +57,10 @@ class ClassMetaClassGetPropertySite extends AbstractCallSite {
           return this;
     }
 
+    /**
+     * Reads this site's property name from the captured class through its meta class.
+     * A {@link GroovyRuntimeException} is unwrapped.
+     */
     @Override
     public final Object getProperty(Object receiver) throws Throwable{
         try {

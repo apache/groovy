@@ -69,11 +69,25 @@ public final class GroovyWorkspaceService implements WorkspaceService {
     private final LanguageServerContext context;
     private final LanguageFeatures features;
 
+    /**
+     * Keeps {@code context} and {@code features} for later workspace requests.
+     *
+     * @param context server state, documents, and client
+     * @param features workspace feature implementations
+     */
     public GroovyWorkspaceService(final LanguageServerContext context, final LanguageFeatures features) {
         this.context = context;
         this.features = features;
     }
 
+    /**
+     * Applies client settings and always schedules a recompile. When
+     * {@code params} holds a map, a nested {@code groovy} map is applied if
+     * present; otherwise the map itself is applied. A non-map settings
+     * object is ignored.
+     *
+     * @param params the configuration change
+     */
     @Override
     public void didChangeConfiguration(final DidChangeConfigurationParams params) {
         Object settings = params.getSettings();
@@ -118,11 +132,22 @@ public final class GroovyWorkspaceService implements WorkspaceService {
                 });
     }
 
+    /**
+     * Schedules a recompile 100 milliseconds after watched files change.
+     *
+     * @param params the file-change notification
+     */
     @Override
     public void didChangeWatchedFiles(final DidChangeWatchedFilesParams params) {
         context.scheduleRecompile(100);
     }
 
+    /**
+     * Adds and removes workspace folders on the context, then schedules a
+     * recompile. A missing event is ignored.
+     *
+     * @param params the folder change
+     */
     @Override
     public void didChangeWorkspaceFolders(final DidChangeWorkspaceFoldersParams params) {
         if (params.getEvent() == null) {
@@ -133,6 +158,14 @@ public final class GroovyWorkspaceService implements WorkspaceService {
         context.scheduleRecompile(0);
     }
 
+    /**
+     * Returns the rename edits for the files in {@code params}, using the
+     * current snapshot and position encoding. A null parameter or file list
+     * is treated as no files.
+     *
+     * @param params the files about to be renamed
+     * @return the edits that update references of those files
+     */
     @Override
     public CompletableFuture<WorkspaceEdit> willRenameFiles(final RenameFilesParams params) {
         List<FileRename> files = params == null || params.getFiles() == null
@@ -141,6 +174,13 @@ public final class GroovyWorkspaceService implements WorkspaceService {
                 files, context.getSnapshot(), context.getPositionEncoding()));
     }
 
+    /**
+     * Returns workspace symbols from the current snapshot that match the
+     * query, as the right side of the protocol either.
+     *
+     * @param params the symbol query
+     * @return the matching symbols
+     */
     @Override
     public CompletableFuture<Either<List<? extends SymbolInformation>, List<? extends WorkspaceSymbol>>> symbol(
             final WorkspaceSymbolParams params) {
@@ -149,6 +189,13 @@ public final class GroovyWorkspaceService implements WorkspaceService {
         return CompletableFuture.completedFuture(Either.forRight(symbols));
     }
 
+    /**
+     * Runs a recognized Groovy workspace command from {@code params}.
+     * An unrecognized command completes with {@code null}.
+     *
+     * @param params the command name and arguments
+     * @return the command result, or {@code null} when the command is unknown
+     */
     @Override
     public CompletableFuture<Object> executeCommand(final ExecuteCommandParams params) {
         String command = params.getCommand();

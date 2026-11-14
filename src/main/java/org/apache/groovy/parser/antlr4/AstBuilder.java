@@ -197,6 +197,13 @@ import static org.codehaus.groovy.runtime.DefaultGroovyMethods.last;
  */
 public class AstBuilder extends GroovyParserBaseVisitor<Object> {
 
+    /**
+     * Creates a builder for {@code sourceUnit} and allocates its {@link ModuleNode}. The lexer
+     * and parser read that source unit. Error recovery follows the compiler configuration, and
+     * the parser uses a descriptive error strategy for that mode. Groovydoc handling is created
+     * from {@code groovydocEnabled} and {@code runtimeGroovydocEnabled}, and a
+     * try-with-resources transform is attached to this builder.
+     */
     public AstBuilder(final SourceUnit sourceUnit, final boolean groovydocEnabled, final boolean runtimeGroovydocEnabled) {
         this.sourceUnit = sourceUnit;
         this.moduleNode = new ModuleNode(sourceUnit);
@@ -292,6 +299,15 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
         return cfe;
     }
 
+    /**
+     * Builds the {@link ModuleNode} by visiting the concrete syntax tree from {@code buildCST}.
+     * <p>
+     * A failure is converted to a {@link CompilationFailedException}. The partial
+     * {@link #moduleNode} is returned when {@code shouldReturnPartialModuleOnFailure()} is true;
+     * otherwise the exception is rethrown. The {@code finally} block releases the lexer and
+     * parser and clears the parameter maps kept for this parse.
+     * </p>
+     */
     public ModuleNode buildAST() {
         try {
             return (ModuleNode) this.visit(this.buildCST());
@@ -330,6 +346,18 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
         return errorRecovery && sourceUnit.getErrorCollector().hasErrors();
     }
 
+    /**
+     * Builds the {@link ModuleNode} for a compilation unit. The package declaration is visited,
+     * then each script statement is added as a statement (a declaration list is flattened into
+     * its statements) or as a method, and every class collected during the walk is added.
+     * <p>
+     * A {@code package-info.groovy} source gains a {@code package-info} class when the module
+     * does not already contain one. A module with no classes, methods, or statements receives
+     * {@link ReturnStatement#RETURN_NULL_OR_VOID}. The script class dummy, when present, takes
+     * its source position from the first and last statements. A number-format error recorded
+     * while visiting literals is thrown after the module is assembled.
+     * </p>
+     */
     @Override
     public ModuleNode visitCompilationUnit(final CompilationUnitContext ctx) {
         this.visit(ctx.packageDeclaration());
@@ -382,6 +410,10 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
         return this.moduleNode;
     }
 
+    /**
+     * Returns the script's top-level {@link ASTNode}s. An absent context yields an empty list;
+     * otherwise each {@code scriptStatement} child is visited.
+     */
     @Override
     public List<ASTNode> visitScriptStatements(final ScriptStatementsContext ctx) {
         if (!asBoolean(ctx)) {
@@ -393,6 +425,11 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
                 .collect(Collectors.toList());
     }
 
+    /**
+     * Returns the module's {@link PackageNode}. The qualified name plus a trailing dot is set as
+     * the package name, annotations from the declaration are copied onto the node, and the node
+     * is positioned on {@code ctx}.
+     */
     @Override
     public PackageNode visitPackageDeclaration(final PackageDeclarationContext ctx) {
         String packageName = this.visitQualifiedName(ctx.qualifiedName());
@@ -405,6 +442,17 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
         return configureAST(packageNode, ctx);
     }
 
+    /**
+     * Returns the {@link ImportNode} just added to the module, positioned on {@code ctx}.
+     * Annotations are collected first. A module import is expanded by
+     * {@code expandModuleImport}.
+     * <p>
+     * A static star import, a static member import, a type star import, or a single-type import
+     * is recorded on the module. An alias, when present, is the simple name; otherwise the
+     * simple name is the member or the last name element. For a static member import the
+     * imported type's end position stops before the member name.
+     * </p>
+     */
     @Override
     public ImportNode visitImportDeclaration(final ImportDeclarationContext ctx) {
         List<AnnotationNode> annotations = this.visitAnnotationsOpt(ctx.annotationsOpt());
@@ -530,6 +578,13 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
 
     // statement { -------------------------------------------------------------
 
+    /**
+     * Builds an {@link AssertStatement} whose condition is a {@link BooleanExpression}. An
+     * assignment used as the condition is rejected. {@code visitingAssertStatementCount} is
+     * raised before the condition is visited, so a postfix operator inside the assertion is
+     * positioned on the operator, and is lowered on the path that also visits the message
+     * expression.
+     */
     @Override
     public AssertStatement visitAssertStatement(final AssertStatementContext ctx) {
         visitingAssertStatementCount += 1;
@@ -561,6 +616,10 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
         return result;
     }
 
+    /**
+     * Returns the {@link Statement} for an {@code if}/{@code else} or a {@code switch},
+     * positioned on {@code ctx}. Any other conditional form is rejected.
+     */
     @Override
     public Statement visitConditionalStatement(final ConditionalStatementContext ctx) {
         if (asBoolean(ctx.ifElseStatement())) {
@@ -572,6 +631,11 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
         throw createParsingFailedException("Unsupported conditional statement", ctx);
     }
 
+    /**
+     * Builds an {@link IfStatement}. The parenthesized condition becomes a
+     * {@link BooleanExpression}. The then and else statements are unpacked, and a missing
+     * {@code else} is {@link EmptyStatement#INSTANCE}.
+     */
     @Override
     public IfStatement visitIfElseStatement(final IfElseStatementContext ctx) {
         Expression conditionExpression = this.visitExpressionInPar(ctx.expressionInPar());
@@ -583,6 +647,10 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
         return configureAST(new IfStatement(booleanExpression, thenStatement, elseStatement), ctx);
     }
 
+    /**
+     * Returns the loop {@link Statement}, positioned on {@code ctx}. The loop context is pushed
+     * as the innermost breakable construct while its statement is visited, then popped.
+     */
     @Override
     public Statement visitLoopStmtAlt(final LoopStmtAltContext ctx) {
         switchExpressionRuleContextStack.push(ctx);
@@ -593,6 +661,11 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
         }
     }
 
+    /**
+     * Builds a {@link ForStatement} from {@code visitForControl} applied to the unpacked body,
+     * then adds any statement annotations. When {@code await} is present the statement is
+     * wrapped by {@code AsyncTransformHelper.wrapForAwaitLoop} and positioned on {@code ctx}.
+     */
     @Override
     public Statement visitForStmtAlt(final ForStmtAltContext ctx) {
         boolean isForAwait = asBoolean(ctx.AWAIT());
@@ -610,6 +683,11 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
         return forStatement;
     }
 
+    /**
+     * Returns the {@link Function} that builds a {@link ForStatement} from a loop body. An
+     * enhanced for-control and a classic for-control are dispatched to their own visitors; any
+     * other form is rejected.
+     */
     @Override
     public Function<Statement, ForStatement> visitForControl(final ForControlContext ctx) {
         // e.g. `for (var e : x) { }` and `for (e in x) { }`
@@ -627,6 +705,11 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
         throw createParsingFailedException("Unsupported for control: " + ctx.getText(), ctx);
     }
 
+    /**
+     * Returns a {@link Function} that builds a for-each {@link ForStatement}. The optional index
+     * parameter and the value parameter (type, name, and modifiers) are captured now. The
+     * collection expression is visited only when that function is applied.
+     */
     @Override
     public Function<Statement, ForStatement> visitEnhancedForControl(final EnhancedForControlContext ctx) {
         var indexParameter = asBoolean(ctx.indexVariable()) ? this.visitIndexVariable(ctx.indexVariable()) : null;
@@ -638,6 +721,11 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
         return (body) -> new ForStatement(indexParameter, valueParameter, (Expression) this.visit(ctx.expression()), body);
     }
 
+    /**
+     * Builds the index {@link Parameter} of a for-each loop. A built-in primitive whose spelling
+     * is not three characters is rejected. The parameter type is {@code int}, the name is the
+     * identifier, and the parameter is final.
+     */
     @Override
     public Parameter visitIndexVariable(final IndexVariableContext ctx) {
         var primitiveType = ctx.BuiltInPrimitiveType();
@@ -650,6 +738,12 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
         return indexParameter;
     }
 
+    /**
+     * Returns a {@link Function} that builds a classic {@link ForStatement}. Init, condition,
+     * and update are visited immediately and stored in a {@link ClosureListExpression}; a
+     * missing condition is {@link EmptyExpression#INSTANCE}. That list is positioned on the
+     * for-control, including the semicolons, and the function only attaches the body.
+     */
     @Override
     public Function<Statement, ForStatement> visitOriginalForControl(final OriginalForControlContext ctx) {
         ClosureListExpression closureListExpression = new ClosureListExpression();
@@ -663,6 +757,13 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
         return (body) -> new ForStatement(closureListExpression, body);
     }
 
+    /**
+     * Returns the init {@link Expression} of a classic {@code for}. An absent context yields
+     * {@link EmptyExpression#INSTANCE}. A local-variable declaration becomes that single
+     * declaration, or a {@link ClosureListExpression} when several are declared together. An
+     * expression list becomes one expression, or a {@link ClosureListExpression} when it has
+     * more than one element.
+     */
     @Override
     public Expression visitForInit(final ForInitContext ctx) {
         if (!asBoolean(ctx)) {
@@ -687,6 +788,11 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
         throw createParsingFailedException("Unsupported for init: " + ctx.getText(), ctx);
     }
 
+    /**
+     * Returns the update {@link Expression} of a classic {@code for}. An absent context yields
+     * {@link EmptyExpression#INSTANCE}; otherwise the expression list becomes one expression, or
+     * a {@link ClosureListExpression} when it has more than one element.
+     */
     @Override
     public Expression visitForUpdate(final ForUpdateContext ctx) {
         if (!asBoolean(ctx)) {
@@ -706,6 +812,10 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
         }
     }
 
+    /**
+     * Builds a {@link WhileStatement} from the parenthesized condition and the unpacked body,
+     * adds any statement annotations, and positions the node on {@code ctx}.
+     */
     @Override
     public WhileStatement visitWhileStmtAlt(final WhileStmtAltContext ctx) {
         Tuple2<BooleanExpression, Statement> conditionAndBlock = createLoopConditionExpressionAndBlock(ctx.expressionInPar(), ctx.statement());
@@ -715,6 +825,10 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
         return whileStatement;
     }
 
+    /**
+     * Builds a {@link DoWhileStatement} from the parenthesized condition and the unpacked body,
+     * adds any statement annotations, and positions the node on {@code ctx}.
+     */
     @Override
     public DoWhileStatement visitDoWhileStmtAlt(final DoWhileStmtAltContext ctx) {
         Tuple2<BooleanExpression, Statement> conditionAndBlock = createLoopConditionExpressionAndBlock(ctx.expressionInPar(), ctx.statement());
@@ -733,6 +847,13 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
         return tuple(booleanExpression, loopBlock);
     }
 
+    /**
+     * Builds a {@link TryCatchStatement}. A {@code try} with neither resources, a {@code catch},
+     * nor a {@code finally} is rejected. Resources and every catch clause are added (multi-catch
+     * clauses are flattened into one list), a missing {@code finally} is empty, and the node is
+     * positioned on {@code ctx}, the try-with-resources transform is applied, and the result is
+     * positioned on {@code ctx} again.
+     */
     @Override
     public Statement visitTryCatchStatement(final TryCatchStatementContext ctx) {
         boolean resourcesExists = asBoolean(ctx.resources());
@@ -764,16 +885,35 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
                 ctx);
     }
 
+    /**
+     * Returns the resource {@link ExpressionStatement}s of a try-with-resources header by
+     * delegating to {@link #visitResourceList}.
+     */
     @Override
     public List<ExpressionStatement> visitResources(final ResourcesContext ctx) {
         return this.visitResourceList(ctx.resourceList());
     }
 
+    /**
+     * Returns one {@link ExpressionStatement} per resource, in source order, by visiting each
+     * {@code resource} child.
+     */
     @Override
     public List<ExpressionStatement> visitResourceList(final ResourceListContext ctx) {
         return ctx.resource().stream().map(this::visitResource).collect(Collectors.toList());
     }
 
+    /**
+     * Returns the {@link ExpressionStatement} for one try-with-resources resource. A
+     * local-variable declaration is used as-is and must declare exactly one variable.
+     * <p>
+     * An expression must be an assignment to a variable or a bare variable. A bare variable is
+     * rewritten by the try-with-resources transform. Either form is then rebuilt as a
+     * {@link DeclarationExpression} whose left side is a {@link VariableExpression} of the
+     * assignment's left text, and that declaration is wrapped in an {@link ExpressionStatement}
+     * positioned on {@code ctx}.
+     * </p>
+     */
     @Override
     public ExpressionStatement visitResource(final ResourceContext ctx) {
         if (asBoolean(ctx.localVariableDeclaration())) {
@@ -838,6 +978,10 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
                 .collect(Collectors.toList());
     }
 
+    /**
+     * Returns the exception types of a {@code catch}. An absent context yields a single dynamic
+     * type; otherwise each qualified class name is visited.
+     */
     @Override
     public List<ClassNode> visitCatchType(final CatchTypeContext ctx) {
         if (!asBoolean(ctx)) {
@@ -849,6 +993,11 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
                 .collect(Collectors.toList());
     }
 
+    /**
+     * Returns the {@code finally} {@link Statement}. An absent context yields
+     * {@link EmptyStatement#INSTANCE}; otherwise the block is wrapped in a block statement and
+     * positioned on {@code ctx}.
+     */
     @Override
     public Statement visitFinallyBlock(final FinallyBlockContext ctx) {
         if (!asBoolean(ctx)) {
@@ -860,6 +1009,16 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
                 ctx);
     }
 
+    /**
+     * Builds a {@link SwitchStatement} whose selector is the parenthesized expression. The
+     * switch context is pushed while the groups are visited. Each group is flattened into case
+     * statements and at most one default statement.
+     * <p>
+     * A second default is rejected, and a default that is not the last branch is rejected. The
+     * error is anchored on the default keyword when that token was recorded. A missing default
+     * is {@link EmptyStatement#INSTANCE}.
+     * </p>
+     */
     @Override
     public SwitchStatement visitSwitchStatement(final SwitchStatementContext ctx) {
         switchExpressionRuleContextStack.push(ctx);
@@ -914,6 +1073,17 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
         }
     }
 
+    /**
+     * Returns the {@link Statement}s for one switch group, one per label. The last {@code case}
+     * label carries the group body when a body is present; earlier case labels get
+     * {@link EmptyStatement#INSTANCE} and are positioned on the group's first {@code case}
+     * token.
+     * <p>
+     * A {@code default} label is the group body, or a fresh empty statement positioned on the
+     * {@code default} token when the group has no body. That statement is marked as the switch
+     * default and remembers the keyword token.
+     * </p>
+     */
     @Override
     public List<Statement> visitSwitchBlockStatementGroup(final SwitchBlockStatementGroupContext ctx) {
         int labelCount = ctx.switchLabel().size();
@@ -954,6 +1124,11 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
                 });
     }
 
+    /**
+     * Returns the keyword {@link Token} paired with its label {@link Expression}. {@code case}
+     * visits the expression; {@code default} uses {@link EmptyExpression#INSTANCE}. Any other
+     * label is rejected.
+     */
     @Override
     public Tuple2<Token, Expression> visitSwitchLabel(final SwitchLabelContext ctx) {
         if (asBoolean(ctx.CASE())) {
@@ -965,6 +1140,10 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
         throw createParsingFailedException("Unsupported switch label: " + ctx.getText(), ctx);
     }
 
+    /**
+     * Builds a {@link SynchronizedStatement} from the parenthesized expression and the block,
+     * positioned on {@code ctx}.
+     */
     @Override
     public SynchronizedStatement visitSynchronizedStmtAlt(final SynchronizedStmtAltContext ctx) {
         return configureAST(
@@ -972,6 +1151,11 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
                 ctx);
     }
 
+    /**
+     * Builds a {@link ReturnStatement}. A {@code return} inside a switch expression that
+     * produces a value is rejected. A missing expression is
+     * {@link ConstantExpression#EMPTY_EXPRESSION}.
+     */
     @Override
     public ReturnStatement visitReturnStmtAlt(final ReturnStmtAltContext ctx) {
         if (isInsideSwitchExpression()) {
@@ -984,6 +1168,9 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
                 ctx);
     }
 
+    /**
+     * Builds a {@link ThrowStatement} for the visited expression, positioned on {@code ctx}.
+     */
     @Override
     public ThrowStatement visitThrowStmtAlt(final ThrowStmtAltContext ctx) {
         return configureAST(
@@ -991,6 +1178,10 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
                 ctx);
     }
 
+    /**
+     * Returns the nested {@link Statement} after adding the identifier as a statement label. The
+     * statement node itself is not rebuilt.
+     */
     @Override
     public Statement visitLabeledStmtAlt(final LabeledStmtAltContext ctx) {
         Statement statement = (Statement) this.visit(ctx.statement());
@@ -1000,6 +1191,11 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
         return statement;
     }
 
+    /**
+     * Builds a {@link BreakStatement}. A {@code break} whose innermost breakable construct is a
+     * switch expression that produces a value is rejected. The label is the identifier when one
+     * is present, otherwise {@code null}.
+     */
     @Override
     public BreakStatement visitBreakStatement(final BreakStatementContext ctx) {
         if (isEnclosingSwitchExpression()) {
@@ -1013,22 +1209,44 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
         return configureAST(new BreakStatement(label), ctx);
     }
 
+    /**
+     * Builds a {@link YieldStatement} for the visited expression, positioned on {@code ctx}.
+     */
     @Override
     public YieldStatement visitYieldStatement(final YieldStatementContext ctx) {
         return configureAST(yieldS((Expression) this.visit(ctx.expression())), ctx);
     }
 
+    /**
+     * Builds an {@link ExpressionStatement} whose expression is the call produced by
+     * {@code AsyncTransformHelper.buildYieldReturnCall} for the visited expression.
+     */
     @Override
     public ExpressionStatement visitYieldReturnStmtAlt(final YieldReturnStmtAltContext ctx) {
         Expression expr = (Expression) this.visit(ctx.expression());
         return configureAST(new ExpressionStatement(AsyncTransformHelper.buildYieldReturnCall(expr)), ctx);
     }
 
+    /**
+     * Returns the {@link YieldStatement} from {@link #visitYieldStatement}, positioned on
+     * {@code ctx}.
+     */
     @Override
     public YieldStatement visitYieldStmtAlt(final YieldStmtAltContext ctx) {
         return configureAST(this.visitYieldStatement(ctx.yieldStatement()), ctx);
     }
 
+    /**
+     * Builds an {@link ExpressionStatement} whose expression is the call produced by
+     * {@code AsyncTransformHelper.buildDeferCall}. {@code defer} is rejected unless the
+     * innermost closure or lambda frame is the closure of an {@code async} expression; a nested
+     * closure inside that frame gets a distinct error.
+     * <p>
+     * A closure expression is passed through as the action. Any other statement expression is
+     * wrapped in a closure whose body is that statement and whose source position is the
+     * statement.
+     * </p>
+     */
     @Override
     public ExpressionStatement visitDeferStmtAlt(final DeferStmtAltContext ctx) {
         if (!Boolean.TRUE.equals(asyncClosureStack.peek())) {
@@ -1051,6 +1269,11 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
         return configureAST(new ExpressionStatement(AsyncTransformHelper.buildDeferCall(action)), ctx);
     }
 
+    /**
+     * Builds a {@link ContinueStatement}. A {@code continue} whose innermost breakable construct
+     * is a switch expression that produces a value is rejected. The label is the identifier when
+     * one is present, otherwise {@code null}.
+     */
     @Override
     public ContinueStatement visitContinueStatement(final ContinueStatementContext ctx) {
         if (isEnclosingSwitchExpression()) {
@@ -1064,6 +1287,10 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
         return configureAST(new ContinueStatement(label), ctx);
     }
 
+    /**
+     * Returns the {@link SwitchExpression} from {@link #visitSwitchExpression}, positioned on
+     * {@code ctx}.
+     */
     @Override
     public Expression visitSwitchExprAlt(final SwitchExprAltContext ctx) {
         return configureAST(this.visitSwitchExpression(ctx.switchExpression()), ctx);
@@ -1130,6 +1357,17 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
         }
     }
 
+    /**
+     * Returns the case and default {@link Statement}s of one switch-expression group. The group
+     * must have a label, and an arrow label cannot share the group with another label.
+     * <p>
+     * The arm is built by {@code switchExpressionArm}: an arrow arm must be a single statement,
+     * an expression statement becomes a {@link YieldStatement}, and an empty arrow arm is kept
+     * only when the enclosing switch is in statement position. Only the last label receives that
+     * arm; earlier labels in the group get an empty statement. A {@code default} arm is marked
+     * as the switch default.
+     * </p>
+     */
     @Override
     public List<Statement> visitSwitchBlockStatementExpressionGroup(final SwitchBlockStatementExpressionGroupContext ctx) {
         List<SwitchExpressionLabel> labels = ctx.switchExpressionLabel().stream()
@@ -1437,6 +1675,17 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
         }
     }
 
+    /**
+     * Returns the label descriptor from {@code switchExpressionLabel}: the {@code case} or
+     * {@code default} keyword, the label expressions, and the colon or arrow separator.
+     * <p>
+     * A pattern label is visited as a pattern expression and must use the arrow form. A colon
+     * label that is a zero-argument call, or a list or map literal that is not pattern-shaped,
+     * is rebuilt as that legacy expression; a {@code when} guard on such a list or map is
+     * rejected. A plain {@code case} uses the expression list, and {@code default} uses an empty
+     * expression.
+     * </p>
+     */
     @Override
     public Object visitSwitchExpressionLabel(final SwitchExpressionLabelContext ctx) {
         return this.switchExpressionLabel(ctx);
@@ -1717,6 +1966,12 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
 
     // } statement -------------------------------------------------------------
 
+    /**
+     * Returns the {@link ClassNode} for a class, interface, trait, enum, record, or annotation
+     * declaration. The class-or-interface modifiers are stored on the class-declaration context
+     * before it is visited, and the result is positioned on {@code ctx}. Any other type
+     * declaration is rejected.
+     */
     @Override
     public ClassNode visitTypeDeclaration(final TypeDeclarationContext ctx) {
         if (asBoolean(ctx.classDeclaration())) { // e.g. class A {}
@@ -1727,6 +1982,36 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
         throw createParsingFailedException("Unsupported type declaration: " + ctx.getText(), ctx);
     }
 
+    /**
+     * Builds the {@link ClassNode} for a class, interface, trait, enum, record, or annotation,
+     * positioned on {@code ctx}. An enum is built with {@link EnumHelper}, including a nested
+     * enum. A nested non-enum type is an {@link InnerClassNode}. A top-level non-enum type uses
+     * the package plus the identifier. {@code var}, and {@code val} when that spelling is
+     * enabled, are rejected as type names.
+     * <p>
+     * Annotation, enum, interface, and record declarations reject the clauses and modifiers the
+     * grammar still allows them to carry (type parameters, {@code extends}, {@code implements},
+     * {@code sealed}, {@code non-sealed}, or a header that is not a record header).
+     * {@code sealed} together with {@code non-sealed} or {@code final} is rejected, and
+     * {@code permits} is rejected on a type that is not sealed.
+     * </p>
+     * <p>
+     * The synthetic-public bit is stripped from the modifiers and recorded with
+     * {@code setSyntheticPublic}. Generics are applied. Sealed, non-sealed, trait, and record
+     * markers are added as annotations, along with the annotations carried by the modifiers. A
+     * sealed type's permitted subclasses are a list of class expressions when a {@code permits}
+     * clause is present. Classes and traits take a single superclass and their interfaces.
+     * Interfaces and annotations receive the interface and abstract modifiers (and static when
+     * nested) and their mixin list is cleared; an annotation also receives the annotation
+     * modifier and the annotation interface. Records turn the header into properties.
+     * </p>
+     * <p>
+     * The class is pushed while its body is visited. A record is then rejected if it still has
+     * an instance field that the header did not generate, or an instance initializer. A
+     * top-level class, followed by its inner classes, is appended to the module's class list.
+     * Groovydoc is attached, and the class node is returned.
+     * </p>
+     */
     @Override
     public ClassNode visitClassDeclaration(final ClassDeclarationContext ctx) {
         String packageName = this.moduleNode.getPackageName();
@@ -1989,6 +2274,11 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
         return !methodDeclarationContextList.isEmpty();
     }
 
+    /**
+     * Attaches the enum constants and class-body declarations to the class node stored on
+     * {@code ctx}, passing that node down in node metadata. Returns {@code null}; the members
+     * are recorded on the class as a side effect.
+     */
     @Override
     public Void visitClassBody(final ClassBodyContext ctx) {
         ClassNode classNode = ctx.getNodeMetaData(CLASS_DECLARATION_CLASS_NODE);
@@ -2007,6 +2297,10 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
         return null;
     }
 
+    /**
+     * Returns the {@link FieldNode}s of the enum constants. The enclosing class node is copied
+     * onto each constant context before it is visited.
+     */
     @Override
     public List<FieldNode> visitEnumConstants(final EnumConstantsContext ctx) {
         ClassNode classNode = ctx.getNodeMetaData(CLASS_DECLARATION_CLASS_NODE);
@@ -2020,6 +2314,12 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
                 .collect(Collectors.toList());
     }
 
+    /**
+     * Builds the enum-constant {@link FieldNode} and adds it to the enum class. An anonymous
+     * body is visited with the enum as its superclass and becomes part of the constant's
+     * initializer. Annotations and groovydoc are attached, and the field is positioned on
+     * {@code ctx}.
+     */
     @Override
     public FieldNode visitEnumConstant(final EnumConstantContext ctx) {
         ClassNode classNode = ctx.getNodeMetaData(CLASS_DECLARATION_CLASS_NODE);
@@ -2121,6 +2421,11 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
                 : configureAST(listExpression, anonymousInnerClassNode);
     }
 
+    /**
+     * Adds one class-body member and returns {@code null}. A member declaration is visited with
+     * the enclosing class node. A {@code static} block is added as a static initializer; an
+     * instance block is added as an object initializer wrapped in a block statement.
+     */
     @Override
     public Void visitClassBodyDeclaration(final ClassBodyDeclarationContext ctx) {
         ClassNode classNode = ctx.getNodeMetaData(CLASS_DECLARATION_CLASS_NODE);
@@ -2139,6 +2444,12 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
         return null;
     }
 
+    /**
+     * Dispatches one member and returns {@code null}. A method, field, or compact constructor is
+     * visited with the enclosing class node; the compact constructor also receives the member's
+     * modifiers. A nested type declaration receives those modifiers and is positioned on
+     * {@code ctx}.
+     */
     @Override
     public Void visitMemberDeclaration(final MemberDeclarationContext ctx) {
         ClassNode classNode = ctx.getNodeMetaData(CLASS_DECLARATION_CLASS_NODE);
@@ -2163,6 +2474,10 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
         return null;
     }
 
+    /**
+     * Returns the declared {@link GenericsType}s. An absent context yields {@code null} rather
+     * than an empty array; otherwise each type parameter is visited.
+     */
     @Override
     public GenericsType[] visitTypeParameters(final TypeParametersContext ctx) {
         if (!asBoolean(ctx)) {
@@ -2174,6 +2489,11 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
                 .toArray(GenericsType[]::new);
     }
 
+    /**
+     * Builds one {@link GenericsType}. The parameter's class node carries the annotations
+     * written on the name, and its bounds are the types from {@code visitTypeBound}. The
+     * generics type is positioned on {@code ctx}.
+     */
     @Override
     public GenericsType visitTypeParameter(final TypeParameterContext ctx) {
         ClassNode baseType = configureAST(ClassHelper.make(this.visitClassName(ctx.className())), ctx);
@@ -2182,6 +2502,10 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
         return configureAST(genericsType, ctx);
     }
 
+    /**
+     * Returns the upper-bound {@link ClassNode}s of a type parameter. An absent context yields
+     * {@code null}; otherwise each bound type is visited.
+     */
     @Override
     public ClassNode[] visitTypeBound(final TypeBoundContext ctx) {
         if (!asBoolean(ctx)) {
@@ -2193,6 +2517,11 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
                 .toArray(ClassNode[]::new);
     }
 
+    /**
+     * Adds the variable declaration as a field or property of the enclosing class and returns
+     * {@code null}. The class node is stored on the variable-declaration context before
+     * {@link #visitVariableDeclaration} runs.
+     */
     @Override
     public Void visitFieldDeclaration(final FieldDeclarationContext ctx) {
         ClassNode classNode = ctx.getNodeMetaData(CLASS_DECLARATION_CLASS_NODE);
@@ -2246,6 +2575,17 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
         }
     }
 
+    /**
+     * Stores a record's compact-constructor body as the {@code pre} closure of its
+     * {@code TupleConstructor} annotation and returns {@code null}. The declaration is rejected
+     * outside a record, when a modifier is {@code val} or {@code var}, or when the name differs
+     * from the record name.
+     * <p>
+     * The body is walked, and a property expression whose receiver text is {@code this} and
+     * whose property names a record component is rejected. An existing tuple-constructor
+     * annotation is reused; otherwise a new one is added.
+     * </p>
+     */
     @Override
     public MethodNode visitCompactConstructorDeclaration(final CompactConstructorDeclarationContext ctx) {
         ClassNode classNode = ctx.getNodeMetaData(CLASS_DECLARATION_CLASS_NODE);
@@ -2267,6 +2607,11 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
         Parameter[] header = classNode.getNodeMetaData(RECORD_HEADER);
         Statement code = this.visitMethodBody(ctx.methodBody());
         code.visit(new CodeVisitorSupport() {
+            /**
+             * Rejects a {@link PropertyExpression} whose receiver text is {@code this} and whose
+             * property names a header component of the compact constructor being checked, then delegates
+             * to the superclass visitor.
+             */
             @Override
             public void visitPropertyExpression(final PropertyExpression expression) {
                 String receiverText = expression.getObjectExpression().getText();
@@ -2288,6 +2633,19 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
         return null;
     }
 
+    /**
+     * Builds the {@link MethodNode} or constructor for a class member or a script method. The
+     * return type, parameters, and exceptions are visited, and anonymous classes created while
+     * the body is visited are given this method as their enclosing method.
+     * <p>
+     * A declaration whose context carries a class node is added to that class, after interface
+     * parameters are checked for default values. A script declaration is public unless the
+     * private modifier is present, and the modifier manager then processes the node. Generics
+     * are set from the type parameters, synthetic-public is set from {@code isSyntheticPublic},
+     * and a static method marks its parameters and variable scope as static. The node is
+     * positioned on {@code ctx}, validated, and given groovydoc.
+     * </p>
+     */
     @Override
     public MethodNode visitMethodDeclaration(final MethodDeclarationContext ctx) {
         ModifierManager modifierManager = createModifierManager(ctx);
@@ -2513,6 +2871,10 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
                 code);
     }
 
+    /**
+     * Returns the method name. An identifier is visited as an identifier, and a string literal
+     * contributes its parsed text. Any other form is rejected.
+     */
     @Override
     public String visitMethodName(final MethodNameContext ctx) {
         if (asBoolean(ctx.identifier())) {
@@ -2526,6 +2888,11 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
         throw createParsingFailedException("Unsupported method name: " + ctx.getText(), ctx);
     }
 
+    /**
+     * Returns the method's return {@link ClassNode}. An absent context yields the dynamic type.
+     * A type is visited as a type. {@code void} is a plain void node positioned on the keyword,
+     * and is rejected for an annotation element. Any other form is rejected.
+     */
     @Override
     public ClassNode visitReturnType(final ReturnTypeContext ctx) {
         if (!asBoolean(ctx)) {
@@ -2547,6 +2914,10 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
         throw createParsingFailedException("Unsupported return type: " + ctx.getText(), ctx);
     }
 
+    /**
+     * Returns the method body {@link Statement}. An absent context yields {@code null};
+     * otherwise the block is visited and positioned on {@code ctx}.
+     */
     @Override
     public Statement visitMethodBody(final MethodBodyContext ctx) {
         if (!asBoolean(ctx)) {
@@ -2556,6 +2927,10 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
         return configureAST(this.visitBlock(ctx.block()), ctx);
     }
 
+    /**
+     * Returns the declaration-list statement from {@link #visitVariableDeclaration}, positioned
+     * on {@code ctx}.
+     */
     @Override
     public DeclarationListStatement visitLocalVariableDeclaration(final LocalVariableDeclarationContext ctx) {
         return configureAST(this.visitVariableDeclaration(ctx.variableDeclaration()), ctx);
@@ -2575,6 +2950,18 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
         return configureAST(new DeclarationListStatement(de), ctx);
     }
 
+    /**
+     * Returns a declaration-list statement for a local declaration, or {@code null} when the
+     * declaration is a field or property of a class. Modifiers are collected first. A
+     * parenthesized type-name or keyed list is a multi-assignment declaration.
+     * <p>
+     * Otherwise the shared variable type is stored on the declarator list and each declarator is
+     * visited. For a class, the resulting declarations are added as fields or properties. For a
+     * local declaration, modifiers and annotations are applied to each variable, the
+     * single-declarator form is positioned on {@code ctx}, and the first of several declarators
+     * has its start moved to the start of {@code ctx}.
+     * </p>
+     */
     @Override
     public DeclarationListStatement visitVariableDeclaration(final VariableDeclarationContext ctx) {
         ModifierManager modifierManager =
@@ -2652,11 +3039,19 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
             setClassNode(cNode);
         }
 
+        /**
+         * Returns the setter statement used when a split property is expanded: an assignment of the
+         * {@code value} variable to {@code field}.
+         */
         @Override
         protected Statement createSetterBlock(final PropertyNode propertyNode, final FieldNode field) {
             return stmt(assignX(varX(field), varX(VALUE_STR, field.getType())));
         }
 
+        /**
+         * Returns the getter statement used when a split property is expanded: a read of
+         * {@code field}.
+         */
         @Override
         protected Statement createGetterBlock(final PropertyNode propertyNode, final FieldNode field) {
             return stmt(varX(field));
@@ -2767,6 +3162,11 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
         return classNode.isInterface() || modifierManager.containsVisibilityModifier();
     }
 
+    /**
+     * Returns the target {@link Expression}s of a multi-assignment. Keyed pairs are visited as
+     * keyed pairs. Otherwise each type-name pair is visited, and a second rest binding
+     * ({@code *}) is rejected.
+     */
     @Override
     public List<Expression> visitTypeNamePairs(final TypeNamePairsContext ctx) {
         if (asBoolean(ctx.keyedPair())) { // GEP-20 map-style: def (name: n, age: a) = person
@@ -2786,6 +3186,12 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
         return pairs;
     }
 
+    /**
+     * Builds the {@link VariableExpression} for one multi-assignment target, positioned on
+     * {@code ctx}. {@code def}, {@code val}, and {@code var} produce the dynamic type; a written
+     * type is visited. {@code val} adds the final modifier. A {@code *} marks the variable as a
+     * rest binding.
+     */
     @Override
     public VariableExpression visitTypeNamePair(final TypeNamePairContext ctx) {
         boolean isRest = asBoolean(ctx.MUL());
@@ -2808,6 +3214,12 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
         return ve;
     }
 
+    /**
+     * Builds the {@link VariableExpression} for a map-style multi-assignment target
+     * ({@code key: name}), positioned on {@code ctx}. {@code def}, {@code val}, and {@code var}
+     * produce the dynamic type; a written type is visited. {@code val} adds the final modifier,
+     * and the key identifier is stored as the map-key metadata.
+     */
     @Override
     public VariableExpression visitKeyedPair(final KeyedPairContext ctx) {
         VariableExpression ve = configureAST(
@@ -2828,6 +3240,10 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
         return this.visitType(typeCtx);
     }
 
+    /**
+     * Returns one {@link DeclarationExpression} per declarator. The shared variable type stored
+     * on {@code ctx} is copied onto each declarator before it is visited.
+     */
     @Override
     public List<DeclarationExpression> visitVariableDeclarators(final VariableDeclaratorsContext ctx) {
         ClassNode variableType = ctx.getNodeMetaData(VARIABLE_DECLARATION_VARIABLE_TYPE);
@@ -2841,6 +3257,12 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
                 .collect(Collectors.toList());
     }
 
+    /**
+     * Builds a {@link DeclarationExpression} positioned on {@code ctx}. The variable's name and
+     * the shared type make a {@link VariableExpression} positioned on the declarator id. The
+     * operator is the written {@code =}, or a synthetic assign token when no initializer is
+     * written. The right side is {@link #visitVariableInitializer}.
+     */
     @Override
     public DeclarationExpression visitVariableDeclarator(final VariableDeclaratorContext ctx) {
         ClassNode variableType = ctx.getNodeMetaData(VARIABLE_DECLARATION_VARIABLE_TYPE);
@@ -2866,6 +3288,11 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
                 ctx);
     }
 
+    /**
+     * Returns the initializer {@link Expression}. An absent context yields
+     * {@link EmptyExpression#INSTANCE}; otherwise the enhanced statement expression is visited
+     * and positioned on {@code ctx}.
+     */
     @Override
     public Expression visitVariableInitializer(final VariableInitializerContext ctx) {
         if (!asBoolean(ctx)) {
@@ -2877,6 +3304,10 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
                 ctx);
     }
 
+    /**
+     * Returns the block {@link Statement}. An absent context yields an empty block; otherwise
+     * {@link #visitBlockStatementsOpt} is positioned on {@code ctx}.
+     */
     @Override
     public Statement visitBlock(final BlockContext ctx) {
         if (!asBoolean(ctx)) {
@@ -2888,6 +3319,12 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
                 ctx);
     }
 
+    /**
+     * Returns an {@link ExpressionStatement} for a command expression, positioned on
+     * {@code ctx}. A {@link SwitchExpression} that is the whole statement and either has an
+     * incomplete arrow arm or whose value is unused is rewritten to a {@link SwitchStatement}
+     * first, so statement position does not produce a value.
+     */
     @Override
     public Statement visitCommandExprAlt(final CommandExprAltContext ctx) {
         Expression expr = this.visitCommandExpression(ctx.commandExpression());
@@ -2947,6 +3384,24 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
                 && statement.getStart() == ctx.getStart() && statement.getStop() == ctx.getStop() ? statement : null;
     }
 
+    /**
+     * Builds the {@link Expression} for a command expression. A command chain inside an array
+     * initializer is rejected. A cast of the identifier {@code in} or {@code as} followed only
+     * by an argument list is rewritten by {@code repairBinaryKeywordCast} when that rewrite
+     * succeeds; otherwise the cast is kept and a resolve hint is attached.
+     * <p>
+     * A binary base that is not a subscript and not parenthesized is rejected. When that binary
+     * is {@code <} between two type-like operands and an argument list follows, the error is a
+     * missing {@code >} anchored on the argument list.
+     * </p>
+     * <p>
+     * An argument list turns a property into a method call, keeps an existing method call, turns
+     * a variable, a gstring, or a string constant into a method call after rejecting a call that
+     * looks like a method definition, and otherwise calls {@code call}. The call is marked as a
+     * command expression. Further command arguments are folded by {@link #visitCommandArgument},
+     * each receiving the expression so far as its base.
+     * </p>
+     */
     @Override
     public Expression visitCommandExpression(final CommandExpressionContext ctx) {
         boolean hasArgumentList = asBoolean(ctx.enhancedArgumentListInPar());
@@ -3202,6 +3657,17 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
         }
     }
 
+    /**
+     * Builds the next {@link Expression} of a command chain from the base expression stored on
+     * {@code ctx}.
+     * <p>
+     * An argument list becomes a {@link MethodCallExpression} with implicit {@code this} turned
+     * off, using the primary as the method name. A property-expression base in that form is
+     * rejected. A path element becomes a property of the base, then the remaining path.
+     * Otherwise the result is a {@link PropertyExpression}, and a variable primary is turned
+     * into a constant name.
+     * </p>
+     */
     @Override
     public Expression visitCommandArgument(final CommandArgumentContext ctx) {
         // e.g. x y a b     we call "x y" as the base expression
@@ -3251,11 +3717,20 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
 
     // expression { ------------------------------------------------------------
 
+    /**
+     * Returns the cast or coercion {@link ClassNode} by delegating to
+     * {@link #visitIntersectionType}.
+     */
     @Override
     public ClassNode visitCastParExpression(final CastParExpressionContext ctx) {
         return this.visitIntersectionType(ctx.intersectionType());
     }
 
+    /**
+     * Returns the cast type. A single component is that type unchanged. Several components
+     * become an {@link IntersectionTypeClassNode} positioned on {@code ctx}, and a repeated
+     * component name is rejected.
+     */
     @Override
     public ClassNode visitIntersectionType(final IntersectionTypeContext ctx) {
         List<? extends TypeContext> typeCtxs = ctx.type();
@@ -3274,6 +3749,10 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
         return configureAST(new IntersectionTypeClassNode(components), ctx);
     }
 
+    /**
+     * Returns the coercion {@link ClassNode}. A parenthesized cast type is visited as a cast;
+     * otherwise the type is visited directly.
+     */
     @Override
     public ClassNode visitCoercionType(final CoercionTypeContext ctx) {
         return ctx.castParExpression() != null
@@ -3281,6 +3760,10 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
                 : this.visitType(ctx.type());
     }
 
+    /**
+     * Returns the parenthesized {@link Expression}, positioned on the parentheses. The
+     * inside-parentheses level stored on the inner expression is incremented first.
+     */
     @Override
     public Expression visitParExpression(final ParExpressionContext ctx) {
         Expression expression = this.visitExpressionInPar(ctx.expressionInPar());
@@ -3291,11 +3774,20 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
         return configureAST(expression, ctx);
     }
 
+    /**
+     * Returns the {@link Expression} inside parentheses by delegating to
+     * {@link #visitEnhancedStatementExpression}. This method does not itself set a source
+     * position.
+     */
     @Override
     public Expression visitExpressionInPar(final ExpressionInParContext ctx) {
         return this.visitEnhancedStatementExpression(ctx.enhancedStatementExpression());
     }
 
+    /**
+     * Returns an {@link Expression} positioned on {@code ctx}. An expression child is visited as
+     * an expression, and a lambda is visited as a lambda. Any other form is rejected.
+     */
     @Override
     public Expression visitEnhancedExpression(final EnhancedExpressionContext ctx) {
         Expression expression;
@@ -3311,6 +3803,11 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
         return configureAST(expression, ctx);
     }
 
+    /**
+     * Returns an {@link Expression} positioned on {@code ctx}. A statement expression is visited
+     * and unwrapped from its {@link ExpressionStatement}. A lambda is visited as a lambda. Any
+     * other form is rejected.
+     */
     @Override
     public Expression visitEnhancedStatementExpression(final EnhancedStatementExpressionContext ctx) {
         Expression expression;
@@ -3326,6 +3823,12 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
         return configureAST(expression, ctx);
     }
 
+    /**
+     * Returns the path {@link Expression}. The keyword {@code static} becomes a
+     * {@link VariableExpression} of that text; otherwise the primary is visited.
+     * {@code createPathExpression} then folds each path element, threading the expression so far
+     * and copying a safe-chain flag forward.
+     */
     @Override
     public Expression visitPathExpression(final PathExpressionContext ctx) {
         final TerminalNode staticTerminalNode = ctx.STATIC();
@@ -3339,6 +3842,31 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
         return this.createPathExpression(primaryExpr, ctx.pathElement());
     }
 
+    /**
+     * Builds one step of a path {@link Expression} from the base expression stored on
+     * {@code ctx}.
+     * <p>
+     * A name part with {@code .}, {@code ?.}, or {@code ??.} becomes an
+     * {@link AttributeExpression} when {@code @} is present and a {@link PropertyExpression}
+     * otherwise. Safe-chain ({@code ??.}) also marks the result so a later element stays safe.
+     * {@code .&} is a {@link MethodPointerExpression}, {@code ::} is a
+     * {@link MethodReferenceExpression}, and a spread dot sets the spread-safe flag. A creator
+     * is visited with the base as its enclosing instance and with any explicit type arguments
+     * stored for the constructor.
+     * </p>
+     * <p>
+     * An index becomes a subscript {@link BinaryExpression}, safe when the base is a safe chain
+     * or the index itself is safe. A named bracket argument becomes a subscript whose right side
+     * is an empty spread map, a single spread-map key, or a wrapped list of entries. An argument
+     * list on a property becomes a method call of that property. A parenthesized base, an
+     * attribute, {@code void}, or any other base that is not a name calls {@code call}; an
+     * attribute call clears spread-safe and uses implicit {@code this}. A primitive type name is
+     * rejected. {@code this} or {@code super} is a constructor call unless it is inside a
+     * closure, where it stays a method call. A variable, gstring, or string constant is a method
+     * call of that name. A trailing closure is appended to an existing argument list, or starts
+     * a call, and named arguments are rewritten as a map expression plus that closure.
+     * </p>
+     */
     @Override
     public Expression visitPathElement(final PathElementContext ctx) {
         Expression baseExpr = ctx.getNodeMetaData(PATH_EXPRESSION_BASE_EXPR);
@@ -3591,6 +4119,10 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
         return methodCallExpression;
     }
 
+    /**
+     * Returns the explicit type arguments as {@link GenericsType}s. An absent context yields
+     * {@code null}; otherwise each type in the list is wrapped as a generics type.
+     */
     @Override
     public GenericsType[] visitNonWildcardTypeArguments(final NonWildcardTypeArgumentsContext ctx) {
         if (!asBoolean(ctx)) {
@@ -3602,6 +4134,10 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
                 .toArray(GenericsType[]::new);
     }
 
+    /**
+     * Returns the {@link ClassNode}s of a type list. An absent context yields
+     * {@link ClassNode#EMPTY_ARRAY}; otherwise each type is visited.
+     */
     @Override
     public ClassNode[] visitTypeList(final TypeListContext ctx) {
         if (!asBoolean(ctx)) {
@@ -3613,6 +4149,12 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
                 .toArray(ClassNode[]::new);
     }
 
+    /**
+     * Returns the argument {@link Expression}. A comma with no argument is rejected. An absent
+     * context yields an unpositioned empty {@link ArgumentListExpression}. An empty {@code ()}
+     * yields an empty argument list positioned on {@code ctx}. Otherwise the enhanced argument
+     * list is visited and positioned on {@code ctx}.
+     */
     @Override
     public Expression visitArguments(final ArgumentsContext ctx) {
         if (asBoolean(ctx) && asBoolean(ctx.COMMA()) && !asBoolean(ctx.enhancedArgumentListInPar())) {
@@ -3629,6 +4171,13 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
         return configureAST(this.visitEnhancedArgumentListInPar(ctx.enhancedArgumentListInPar()), ctx);
     }
 
+    /**
+     * Returns the argument {@link Expression}, or {@code null} when {@code ctx} is absent.
+     * Positional arguments become an {@link ArgumentListExpression}. Named arguments alone
+     * become a {@link TupleExpression} holding a {@link NamedArgumentListExpression}. A mix
+     * becomes an argument list whose first expression is a {@link MapExpression} of the named
+     * arguments. A duplicated named argument is rejected unless its key is parenthesized.
+     */
     @Override
     public Expression visitEnhancedArgumentListInPar(final EnhancedArgumentListInParContext ctx) {
         if (!asBoolean(ctx)) {
@@ -3691,6 +4240,10 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
         throw createParsingFailedException("Duplicated named parameter '" + parameterName + "' found", mapEntryExpression);
     }
 
+    /**
+     * Returns one argument {@link Expression}, positioned on {@code ctx}: an expression-list
+     * element, a lambda, or a map entry. Any other form is rejected.
+     */
     @Override
     public Expression visitEnhancedArgumentListElement(final EnhancedArgumentListElementContext ctx) {
         if (asBoolean(ctx.expressionListElement())) {
@@ -3708,6 +4261,11 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
         throw createParsingFailedException("Unsupported enhanced argument list element: " + ctx.getText(), ctx);
     }
 
+    /**
+     * Returns a {@link ConstantExpression} for the parsed string contents, marked as a string
+     * and positioned on {@code ctx}. Quotation marks are stripped, multiline text loses carriage
+     * returns, and escapes are decoded for the literal's slashy kind.
+     */
     @Override
     public ConstantExpression visitStringLiteral(final StringLiteralContext ctx) {
         String text = parseStringLiteral(ctx.StringLiteral().getText());
@@ -3746,6 +4304,12 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
                     text.startsWith(DOLLAR_SLASH_STR) ? StringUtils.DOLLAR_SLASHY : StringUtils.NONE_SLASHY;
     }
 
+    /**
+     * Returns the index token (the bracket or the safe-index symbol) paired with the index
+     * {@link Expression}. One element is that expression, unless it is a spread, in which case
+     * it is an unwrapped one-element list. Several elements become a wrapped
+     * {@link ListExpression} positioned on {@code ctx}.
+     */
     @Override
     public Tuple2<Token, Expression> visitIndexPropertyArgs(final IndexPropertyArgsContext ctx) {
         List<Expression> expressionList = this.visitExpressionList(ctx.expressionList());
@@ -3776,11 +4340,20 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
         return tuple(token, configureAST(listExpression, ctx));
     }
 
+    /**
+     * Returns the {@link MapEntryExpression}s of a named bracket argument by delegating to
+     * {@link #visitMapEntryList}.
+     */
     @Override
     public List<MapEntryExpression> visitNamedPropertyArgs(final NamedPropertyArgsContext ctx) {
         return this.visitMapEntryList(ctx.mapEntryList());
     }
 
+    /**
+     * Returns the name {@link Expression}, positioned on {@code ctx}. An identifier or a keyword
+     * becomes a {@link ConstantExpression} of its text, a string literal is parsed as a string,
+     * and a dynamic member name is visited as one. Any other form is rejected.
+     */
     @Override
     public Expression visitNamePart(final NamePartContext ctx) {
         if (asBoolean(ctx.identifier())) {
@@ -3796,6 +4369,10 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
         throw createParsingFailedException("Unsupported name part: " + ctx.getText(), ctx);
     }
 
+    /**
+     * Returns the dynamic member {@link Expression}, positioned on {@code ctx}: a parenthesized
+     * expression or a gstring. Any other form is rejected.
+     */
     @Override
     public Expression visitDynamicMemberName(final DynamicMemberNameContext ctx) {
         if (asBoolean(ctx.parExpression())) {
@@ -3807,6 +4384,11 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
         throw createParsingFailedException("Unsupported dynamic member name: " + ctx.getText(), ctx);
     }
 
+    /**
+     * Returns the path {@link Expression}, or a {@link PostfixExpression} when an operator is
+     * present. Inside an assertion the postfix node is positioned on the operator token;
+     * otherwise it is positioned on {@code ctx}.
+     */
     @Override
     public Expression visitPostfixExpression(final PostfixExpressionContext ctx) {
         Expression pathExpr = this.visitPathExpression(ctx.pathExpression());
@@ -3825,6 +4407,12 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
         return configureAST(pathExpr, ctx);
     }
 
+    /**
+     * Builds a {@link NotExpression} for {@code !} or a {@link BitwiseNegationExpression} for
+     * {@code ~}, positioned on {@code ctx}. When the operand is a repaired parenthesized-name
+     * {@code +} or {@code -} that is not itself parenthesized, only that binary's leading
+     * operand is wrapped and the binary is returned.
+     */
     @Override
     public Expression visitUnaryNotExprAlt(final UnaryNotExprAltContext ctx) {
         Expression expression = (Expression) this.visit(ctx.expression());
@@ -3852,6 +4440,21 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
         throw createParsingFailedException("Unsupported unary expression: " + ctx.getText(), ctx);
     }
 
+    /**
+     * Builds the cast {@link Expression}, including the parenthesized-name repairs. A bare name
+     * whose final segment does not start with an uppercase letter, followed by unary {@code +}
+     * or {@code -}, becomes a binary expression marked as a repaired parenthesized-name binary.
+     * A bare name followed by {@code in} and a list or map subscript is rebuilt as a binary
+     * {@code in} when that shape matches.
+     * <p>
+     * {@code super} as the operand is rejected. An operand that is the identifier {@code in} or
+     * {@code as} becomes a {@link CastExpression} marked so the command-expression visitor can
+     * restore the binary reading. A repaired parenthesized-name binary is cast on its leading
+     * operand only. Any other operand becomes a {@link CastExpression}, and an ambiguous operand
+     * (a unary sign, a prefix, a list, a map, a closure, a method call, or a parenthesized
+     * expression) stores a resolve hint on the cast.
+     * </p>
+     */
     @Override
     public Expression visitCastExprAlt(final CastExprAltContext ctx) {
         String bareName = this.bareCastTypeName(ctx.castParExpression());
@@ -4017,6 +4620,11 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
                 || isInsideParentheses(expr);
     }
 
+    /**
+     * Returns the expression produced by {@code AsyncTransformHelper.buildAwaitCall}, positioned
+     * on {@code ctx}. One operand is passed through. Several operands are passed as an
+     * {@link ArgumentListExpression}.
+     */
     @Override
     public Expression visitAwaitExprAlt(final AwaitExprAltContext ctx) {
         List<? extends ExpressionContext> exprCtxs = ctx.expression();
@@ -4035,6 +4643,11 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
             ctx);
     }
 
+    /**
+     * Returns the expression produced by {@code AsyncTransformHelper.transformAsyncClosure},
+     * positioned on {@code ctx}. {@code nextClosureIsAsync} is set before the closure or lambda
+     * is visited, so that visit records the closure as the body of an {@code async} expression.
+     */
     @Override
     public Expression visitAsyncClosureExprAlt(final AsyncClosureExprAltContext ctx) {
         nextClosureIsAsync = true;
@@ -4042,11 +4655,31 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
         return configureAST(AsyncTransformHelper.transformAsyncClosure(closure), ctx);
     }
 
+    /**
+     * Builds a power {@link BinaryExpression} ({@code **}). The operands go through
+     * {@code createBinaryExpression}, which reassociates a repaired parenthesized-name {@code +}
+     * or {@code -} so the textual left-to-right grouping is kept. When the expression is marked
+     * as inside a conditional, the node is positioned on the operator token; otherwise the
+     * position is the whole context.
+     */
     @Override
     public BinaryExpression visitPowerExprAlt(final PowerExprAltContext ctx) {
         return this.createBinaryExpression(ctx.left, ctx.op, ctx.right, ctx);
     }
 
+    /**
+     * Builds the unary {@link Expression} for {@code +}, {@code -}, {@code ++}, or {@code --}.
+     * When the operand is a repaired parenthesized-name {@code +} or {@code -} that is not
+     * itself parenthesized, only that binary's leading operand is wrapped.
+     * <p>
+     * Unary {@code +} on a non-string constant that is not parenthesized returns that constant,
+     * positioned on {@code ctx}, instead of a {@link UnaryPlusExpression}. Unary {@code -} on
+     * such a constant parses the negated integer or decimal text, clears
+     * {@code numberFormatError} when that parse succeeds, and returns the resulting constant; a
+     * missing original literal text is a failure. {@code ++} and {@code --} are a
+     * {@link PrefixExpression}.
+     * </p>
+     */
     @Override
     public Expression visitUnaryAddExprAlt(final UnaryAddExprAltContext ctx) {
         Expression expression = (Expression) this.visit(ctx.expression());
@@ -4112,16 +4745,41 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
                 && !isInsideParentheses(expression);
     }
 
+    /**
+     * Builds a multiplicative {@link BinaryExpression} ({@code *}, {@code /}, or {@code %}). The
+     * operands go through {@code createBinaryExpression}, which reassociates a repaired
+     * parenthesized-name {@code +} or {@code -} so the textual left-to-right grouping is kept.
+     * When the expression is marked as inside a conditional, the node is positioned on the
+     * operator token; otherwise the position is the whole context.
+     */
     @Override
     public BinaryExpression visitMultiplicativeExprAlt(final MultiplicativeExprAltContext ctx) {
         return this.createBinaryExpression(ctx.left, ctx.op, ctx.right, ctx);
     }
 
+    /**
+     * Builds an additive {@link BinaryExpression} ({@code +} or {@code -}). The operands go
+     * through {@code createBinaryExpression}, which reassociates a repaired parenthesized-name
+     * {@code +} or {@code -} so the textual left-to-right grouping is kept. When the expression
+     * is marked as inside a conditional, the node is positioned on the operator token; otherwise
+     * the position is the whole context.
+     */
     @Override
     public BinaryExpression visitAdditiveExprAlt(final AdditiveExprAltContext ctx) {
         return this.createBinaryExpression(ctx.left, ctx.op, ctx.right, ctx);
     }
 
+    /**
+     * Builds a shift or range {@link Expression}. A range operator becomes a
+     * {@link RangeExpression} whose left endpoint is exclusive when the operator text starts
+     * with {@code <} and whose right endpoint is exclusive when it ends with {@code <}.
+     * <p>
+     * {@code <<}, {@code >>}, and {@code >>>} become a {@link BinaryExpression} whose operator
+     * text is the bracket repeated two or three times. When the expression is marked as inside a
+     * conditional, that binary is positioned on the operator token; otherwise it is positioned
+     * on {@code ctx}.
+     * </p>
+     */
     @Override
     public Expression visitShiftExprAlt(final ShiftExprAltContext ctx) {
         Expression left = (Expression) this.visit(ctx.left);
@@ -4155,6 +4813,21 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
         return configureAST(binaryExpression, ctx);
     }
 
+    /**
+     * Builds the relational {@link Expression}. {@code as} is a coercion, and coercing
+     * {@code super} is rejected. {@code instanceof} of a record pattern or a type with a binding
+     * is a {@link PatternExpression}; otherwise it is a {@link BinaryExpression} whose right
+     * side is the type as a class expression. The type context is marked as inside
+     * {@code instanceof} before it is visited.
+     * <p>
+     * {@code !instanceof} of a pattern is a {@link NotExpression} around that pattern
+     * expression. {@code !instanceof} of a type is a binary expression; a parenthesized
+     * intersection on the right is rejected, and a parenthesized type is marked as inside
+     * {@code instanceof} before it is visited. Comparisons and {@code in} / {@code !in} are
+     * binary expressions built like the other arithmetic operators, including the conditional
+     * source-position rule.
+     * </p>
+     */
     @Override
     public Expression visitRelationalExprAlt(final RelationalExprAltContext ctx) {
         switch (ctx.op.getType()) {
@@ -4231,6 +4904,12 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
         }
     }
 
+    /**
+     * Builds an equality {@link BinaryExpression} ({@code ==}, {@code !=}, {@code ===},
+     * {@code !==}, or {@code <=>}). The operands go through {@code createBinaryExpression},
+     * which reassociates a repaired parenthesized-name {@code +} or {@code -} so the textual
+     * left-to-right grouping is kept. The source position is the whole context.
+     */
     @Override
     public BinaryExpression visitEqualityExprAlt(final EqualityExprAltContext ctx) {
         return configureAST(
@@ -4238,6 +4917,12 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
                 ctx);
     }
 
+    /**
+     * Builds a regex {@link BinaryExpression} ({@code =~} or {@code ==~}). The operands go
+     * through {@code createBinaryExpression}, which reassociates a repaired parenthesized-name
+     * {@code +} or {@code -} so the textual left-to-right grouping is kept. The source position
+     * is the whole context.
+     */
     @Override
     public BinaryExpression visitRegexExprAlt(final RegexExprAltContext ctx) {
         return configureAST(
@@ -4245,21 +4930,48 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
                 ctx);
     }
 
+    /**
+     * Builds a bitwise {@link BinaryExpression} for {@code &}. The operands go through
+     * {@code createBinaryExpression}, which reassociates a repaired parenthesized-name {@code +}
+     * or {@code -} so the textual left-to-right grouping is kept. When the expression is marked
+     * as inside a conditional, the node is positioned on the operator token; otherwise the
+     * position is the whole context.
+     */
     @Override
     public BinaryExpression visitAndExprAlt(final AndExprAltContext ctx) {
         return this.createBinaryExpression(ctx.left, ctx.op, ctx.right, ctx);
     }
 
+    /**
+     * Builds a bitwise {@link BinaryExpression} for {@code ^}. The operands go through
+     * {@code createBinaryExpression}, which reassociates a repaired parenthesized-name {@code +}
+     * or {@code -} so the textual left-to-right grouping is kept. When the expression is marked
+     * as inside a conditional, the node is positioned on the operator token; otherwise the
+     * position is the whole context.
+     */
     @Override
     public BinaryExpression visitExclusiveOrExprAlt(final ExclusiveOrExprAltContext ctx) {
         return this.createBinaryExpression(ctx.left, ctx.op, ctx.right, ctx);
     }
 
+    /**
+     * Builds a bitwise {@link BinaryExpression} for {@code |}. The operands go through
+     * {@code createBinaryExpression}, which reassociates a repaired parenthesized-name {@code +}
+     * or {@code -} so the textual left-to-right grouping is kept. When the expression is marked
+     * as inside a conditional, the node is positioned on the operator token; otherwise the
+     * position is the whole context.
+     */
     @Override
     public BinaryExpression visitInclusiveOrExprAlt(final InclusiveOrExprAltContext ctx) {
         return this.createBinaryExpression(ctx.left, ctx.op, ctx.right, ctx);
     }
 
+    /**
+     * Builds a logical {@link BinaryExpression} for {@code &&}. The operands go through
+     * {@code createBinaryExpression}, which reassociates a repaired parenthesized-name {@code +}
+     * or {@code -} so the textual left-to-right grouping is kept. The source position is the
+     * whole context.
+     */
     @Override
     public BinaryExpression visitLogicalAndExprAlt(final LogicalAndExprAltContext ctx) {
         return configureAST(
@@ -4267,6 +4979,12 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
                 ctx);
     }
 
+    /**
+     * Builds a logical {@link BinaryExpression} for {@code ||}. The operands go through
+     * {@code createBinaryExpression}, which reassociates a repaired parenthesized-name {@code +}
+     * or {@code -} so the textual left-to-right grouping is kept. The source position is the
+     * whole context.
+     */
     @Override
     public BinaryExpression visitLogicalOrExprAlt(final LogicalOrExprAltContext ctx) {
         return configureAST(
@@ -4274,6 +4992,12 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
                 ctx);
     }
 
+    /**
+     * Builds an implication {@link BinaryExpression} for {@code ==>}. The operands go through
+     * {@code createBinaryExpression}, which reassociates a repaired parenthesized-name {@code +}
+     * or {@code -} so the textual left-to-right grouping is kept. The source position is the
+     * whole context.
+     */
     @Override
     public BinaryExpression visitImplicationExprAlt(final ImplicationExprAltContext ctx) {
         return configureAST(
@@ -4281,6 +5005,17 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
                 ctx);
     }
 
+    /**
+     * Builds a conditional {@link Expression}. {@code ?:} and {@code ??} become an
+     * {@link ElvisOperatorExpression}; the null-coalescing flag is set only for {@code ??}. The
+     * false branch is marked as inside a conditional before it is visited.
+     * <p>
+     * A {@code ? :} expression is a {@link TernaryExpression} whose condition is a
+     * {@link BooleanExpression}. Both the true and false branches are marked as inside a
+     * conditional before they are visited, which makes a shift or arithmetic operator inside
+     * them take the operator's source position.
+     * </p>
+     */
     @Override
     public Expression visitConditionalExprAlt(final ConditionalExprAltContext ctx) {
         ctx.fb.putNodeMetaData(IS_INSIDE_CONDITIONAL_EXPRESSION, Boolean.TRUE);
@@ -4302,6 +5037,11 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
                 ctx);
     }
 
+    /**
+     * Builds a multiple-assignment {@link BinaryExpression} positioned on {@code ctx}. The left
+     * side is the tuple from {@link #visitVariableNames}. The right side is visited as a
+     * statement and unwrapped to its expression.
+     */
     @Override
     public BinaryExpression visitMultipleAssignmentExprAlt(final MultipleAssignmentExprAltContext ctx) {
         return configureAST(
@@ -4312,6 +5052,15 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
                 ctx);
     }
 
+    /**
+     * Builds an assignment {@link BinaryExpression} positioned on {@code ctx}. A built-in type
+     * name on the left is rejected. A variable wrapped in exactly one set of parentheses becomes
+     * a one-element {@link TupleExpression}; deeper parentheses are rejected.
+     * <p>
+     * Any other left side must be a variable that is not parenthesized, a property, or an index
+     * expression. The right side is the visited expression.
+     * </p>
+     */
     @Override
     public BinaryExpression visitAssignmentExprAlt(final AssignmentExprAltContext ctx) {
         Expression leftExpr = (Expression) this.visit(ctx.left);
@@ -4366,6 +5115,11 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
 
     // primary { ---------------------------------------------------------------
 
+    /**
+     * Returns a primary {@link Expression} positioned on {@code ctx}. With type arguments the
+     * identifier is a {@link ClassExpression} whose generics are those arguments. Without them
+     * it is a {@link VariableExpression} of the identifier.
+     */
     @Override
     public Expression visitIdentifierPrmrAlt(final IdentifierPrmrAltContext ctx) {
         if (asBoolean(ctx.typeArguments())) {
@@ -4380,6 +5134,11 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
         return configureAST(new VariableExpression(this.visitIdentifier(ctx.identifier())), ctx);
     }
 
+    /**
+     * Returns the creator {@link Expression}, positioned on {@code ctx}. Explicit constructor
+     * type arguments, when present, are stored on the creator context before
+     * {@link #visitCreator} runs.
+     */
     @Override
     public Expression visitNewPrmrAlt(final NewPrmrAltContext ctx) {
         if (asBoolean(ctx.nonWildcardTypeArguments())) {
@@ -4388,6 +5147,11 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
         return configureAST(this.visitCreator(ctx.creator()), ctx);
     }
 
+    /**
+     * Returns a {@link VariableExpression} of the {@code this} keyword, positioned on
+     * {@code ctx}. Explicit type arguments, when present, are stored on that variable for a
+     * later constructor call.
+     */
     @Override
     public VariableExpression visitThisPrmrAlt(final ThisPrmrAltContext ctx) {
         VariableExpression varExpr = configureAST(new VariableExpression(ctx.THIS().getText()), ctx);
@@ -4397,6 +5161,11 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
         return varExpr;
     }
 
+    /**
+     * Returns a {@link VariableExpression} of the {@code super} keyword, positioned on
+     * {@code ctx}. Explicit type arguments, when present, are stored on that variable for a
+     * later constructor call.
+     */
     @Override
     public VariableExpression visitSuperPrmrAlt(final SuperPrmrAltContext ctx) {
         VariableExpression varExpr = configureAST(new VariableExpression(ctx.SUPER().getText()), ctx);
@@ -4408,6 +5177,23 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
 
     // } primary ---------------------------------------------------------------
 
+    /**
+     * Builds a creation {@link Expression} positioned on {@code ctx}. With arguments, the result
+     * is a {@link ConstructorCallExpression}. An enclosing instance is inserted as the first
+     * positional argument and is rejected for named arguments. When that instance is itself a
+     * constructor call and the created name contains no dot, the created name is prefixed with
+     * the instance's type name. An anonymous body is visited with the created type as its
+     * superclass, recorded when the creation is inside a method, and the call is marked as using
+     * an anonymous inner class. Constructor type arguments stored on {@code ctx} are set on the
+     * call.
+     * <p>
+     * A sized array is an {@link ArrayExpression} of the given sizes, with an empty expression
+     * for each unsized dimension, and dimension annotations are applied from the array type down
+     * through its array components. An initializer form wraps the element type for the inner
+     * dimensions, visits the initializer with that element type, and puts the outermost
+     * dimension's annotations on the expression's array type.
+     * </p>
+     */
     @Override
     public Expression visitCreator(final CreatorContext ctx) {
         ClassNode classNode = this.visitCreatedName(ctx.createdName());
@@ -4500,6 +5286,12 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
         throw createParsingFailedException("Unsupported creator: " + ctx.getText(), ctx);
     }
 
+    /**
+     * Returns the created {@link ClassNode}, with the type annotations from {@code ctx} added. A
+     * primitive name is visited as a primitive. Any other name is the parameterized class type
+     * from {@code visitParameterizedClassType} (type arguments or a diamond, without forcing a
+     * raw enclosing type). An unrecognised name is rejected.
+     */
     @Override
     public ClassNode visitCreatedName(final CreatedNameContext ctx) {
         ClassNode classNode;
@@ -4531,6 +5323,17 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
         return outerClass.getName() + "$" + (anonymousClassCount + 1);
     }
 
+    /**
+     * Builds the anonymous {@link InnerClassNode}. The superclass is the node stored on
+     * {@code ctx}, and the outer class is the class being built or, at the top level, the script
+     * class dummy. The generated name is the outer name plus the next anonymous index.
+     * <p>
+     * An enum-constant body ({@code ctx.t} of {@code 1}) is an {@link EnumConstantClassNode};
+     * any other body is an {@link InnerClassNode} of the superclass. The class is anonymous,
+     * does not use generics, and is pushed while its body is visited. When that leaves the class
+     * stack empty, the anonymous class is appended to the module's class list.
+     * </p>
+     */
     @Override
     public InnerClassNode visitAnonymousInnerClassDeclaration(final AnonymousInnerClassDeclarationContext ctx) {
         ClassNode superClass = Objects.requireNonNull(ctx.getNodeMetaData(ANONYMOUS_INNER_CLASS_SUPER_CLASS), "superClass should not be null");
@@ -4561,6 +5364,16 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
         return anonymousInnerClass;
     }
 
+    /**
+     * Returns the initializer {@link Expression}s. An absent context yields an empty list.
+     * {@code visitingArrayInitializerCount} is raised for the walk, so a command chain inside
+     * the initializer is rejected, and lowered afterwards.
+     * <p>
+     * A nested initializer becomes an {@link ArrayExpression} of the component type, and that
+     * expression's type is then set to the enclosing element type. A variable-initializer child
+     * is visited as one; other children are skipped.
+     * </p>
+     */
     @Override
     public List<Expression> visitArrayInitializer(final ArrayInitializerContext ctx) {
         if (!asBoolean(ctx)) {
@@ -4591,6 +5404,9 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
         }
     }
 
+    /**
+     * Builds a {@link MapExpression} from {@link #visitMapEntryList}, positioned on {@code ctx}.
+     */
     @Override
     public MapExpression visitMap(final MapContext ctx) {
         return configureAST(
@@ -4598,6 +5414,10 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
                 ctx);
     }
 
+    /**
+     * Returns the {@link MapEntryExpression}s. An absent context yields an empty list; otherwise
+     * each map entry is visited.
+     */
     @Override
     public List<MapEntryExpression> visitMapEntryList(final MapEntryListContext ctx) {
         if (!asBoolean(ctx)) {
@@ -4617,6 +5437,11 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
                 .collect(Collectors.toList());
     }
 
+    /**
+     * Builds a {@link MapEntryExpression} positioned on {@code ctx}. A {@code *} key is a
+     * {@link SpreadMapExpression} of the value. Otherwise the key is {@link #visitMapEntryLabel}
+     * and the value is the enhanced expression.
+     */
     @Override
     public MapEntryExpression visitMapEntry(final MapEntryContext ctx) {
         Expression keyExpr;
@@ -4635,6 +5460,11 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
                 ctx);
     }
 
+    /**
+     * Returns the key {@link Expression}, positioned on {@code ctx}. A keyword is a constant of
+     * its text. A primary is visited, and a {@link VariableExpression} that is not parenthesized
+     * is replaced by a {@link ConstantExpression} of its name, so a bare map key is a constant.
+     */
     @Override
     public Expression visitMapEntryLabel(final MapEntryLabelContext ctx) {
         if (asBoolean(ctx.keywords())) {
@@ -4656,11 +5486,18 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
         throw createParsingFailedException("Unsupported map entry label: " + ctx.getText(), ctx);
     }
 
+    /**
+     * Returns a {@link ConstantExpression} of the keyword text, positioned on {@code ctx}.
+     */
     @Override
     public ConstantExpression visitKeywords(final KeywordsContext ctx) {
         return configureAST(new ConstantExpression(ctx.getText()), ctx);
     }
 
+    /**
+     * Returns a {@link VariableExpression} of {@code void} or a built-in primitive, marked as a
+     * built-in type and positioned on {@code ctx}. Any other form is rejected.
+     */
     @Override
     public VariableExpression visitBuiltInType(final BuiltInTypeContext ctx) {
         String text;
@@ -4677,6 +5514,10 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
         return configureAST(variableExpression, ctx);
     }
 
+    /**
+     * Builds a {@link ListExpression} from the expression list, positioned on {@code ctx}. A
+     * comma in an otherwise empty list is rejected.
+     */
     @Override
     public ListExpression visitList(final ListContext ctx) {
         if (asBoolean(ctx.COMMA()) && !asBoolean(ctx.expressionList())) {
@@ -4689,6 +5530,10 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
                 ctx);
     }
 
+    /**
+     * Returns the list's {@link Expression}s. An absent context yields an empty list; otherwise
+     * each element is visited.
+     */
     @Override
     public List<Expression> visitExpressionList(final ExpressionListContext ctx) {
         if (!asBoolean(ctx)) {
@@ -4708,6 +5553,12 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
                 .collect(Collectors.toList());
     }
 
+    /**
+     * Returns one list {@link Expression}, positioned on {@code ctx}. A command call with
+     * implicit {@code this} whose name is a primitive or starts with an uppercase letter is
+     * rejected as a method declaration. A {@code *} wraps the expression in a
+     * {@link SpreadExpression} when spreading is allowed here, and is rejected otherwise.
+     */
     @Override
     public Expression visitExpressionListElement(final ExpressionListElementContext ctx) {
         Expression expression = (Expression) this.visit(ctx.expression());
@@ -4737,6 +5588,12 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
 
     // literal { ---------------------------------------------------------------
 
+    /**
+     * Returns a numeric {@link ConstantExpression} for the integer literal, remembering the
+     * original text. A parse failure is stored in {@code numberFormatError} and the constant's
+     * value is left null; the failure is reported later from the compilation unit. The constant
+     * is positioned on {@code ctx}.
+     */
     @Override
     public ConstantExpression visitIntegerLiteralAlt(final IntegerLiteralAltContext ctx) {
         String text = ctx.IntegerLiteral().getText();
@@ -4753,6 +5610,12 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
         return configureAST(constantExpression, ctx);
     }
 
+    /**
+     * Returns a numeric {@link ConstantExpression} for the floating-point literal, remembering
+     * the original text. A parse failure is stored in {@code numberFormatError} and the
+     * constant's value is left null; the failure is reported later from the compilation unit.
+     * The constant is positioned on {@code ctx}.
+     */
     @Override
     public ConstantExpression visitFloatingPointLiteralAlt(final FloatingPointLiteralAltContext ctx) {
         String text = ctx.FloatingPointLiteral().getText();
@@ -4769,11 +5632,18 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
         return configureAST(constantExpression, ctx);
     }
 
+    /**
+     * Returns a {@link ConstantExpression} for {@code true} or {@code false}, positioned on
+     * {@code ctx}.
+     */
     @Override
     public ConstantExpression visitBooleanLiteralAlt(final BooleanLiteralAltContext ctx) {
         return configureAST(new ConstantExpression("true".equals(ctx.BooleanLiteral().getText()), true), ctx);
     }
 
+    /**
+     * Returns a {@link ConstantExpression} whose value is null, positioned on {@code ctx}.
+     */
     @Override
     public ConstantExpression visitNullLiteralAlt(final NullLiteralAltContext ctx) {
         return configureAST(new ConstantExpression(null), ctx);
@@ -4783,6 +5653,16 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
 
     // gstring { ---------------------------------------------------------------
 
+    /**
+     * Builds a {@link GStringExpression} positioned on {@code ctx}. The begin, each part, and
+     * the end are parsed as string constants by restoring the opening quotation around each
+     * fragment. The values are the visited gstring values.
+     * <p>
+     * The verbatim text interleaves those strings and values. A variable value is appended as
+     * {@code $name}; any other value is appended inside braces after {@code $}. An empty value
+     * is skipped.
+     * </p>
+     */
     @Override
     public GStringExpression visitGstring(final GstringContext ctx) {
         final List<ConstantExpression> stringLiteralList = new LinkedList<>();
@@ -4866,6 +5746,15 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
         }
     }
 
+    /**
+     * Returns one gstring value {@link Expression}. A path is visited as a gstring path.
+     * <p>
+     * A closure with no arrow contributes its single expression when the body is one expression
+     * statement that is not a declaration, a null constant when the body is empty, and otherwise
+     * a {@code call} of the closure with implicit {@code this}. A closure that has an arrow is
+     * returned as the closure.
+     * </p>
+     */
     @Override
     public Expression visitGstringValue(final GstringValueContext ctx) {
         if (asBoolean(ctx.gstringPath())) {
@@ -4898,6 +5787,11 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
         throw createParsingFailedException("Unsupported gstring value: " + ctx.getText(), ctx);
     }
 
+    /**
+     * Returns the {@link Expression} for a {@code $name} or {@code $name.prop} path, positioned
+     * on {@code ctx}. The identifier is a {@link VariableExpression}. Each following path part,
+     * with its leading character removed, becomes a constant property folded onto that variable.
+     */
     @Override
     public Expression visitGstringPath(final GstringPathContext ctx) {
         VariableExpression variableExpression = new VariableExpression(this.visitIdentifier(ctx.identifier()));
@@ -4915,6 +5809,12 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
 
     // } gstring ---------------------------------------------------------------
 
+    /**
+     * Builds a {@link LambdaExpression} positioned on {@code ctx}. The lambda is pushed as a
+     * switch and closure frame, and {@code nextClosureIsAsync} is recorded on that frame and
+     * then cleared, so a nested closure is not itself async. Both frames are popped when the
+     * visit finishes.
+     */
     @Override
     public LambdaExpression visitStandardLambdaExpression(final StandardLambdaExpressionContext ctx) {
         switchExpressionRuleContextStack.push(ctx);
@@ -4934,6 +5834,11 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
                 this.visitLambdaBody(lambdaBodyContext));
     }
 
+    /**
+     * Returns the lambda's {@link Parameter}s. A single variable name becomes one dynamic-typed
+     * parameter positioned on that name. A formal parameter list is visited, and an empty list
+     * is returned as {@code null} rather than an empty array.
+     */
     @Override
     public Parameter[] visitStandardLambdaParameters(final StandardLambdaParametersContext ctx) {
         if (asBoolean(ctx.variableDeclaratorId())) {
@@ -4947,6 +5852,11 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
         return (parameters.length > 0 ? parameters : null);
     }
 
+    /**
+     * Returns the lambda body {@link Statement}, positioned on {@code ctx}. A block is visited
+     * as a block; otherwise the statement expression is visited as a statement and is not
+     * unwrapped.
+     */
     @Override
     public Statement visitLambdaBody(final LambdaBodyContext ctx) {
         if (asBoolean(ctx.block())) {
@@ -4955,6 +5865,16 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
         return configureAST((Statement) this.visit(ctx.statementExpression()), ctx);
     }
 
+    /**
+     * Builds a {@link ClosureExpression} positioned on {@code ctx}. The closure is pushed as a
+     * switch and closure frame, {@code nextClosureIsAsync} is recorded on that frame and then
+     * cleared, and {@code visitingClosureCount} is raised so {@code this} and {@code super}
+     * calls inside stay method calls. All three are restored when the visit finishes.
+     * <p>
+     * Parameters come from the formal parameter list. Without an arrow they are replaced by
+     * {@link Parameter#EMPTY_ARRAY}, and an empty body is positioned on {@code ctx}.
+     * </p>
+     */
     @Override
     public ClosureExpression visitClosure(final ClosureContext ctx) {
         switchExpressionRuleContextStack.push(ctx);
@@ -4983,6 +5903,10 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
         }
     }
 
+    /**
+     * Returns the {@link Parameter}s. An absent context yields {@link Parameter#EMPTY_ARRAY};
+     * otherwise the formal parameter list is visited.
+     */
     @Override
     public Parameter[] visitFormalParameters(final FormalParametersContext ctx) {
         if (!asBoolean(ctx)) {
@@ -4992,6 +5916,12 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
         return this.visitFormalParameterList(ctx.formalParameterList());
     }
 
+    /**
+     * Returns the {@link Parameter}s. An absent context yields {@link Parameter#EMPTY_ARRAY}. A
+     * receiver ({@code this}) parameter is first when present, then each formal parameter. A
+     * var-arg parameter that is not last is rejected, and a duplicated name is rejected; the
+     * name {@code _} is not compared.
+     */
     @Override
     public Parameter[] visitFormalParameterList(final FormalParameterListContext ctx) {
         if (!asBoolean(ctx)) {
@@ -5047,16 +5977,30 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
         }
     }
 
+    /**
+     * Returns one {@link Parameter} by delegating to {@code processFormalParameter}. The type is
+     * visited, a var-arg type becomes an array type, modifiers are applied, and a default
+     * expression is set when present. The parameter and its modifier manager are kept in the
+     * builder's parameter maps rather than on the parameter.
+     */
     @Override
     public Parameter visitFormalParameter(final FormalParameterContext ctx) {
         return this.processFormalParameter(ctx, ctx.variableModifiersOpt(), ctx.type(), ctx.ELLIPSIS(), ctx.variableDeclaratorId(), ctx.expression());
     }
 
+    /**
+     * Returns the receiver {@link Parameter}: the visited type with the name {@code this},
+     * positioned on {@code ctx}. Modifiers and a default value are not applied.
+     */
     @Override
     public Parameter visitThisFormalParameter(final ThisFormalParameterContext ctx) {
         return configureAST(new Parameter(this.visitType(ctx.type()), THIS_STR), ctx);
     }
 
+    /**
+     * Returns the class or interface {@link ModifierNode}s. When none are written the result is
+     * an empty list; otherwise each modifier is visited.
+     */
     @Override
     public List<ModifierNode> visitClassOrInterfaceModifiersOpt(final ClassOrInterfaceModifiersOptContext ctx) {
         if (asBoolean(ctx.classOrInterfaceModifiers())) {
@@ -5066,6 +6010,9 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
         return Collections.emptyList();
     }
 
+    /**
+     * Returns every class or interface {@link ModifierNode}, in source order.
+     */
     @Override
     public List<ModifierNode> visitClassOrInterfaceModifiers(final ClassOrInterfaceModifiersContext ctx) {
         return ctx.classOrInterfaceModifier().stream()
@@ -5073,6 +6020,11 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
                 .collect(Collectors.toList());
     }
 
+    /**
+     * Returns one class or interface {@link ModifierNode}, positioned on {@code ctx}. An
+     * annotation modifier carries the visited annotation node. A keyword modifier carries the
+     * keyword's token type and text. Any other form is rejected.
+     */
     @Override
     public ModifierNode visitClassOrInterfaceModifier(final ClassOrInterfaceModifierContext ctx) {
         if (asBoolean(ctx.annotation())) {
@@ -5086,6 +6038,11 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
         throw createParsingFailedException("Unsupported class or interface modifier: " + ctx.getText(), ctx);
     }
 
+    /**
+     * Returns one {@link ModifierNode}, positioned on {@code ctx}. A class or interface modifier
+     * is visited as one. A keyword modifier carries the keyword's token type and text. Any other
+     * form is rejected.
+     */
     @Override
     public ModifierNode visitModifier(final ModifierContext ctx) {
         if (asBoolean(ctx.classOrInterfaceModifier())) {
@@ -5099,6 +6056,9 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
         throw createParsingFailedException("Unsupported modifier: " + ctx.getText(), ctx);
     }
 
+    /**
+     * Returns every {@link ModifierNode}, in source order.
+     */
     @Override
     public List<ModifierNode> visitModifiers(final ModifiersContext ctx) {
         return ctx.modifier().stream()
@@ -5106,6 +6066,10 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
                 .collect(Collectors.toList());
     }
 
+    /**
+     * Returns the {@link ModifierNode}s. When none are written the result is an empty list;
+     * otherwise {@link #visitModifiers} is used.
+     */
     @Override
     public List<ModifierNode> visitModifiersOpt(final ModifiersOptContext ctx) {
         if (asBoolean(ctx.modifiers())) {
@@ -5115,6 +6079,11 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
         return Collections.emptyList();
     }
 
+    /**
+     * Returns one variable {@link ModifierNode}, positioned on {@code ctx}. An annotation
+     * modifier carries the visited annotation node. A keyword modifier carries the keyword's
+     * token type and text. Any other form is rejected.
+     */
     @Override
     public ModifierNode visitVariableModifier(final VariableModifierContext ctx) {
         if (asBoolean(ctx.annotation())) {
@@ -5128,6 +6097,10 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
         throw createParsingFailedException("Unsupported variable modifier", ctx);
     }
 
+    /**
+     * Returns the variable {@link ModifierNode}s. When none are written the result is an empty
+     * list; otherwise each modifier is visited.
+     */
     @Override
     public List<ModifierNode> visitVariableModifiersOpt(final VariableModifiersOptContext ctx) {
         if (asBoolean(ctx.variableModifiers())) {
@@ -5137,6 +6110,9 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
         return Collections.emptyList();
     }
 
+    /**
+     * Returns every variable {@link ModifierNode}, in source order.
+     */
     @Override
     public List<ModifierNode> visitVariableModifiers(final VariableModifiersContext ctx) {
         return ctx.variableModifier().stream()
@@ -5146,6 +6122,15 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
 
     // type { ------------------------------------------------------------------
 
+    /**
+     * Returns the {@link ClassNode} for a type. An absent context yields the dynamic type, and
+     * {@code void} is rejected. A primitive or a reference type is visited, type annotations are
+     * added, and each array dimension wraps the type and contributes its annotations.
+     * <p>
+     * When the type is inside {@code instanceof}, that flag is copied onto the reference type
+     * and a non-reifiable result is rejected. The node is positioned on {@code ctx}.
+     * </p>
+     */
     @Override
     public ClassNode visitType(final TypeContext ctx) {
         if (!asBoolean(ctx)) {
@@ -5183,11 +6168,20 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
         return configureAST(classNode, ctx);
     }
 
+    /**
+     * Returns a plain {@link ClassNode} for the primitive named by {@code ctx}, positioned on
+     * {@code ctx}.
+     */
     @Override
     public ClassNode visitPrimitiveType(final PrimitiveTypeContext ctx) {
         return configureAST(ClassHelper.make(ctx.getText()).getPlainNodeReference(false), ctx);
     }
 
+    /**
+     * Returns the reference {@link ClassNode} from {@code visitParameterizedClassType},
+     * positioned on {@code ctx}. A raw enclosing type is recorded when type arguments follow a
+     * qualified name.
+     */
     @Override
     public ClassNode visitReferenceType(final ReferenceTypeContext ctx) {
         return configureAST(this.visitParameterizedClassType(ctx, true), ctx);
@@ -5288,6 +6282,11 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
         return outer != null && carriesNonReifiableInstanceofArg(outer);
     }
 
+    /**
+     * Returns the {@link GenericsType}s of a type-argument list or a diamond. Written arguments
+     * are visited. A diamond ({@code <>}) yields {@link GenericsType#EMPTY_ARRAY}. Any other
+     * form is rejected.
+     */
     @Override
     public GenericsType[] visitTypeArgumentsOrDiamond(final TypeArgumentsOrDiamondContext ctx) {
         if (asBoolean(ctx.typeArguments())) {
@@ -5301,11 +6300,20 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
         throw this.createParsingFailedException("Unsupported type arguments or diamond: " + ctx.getText(), ctx);
     }
 
+    /**
+     * Returns one {@link GenericsType} per type argument, in source order.
+     */
     @Override
     public GenericsType[] visitTypeArguments(final TypeArgumentsContext ctx) {
         return ctx.typeArgument().stream().map(this::visitTypeArgument).toArray(GenericsType[]::new);
     }
 
+    /**
+     * Builds one {@link GenericsType} positioned on {@code ctx}. A {@code ?} is a wildcard whose
+     * base type carries the annotations written on the question mark; {@code extends} sets the
+     * upper bound and {@code super} sets the lower bound. A plain type is wrapped as a
+     * non-wildcard generics type. Any other form is rejected.
+     */
     @Override
     public GenericsType visitTypeArgument(final TypeArgumentContext ctx) {
         if (asBoolean(ctx.QUESTION())) {
@@ -5343,6 +6351,12 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
 
     // } type ------------------------------------------------------------------
 
+    /**
+     * Returns a {@link ClassExpression} for the plain type on the right of {@code instanceof},
+     * positioned on {@code ctx}. When the context is marked as inside {@code instanceof}, that
+     * flag is copied onto the type before it is visited. A pattern on the right is built
+     * elsewhere.
+     */
     @Override
     public Expression visitMatchingType(final MatchingTypeContext ctx) {
         // the plain type of `instanceof Type`; a pattern is built by buildMatchingPattern
@@ -5369,6 +6383,10 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
         return new TypePattern(type, this.bindingVariable(ctx.identifier(), type));
     }
 
+    /**
+     * Returns a {@link VariableExpression} of the identifier, positioned on {@code ctx}. A
+     * built-in type name used as the identifier is rejected.
+     */
     @Override
     public VariableExpression visitVariableDeclaratorId(final VariableDeclaratorIdContext ctx) {
         if (ctx.builtInType() != null) { // e.g. `def long = 1`, `def (a, long) = [1, 2]`, `def m(long) {}`
@@ -5381,6 +6399,10 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
         return "'" + name + "' is a " + (VOID_STR.equals(name) ? "" : "primitive ") + "type name and cannot be used as a variable name";
     }
 
+    /**
+     * Builds a {@link TupleExpression} of the variable names, positioned on {@code ctx}. Each
+     * name is a {@link VariableExpression} from {@link #visitVariableDeclaratorId}.
+     */
     @Override
     public TupleExpression visitVariableNames(final VariableNamesContext ctx) {
         return configureAST(
@@ -5392,6 +6414,11 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
                 ctx);
     }
 
+    /**
+     * Returns a {@link ClosureExpression} positioned on {@code ctx}. A closure and a lambda are
+     * each visited by their own method; a lambda is a {@link LambdaExpression}. Any other form
+     * is rejected.
+     */
     @Override
     public ClosureExpression visitClosureOrLambdaExpression(final ClosureOrLambdaExpressionContext ctx) {
         // GROOVY-8991: Difference in behaviour with closure and lambda
@@ -5405,6 +6432,10 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
         throw createParsingFailedException("The node is not expected here" + ctx.getText(), ctx);
     }
 
+    /**
+     * Returns a {@link BlockStatement} positioned on {@code ctx}. When statements are present
+     * they are visited; otherwise the block is empty.
+     */
     @Override
     public BlockStatement visitBlockStatementsOpt(final BlockStatementsOptContext ctx) {
         if (asBoolean(ctx.blockStatements())) {
@@ -5414,6 +6445,10 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
         return configureAST(this.createBlockStatement(), ctx);
     }
 
+    /**
+     * Builds a {@link BlockStatement} of the block's statements, positioned on {@code ctx}. A
+     * statement whose visit returns {@code null} is dropped.
+     */
     @Override
     public BlockStatement visitBlockStatements(final BlockStatementsContext ctx) {
         return configureAST(
@@ -5425,6 +6460,11 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
                 ctx);
     }
 
+    /**
+     * Returns the nested {@link Statement}, or {@code null} when the visit returns {@code null}.
+     * A {@link MethodNode} and an {@link ImportNode} are rejected, as is any other non-statement
+     * result.
+     */
     @Override
     public Statement visitBlockStatement(final BlockStatementContext ctx) {
         Object astNode = this.visit(ctx.statement());
@@ -5444,6 +6484,10 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
         }
     }
 
+    /**
+     * Returns the {@link AnnotationNode}s. When none are written the result is an empty list;
+     * otherwise each annotation is visited.
+     */
     @Override
     public List<AnnotationNode> visitAnnotationsOpt(final AnnotationsOptContext ctx) {
         if (!asBoolean(ctx.annotation())) {
@@ -5455,6 +6499,12 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
                 .collect(Collectors.toList());
     }
 
+    /**
+     * Builds an {@link AnnotationNode} for the annotation's class name, positioned on
+     * {@code ctx}. The class node itself is positioned on the annotation name. Each element
+     * value is added as a member. A method-pointer value is rewritten to a closure that calls
+     * {@code this.withMethodClosure} with that pointer.
+     */
     @Override
     public AnnotationNode visitAnnotation(final AnnotationContext ctx) {
         String annotationName = this.visitAnnotationName(ctx.annotationName());
@@ -5472,6 +6522,11 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
         return configureAST(annotationNode, ctx);
     }
 
+    /**
+     * Returns the annotation member names paired with their {@link Expression}s. An absent
+     * context yields an empty list. Named pairs are visited as pairs. A single unnamed value is
+     * stored under the name {@code value}.
+     */
     @Override
     public List<Tuple2<String, Expression>> visitElementValues(final ElementValuesContext ctx) {
         if (!asBoolean(ctx)) {
@@ -5489,11 +6544,19 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
         return annotationElementValues;
     }
 
+    /**
+     * Returns the annotation class name by visiting the qualified class name and reading that
+     * node's name.
+     */
     @Override
     public String visitAnnotationName(final AnnotationNameContext ctx) {
         return this.visitQualifiedClassName(ctx.qualifiedClassName()).getName();
     }
 
+    /**
+     * Returns the annotation members as a map from name to {@link Expression}, in source order.
+     * A duplicate name is rejected.
+     */
     @Override
     public Map<String, Expression> visitElementValuePairs(final ElementValuePairsContext ctx) {
         return ctx.elementValuePair().stream()
@@ -5508,11 +6571,20 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
                 ));
     }
 
+    /**
+     * Returns the member name paired with its {@link Expression}. The name is the pair-name
+     * text, and the value is {@link #visitElementValue}.
+     */
     @Override
     public Tuple2<String, Expression> visitElementValuePair(final ElementValuePairContext ctx) {
         return tuple(ctx.elementValuePairName().getText(), this.visitElementValue(ctx.elementValue()));
     }
 
+    /**
+     * Returns one annotation value {@link Expression}, positioned on {@code ctx}: a visited
+     * expression, an {@link AnnotationConstantExpression} for a nested annotation, or the list
+     * from an array initializer. Any other form is rejected.
+     */
     @Override
     public Expression visitElementValue(final ElementValueContext ctx) {
         if (asBoolean(ctx.expression())) {
@@ -5530,21 +6602,33 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
         throw createParsingFailedException("Unsupported element value: " + ctx.getText(), ctx);
     }
 
+    /**
+     * Builds a {@link ListExpression} of the element values, positioned on {@code ctx}.
+     */
     @Override
     public ListExpression visitElementValueArrayInitializer(final ElementValueArrayInitializerContext ctx) {
         return configureAST(listX(ctx.elementValue().stream().map(this::visitElementValue).toList()), ctx);
     }
 
+    /**
+     * Returns the class-name text of {@code ctx}.
+     */
     @Override
     public String visitClassName(final ClassNameContext ctx) {
         return ctx.getText();
     }
 
+    /**
+     * Returns the identifier text of {@code ctx}.
+     */
     @Override
     public String visitIdentifier(final IdentifierContext ctx) {
         return ctx.getText();
     }
 
+    /**
+     * Returns the qualified name formed by joining each name element with a dot.
+     */
     @Override
     public String visitQualifiedName(final QualifiedNameContext ctx) {
         return ctx.qualifiedNameElement().stream()
@@ -5552,6 +6636,10 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
                 .collect(Collectors.joining(DOT_STR));
     }
 
+    /**
+     * Returns the {@link ClassNode} for a qualified class name and adds the type annotations
+     * from {@code ctx}.
+     */
     @Override
     public ClassNode visitAnnotatedQualifiedClassName(final AnnotatedQualifiedClassNameContext ctx) {
         ClassNode classNode = this.visitQualifiedClassName(ctx.qualifiedClassName());
@@ -5561,6 +6649,10 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
         return classNode;
     }
 
+    /**
+     * Returns the {@link ClassNode}s of an annotated qualified-name list. An absent context
+     * yields {@link ClassNode#EMPTY_ARRAY}; otherwise each annotated name is visited.
+     */
     @Override
     public ClassNode[] visitQualifiedClassNameList(final QualifiedClassNameListContext ctx) {
         if (!asBoolean(ctx)) {
@@ -5572,11 +6664,21 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
                 .toArray(ClassNode[]::new);
     }
 
+    /**
+     * Returns the {@link ClassNode} for a qualified class name from {@code createClassNode}.
+     * Inside {@code instanceof} the node is not given a redirect; otherwise a generics-using
+     * name is proxied. The node is positioned on {@code ctx}.
+     */
     @Override
     public ClassNode visitQualifiedClassName(final QualifiedClassNameContext ctx) {
         return this.createClassNode(ctx);
     }
 
+    /**
+     * Returns the {@link ClassNode} for a qualified standard class name from
+     * {@code createClassNode}. Inside {@code instanceof} the node is not given a redirect;
+     * otherwise a generics-using name is proxied. The node is positioned on {@code ctx}.
+     */
     @Override
     public ClassNode visitQualifiedStandardClassName(final QualifiedStandardClassNameContext ctx) {
         return this.createClassNode(ctx);
@@ -5772,6 +6874,11 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
         return this.appendStatementsToBlockStatement(new BlockStatement(), statementList);
     }
 
+    /**
+     * Adds {@code statements} to {@code bs} and returns that same block. Each
+     * {@code DeclarationListStatement} is flattened into its declaration statements; every other
+     * statement is added as itself.
+     */
     public BlockStatement appendStatementsToBlockStatement(final BlockStatement bs, final Statement... statements) {
         return this.appendStatementsToBlockStatement(bs, Arrays.asList(statements));
     }
@@ -5973,6 +7080,11 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
 
     private ANTLRErrorListener createANTLRErrorListener() {
         return new ANTLRErrorListener() {
+            /**
+             * Records {@code msg} as a {@link SyntaxException} at {@code line} and a 1-based column
+             * ({@code charPositionInLine + 1}). The recognizer, the offending symbol, and the
+             * recognition exception are not consulted.
+             */
             @Override
             public void syntaxError(final Recognizer recognizer, final Object offendingSymbol, final int line, final int charPositionInLine, final String msg, final RecognitionException e) {
                 collectSyntaxError(new SyntaxException(msg, line, charPositionInLine + 1));
@@ -6014,10 +7126,17 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
 
         private final List<ExpressionStatement> declarationStatements;
 
+        /**
+         * Forwards the declarations to the list constructor.
+         */
         public DeclarationListStatement(DeclarationExpression... declarations) {
             this(Arrays.asList(declarations));
         }
 
+        /**
+         * Wraps each {@link DeclarationExpression} in an {@link ExpressionStatement} positioned on
+         * that declaration, and keeps those statements as this node's body.
+         */
         public DeclarationListStatement(List<DeclarationExpression> declarations) {
             this.declarationStatements =
                     declarations.stream()
@@ -6025,6 +7144,11 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
                             .collect(Collectors.toList());
         }
 
+        /**
+         * Returns the declaration {@link ExpressionStatement}s. When this statement has labels, each
+         * child's existing labels are cleared and these labels are copied onto the child before the
+         * list is returned.
+         */
         public List<ExpressionStatement> getDeclarationStatements() {
             List<String> declarationListStatementLabels = this.getStatementLabels();
 
@@ -6042,6 +7166,9 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
             return this.declarationStatements;
         }
 
+        /**
+         * Returns the {@link DeclarationExpression} inside each declaration statement.
+         */
         public List<DeclarationExpression> getDeclarationExpressions() {
             return this.declarationStatements.stream()
                     .map(e -> (DeclarationExpression) e.getExpression())

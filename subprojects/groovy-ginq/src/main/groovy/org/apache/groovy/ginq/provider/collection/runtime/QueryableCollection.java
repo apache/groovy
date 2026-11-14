@@ -118,6 +118,16 @@ class QueryableCollection<T> implements Queryable<T>, Serializable {
         }
     }
 
+    /**
+     * Nested-loop inner join. For each element of this source the other source is read,
+     * materializing it first when it is a {@link QueryableCollection}, and pairs that
+     * {@code joiner} accepts are returned as {@link Tuple2} values.
+     *
+     * @param queryable the source to join with
+     * @param joiner the pair predicate
+     * @param <U> the element type of {@code queryable}
+     * @return the matching pairs
+     */
     @Override
     public <U> Queryable<Tuple2<T, U>> innerJoin(Queryable<? extends U> queryable, BiPredicate<? super T, ? super U> joiner) {
         Stream<Tuple2<T, U>> stream =
@@ -135,6 +145,18 @@ class QueryableCollection<T> implements Queryable<T>, Serializable {
         return from(stream);
     }
 
+    /**
+     * Hash inner join. {@code queryable} is indexed by the hash of {@code fieldsExtractor2},
+     * and each element of this source probes that table with {@code fieldsExtractor1}.
+     * A pair is kept when the extracted values are equal. In parallel mode the index is
+     * built before probing so the two sources are not queried in nested parallel.
+     *
+     * @param queryable the source to join with
+     * @param fieldsExtractor1 key extracted from this source
+     * @param fieldsExtractor2 key extracted from {@code queryable}
+     * @param <U> the element type of {@code queryable}
+     * @return the matching pairs
+     */
     @Override
     public <U> Queryable<Tuple2<T, U>> innerHashJoin(Queryable<? extends U> queryable, Function<? super T, ?> fieldsExtractor1, Function<? super U, ?> fieldsExtractor2) {
         final ConcurrentObjectHolder<Map<Integer, List<Candidate<U>>>> hashTableHolder = new ConcurrentObjectHolder<>(createHashTableSupplier(queryable, fieldsExtractor2));
@@ -194,26 +216,74 @@ class QueryableCollection<T> implements Queryable<T>, Serializable {
         return Objects.hash(obj);
     }
 
+    /**
+     * Left outer join. Each element of this source is paired with the matches from
+     * {@code queryable}, or with {@code null} when {@code joiner} accepts nothing.
+     *
+     * @param queryable the source to join with
+     * @param joiner the pair predicate
+     * @param <U> the element type of {@code queryable}
+     * @return the left-outer pairs
+     */
     @Override
     public <U> Queryable<Tuple2<T, U>> leftJoin(Queryable<? extends U> queryable, BiPredicate<? super T, ? super U> joiner) {
         return outerJoin(this, queryable, joiner);
     }
 
+    /**
+     * Hash left outer join. Unmatched elements of this source are paired with {@code null}.
+     *
+     * @param queryable the source to join with
+     * @param fieldsExtractor1 key extracted from this source
+     * @param fieldsExtractor2 key extracted from {@code queryable}
+     * @param <U> the element type of {@code queryable}
+     * @return the left-outer pairs
+     */
     @Override
     public <U> Queryable<Tuple2<T, U>> leftHashJoin(Queryable<? extends U> queryable, Function<? super T, ?> fieldsExtractor1, Function<? super U, ?> fieldsExtractor2) {
         return outerHashJoin(this, queryable, fieldsExtractor1, fieldsExtractor2);
     }
 
+    /**
+     * Right outer join. Implemented as a left outer join with the sources and the
+     * joiner arguments swapped, then each pair is swapped back to (left, right).
+     * An unmatched element of {@code queryable} is paired with {@code null}.
+     *
+     * @param queryable the source to join with
+     * @param joiner the pair predicate, called as {@code (left, right)}
+     * @param <U> the element type of {@code queryable}
+     * @return the right-outer pairs
+     */
     @Override
     public <U> Queryable<Tuple2<T, U>> rightJoin(Queryable<? extends U> queryable, BiPredicate<? super T, ? super U> joiner) {
         return outerJoin(queryable, this, (a, b) -> joiner.test(b, a)).select((e, q) -> tuple(e.getV2(), e.getV1()));
     }
 
+    /**
+     * Hash right outer join. The extractors are swapped for the underlying left hash
+     * join, then each pair is swapped back to (left, right).
+     *
+     * @param queryable the source to join with
+     * @param fieldsExtractor1 key extracted from this source
+     * @param fieldsExtractor2 key extracted from {@code queryable}
+     * @param <U> the element type of {@code queryable}
+     * @return the right-outer pairs
+     */
     @Override
     public <U> Queryable<Tuple2<T, U>> rightHashJoin(Queryable<? extends U> queryable, Function<? super T, ?> fieldsExtractor1, Function<? super U, ?> fieldsExtractor2) {
         return outerHashJoin(queryable, this, fieldsExtractor2, fieldsExtractor1).select((e, q) -> tuple(e.getV2(), e.getV1()));
     }
 
+    /**
+     * Full outer join. Both sources are made reusable, then the left join and the
+     * right join are combined with {@link Queryable#union}, so a matched pair is
+     * kept once and an unmatched row from either side is paired with {@code null}.
+     *
+     * @param queryable the source to join with
+     * @param joiner the pair predicate
+     * @param <U> the element type of {@code queryable}
+     * @return the full-outer pairs
+     */
     @Override
     public <U> Queryable<Tuple2<T, U>> fullJoin(Queryable<? extends U> queryable, BiPredicate<? super T, ? super U> joiner) {
         if (queryable instanceof QueryableCollection) {
@@ -226,6 +296,16 @@ class QueryableCollection<T> implements Queryable<T>, Serializable {
         return lj.union(rj);
     }
 
+    /**
+     * Hash full outer join. Both sources are made reusable, then the left hash join
+     * and the right hash join are combined with {@link Queryable#union}.
+     *
+     * @param queryable the source to join with
+     * @param fieldsExtractor1 key extracted from this source
+     * @param fieldsExtractor2 key extracted from {@code queryable}
+     * @param <U> the element type of {@code queryable}
+     * @return the full-outer pairs
+     */
     @Override
     public <U> Queryable<Tuple2<T, U>> fullHashJoin(Queryable<? extends U> queryable, Function<? super T, ?> fieldsExtractor1, Function<? super U, ?> fieldsExtractor2) {
         if (queryable instanceof QueryableCollection) {
@@ -261,6 +341,12 @@ class QueryableCollection<T> implements Queryable<T>, Serializable {
         return from(stream);
     }
 
+    /**
+     * Keeps elements for which {@code filter} is true.
+     *
+     * @param filter the predicate applied to each element
+     * @return the filtered queryable
+     */
     @Override
     public Queryable<T> where(Predicate<? super T> filter) {
         Stream<T> stream = this.stream().filter(filter);
@@ -268,6 +354,16 @@ class QueryableCollection<T> implements Queryable<T>, Serializable {
         return from(stream);
     }
 
+    /**
+     * Groups elements by {@code classifier}. Parallel execution uses a concurrent
+     * grouping collector. When {@code having} is non-null, a group is kept only if
+     * the predicate accepts the key and a queryable over that group's elements.
+     * Each result row is a tuple of the key and that queryable.
+     *
+     * @param classifier the group key
+     * @param having optional group filter, or null to keep every group
+     * @return the grouped rows
+     */
     @Override
     public Queryable<Tuple2<?, Queryable<T>>> groupBy(Function<? super T, ?> classifier, Predicate<? super Tuple2<?, Queryable<? extends T>>> having) {
         Collector<T, ?, ? extends Map<?, List<T>>> groupingBy =
@@ -284,6 +380,17 @@ class QueryableCollection<T> implements Queryable<T>, Serializable {
         return Group.of(stream);
     }
 
+    /**
+     * Groups elements by {@code classifier} into {@link GroupResult} values.
+     * Each group's elements are materialized as a list so a later aggregate can
+     * read the group again. When {@code having} is non-null, groups that fail
+     * the predicate are dropped.
+     *
+     * @param classifier the group key
+     * @param having optional group filter, or null to keep every group
+     * @param <K> the key type
+     * @return the grouped results
+     */
     @Override
     public <K> Queryable<GroupResult<K, T>> groupByInto(Function<? super T, ? extends K> classifier, Predicate<? super GroupResult<K, T>> having) {
         Collector<T, ?, ? extends Map<K, List<T>>> groupingBy =
@@ -302,6 +409,13 @@ class QueryableCollection<T> implements Queryable<T>, Serializable {
         return from(stream);
     }
 
+    /**
+     * Sorts by the supplied orders. When no orders are given, returns this queryable unchanged.
+     *
+     * @param orders the sort keys, first key most significant
+     * @param <U> the key type
+     * @return the sorted queryable, or this queryable when {@code orders} is empty
+     */
     @SafeVarargs
     @Override
     public final <U extends Comparable<? super U>> Queryable<T> orderBy(Order<? super T, ? extends U>... orders) {
@@ -313,11 +427,29 @@ class QueryableCollection<T> implements Queryable<T>, Serializable {
         return from(this.stream().sorted(comparator));
     }
 
+    /**
+     * Builds a comparator from the listed orders.
+     *
+     * @param orders the sort keys
+     * @param <T> the element type
+     * @param <U> the key type
+     * @return the comparator, or null when {@code orders} is empty
+     */
     @SuppressWarnings("unchecked")
     protected static <T, U extends Comparable<? super U>> Comparator<T> makeComparator(List<? extends Order<? super T, ? extends U>> orders) {
         return makeComparator(orders.toArray(Order.EMPTY_ARRAY));
     }
 
+    /**
+     * Chains a comparator from the orders. The first order is the primary key.
+     * Each key uses natural order or its reverse, and nulls sort first or last,
+     * as that order specifies. Returns null when {@code orders} is null or empty.
+     *
+     * @param orders the sort keys
+     * @param <T> the element type
+     * @param <U> the key type
+     * @return the chained comparator, or null when there is nothing to sort by
+     */
     @SafeVarargs
     protected static <T, U extends Comparable<? super U>> Comparator<T> makeComparator(Order<? super T, ? extends U>... orders) {
         if (null == orders || 0 == orders.length) {
@@ -350,6 +482,20 @@ class QueryableCollection<T> implements Queryable<T>, Serializable {
         return from(stream);
     }
 
+    /**
+     * Projects each element with {@code mapper}, passing the element and this queryable.
+     * Parallel execution is turned off for the projection so row numbers are assigned
+     * in order, then restored afterwards. When window functions are in use, or this
+     * is a {@link Group}, the source is materialized first. An empty group is projected
+     * as one row: the pair ({@link Queryable#NULL}, {@link Queryable#EMPTY_QUERYABLE}).
+     * If the caller asked for parallel execution, the projected values are joined as
+     * {@link CompletableFuture}s; an interrupt is restored, and any other failure is
+     * wrapped in {@link GroovyRuntimeException}.
+     *
+     * @param mapper the projection, given the element and this queryable
+     * @param <U> the projected type
+     * @return the projected queryable
+     */
     @SuppressWarnings("unchecked")
     @Override
     public <U> Queryable<U> select(BiFunction<? super T, ? super Queryable<? extends T>, ? extends U> mapper) {
@@ -468,6 +614,13 @@ class QueryableCollection<T> implements Queryable<T>, Serializable {
         return agg(q -> q.stream().count());
     }
 
+    /**
+     * Counts mapped values that are not null.
+     *
+     * @param mapper the value to count
+     * @param <U> the mapped type
+     * @return how many mapped values are non-null
+     */
     @Override
     public <U> Long count(Function<? super T, ? extends U> mapper) {
         return agg(q -> q.stream()
@@ -476,6 +629,12 @@ class QueryableCollection<T> implements Queryable<T>, Serializable {
                 .count());
     }
 
+    /**
+     * Sums the mapped numbers as {@link BigDecimal}. A null mapped value contributes zero.
+     *
+     * @param mapper the number to add
+     * @return the sum
+     */
     @Override
     public BigDecimal sum(Function<? super T, ? extends Number> mapper) {
         return agg(q -> this.stream()
@@ -487,6 +646,13 @@ class QueryableCollection<T> implements Queryable<T>, Serializable {
                 }).reduce(BigDecimal.ZERO, BigDecimal::add));
     }
 
+    /**
+     * Averages the non-null mapped numbers. The sum is divided by how many non-null
+     * values there were, at scale 16 with half-up rounding.
+     *
+     * @param mapper the number to average
+     * @return the average
+     */
     @Override
     public BigDecimal avg(Function<? super T, ? extends Number> mapper) {
         Object[] result = agg(q -> q.stream()
@@ -503,6 +669,13 @@ class QueryableCollection<T> implements Queryable<T>, Serializable {
         return ((BigDecimal) result[1]).divide(toBigDecimal((Long) result[0]), 16, RoundingMode.HALF_UP);
     }
 
+    /**
+     * Returns the smallest non-null mapped value, or null when every mapped value is null.
+     *
+     * @param mapper the value to compare
+     * @param <U> the mapped type
+     * @return the minimum, or null
+     */
     @Override
     public <U extends Comparable<? super U>> U min(Function<? super T, ? extends U> mapper) {
         return agg(q -> q.stream()
@@ -512,6 +685,13 @@ class QueryableCollection<T> implements Queryable<T>, Serializable {
                 .orElse(null));
     }
 
+    /**
+     * Returns the largest non-null mapped value, or null when every mapped value is null.
+     *
+     * @param mapper the value to compare
+     * @param <U> the mapped type
+     * @return the maximum, or null
+     */
     @Override
     public <U extends Comparable<? super U>> U max(Function<? super T, ? extends U> mapper) {
         return agg(q -> q.stream()
@@ -521,6 +701,13 @@ class QueryableCollection<T> implements Queryable<T>, Serializable {
                 .orElse(null));
     }
 
+    /**
+     * Collects the non-null mapped values in encounter order.
+     *
+     * @param mapper the value to collect
+     * @param <U> the mapped type
+     * @return the non-null values
+     */
     @Override
     public <U> List<U> list(Function<? super T, ? extends U> mapper) {
         return agg(q -> q.stream()
@@ -529,6 +716,14 @@ class QueryableCollection<T> implements Queryable<T>, Serializable {
             .collect(Collectors.toList()));
     }
 
+    /**
+     * Returns the median of the non-null mapped numbers. An empty selection returns null.
+     * An odd count returns the middle value; an even count returns the mean of the two
+     * middle values.
+     *
+     * @param mapper the number to take the median of
+     * @return the median, or null when no non-null values were mapped
+     */
     @Override
     public BigDecimal median(Function<? super T, ? extends Number> mapper) {
         List<BigDecimal> sortedNumList = agg(q -> q.stream()
@@ -554,21 +749,48 @@ class QueryableCollection<T> implements Queryable<T>, Serializable {
         return num;
     }
 
+    /**
+     * Square root of {@link #var(Function)}. The root is taken in {@code double} precision.
+     *
+     * @param mapper the number to measure
+     * @return that square root
+     */
     @Override
     public BigDecimal stdev(Function<? super T, ? extends Number> mapper) {
         return sd(mapper, 0);
     }
 
+    /**
+     * Square root of {@link #varp(Function)}. The root is taken in {@code double} precision.
+     *
+     * @param mapper the number to measure
+     * @return that square root
+     */
     @Override
     public BigDecimal stdevp(Function<? super T, ? extends Number> mapper) {
         return sd(mapper, 1);
     }
 
+    /**
+     * Variance of the non-null mapped numbers: the sum of squared differences from
+     * their average, divided by how many non-null values there were, at scale 16
+     * with half-up rounding.
+     *
+     * @param mapper the number to measure
+     * @return that variance
+     */
     @Override
     public BigDecimal var(Function<? super T, ? extends Number> mapper) {
         return vr(mapper, 0);
     }
 
+    /**
+     * Variance of the non-null mapped numbers, dividing the sum of squared differences
+     * from their average by one less than the count, at scale 16 with half-up rounding.
+     *
+     * @param mapper the number to measure
+     * @return that variance
+     */
     @Override
     public BigDecimal varp(Function<? super T, ? extends Number> mapper) {
         return vr(mapper, 1);
@@ -594,6 +816,13 @@ class QueryableCollection<T> implements Queryable<T>, Serializable {
         return toBigDecimal(sqrt(vr(mapper, diff).doubleValue()));
     }
 
+    /**
+     * Applies {@code mapper} to this queryable and returns its result.
+     *
+     * @param mapper the function applied to this queryable
+     * @param <U> the result type
+     * @return the mapped result
+     */
     @Override
     public <U> U agg(Function<? super Queryable<? extends T>, ? extends U> mapper) {
         return mapper.apply(this);
@@ -764,6 +993,12 @@ class QueryableCollection<T> implements Queryable<T>, Serializable {
             this.partitionId = partitionId;
         }
 
+        /**
+         * Matches keys that share the same partition value and partition id.
+         *
+         * @param o the object to compare
+         * @return {@code true} when both the partition key and the partition id are equal
+         */
         @Override
         public boolean equals(Object o) {
             if (this == o) return true;
@@ -771,6 +1006,11 @@ class QueryableCollection<T> implements Queryable<T>, Serializable {
             return partitionKey.equals(that.partitionKey) && partitionId.equals(that.partitionId);
         }
 
+        /**
+         * Hashes the partition key and the partition id.
+         *
+         * @return that hash
+         */
         @Override
         public int hashCode() {
             return Objects.hash(partitionKey, partitionId);
@@ -786,6 +1026,12 @@ class QueryableCollection<T> implements Queryable<T>, Serializable {
             this.orderId = orderId;
         }
 
+        /**
+         * Matches keys that refer to the same partition instance and the same order id.
+         *
+         * @param o the object to compare
+         * @return {@code true} when the partition reference and the order id both match
+         */
         @SuppressWarnings("rawtypes")
         @Override
         public boolean equals(Object o) {
@@ -794,6 +1040,11 @@ class QueryableCollection<T> implements Queryable<T>, Serializable {
             return partition == that.partition && orderId.equals(that.orderId);
         }
 
+        /**
+         * Hashes the partition's size and the order id.
+         *
+         * @return that hash
+         */
         @Override
         public int hashCode() {
             return Objects.hash(partition.size(), orderId);

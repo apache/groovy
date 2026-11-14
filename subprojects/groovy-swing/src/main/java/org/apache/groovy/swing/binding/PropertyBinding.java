@@ -96,11 +96,22 @@ public class PropertyBinding implements SourceBinding, TargetBinding, TriggerBin
             return Thread.currentThread().getContextClassLoader().getResources(path);
         } catch (IOException e) {
             return new Enumeration<URL>() {
+                /**
+                 * Reports that the failed service lookup has no URLs.
+                 *
+                 * @return {@code false}
+                 */
                 @Override
                 public boolean hasMoreElements() {
                     return false;
                 }
 
+                /**
+                 * Returns {@code null}. This enumeration is used only after
+                 * listing the accessor services threw an {@link IOException}.
+                 *
+                 * @return {@code null}
+                 */
                 @Override
                 public URL nextElement() {
                     return null;
