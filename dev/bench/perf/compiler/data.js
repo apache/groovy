@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1794553054156,
+  "lastUpdate": 1794639562261,
   "repoUrl": "https://github.com/apache/groovy",
   "entries": {
     "Compiler Performance": [
@@ -9646,6 +9646,63 @@ window.BENCHMARK_DATA = {
             "name": "compile@groovy-6",
             "value": 371.3533333333333,
             "range": "±18.03",
+            "unit": "ms",
+            "extra": "6.0.0"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "Paul King",
+            "username": "paulk-asert",
+            "email": "paulk@asert.com.au"
+          },
+          "committer": {
+            "name": "Paul King",
+            "username": "paulk-asert",
+            "email": "paulk@asert.com.au"
+          },
+          "id": "0b455da1f570a2ecdf51620215396ba6f6460672",
+          "message": "GROOVY-12762: @NamedVariant: default values aren't handled correctly by the named-arg variant\n\n- give the named-arg variant its own copies of positional parameters with\n  default values, so its default-argument variants are generated, and\n  report a clash of such a variant with a declared member as an error\n- build a @NamedDelegate referenced by a default value once and share it\n  (a local in methods, a private helper constructor for constructors);\n  a positional default value that references a @NamedDelegate is an error\n- rewrite references to earlier parameters in default values at any depth\n- report a default value that references a parameter from within a\n  closure as an error instead of failing in class generation\n- don't treat the delegate's subMap call as an implicit-this call, so a\n  @NamedVariant constructor with a @NamedDelegate compiles dynamically",
+          "timestamp": "2026-11-13T02:27:16Z",
+          "url": "https://github.com/apache/groovy/commit/0b455da1f570a2ecdf51620215396ba6f6460672"
+        },
+        "date": 1794639555805,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "compile@current",
+            "value": 538.6633333333333,
+            "range": "±20.24",
+            "unit": "ms",
+            "extra": "current"
+          },
+          {
+            "name": "compile@groovy-3",
+            "value": 702.1633333333333,
+            "range": "±226.33",
+            "unit": "ms",
+            "extra": "3.0.25"
+          },
+          {
+            "name": "compile@groovy-4",
+            "value": 615.2966666666666,
+            "range": "±149.7",
+            "unit": "ms",
+            "extra": "4.0.33"
+          },
+          {
+            "name": "compile@groovy-5",
+            "value": 486.8166666666667,
+            "range": "±22.37",
+            "unit": "ms",
+            "extra": "5.1.3"
+          },
+          {
+            "name": "compile@groovy-6",
+            "value": 497.5366666666667,
+            "range": "±24.79",
             "unit": "ms",
             "extra": "6.0.0"
           }
