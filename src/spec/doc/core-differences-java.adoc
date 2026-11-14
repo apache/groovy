@@ -127,7 +127,7 @@ include::../test/DifferencesFromJavaTest.groovy[tags=packageprivate_field,indent
 
 == ARM blocks
 
-Java 7 introduced ARM (Automatic Resource Management) blocks (also know as try-with-resources) blocks like this:
+Java 7 introduced ARM (Automatic Resource Management) blocks (also known as try-with-resources) like this:
 
 [source,java]
 ----
