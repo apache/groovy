@@ -1018,10 +1018,12 @@ final class InnerClassTest {
         assert err.message =~ /No such property: p for class: Outer.Inner/
     }
 
-    @NotYetImplemented @Test
-    void testUsageOfOuterField13() {
-        assertScript '''
+    // GROOVY-11855
+    @CompileModesTest
+    void testUsageOfOuterField13(String mode) {
+        assertScript """
             class Outer {
+                $mode
                 interface Inner {
                     default i() {
                         'i' + o
@@ -1031,7 +1033,22 @@ final class InnerClassTest {
             }
 
             assert (new Outer.Inner() {}).i() == 'io'
-        '''
+        """
+
+        assertScript """
+            class Outer {
+                $mode
+                interface Inner {
+                    default i() {
+                        o = 'o'
+                        'i' + o
+                    }
+                }
+                private static o
+            }
+
+            assert (new Outer.Inner() {}).i() == 'io'
+        """
     }
 
     @Test
@@ -1398,10 +1415,12 @@ final class InnerClassTest {
         '''
     }
 
-    @NotYetImplemented @Test
-    void testUsageOfOuterMethod10() {
-        assertScript '''
+    // GROOVY-11855
+    @CompileModesTest
+    void testUsageOfOuterMethod10(String mode) {
+        assertScript """
             class Outer {
+                $mode
                 interface Inner {
                     default i() {
                         'i' + o()
@@ -1411,7 +1430,7 @@ final class InnerClassTest {
             }
 
             assert (new Outer.Inner() {}).i() == 'io'
-        '''
+        """
     }
 
     // GROOVY-12574
