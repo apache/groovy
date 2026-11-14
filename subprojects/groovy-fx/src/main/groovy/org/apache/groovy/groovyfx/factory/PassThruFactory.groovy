@@ -32,7 +32,12 @@ package org.apache.groovy.groovyfx.factory
  */
 class PassThruFactory extends AbstractFactory {
 
+    /** Type {@code newInstance} accepts. */
     final Class restrictedType
+    /**
+     * {@code true} when the node does not take children.
+     * {@link #isLeaf()} returns this value.
+     */
     final boolean leaf
 
     /**

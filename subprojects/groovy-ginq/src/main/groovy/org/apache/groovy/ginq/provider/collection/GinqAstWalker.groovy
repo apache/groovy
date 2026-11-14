@@ -1674,6 +1674,7 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
 
     //--------------------------------------------------------------------------
 
+    /** Source unit passed to the constructor. */
     final SourceUnit sourceUnit
 
     private Map<String, String> configuration
