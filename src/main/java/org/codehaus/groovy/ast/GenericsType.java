@@ -41,6 +41,9 @@ import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.implem
  * @see GenericsTypeName
  */
 public class GenericsType extends ASTNode {
+    /**
+     * Zero-length array shared by nodes that have no type arguments.
+     */
     public static final GenericsType[] EMPTY_ARRAY = new GenericsType[0];
 
     private String name;

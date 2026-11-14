@@ -34,6 +34,9 @@ public class ArgumentListExpression extends TupleExpression {
     public static final Object[] EMPTY_ARRAY = {
     };
 
+    /**
+     * Empty argument list. Call sites that pass no arguments share this instance.
+     */
     public static final ArgumentListExpression EMPTY_ARGUMENTS = new ArgumentListExpression();
 
     /**
