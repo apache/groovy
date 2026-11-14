@@ -22,6 +22,11 @@ import org.codehaus.groovy.ast.PropertyNode;
 
 import java.lang.reflect.Modifier;
 
+/**
+ * Helpers for {@link PropertyNode}.
+ * {@link #adjustPropertyModifiersForMethod} is the mask applied when an
+ * accessor is generated from a property.
+ */
 public class PropertyNodeUtils {
 
     /**

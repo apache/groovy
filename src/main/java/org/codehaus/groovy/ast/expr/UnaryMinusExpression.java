@@ -21,14 +21,28 @@ package org.codehaus.groovy.ast.expr;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.GroovyCodeVisitor;
 
+/**
+ * Represents a unary minus expression such as {@code -x}.
+ * The type reported for the expression is the operand's type.
+ */
 public class UnaryMinusExpression extends Expression {
 
     private final Expression expression;
 
+    /**
+     * Creates a unary minus expression for {@code expression}.
+     *
+     * @param expression the operand
+     */
     public UnaryMinusExpression(final Expression expression) {
         this.expression = expression;
     }
 
+    /**
+     * Returns the operand passed to the constructor.
+     *
+     * @return the operand
+     */
     public Expression getExpression() {
         return expression;
     }
@@ -43,6 +57,12 @@ public class UnaryMinusExpression extends Expression {
         return getExpression().getType();
     }
 
+    /**
+     * Always returns {@code false}.
+     *
+     * @return {@code false}
+     * @deprecated always returns {@code false}
+     */
     @Deprecated
     public boolean isDynamic() {
         return false;

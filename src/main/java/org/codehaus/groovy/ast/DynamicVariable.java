@@ -30,6 +30,11 @@ public class DynamicVariable implements Variable {
     private boolean closureShare = false;
     private boolean staticContext = false;
 
+    /**
+     * @param name the variable name
+     * @param context {@code true} when the variable occurs in a static context.
+     *                {@link #isInStaticContext()} returns this flag
+     */
     public DynamicVariable(String name, boolean context) {
         this.name = name;
         staticContext = context;

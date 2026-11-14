@@ -30,10 +30,22 @@ import java.util.List;
 public class MapExpression extends Expression {
     private final List<MapEntryExpression> mapEntryExpressions;
 
+    /**
+     * Creates an empty map expression.
+     * The entry list is a new {@link ArrayList}, and the expression type is
+     * {@link ClassHelper#MAP_TYPE}.
+     */
     public MapExpression() {
         this(new ArrayList<MapEntryExpression>());
     }
 
+    /**
+     * Creates a map expression that keeps {@code mapEntryExpressions} as its entries.
+     * The list is stored, not copied, so later {@link #addMapEntryExpression(MapEntryExpression)
+     * additions} append to the caller's list. The expression type is {@link ClassHelper#MAP_TYPE}.
+     *
+     * @param mapEntryExpressions the entry list to retain; must accept {@code add} if entries are added later
+     */
     public MapExpression(List<MapEntryExpression> mapEntryExpressions) {
         this.mapEntryExpressions = mapEntryExpressions;
         //TODO: get the type's of the expressions to specify the
@@ -41,10 +53,21 @@ public class MapExpression extends Expression {
         setType(ClassHelper.MAP_TYPE);
     }
 
+    /**
+     * Appends {@code expression} to the entry list.
+     *
+     * @param expression the entry to add
+     */
     public void addMapEntryExpression(MapEntryExpression expression) {
         mapEntryExpressions.add(expression);
     }
 
+    /**
+     * Returns the entry list retained by this expression.
+     * The list is not copied, so changes to it change this expression.
+     *
+     * @return the entry list passed to the constructor, or the list created for an empty map
+     */
     public List<MapEntryExpression> getMapEntryExpressions() {
         return mapEntryExpressions;
     }
@@ -54,6 +77,11 @@ public class MapExpression extends Expression {
         visitor.visitMapExpression(this);
     }
 
+    /**
+     * Always returns {@code false}.
+     *
+     * @return {@code false}
+     */
     public boolean isDynamic() {
         return false;
     }
@@ -94,6 +122,13 @@ public class MapExpression extends Expression {
         return sb.toString();
     }
 
+    /**
+     * Appends a new {@link MapEntryExpression} for {@code keyExpression} and
+     * {@code valueExpression}. Neither expression is copied.
+     *
+     * @param keyExpression the key
+     * @param valueExpression the value
+     */
     public void addMapEntryExpression(Expression keyExpression, Expression valueExpression) {
         addMapEntryExpression(new MapEntryExpression(keyExpression, valueExpression));
     }

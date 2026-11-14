@@ -29,6 +29,12 @@ import java.util.Map;
  */
 public class AnnotationConstantExpression extends ConstantExpression {
 
+    /**
+     * Uses {@code node} as the constant value and sets this expression's
+     * type to the annotation class.
+     *
+     * @param node annotation represented by this constant
+     */
     public AnnotationConstantExpression(final AnnotationNode node) {
         super(node);
         setType(node.getClassNode());

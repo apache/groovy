@@ -137,10 +137,24 @@ public class ImportNode extends AnnotatedNode {
         }
     }
 
+    /**
+     * Returns whether this import uses star form.
+     * Package star imports, module imports, and static star imports return true.
+     * A single-type import and a static member import return false.
+     *
+     * @return {@code true} when this node was created as a star or module import
+     */
     public boolean isStar() {
         return isStar;
     }
 
+    /**
+     * Returns whether this import is static.
+     * Static star imports and static member imports return true.
+     * A plain type import, a package star import, and a module import return false.
+     *
+     * @return {@code true} when this node was created as a static import
+     */
     public boolean isStatic() {
         return isStatic;
     }

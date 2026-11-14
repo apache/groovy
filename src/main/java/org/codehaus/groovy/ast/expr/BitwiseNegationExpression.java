@@ -22,14 +22,26 @@ import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.GroovyCodeVisitor;
 
+/**
+ * Bitwise negation, written {@code ~(expression)}. A {@code String} or GString operand is
+ * reported by {@link #getType()} as {@code Pattern}.
+ */
 public class BitwiseNegationExpression extends Expression {
 
     private final Expression expression;
 
+    /**
+     * @param expression the operand of {@code ~}
+     */
     public BitwiseNegationExpression(final Expression expression) {
         this.expression = expression;
     }
 
+    /**
+     * Returns the operand of {@code ~}.
+     *
+     * @return the negated expression
+     */
     public Expression getExpression() {
         return expression;
     }

@@ -356,6 +356,12 @@ class Annotations {
         private final Object initLock;
         private volatile boolean lazyInitDone;
 
+        /**
+         * Creates a node for {@code type} whose retention and targets are not yet loaded.
+         * The first retention or target query initializes them from the annotation class.
+         *
+         * @param type the annotation class this node represents
+         */
         public DecompiledAnnotationNode(ClassNode type) {
             super(type);
             initLock = new Object();

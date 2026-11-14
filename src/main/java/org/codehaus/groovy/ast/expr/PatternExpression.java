@@ -101,6 +101,12 @@ public class PatternExpression extends Expression {
         setType(ClassHelper.boolean_TYPE);
     }
 
+    /**
+     * The pattern as written. Lowering does not replace it; the derived code is
+     * {@link #getLowered()}.
+     *
+     * @return the {@link MatchPattern} this node was created with
+     */
     public MatchPattern getPattern() {
         return pattern;
     }
@@ -114,6 +120,11 @@ public class PatternExpression extends Expression {
         return guard;
     }
 
+    /**
+     * Whether this pattern arm was written with a {@code when} guard.
+     *
+     * @return {@code true} when {@link #getGuard()} is non-null
+     */
     public boolean hasGuard() {
         return guard != null;
     }
@@ -150,6 +161,12 @@ public class PatternExpression extends Expression {
         return subject;
     }
 
+    /**
+     * Records the switch selector variable. Lowering sets the same parameter on
+     * every pattern arm of the switch.
+     *
+     * @param subject the selector variable shared by those arms
+     */
     public void setSubject(final Parameter subject) {
         this.subject = subject;
     }
@@ -165,6 +182,13 @@ public class PatternExpression extends Expression {
         return elements;
     }
 
+    /**
+     * Records the variable that holds the switch selector as a {@code List}, or
+     * {@code null} when the switch has no list-pattern arms. Lowering sets the
+     * same parameter on every pattern arm of the switch.
+     *
+     * @param elements the shared list variable, or {@code null}
+     */
     public void setElements(final Parameter elements) {
         this.elements = elements;
     }
@@ -178,6 +202,12 @@ public class PatternExpression extends Expression {
         return lowered;
     }
 
+    /**
+     * Records the boolean expression that implements the match. {@code null}
+     * means the pattern has not been lowered.
+     *
+     * @param lowered the lowered expression, or {@code null}
+     */
     public void setLowered(final Expression lowered) {
         this.lowered = lowered;
     }

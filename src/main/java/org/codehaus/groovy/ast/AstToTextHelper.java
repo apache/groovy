@@ -26,11 +26,26 @@ import java.util.StringJoiner;
  */
 public class AstToTextHelper {
 
+    /**
+     * Renders {@code node} without generics. A null node is rendered as
+     * {@literal <unknown>}.
+     *
+     * @param node class to render, or null
+     * @return {@code node.toString(false)}, or {@literal <unknown>}
+     */
     public static String getClassText(final ClassNode node) {
         if (node == null) return "<unknown>";
         return node.toString(false);
     }
 
+    /**
+     * Renders {@code node} as {@code type name}, plus {@code =} and the
+     * initial expression when one is present. A null parameter, or a
+     * parameter with a null name, uses {@literal <unknown>} for that part.
+     *
+     * @param node parameter to render, or null
+     * @return that declaration text
+     */
     public static String getParameterText(final Parameter node) {
         if (node == null) return "<unknown>";
 
@@ -45,6 +60,13 @@ public class AstToTextHelper {
         return text;
     }
 
+    /**
+     * Joins {@link #getParameterText} for each parameter with {@code ", "}.
+     * A null or empty array is an empty string.
+     *
+     * @param parameters parameters to render, or null
+     * @return the joined parameter list, without parentheses
+     */
     public static String getParametersText(final Parameter[] parameters) {
         if (parameters == null || parameters.length == 0) return "";
         StringJoiner result = new StringJoiner(", ");
@@ -54,6 +76,13 @@ public class AstToTextHelper {
         return result.toString();
     }
 
+    /**
+     * Renders a throws clause, including the leading space. A null or empty
+     * array is an empty string.
+     *
+     * @param exceptions checked exception types, or null
+     * @return a leading space, {@code throws}, the joined type names, or empty
+     */
     public static String getThrowsClauseText(final ClassNode[] exceptions) {
         if (exceptions == null || exceptions.length == 0) return "";
         StringJoiner result = new StringJoiner(", ");
@@ -63,6 +92,15 @@ public class AstToTextHelper {
         return " throws " + result.toString();
     }
 
+    /**
+     * Renders the modifier bits of {@code modifiers} as keywords, in this
+     * order: private, protected, public, static, abstract, final,
+     * interface, native, synchronized, transient, volatile. Bits outside
+     * that set are ignored.
+     *
+     * @param modifiers JVM access flags
+     * @return the keywords separated by spaces, or empty when none apply
+     */
     public static String getModifiersText(final int modifiers) {
         StringJoiner result = new StringJoiner(" ");
         if (Modifier.isPrivate(modifiers)) {
