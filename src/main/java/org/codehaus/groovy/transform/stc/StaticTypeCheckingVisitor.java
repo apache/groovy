@@ -8361,7 +8361,15 @@ trying: for (ClassNode[] signature : signatures) {
                                             ? null : extractPlaceHoldersVisibleToDeclaration(receiver, method, arguments);
         GenericsType[] methodGenericTypes = method.isConstructor() ? method.getDeclaringClass().getGenericsTypes() : applyGenericsContext(context, method.getGenericsTypes());
 
-        // 1) resolve type parameters of method
+        // 1) resolve type parameters of method's enclosing context, before those of the method: a type the arguments
+        //    give a method type parameter can name a type parameter of the caller, such as "T" of "<T> List<T> m()",
+        //    which the receiver's "T" must not replace
+
+        if (context != null) {
+            returnType = applyGenericsContext(context, returnType);
+        }
+
+        // 2) resolve type parameters of method
 
         if (methodGenericTypes != null) {
             Map<GenericsTypeName, GenericsType> resolvedPlaceholders = new HashMap<>();
@@ -8373,15 +8381,9 @@ trying: for (ClassNode[] signature : signatures) {
             returnType = applyGenericsContext(resolvedPlaceholders, returnType);
         }
 
-        // 2) resolve type parameters of method's enclosing context
-
-        if (context != null) {
-            returnType = applyGenericsContext(context, returnType);
-
-            if (receiver.getGenericsTypes() == null && receiver.redirect().getGenericsTypes() != null
-                    && !receiver.isGenericsPlaceHolder() && GenericsUtils.hasUnresolvedGenerics(returnType)) {
-                returnType = returnType.getPlainNodeReference(); // GROOVY-10049: not "Stream<E>" for raw type
-            }
+        if (context != null && receiver.getGenericsTypes() == null && receiver.redirect().getGenericsTypes() != null
+                && !receiver.isGenericsPlaceHolder() && GenericsUtils.hasUnresolvedGenerics(returnType)) {
+            returnType = returnType.getPlainNodeReference(); // GROOVY-10049: not "Stream<E>" for raw type
         }
 
         // 3) resolve bounds of type parameters from calling context
