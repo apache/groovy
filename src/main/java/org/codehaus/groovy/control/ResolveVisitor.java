@@ -647,12 +647,38 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
 
         if (!typeName.equals(maybeOuter.getName())) {
             ClassNode maybeNested = new ConstructedNestedClass(maybeOuter, typeName);
-            if (resolveFromCompileUnit(maybeNested) || resolveToOuter(maybeNested)) {
+            if (resolveFromCompileUnit(maybeNested) || resolveNestedFromPrecompiledOuter(maybeOuter, maybeNested)) {
                 type.setRedirect(maybeNested);
                 return true;
             }
         }
         return false;
+    }
+
+    /**
+     * Member types of a source class in this compile unit are declared in its
+     * body (JLS 8.5) and are registered before resolution, so a miss in the
+     * compile unit is final for that outer type. A precompiled outer type keeps
+     * the loader lookup: its member types are not part of this unit, and the
+     * absence of a class resource is not evidence that a parent cannot define them.
+     */
+    private boolean resolveNestedFromPrecompiledOuter(final ClassNode maybeOuter, final ClassNode maybeNested) {
+        if (memberTypesAreDeclaredInThisUnit(maybeOuter)) {
+            return false;
+        }
+        return resolveToOuter(maybeNested);
+    }
+
+    private boolean memberTypesAreDeclaredInThisUnit(final ClassNode maybeOuter) {
+        if (currentClass == null || !maybeOuter.isPrimaryClassNode()) {
+            return false;
+        }
+        CompileUnit unit = currentClass.getCompileUnit();
+        ClassNode outer = maybeOuter.redirect();
+        if (unit == null || outer.getCompileUnit() != unit) {
+            return false;
+        }
+        return unit.getClass(outer.getName()) == outer;
     }
 
     private static String replaceLastPointWithDollar(final String name) {
