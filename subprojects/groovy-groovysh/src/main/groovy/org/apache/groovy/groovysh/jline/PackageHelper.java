@@ -29,14 +29,37 @@ import java.util.jar.JarFile;
  */
 public class PackageHelper {
     private enum ClassesToScan {
+        /**
+         * Walks nested directories, and in a jar keeps every class whose binary
+         * name contains the package.
+         */
         ALL,
+        /**
+         * Selects every class in one package, including inner classes. Chosen for
+         * a pattern that ends in {@code .**}.
+         */
         PACKAGE_ALL,
+        /**
+         * Selects top-level classes in one package. Chosen for a pattern that
+         * ends in {@code .*}.
+         */
         PACKAGE_CLASS
     }
 
     private enum ClassOutput {
+        /**
+         * Stores the binary class name.
+         */
         NAME,
+        /**
+         * Loads each match and stores the class when loading succeeds.
+         */
         CLASS,
+        /**
+         * In a jar, loads a match whose simple name starts with an uppercase
+         * letter and otherwise stores the binary name. A directory walk stores
+         * binary names.
+         */
         MIXED
     }
 
@@ -155,6 +178,13 @@ public class PackageHelper {
         private final ClassesToScan classesToScan;
         private final ClassOutput outType;
 
+        /**
+         * Interprets a package pattern. A trailing {@code .*} selects top-level
+         * classes, a trailing {@code .**} selects every class in that package,
+         * and any other text selects the package together with nested packages.
+         *
+         * @param packageName the pattern, including an optional wildcard suffix
+         */
         public PackageNameParser(String packageName) {
             if (packageName.endsWith(".*")) {
                 classesToScan = ClassesToScan.PACKAGE_CLASS;
@@ -171,14 +201,24 @@ public class PackageHelper {
             }
         }
 
+        /**
+         * Returns the package name with a trailing {@code .*} or {@code .**} removed.
+         */
         public String packageName() {
             return packageName;
         }
 
+        /**
+         * Returns whether the pattern selects nested packages, one package's
+         * top-level classes, or every class in one package.
+         */
         public ClassesToScan classesToScan() {
             return classesToScan;
         }
 
+        /**
+         * Returns whether matches are stored as names, loaded classes, or a mix.
+         */
         public ClassOutput outType() {
             return outType;
         }
@@ -190,10 +230,16 @@ public class PackageHelper {
 
             int cursor;
 
+            /**
+             * Returns whether the cursor is still inside the URL array.
+             */
             public boolean hasMoreElements() {
                 return (cursor < size);
             }
 
+            /**
+             * Returns the URL at the cursor and advances the cursor.
+             */
             public URL nextElement() {
                 return urls[cursor++];
             }

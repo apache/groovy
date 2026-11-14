@@ -23,15 +23,31 @@ import org.codehaus.groovy.reflection.ClassInfo;
 import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.runtime.ScriptBytecodeAdapter;
 
+/**
+ * Call site that dispatches through a receiver's per-instance meta class
+ * while {@link ClassInfo} reports that such meta classes are in use.
+ */
 public class PerInstancePojoMetaClassSite extends AbstractCallSite{
     private final ClassInfo info;
 
+    /**
+     * Copies the parent site and remembers where per-instance meta classes are tracked.
+     *
+     * @param site the site whose name and index are copied
+     * @param info class information used to detect per-instance meta classes
+     */
     public PerInstancePojoMetaClassSite(CallSite site, ClassInfo info) {
         super(site);
         this.info = info;
     }
 
     @Override
+    /**
+     * Invokes this site's method on the receiver's meta class when the
+     * receiver is non-null and per-instance meta classes are in use.
+     * A {@link GroovyRuntimeException} is unwrapped. Otherwise uses the
+     * default call.
+     */
     public Object call(Object receiver, Object[] args) throws Throwable {
         if (receiver != null && info.hasPerInstanceMetaClasses()) {
             try {

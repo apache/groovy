@@ -116,6 +116,11 @@ public class Node implements Writable {
      */
     public void replaceNode(final Closure replacementClosure, final GPathResult result) {
         this.replacementNodeStack.push(new ReplacementNode() {
+            /**
+             * Runs the replacement closure against the original node. The replacement
+             * is popped first so the closure does not see itself, the builder is set
+             * as the closure's delegate, and the replacement is pushed again afterwards.
+             */
             @Override
             public void build(final GroovyObject builder, final Map namespaceMap, final Map<String, String> namespaceTagHints) {
                 final Closure c = (Closure) replacementClosure.clone();
@@ -145,6 +150,10 @@ public class Node implements Writable {
     protected void appendNode(final Object newValue, final GPathResult result) {
         if (newValue instanceof Closure) {
             this.children.add(new ReplacementNode() {
+                /**
+                 * Runs a clone of the appended closure with the builder as its delegate
+                 * and the current result as the argument.
+                 */
                 @Override
                 public void build(final GroovyObject builder, final Map namespaceMap, final Map<String, String> namespaceTagHints) {
                     final Closure c = (Closure) ((Closure) newValue).clone();
@@ -198,11 +207,17 @@ public class Node implements Writable {
             private final Iterator iter = Node.this.children.iterator();
             private Object nextElementNodes = getNextElementNodes();
 
+            /**
+             * Returns whether another child element has been buffered.
+             */
             @Override
             public boolean hasNext() {
                 return this.nextElementNodes != null;
             }
 
+            /**
+             * Returns the buffered child element and buffers the next one.
+             */
             @Override
             public Object next() {
                 try {
@@ -212,6 +227,10 @@ public class Node implements Writable {
                 }
             }
 
+            /**
+             * Throws {@link UnsupportedOperationException}; child elements cannot be
+             * removed through this iterator.
+             */
             @Override
             public void remove() {
                 throw new UnsupportedOperationException();
@@ -256,6 +275,11 @@ public class Node implements Writable {
     public void build(final GroovyObject builder, final Map namespaceMap, final Map<String, String> namespaceTagHints) {
         if (this.replacementNodeStack.empty()) {
             final Closure rest = new Closure(null) {
+                /**
+                 * Builds this node's children through {@code builder} and returns
+                 * {@code null}. This closure is the body passed to the builder for the
+                 * element.
+                 */
                 public Object doCall(final Object o) {
                     buildChildren(builder, namespaceMap, namespaceTagHints);
                     return null;
