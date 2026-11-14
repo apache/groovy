@@ -237,7 +237,7 @@ include::../test/ClassTest.groovy[tags=class_instantiation,indent=0]
 
 === Inner class
 
-Inner classes are defined within another classes. The enclosing class can use the inner class as usual. On the other side, an inner class can access members of its enclosing class, even if they are private. Classes other than the enclosing class are not allowed to access inner classes. Here is an example:
+Inner classes are defined within another class. The enclosing class can use the inner class as usual. An inner class can access members of its enclosing class, even if they are private. Other classes can name the inner class when its visibility allows it: a `private` inner class is visible only inside the enclosing class, while a public one can be used from elsewhere (`Outer.Inner` for a static inner class, or through an enclosing instance for a non-static one). Here is an example:
 
 [source,groovy]
 ----

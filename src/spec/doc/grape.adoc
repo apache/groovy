@@ -155,8 +155,10 @@ groovy.grape.ivy.level=FINE
 groovy.grape.ivy.level=FINEST
 ----
 
-The `grape` command's `-q`, `-w`, `-i`, `-V`, and `-d` flags also
-adjust the Ivy logging level for that invocation.
+The `grape` command's global options `-q`/`--quiet`, `-w`/`--warn`, `-i`/`--info`,
+`-V`/`--verbose` and `-d`/`--debug` adjust the Ivy logging level for that invocation.
+`grape resolve` reuses `-i`/`--ivy` and `-d`/`--dos` for its output format, so on a
+resolve those two flags do not set the log level.
 
 If you want to see download progress specifically, set the system property
 `groovy.grape.report.downloads` to `true` (e.g. add
@@ -501,7 +503,8 @@ runtime exception.
 [[Grape-ArgumentsMaparguments]]
 ==== Arguments Map arguments
 
-* `classLoader:` - <GroovyClassLoader> or <RootClassLoader> - The
+* `classLoader:` - a `groovy.lang.GroovyClassLoader` or an
+`org.codehaus.groovy.tools.RootLoader`, or a subclass of either - The
 ClassLoader to add resolved Jars to
 * `refObject:` - <Object> - The closest parent ClassLoader for the
 object’s class will be treated as though it were passed in as

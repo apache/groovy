@@ -1251,7 +1251,8 @@ When creating the `CliBuilder` instance in the above example, we set the optiona
 within the constructor call. This follows Groovy's normal ability to set additional properties
 of the instance during construction. There are numerous other properties which can be set
 such as `header` and `footer`. For the complete set of available properties, see the
-available properties for the gapi:groovy.util.CliBuilder[CliBuilder] class.
+available properties for the gapi:groovy.cli.picocli.CliBuilder[picocli `CliBuilder`] class.
+`groovy.cli.commons.CliBuilder` is the other implementation. `groovy.util.CliBuilder` was removed in Groovy 3.0.
 
 When defining an allowed commandline option, both a short name (e.g. "h" for the `help` option shown previously)
 and a short description (e.g. "display usage" for the `help` option) must be supplied.
