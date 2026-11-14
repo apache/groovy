@@ -329,6 +329,9 @@ plugins {
     id 'jacoco'
 }
 
+def groovyVersion = '<groovy version>'
+def junitVersion = '<junit version>'
+
 repositories {
     mavenCentral()
 }

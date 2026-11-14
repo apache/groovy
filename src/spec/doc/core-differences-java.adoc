@@ -305,8 +305,9 @@ equality implemented by `DefaultTypeTransformation.compareEqual`, not Java's
 `==`. Identical references are equal. Two lists are compared as lists, including
 a list that is also `Comparable`, such as a tuple. A `Comparable`, or a pair of
 numbers, is compared with Groovy's comparison and is equal when that comparison
-is zero. Arrays are compared element by element. Anything else is compared with
-`equals`.
+is zero. Arrays are compared element by element, as are a list and an array.
+Two map entries are equal when their keys are equal and their values compare
+equal. Anything else is compared with `equals`.
 
 To check for identity (reference equality), use the `is` method: `a.is(b)`.
 From Groovy 3, you can also use the `===` operator (or negated version): `a === b` (or `c !== d`).
