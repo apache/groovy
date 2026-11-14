@@ -28,6 +28,15 @@ public class DefaultCachedMethodKey extends MethodKey{
 
     private final CachedClass[] parameterTypes;
 
+    /**
+     * Creates a key for a method identified by the sender, name, parameter types
+     * and whether the call is to {@code super}.
+     *
+     * @param sender the class that sends the call
+     * @param name the method name
+     * @param parameterTypes the parameter types, stored as given
+     * @param isCallToSuper whether the call targets a super method
+     */
     public DefaultCachedMethodKey(Class sender, String name, CachedClass[] parameterTypes, boolean isCallToSuper) {
         super(sender, name,isCallToSuper);
         this.parameterTypes = parameterTypes;

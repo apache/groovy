@@ -132,6 +132,13 @@ public final class ComposedClosure<V> extends Closure<V> {
         return first.getParameterTypes();
     }
 
+    /**
+     * Invokes this composition. Equivalent to {@link #call(Object[])}: the first closure
+     * is called with {@code args}, and its result is passed to the second.
+     *
+     * @param args arguments passed to the first closure
+     * @return the value returned by the second closure
+     */
     public Object doCall(Object... args) {
         return call(args);
     }

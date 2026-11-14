@@ -745,6 +745,21 @@ public class ProxyGeneratorAdapter extends ClassVisitor {
         return mv;
     }
 
+    /**
+     * Emits a proxy method that boxes its arguments and calls a closure from the
+     * {@code $closures$delegate$map} field. The map is read under {@code name}, then
+     * under {@code "*"} when that entry is missing. The value passes through
+     * {@link #ensureClosure(Object)} and {@link Closure#call(Object[])}, and the
+     * result is unboxed or cast to the method's return type. The visitor is ended
+     * here.
+     *
+     * @param name method name, also the closure-map key
+     * @param desc ASM method descriptor used for the argument and return types
+     * @param signature generic signature passed to {@link ClassVisitor#visitMethod}
+     * @param exceptions exception names passed to {@link ClassVisitor#visitMethod}
+     * @param accessFlags method access flags
+     * @return {@code null} after the method visitor has been ended
+     */
     protected MethodVisitor makeDelegateToClosureCall(final String name, final String desc, final String signature, final String[] exceptions, final int accessFlags) {
         MethodVisitor mv = super.visitMethod(accessFlags, name, desc, signature, exceptions);
 //        TraceMethodVisitor tmv = new TraceMethodVisitor(mv);
@@ -820,6 +835,17 @@ public class ProxyGeneratorAdapter extends ClassVisitor {
         }
     }
 
+    /**
+     * Instantiates the generated proxy. A {@code null} {@code constructorArgs} together
+     * with a cached no-argument constructor calls that constructor with {@code map}
+     * alone. Otherwise {@code map} is appended after the constructor arguments, and a
+     * {@code null} argument list is treated as empty.
+     *
+     * @param map closure or property map passed to the proxy constructor
+     * @param constructorArgs arguments for the super constructor; {@code null} means none
+     * @return the new proxy
+     * @throws GroovyRuntimeException when the cached constructor fails
+     */
     @SuppressWarnings("unchecked")
     public GroovyObject proxy(final Map<Object, Object> map, Object... constructorArgs) {
         if (constructorArgs == null && cachedNoArgConstructor != null) {
@@ -838,6 +864,19 @@ public class ProxyGeneratorAdapter extends ClassVisitor {
         return DefaultGroovyMethods.<GroovyObject>newInstance(cachedClass, values);
     }
 
+    /**
+     * Instantiates the generated delegating proxy. A {@code null} {@code constructorArgs}
+     * together with a cached no-argument constructor calls that constructor with
+     * {@code map} and {@code delegate}. Otherwise those two values are appended, in
+     * that order, after the constructor arguments, and a {@code null} argument list
+     * is treated as empty.
+     *
+     * @param delegate the object later methods are forwarded to
+     * @param map closure or property map passed to the proxy constructor
+     * @param constructorArgs arguments for the super constructor; {@code null} means none
+     * @return the new proxy
+     * @throws GroovyRuntimeException when the cached constructor fails
+     */
     @SuppressWarnings("unchecked")
     public GroovyObject delegatingProxy(final Object delegate, final Map<Object, Object> map, Object... constructorArgs) {
         if (constructorArgs == null && cachedNoArgConstructor != null) {
@@ -888,6 +927,15 @@ public class ProxyGeneratorAdapter extends ClassVisitor {
     private static class InnerLoader extends GroovyClassLoader {
         List<ClassLoader> internalClassLoaders = null;
 
+        /**
+         * Loads through {@code parent}, and remembers each interface loader that is
+         * non-null and distinct from {@code parent}. {@link #loadClass(String)} searches
+         * those loaders after the parent.
+         *
+         * @param parent the parent class loader
+         * @param interfaces interfaces whose loaders may also be searched; {@code null}
+         *                   records none
+         */
         protected InnerLoader(final ClassLoader parent, final Class[] interfaces) {
             super(parent);
             if (interfaces != null) {
@@ -963,6 +1011,11 @@ public class ProxyGeneratorAdapter extends ClassVisitor {
         private static final long serialVersionUID = 1313135457715304501L;
         private final V value;
 
+        /**
+         * Closure that ignores its arguments and returns {@code returnValue}. The owner is {@code null}.
+         *
+         * @param returnValue the value {@link Closure#call(Object[])} returns
+         */
         public ReturnValueWrappingClosure(final V returnValue) {
             super(null);
             value = returnValue;

@@ -304,6 +304,7 @@ public class MethodRankHelper {
      * If c is a primitive class this method returns a boxed version
      * otherwise c is returned.
      * In java 1.5 this can be simplified thanks to the Type class.
+     *
      * @param c
      * @return a boxed version of c if c can be boxed, else c
      */
@@ -342,6 +343,7 @@ public class MethodRankHelper {
      *
      * This version is based on Chas Emerick's implementation of Levenshtein Distance
      * for jakarta commons.
+     *
      * @param s a CharSequence
      * @param t the CharSequence to be compared to s
      * @return a value representing the edit distance between s and t
@@ -420,6 +422,7 @@ public class MethodRankHelper {
 
     /**
      * Compares two characters whilst ignoring case.
+     *
      * @param a the first character
      * @param b the second character
      * @return true if the characters are equal
@@ -434,6 +437,7 @@ public class MethodRankHelper {
      * No objects may be null.
      * This implementation is based on Chas Emerick's implementation of Levenshtein Distance
      * for jakarta commons.
+     *
      * @param s an Object array
      * @param t this array is compared to s
      * @return the edit distance between the two arrays
@@ -505,6 +509,15 @@ public class MethodRankHelper {
     private static final class Pair<U,V> {
         private final U u;
         private final V v;
+        /**
+         * Holds an argument class and the parameter class that shares its
+         * name but was loaded by a different class loader.
+         *
+         * @param <U> class of the argument that was passed
+         * @param <V> class of the suggested parameter
+         * @param u argument class
+         * @param v parameter class loaded separately from {@code u}
+         */
         public Pair(U u, V v){
             this.u = u;
             this.v = v;
@@ -519,6 +532,13 @@ public class MethodRankHelper {
         final MetaProperty f;
         final Integer score;
 
+        /**
+         * Scores {@code mp} by {@link MethodRankHelper#delDistance} from
+         * {@code name} to the property name. A lower score ranks earlier.
+         *
+         * @param name name the caller tried to use
+         * @param mp candidate property
+         */
         public RankableField(final String name, final MetaProperty mp) {
             this.f = mp;
             this.score = delDistance(name,mp.getName());
@@ -543,6 +563,16 @@ public class MethodRankHelper {
         final MetaMethod m;
         final Integer score;
 
+        /**
+         * Scores {@code m2} by the name distance from {@code name} plus the
+         * Damerau-Levenshtein distance between {@code argumentTypes} and
+         * the method's parameter types after primitives are boxed. A lower
+         * score ranks earlier.
+         *
+         * @param name name the caller tried to use
+         * @param argumentTypes boxed classes of the arguments that were passed
+         * @param m2 candidate method
+         */
         public RankableMethod(final String name, final Class[] argumentTypes, final MetaMethod m2) {
             this.m = m2;
             int nameDist = delDistance(name, m2.getName());
@@ -571,6 +601,14 @@ public class MethodRankHelper {
         final Constructor c;
         final Integer score;
 
+        /**
+         * Scores {@code c} by the Damerau-Levenshtein distance between
+         * {@code argumentTypes} and the constructor's parameter types after
+         * primitives are boxed. A lower score ranks earlier.
+         *
+         * @param argumentTypes boxed classes of the arguments that were passed
+         * @param c candidate constructor
+         */
         public RankableConstructor(final Class[] argumentTypes, final Constructor c) {
             this.c = c;
             // unbox primitives

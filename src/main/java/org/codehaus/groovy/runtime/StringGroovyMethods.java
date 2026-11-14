@@ -531,6 +531,15 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
         return join(DefaultGroovyMethods.dropWhile(selfIter, condition), "");
     }
 
+    /**
+     * Binary-compatibility bridge for {@link #dropWhile(CharSequence, Closure)}.
+     * Calls that method and returns its result.
+     *
+     * @param self the character sequence whose leading characters may be dropped
+     * @param condition while this returns true for the next character, that character is dropped
+     * @return the suffix that remains
+     * @deprecated exists so callers compiled against the previous return type still link
+     */
     @Deprecated // for binary compatibility only
     public static CharSequence dropWhile$$bridge(final CharSequence self, @ClosureParams(value=FromString.class, conflictResolutionStrategy=PickFirstResolver.class, options={"String", "Character"}) final Closure condition) {
         return dropWhile(self, condition);
@@ -558,6 +567,11 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
         private final int length;
         private int index;
 
+        /**
+         * Iterates {@code delegate} one {@link Character} at a time, from index 0.
+         *
+         * @param delegate the sequence whose {@link CharSequence#charAt(int)} is read
+         */
         public CharacterIterator(final CharSequence delegate) {
             this.delegate = delegate;
             length = delegate.length();
@@ -584,6 +598,12 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
         private final int length;
         private int index;
 
+        /**
+         * Iterates {@code delegate} one character at a time, each as a one-character
+         * {@link String}, from index 0.
+         *
+         * @param delegate the sequence whose {@link CharSequence#charAt(int)} is read
+         */
         public StringIterator(final CharSequence delegate) {
             this.delegate = delegate;
             length = delegate.length();
@@ -608,6 +628,12 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
     private static final class LineIterable implements Iterable<String> {
         private final CharSequence delegate;
 
+        /**
+         * Stores {@code cs}, converting a {@link GString} with {@link GString#toString()}
+         * so later line reads do not rebuild it on every character.
+         *
+         * @param cs the sequence whose lines will be iterated
+         */
         public LineIterable(final CharSequence cs) {
             // GROOVY-7873: GString calls toString() on each invocation of CharSequence methods such
             // as charAt which is very expensive for large GStrings.
@@ -1703,6 +1729,13 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
         private final int count;
         private final List<String> delegate;
 
+        /**
+         * Copies every group of the matcher's current match, including group 0, and
+         * remembers {@code count} so a later named lookup can re-find that match.
+         *
+         * @param matcher the matcher positioned on the match this list represents
+         * @param count zero-based index of that match in the matcher's find sequence
+         */
         public GroupList(Matcher matcher, int count) {
             this.matcher = matcher;
             this.count = count;
@@ -1764,6 +1797,16 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
             return delegate.get(index);
         }
 
+        /**
+         * Re-finds the match this list was built for, then returns its named group.
+         * {@link Matcher#reset()} runs first, then {@link Matcher#find()} once more
+         * than {@code count}, so the matcher is left on that match.
+         *
+         * @param name the capturing-group name
+         * @return the text captured by that group
+         * @throws IllegalStateException when the re-find does not land on a match
+         * @throws IllegalArgumentException when {@code name} is not a named group
+         */
         public String get(String name) {
             matcher.reset();
             for (int i = 0; i <= count; i++) {
@@ -1772,6 +1815,14 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
             return matcher.group(name);
         }
 
+        /**
+         * Returns the named group of the matcher's current match, without resetting it.
+         *
+         * @param name the capturing-group name
+         * @return the text captured by that group
+         * @throws IllegalStateException when the matcher has no current match
+         * @throws IllegalArgumentException when {@code name} is not a named group
+         */
         public String getAt(String name) {
             return matcher.group(name);
         }
@@ -2123,17 +2174,16 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
         return new StringBuilder(self).append(value);
     }
 
+    // TODO: Deprecate in favor of leftShift(CharSequence,Object): StringBuilder?
     /**
-     * Overloads the left shift operator to provide an easy way to append multiple
-     * objects as string representations to a String.
+     * Appends {@code value} to a new {@link StringBuffer} copied from {@code self}.
+     * {@code self} itself is left unchanged.
      *
-     * @param self  a String
-     * @param value an Object
-     * @return a StringBuffer built from this string
-     *
+     * @param self the characters copied into the buffer
+     * @param value the object appended with {@link StringBuffer#append(Object)}
+     * @return the new buffer
      * @since 1.0
      */
-    // TODO: Deprecate in favor of leftShift(CharSequence,Object): StringBuilder?
     public static StringBuffer leftShift(final String self, final Object value) {
         return new StringBuffer(self).append(value);
     }
@@ -2890,6 +2940,12 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
      * Helper class used by {@link #replace(CharSequence,Map)}.
      */
     private static class ReplaceState {
+        /**
+         * Snapshots {@code replacements} in entry-set order and allocates a
+         * {@code noMoreMatches} flag for each entry, initially {@code false}.
+         *
+         * @param replacements the search text and its replacement, in map iteration order
+         */
         public ReplaceState(Map<CharSequence, CharSequence> replacements) {
             this.noMoreMatches = new boolean[replacements.size()];
             this.replacementsList = DefaultGroovyMethods.toList((Iterable<Map.Entry<CharSequence,CharSequence>>) replacements.entrySet());
@@ -3468,6 +3524,15 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
         return join(DefaultGroovyMethods.takeWhile(selfIter, condition), "");
     }
 
+    /**
+     * Binary-compatibility bridge for {@link #takeWhile(CharSequence, Closure)}.
+     * Calls that method and returns its result.
+     *
+     * @param self the character sequence whose leading characters may be kept
+     * @param condition taking stops at the first character for which this returns false
+     * @return the prefix that was kept
+     * @deprecated exists so callers compiled against the previous return type still link
+     */
     @Deprecated // for binary compatibility only
     public static CharSequence takeWhile$$bridge(final CharSequence self, @ClosureParams(value=FromString.class, conflictResolutionStrategy=PickFirstResolver.class, options={"String", "Character"}) final Closure condition) {
         return takeWhile(self, condition);

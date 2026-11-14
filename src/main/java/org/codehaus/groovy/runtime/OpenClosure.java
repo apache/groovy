@@ -53,9 +53,22 @@ public final class OpenClosure {
      * "In case of static compilation that is empty."
      */
     public interface Resolver {
+        /**
+         * Resolves a free-name read.
+         *
+         * @param name the bare name
+         * @return the object bound to {@code name}
+         */
         Object property(String name);
         /** Writes a free name; returns {@code value} (assignment-expression semantics). */
         Object setProperty(String name, Object value);
+        /**
+         * Invokes an unqualified call of a free name.
+         *
+         * @param name the method name
+         * @param args the arguments of that call
+         * @return the object produced by the call
+         */
         Object invoke(String name, Object[] args);
     }
 
@@ -84,6 +97,12 @@ public final class OpenClosure {
         private int strategy = Closure.OWNER_FIRST;
         private Object self; // the wrapping Closure, for TO_SELF
 
+        /**
+         * Uses {@code owner} as both the owner and the initial delegate.
+         * The resolve strategy starts as {@link Closure#OWNER_FIRST}.
+         *
+         * @param owner the closure owner, also stored as the delegate
+         */
         public ClassicResolver(final Object owner) {
             this.owner = owner;
             this.delegate = owner;
@@ -93,9 +112,34 @@ public final class OpenClosure {
             this.self = self;
         }
 
+        /**
+         * Replaces the delegate consulted by the owner/delegate strategies.
+         *
+         * @param delegate the new delegate; may be {@code null}
+         */
         public void setDelegate(final Object delegate) { this.delegate = delegate; }
+        /**
+         * The delegate currently stored. It starts out as the owner.
+         *
+         * @return the delegate, or {@code null} after {@link #setDelegate(Object)} clears it
+         */
         public Object getDelegate() { return delegate; }
+        /**
+         * Stores the strategy used by {@link #property(String)},
+         * {@link #setProperty(String, Object)} and {@link #invoke(String, Object[])}.
+         * A value other than {@link Closure#DELEGATE_FIRST}, {@link Closure#DELEGATE_ONLY},
+         * {@link Closure#OWNER_ONLY} or {@link Closure#TO_SELF} is resolved as
+         * {@link Closure#OWNER_FIRST}.
+         *
+         * @param strategy a {@link Closure} resolve-strategy constant
+         */
         public void setResolveStrategy(final int strategy) { this.strategy = strategy; }
+        /**
+         * The strategy last stored by {@link #setResolveStrategy(int)}, or
+         * {@link Closure#OWNER_FIRST} when none has been stored.
+         *
+         * @return the stored strategy constant
+         */
         public int getResolveStrategy() { return strategy; }
 
         @Override
@@ -215,6 +259,16 @@ public final class OpenClosure {
     private final Object[] captured; // captured[0] is the resolver for open bodies
     private final Class[] parameterTypes;
 
+    /**
+     * Binds a hoisted body to its receiver, dispatcher, captures and parameter
+     * types. The arrays are stored, not copied.
+     *
+     * @param receiver the leading argument passed to the dispatcher
+     * @param dispatchers the bundle whose dispatcher is used
+     * @param id the dispatcher id of this body
+     * @param captured the captured values; slot 0 is the resolver for an open body
+     * @param parameterTypes the types {@link #call(Object[])} counts
+     */
     public OpenClosure(final Object receiver, final GeneratedDispatcher.Bundle dispatchers, final int id, final Object[] captured, final Class[] parameterTypes) {
         this.receiver = receiver;
         this.dispatcher = dispatchers.dispatcher;
@@ -223,8 +277,25 @@ public final class OpenClosure {
         this.parameterTypes = parameterTypes;
     }
 
+    /**
+     * The parameter types stored by the constructor. The returned array is that
+     * same instance.
+     *
+     * @return the parameter-type array passed to the constructor
+     */
     public Class[] getParameterTypes() { return parameterTypes; }
 
+    /**
+     * Dispatches the body with {@code args}. A {@code null} array is treated as
+     * no arguments. The dispatcher receives the receiver, then the captured
+     * values, then the arguments.
+     *
+     * Fails with {@link MissingMethodException} when the number of arguments is not the length.
+     *
+     * @param args the arguments; {@code null} means none
+     * @return the object produced by {@link GeneratedDispatcher#dispatch(int, Object[])}
+     *         of {@link #getParameterTypes()}
+     */
     public Object call(final Object... args) {
         Object[] provided = (args != null) ? args : new Object[0];
         if (provided.length != parameterTypes.length) {

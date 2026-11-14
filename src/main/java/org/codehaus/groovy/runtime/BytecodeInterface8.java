@@ -26,6 +26,13 @@ import org.codehaus.groovy.runtime.metaclass.DefaultMetaClassInfo;
  */
 public class BytecodeInterface8 {
 
+    /**
+     * Reports whether the bytecode fast path that assumes the standard
+     * metaclass is off. That happens while a category is in use or a
+     * custom metaclass creation handle is installed.
+     *
+     * @return {@code true} when that fast path must not be used
+     */
     @GroovyABI(since = "1.8.0")
     public static boolean disabledStandardMetaClass() {
         return DefaultMetaClassInfo.disabledStandardMetaClass();

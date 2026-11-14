@@ -34,6 +34,10 @@ public class NumberAwareComparator<T> implements Comparator<T>, Serializable {
     @Serial private static final long serialVersionUID = 9017657289076651660L;
     private boolean ignoreZeroSign;
 
+    /**
+     * Compares without forcing {@code +0.0} and {@code -0.0} to be equal.
+     * Same as {@link #NumberAwareComparator(boolean)} with that flag false.
+     */
     public NumberAwareComparator() {
         this(false);
     }

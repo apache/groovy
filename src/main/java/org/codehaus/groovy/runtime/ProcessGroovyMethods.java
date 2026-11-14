@@ -768,6 +768,9 @@ public class ProcessGroovyMethods extends DefaultGroovyMethodsSupport {
         Process process;
         private boolean finished;
 
+        /**
+         * @param process the process {@link #run()} waits for and {@link #waitForOrKill(long)} may destroy
+         */
         public ProcessRunner(Process process) {
             this.process = process;
         }
@@ -789,6 +792,14 @@ public class ProcessGroovyMethods extends DefaultGroovyMethodsSupport {
             }
         }
 
+        /**
+         * Waits up to {@code millis} milliseconds for {@link #run()} to finish. If the
+         * process is still running, {@link Process#destroy()} is called and this method
+         * waits for the process to exit. An interrupt during the timed wait restores the
+         * interrupt status and then still destroys the process when it has not finished.
+         *
+         * @param millis maximum wait before the process is destroyed, in milliseconds
+         */
         public synchronized void waitForOrKill(long millis) {
             if (!finished) {
                 try {
@@ -809,6 +820,14 @@ public class ProcessGroovyMethods extends DefaultGroovyMethodsSupport {
         final Appendable app;
         final Charset charset;
 
+        /**
+         * Reads {@code in} as text in {@code charset}. {@link #run()} appends each line,
+         * plus a newline, to {@code app} when {@code app} is non-null.
+         *
+         * @param in the process stream to read
+         * @param app where lines are appended; {@code null} discards them
+         * @param charset charset used to decode {@code in}
+         */
         public TextDumper(InputStream in, Appendable app, Charset charset) {
             this.in = in;
             this.app = app;
@@ -837,6 +856,13 @@ public class ProcessGroovyMethods extends DefaultGroovyMethodsSupport {
         final InputStream in;
         final OutputStream out;
 
+        /**
+         * Wraps {@code in} in a {@link BufferedInputStream}. {@link #run()} copies bytes
+         * to {@code out} when {@code out} is non-null.
+         *
+         * @param in the process stream to read
+         * @param out where bytes are written; {@code null} discards them
+         */
         public ByteDumper(InputStream in, OutputStream out) {
             this.in = new BufferedInputStream(in);
             this.out = out;

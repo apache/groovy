@@ -1381,21 +1381,57 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     //--------------------------------------------------------------------------
     // columns
 
+    /**
+     * Iterates the columns of {@code self}. Each element is a new {@code double[]}
+     * holding one column, and iteration stops at the shortest row.
+     *
+     * @param self the matrix to read by column
+     * @return an iterator of one column array per column
+     * @throws NullPointerException if {@code self} is {@code null}
+     * @deprecated retained; the body still returns a column iterator
+     */
     @Deprecated
     public static Iterator<double[]> columns(double[][] self) {
         return new DoubleDoubleArrayColumnIterator(self);
     }
 
+    /**
+     * Iterates the columns of {@code self}. Each element is a new {@code float[]}
+     * holding one column, and iteration stops at the shortest row.
+     *
+     * @param self the matrix to read by column
+     * @return an iterator of one column array per column
+     * @throws NullPointerException if {@code self} is {@code null}
+     * @deprecated retained; the body still returns a column iterator
+     */
     @Deprecated
     public static Iterator<float[]> columns(float[][] self) {
         return new FloatFloatArrayColumnIterator(self);
     }
 
+    /**
+     * Iterates the columns of {@code self}. Each element is a new {@code int[]}
+     * holding one column, and iteration stops at the shortest row.
+     *
+     * @param self the matrix to read by column
+     * @return an iterator of one column array per column
+     * @throws NullPointerException if {@code self} is {@code null}
+     * @deprecated retained; the body still returns a column iterator
+     */
     @Deprecated
     public static Iterator<int[]> columns(int[][] self) {
         return new IntIntArrayColumnIterator(self);
     }
 
+    /**
+     * Iterates the columns of {@code self}. Each element is a new {@code long[]}
+     * holding one column, and iteration stops at the shortest row.
+     *
+     * @param self the matrix to read by column
+     * @return an iterator of one column array per column
+     * @throws NullPointerException if {@code self} is {@code null}
+     * @deprecated retained; the body still returns a column iterator
+     */
     @Deprecated
     public static Iterator<long[]> columns(long[][] self) {
         return new LongLongArrayColumnIterator(self);
@@ -11375,6 +11411,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Creates a spreadable map from this array.
      * <p>
+     *
      * @param self an object array
      * @return a newly created SpreadMap
      * @see groovy.lang.SpreadMap#SpreadMap(java.lang.Object[])

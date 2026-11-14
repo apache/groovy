@@ -36,6 +36,20 @@ public final class GStringUtil {
     private GStringUtil() {
     }
 
+    /**
+     * Returns a new {@link GStringImpl} that concatenates the left and right parts.
+     * The input arrays are not modified. Values are copied left then right.
+     * When {@code thisStrings} is longer than {@code thisValues}, the last left
+     * string is concatenated with the first right string and the remaining right
+     * strings follow, so the boundary does not insert an empty value. Otherwise
+     * the right strings are copied in full.
+     *
+     * @param thisValues values from the left GString
+     * @param thatValues values from the right GString
+     * @param thisStrings strings from the left GString
+     * @param thatStrings strings from the right GString
+     * @return a GString holding the combined values and strings
+     */
     public static GString plusImpl(Object[] thisValues, Object[] thatValues, String[] thisStrings, String[] thatStrings) {
         return new GStringImpl(
                 appendValues(thisValues, thatValues),
@@ -74,6 +88,21 @@ public final class GStringUtil {
         return newValues;
     }
 
+    /**
+     * Writes each string in {@code ss}, and the value at the same index when
+     * {@code i} is in range of {@code vs}. A {@link Closure} value with no
+     * parameters is called and {@link FormatHelper#write(Writer, Object)} writes
+     * the call's result. A closure with one parameter is called with {@code out}
+     * and its result is not written. Any other value, including {@code null}, is
+     * passed to {@link FormatHelper#write(Writer, Object)}. Returns the same writer.
+     *
+     * @param out the writer that receives the text
+     * @param vs the interpolated values
+     * @param ss the literal strings
+     * @return {@code out}
+     * @throws IOException if a write fails
+     * @throws GroovyRuntimeException if a closure value takes more than one parameter
+     */
     public static Writer writeToImpl(Writer out, Object[] vs, String[] ss) throws IOException {
         int numberOfValues = vs.length;
         for (int i = 0, size = ss.length; i < size; i++) {
@@ -100,6 +129,16 @@ public final class GStringUtil {
         return out;
     }
 
+    /**
+     * Yields each string, and each following value, through {@code builder}.
+     * For every string, and for a value at the same index when one exists,
+     * the property {@code mkp} is read and then {@code yield} is invoked with
+     * that string or value. The property read's result is discarded.
+     *
+     * @param builder the builder that receives {@code mkp} and {@code yield}
+     * @param vs the interpolated values
+     * @param ss the literal strings
+     */
     public static void buildImpl(GroovyObject builder, Object[] vs, String[] ss) {
         final int numberOfValues = vs.length;
 
@@ -113,6 +152,17 @@ public final class GStringUtil {
         }
     }
 
+    /**
+     * Estimates a buffer size from the literal strings. Sums {@code ss[i].length()}.
+     * When {@code ss} is non-empty, adds {@code vs.length} times the greater of
+     * that sum divided by {@code ss.length} (integer division) and 8. Returns the
+     * greater of 120% of that total, truncated to {@code int}, and 16. Value
+     * contents are not inspected. An empty {@code ss} yields 16.
+     *
+     * @param vs values, used only for {@code vs.length}
+     * @param ss literal strings whose lengths are summed
+     * @return the estimated capacity, at least 16
+     */
     public static int calcInitialCapacityImpl(Object[] vs, String[] ss) {
         int initialCapacity = 0;
         for (String string : ss) {

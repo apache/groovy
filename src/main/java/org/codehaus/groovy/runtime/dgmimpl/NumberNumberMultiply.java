@@ -33,6 +33,15 @@ public final class NumberNumberMultiply extends NumberNumberMetaMethod {
         return NumberMath.multiply((Number) object, (Number) arguments[0]);
     }
 
+    /**
+     * Multiplies {@code left} by {@code right}.
+     * The operation is {@link NumberMath#multiply(Number, Number)}, which selects
+     * the math implementation from the operand classes. The operands are not modified.
+     *
+     * @param left the left operand
+     * @param right the right operand
+     * @return the product
+     */
     @GroovyABI(since = "2.0.0")
     public static Number multiply(Number left, Number right) {
         return NumberMath.multiply(left, right);
