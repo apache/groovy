@@ -504,6 +504,12 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     /** Empty statement reused for synthetic AST nodes. */
     public static final Statement GENERATED_EMPTY_STATEMENT = EmptyStatement.INSTANCE;
 
+    /**
+     * Records each return {@link ReturnAdder} inserts or visits.
+     * A return inside a closure is added to that closure's inferred return types.
+     * A return in a method is recorded against that method. A return that is in
+     * neither throws {@link GroovyBugError}.
+     */
     protected final ReturnAdder.ReturnStatementListener returnListener = (returnStatement) -> {
         ClassNode returnType = checkReturnType(returnStatement);
         if (this.typeCheckingContext.getEnclosingClosure() != null) {

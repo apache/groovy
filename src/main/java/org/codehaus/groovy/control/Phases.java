@@ -45,6 +45,12 @@ public class Phases {
     public static final int ALL = FINALIZATION;
 
     // TODO: If no reference is made to array, convert to switch in getDescription(int).
+    /**
+     * Text for each phase index. Index {@code 0} is {@code startup} and is
+     * not one of the phase constants. Indexes {@link #INITIALIZATION}
+     * through {@link #FINALIZATION} are what {@link #getDescription}
+     * returns.
+     */
     public static final String[] descriptions = {
         "startup",
         "initialization",

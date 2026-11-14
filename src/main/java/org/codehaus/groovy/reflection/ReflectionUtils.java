@@ -132,6 +132,17 @@ public class ReflectionUtils {
         }
     }
 
+    /**
+     * Returns the methods {@code type} declares whose name is {@code name} and
+     * whose parameter list {@link #parameterTypeMatches(Class[], Class[])} accepts.
+     * Inherited methods are omitted. The list is empty when none match.
+     *
+     * @param type the class to inspect
+     * @param name the method name
+     * @param parameterTypes the expected parameter types; an empty array matches only
+     *        methods that declare no parameters
+     * @return the matching methods, in the order {@link Class#getDeclaredMethods()} produced
+     */
     public static List<Method> getDeclaredMethods(final Class<?> type, final String name, final Class<?>... parameterTypes) {
         return doGetMethods(type, name, parameterTypes, Class::getDeclaredMethods);
     }
@@ -200,6 +211,17 @@ public class ReflectionUtils {
         return 0;
     }
 
+    /**
+     * Returns the public methods of {@code type}, including inherited methods, whose
+     * name is {@code name} and whose parameter list
+     * {@link #parameterTypeMatches(Class[], Class[])} accepts.
+     *
+     * @param type the class to inspect
+     * @param name the method name
+     * @param parameterTypes the expected parameter types; an empty array matches only
+     *        methods that declare no parameters
+     * @return the matching methods, in the order {@link Class#getMethods()} produced
+     */
     public static List<Method> getMethods(final Class<?> type, final String name, final Class<?>... parameterTypes) {
         return doGetMethods(type, name, parameterTypes, Class::getMethods);
     }
@@ -222,6 +244,17 @@ public class ReflectionUtils {
         return methodList;
     }
 
+    /**
+     * Whether each parameter type accepts the argument type in the same position.
+     * A parameter of {@code Object} matches any argument type, including {@code null}.
+     * Any other parameter rejects a {@code null} argument type. Remaining pairs match
+     * when the classes are the same, or when the boxed parameter type is assignable
+     * from the boxed argument type.
+     *
+     * @param parameterTypes the method's parameter types
+     * @param argTypes the argument types, with {@code null} for an unknown argument
+     * @return {@code true} when the arrays have equal length and every position matches
+     */
     public static boolean parameterTypeMatches(final Class<?>[] parameterTypes, final Class<?>[] argTypes) {
         if (parameterTypes.length != argTypes.length) {
             return false;
@@ -245,14 +278,39 @@ public class ReflectionUtils {
         return true;
     }
 
+    /**
+     * Whether the VM plugin allows {@code accessibleObject} to be made accessible
+     * from {@code caller}.
+     *
+     * @param accessibleObject the reflected member to check
+     * @param caller the class that would call {@code setAccessible}
+     * @return what {@link VMPlugin#checkCanSetAccessible(AccessibleObject, Class)} returns
+     */
     public static boolean checkCanSetAccessible(final AccessibleObject accessibleObject, final Class<?> caller) {
         return VM_PLUGIN.checkCanSetAccessible(accessibleObject, caller);
     }
 
+    /**
+     * Whether {@code callerClass} can access a member of {@code declaringClass}
+     * with the given modifiers, as decided by the VM plugin.
+     *
+     * @param callerClass the class requesting access
+     * @param declaringClass the class that declares the member
+     * @param memberModifiers the member's modifiers
+     * @param allowIllegalAccess whether illegal access is permitted
+     * @return what {@link VMPlugin#checkAccessible(Class, Class, int, boolean)} returns
+     */
     public static boolean checkAccessible(final Class<?> callerClass, final Class<?> declaringClass, final int memberModifiers, final boolean allowIllegalAccess) {
         return VM_PLUGIN.checkAccessible(callerClass, declaringClass, memberModifiers, allowIllegalAccess);
     }
 
+    /**
+     * Tries to set the accessible flag on {@code ao}. A security, module, or other
+     * failure is swallowed.
+     *
+     * @param ao the reflected member
+     * @return {@code true} when the flag was set; {@code false} when it could not be
+     */
     public static boolean trySetAccessible(final AccessibleObject ao) {
         try {
             return VM_PLUGIN.trySetAccessible(ao);
@@ -262,11 +320,25 @@ public class ReflectionUtils {
         return false;
     }
 
+    /**
+     * Makes {@code ao} accessible when the VM plugin allows it. This does not enter
+     * a privileged action; it calls {@link #makeAccessible(AccessibleObject)}.
+     *
+     * @param ao the reflected member
+     * @return {@code ao} when access was enabled, otherwise an empty optional
+     */
     public static Optional<AccessibleObject> makeAccessibleInPrivilegedAction(final AccessibleObject ao) {
         return makeAccessible(ao);
     }
 
     // to be run in PrivilegedAction!
+    /**
+     * Enables access to {@code ao} when {@link #trySetAccessible(AccessibleObject)}
+     * succeeds. A failure leaves the member unchanged.
+     *
+     * @param ao the reflected member
+     * @return {@code ao} when it was made accessible, otherwise an empty optional
+     */
     public static Optional<AccessibleObject> makeAccessible(final AccessibleObject ao) {
         try {
             if (trySetAccessible(ao)) {
@@ -279,6 +351,17 @@ public class ReflectionUtils {
     }
 
     // to be run in PrivilegedAction!
+    /**
+     * Enables access to every element of {@code aoa}. When
+     * {@link AccessibleObject#setAccessible(AccessibleObject[], boolean)} succeeds,
+     * the same array is returned. When that call fails, each element is tried on
+     * its own and only the members that succeed are returned, using {@code aoa}'s
+     * component type.
+     *
+     * @param aoa the reflected members
+     * @return {@code aoa} after a successful bulk update, otherwise a new array of
+     *         the members that could be made accessible
+     */
     public static AccessibleObject[] makeAccessible(final AccessibleObject[] aoa) {
         try {
             AccessibleObject.setAccessible(aoa, true);
@@ -297,6 +380,14 @@ public class ReflectionUtils {
         }
     }
 
+    /**
+     * Whether {@code clazz} is sealed. Returns {@code false} when {@code clazz} is
+     * {@code null}, when {@link Class#isSealed()} is unavailable on this JVM, or
+     * when calling it fails.
+     *
+     * @param clazz the class to test, or {@code null}
+     * @return {@code true} only when the JVM reports that the class is sealed
+     */
     public static boolean isSealed(Class<?> clazz) {
         if (null == IS_SEALED_METHODHANDLE) return false;
         if (null == clazz) return false;
@@ -309,6 +400,16 @@ public class ReflectionUtils {
         return sealed;
     }
 
+    /**
+     * The direct permitted subclasses of a sealed class. Returns a shared empty
+     * array when {@code clazz} is {@code null}, when
+     * {@link Class#getPermittedSubclasses()} is unavailable, or when calling it
+     * fails. When the JVM method returns {@code null} because the class is not
+     * sealed, this method returns {@code null} as well.
+     *
+     * @param clazz the class to inspect, or {@code null}
+     * @return the permitted subclasses, a shared empty array, or {@code null}
+     */
     public static Class<?>[] getPermittedSubclasses(Class<?> clazz) {
         if (null == GET_PERMITTED_SUBCLASSES_METHODHANDLE) return EMPTY_CLASS_ARRAY;
         if (null == clazz) return EMPTY_CLASS_ARRAY;

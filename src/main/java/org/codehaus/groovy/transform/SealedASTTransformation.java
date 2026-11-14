@@ -52,6 +52,12 @@ public class SealedASTTransformation extends AbstractASTTransformation {
     private static final ClassNode SEALED_TYPE = make(SEALED_CLASS);
     private static final ClassNode SEALED_OPTIONS_TYPE = make(SealedOptions.class);
     private static final String SEALED_ALWAYS_ANNOTATE_KEY = "groovy.transform.SealedOptions.alwaysAnnotate";
+    /**
+     * Node-metadata key set when {@link SealedOptions#alwaysAnnotate()} is
+     * {@code false}. The text is {@code groovy.transform.SealedOptions.alwaysAnnotate}.
+     *
+     * @deprecated the transformation reads a private copy of this string
+     */
     @Deprecated
     public static final String SEALED_ALWAYS_ANNOTATE = SEALED_ALWAYS_ANNOTATE_KEY;
 

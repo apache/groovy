@@ -151,6 +151,13 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
     private static class ConstructedNestedClass extends ClassNode {
         final ClassNode knownEnclosingType;
 
+        /**
+         * Names the nested class {@code outer.getName() + "$" + inner}, with each
+         * {@code '.'} in {@code inner} replaced by {@code '$'}. The node is not primary.
+         *
+         * @param outer the enclosing class, already resolved
+         * @param inner the nested name, with {@code '.'} between further levels
+         */
         public ConstructedNestedClass(final ClassNode outer, final String inner) {
             super(outer.getName() + "$" + inner.replace('.', '$'), Opcodes.ACC_PUBLIC, ClassHelper.OBJECT_TYPE);
             this.knownEnclosingType = outer;
@@ -191,6 +198,14 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
         final String prefix;
         String className;
 
+        /**
+         * Names the class {@code pkg + name}, adding no separator of its own. The node is
+         * not primary, and {@code pkg} is kept apart so a later inner-class search does
+         * not rewrite the package portion.
+         *
+         * @param pkg prefix concatenated in front of {@code name}
+         * @param name the class name appended to {@code pkg}
+         */
         public ConstructedClassWithPackage(final String pkg, final String name) {
             super(pkg + name, Opcodes.ACC_PUBLIC, ClassHelper.OBJECT_TYPE);
             isPrimaryNode = false;
@@ -235,6 +250,10 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
     private static class LowerCaseClass extends ClassNode {
         final String className;
 
+        /**
+         * @param name the lower-case identifier stored as this node's class name.
+         *             The node is not a primary class node.
+         */
         public LowerCaseClass(final String name) {
             super(name, Opcodes.ACC_PUBLIC, ClassHelper.OBJECT_TYPE);
             isPrimaryNode = false;

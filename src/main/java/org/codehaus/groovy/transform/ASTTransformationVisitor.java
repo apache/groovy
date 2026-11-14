@@ -245,6 +245,15 @@ public final class ASTTransformationVisitor extends ClassCodeVisitorSupport {
         // ignore: we'll already have allocated to field or accessor method by now
     }
 
+    /**
+     * Registers the phase operations that collect and run AST transformations.
+     * Global transforms are loaded first. A semantic-analysis operation then
+     * collects per-class transformation annotations, and every later compile
+     * phase gets an operation that runs the transformations for that phase.
+     * Initialization, parsing and conversion are left unchanged.
+     *
+     * @param compilationUnit the unit that receives the operations
+     */
     public static void addPhaseOperations(final CompilationUnit compilationUnit) {
         ASTTransformationsContext context = compilationUnit.getASTTransformationsContext();
         addGlobalTransforms(context);
@@ -294,10 +303,25 @@ public final class ASTTransformationVisitor extends ClassCodeVisitorSupport {
         }, phase);
     }
 
+    /**
+     * Loads global AST transformations discovered after a {@code @Grab}, and
+     * registers phase operations only for names that were not already recorded
+     * by {@link #addGlobalTransforms(ASTTransformationsContext)}.
+     *
+     * @param context the compilation unit's transformation context
+     */
     public static void addGlobalTransformsAfterGrab(ASTTransformationsContext context) {
         doAddGlobalTransforms(context, false);
     }
 
+    /**
+     * Loads global AST transformations from
+     * {@code META-INF/services/org.codehaus.groovy.transform.ASTTransformation},
+     * records every accepted name on {@code context}, and registers their phase
+     * operations.
+     *
+     * @param context the compilation unit's transformation context
+     */
     public static void addGlobalTransforms(ASTTransformationsContext context) {
         doAddGlobalTransforms(context, true);
     }

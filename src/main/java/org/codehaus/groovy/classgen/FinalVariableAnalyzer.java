@@ -89,6 +89,12 @@ public class FinalVariableAnalyzer extends ClassCodeVisitorSupport {
             this.isFinal = isFinal;
         }
 
+        /**
+         * Next state after an assignment. {@code is_uninitialized} becomes {@code is_final};
+         * every other state becomes {@code is_var}.
+         *
+         * @return the state that follows this one
+         */
         public VariableState getNext() {
             return switch (this) {
                 case is_uninitialized -> is_final;
@@ -96,6 +102,9 @@ public class FinalVariableAnalyzer extends ClassCodeVisitorSupport {
             };
         }
 
+        /**
+         * @return {@code true} only for {@code is_final}
+         */
         public boolean isFinal() {
             return isFinal;
         }

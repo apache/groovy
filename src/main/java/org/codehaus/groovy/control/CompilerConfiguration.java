@@ -203,6 +203,11 @@ public class CompilerConfiguration {
             JDK28, Opcodes.V28
     );
 
+    /**
+     * Target bytecode selected when none is configured.
+     * This is the running JVM's feature version when that version is a key of
+     * {@link #JDK_TO_BYTECODE_VERSION_MAP}, and {@link #JDK17} otherwise.
+     */
     public static final String DEFAULT_TARGET_BYTECODE = defaultTargetBytecode();
 
     /**
@@ -816,6 +821,7 @@ public class CompilerConfiguration {
     /**
      * Checks if the specified bytecode version string represents a JDK 1.5+ compatible
      * bytecode version.
+     *
      * @param bytecodeVersion The parameter can take one of the values in {@link #ALLOWED_JDKS}.
      * @return true if the bytecode version is JDK 1.5+
      */
@@ -827,6 +833,7 @@ public class CompilerConfiguration {
     /**
      * Checks if the specified bytecode version string represents a JDK 1.7+ compatible
      * bytecode version.
+     *
      * @param bytecodeVersion The parameter can take one of the values in {@link #ALLOWED_JDKS}.
      * @return true if the bytecode version is JDK 1.7+
      */
@@ -838,6 +845,7 @@ public class CompilerConfiguration {
     /**
      * Checks if the specified bytecode version string represents a JDK 1.8+ compatible
      * bytecode version.
+     *
      * @param bytecodeVersion The parameter can take one of the values in {@link #ALLOWED_JDKS}.
      * @return true if the bytecode version is JDK 1.8+
      */
@@ -849,6 +857,7 @@ public class CompilerConfiguration {
     /**
      * Checks if the specified bytecode version string represents a JDK 9+ compatible
      * bytecode version.
+     *
      * @param bytecodeVersion The parameter can take one of the values in {@link #ALLOWED_JDKS}.
      * @return true if the bytecode version is JDK 9+
      */
@@ -957,6 +966,7 @@ public class CompilerConfiguration {
     /**
      * Method to configure a CompilerConfiguration by using Properties.
      * For a list of available properties look at {@link #CompilerConfiguration(Properties)}.
+     *
      * @param configuration The properties to get flag values from.
      */
     public void configure(final Properties configuration) throws ConfigurationException {
@@ -1109,6 +1119,7 @@ public class CompilerConfiguration {
 
     /**
      * Gets the currently configured output writer.
+     *
      * @deprecated not used anymore
      */
     @Deprecated
@@ -1118,6 +1129,7 @@ public class CompilerConfiguration {
 
     /**
      * Sets the output writer.
+     *
      * @deprecated not used anymore, has no effect
      */
     @Deprecated
@@ -1174,6 +1186,7 @@ public class CompilerConfiguration {
 
     /**
      * sets the classpath using a list of Strings
+     *
      * @param parts list of strings containing the classpath parts
      */
     public void setClasspathList(final List<String> parts) {
@@ -1565,6 +1578,7 @@ public class CompilerConfiguration {
 
     /**
      * Gets the joint compilation options for this configuration.
+     *
      * @return the options
      */
     public Map<String, Object> getJointCompilationOptions() {
@@ -1574,6 +1588,7 @@ public class CompilerConfiguration {
     /**
      * Sets the joint compilation options for this configuration.
      * Using null will disable joint compilation.
+     *
      * @param options the options
      */
     public void setJointCompilationOptions(final Map<String, Object> options) {
@@ -1582,6 +1597,7 @@ public class CompilerConfiguration {
 
     /**
      * Gets the optimization options for this configuration.
+     *
      * @return the options (always not null)
      */
     public Map<String, Boolean> getOptimizationOptions() {
@@ -1596,6 +1612,7 @@ public class CompilerConfiguration {
      * {@link #PARALLEL_PARSE}, {@link #GROOVYDOC}, and {@link #RUNTIME_GROOVYDOC}.
      * For-in per-iteration capture (GROOVY-11792) is not an optimization option; use
      * {@link #setForInPerIterationCaptureEnabled(boolean)} instead.
+     *
      * @param options the options.
      * @throws IllegalArgumentException if the options are null
      */
@@ -1607,6 +1624,7 @@ public class CompilerConfiguration {
     /**
      * Adds compilation customizers to the compilation process. A compilation customizer is a class node
      * operation which performs various operations going from adding imports to access control.
+     *
      * @param customizers the list of customizers to be added
      * @return this configuration instance
      */
@@ -1618,6 +1636,7 @@ public class CompilerConfiguration {
 
     /**
      * Returns the list of compilation customizers.
+     *
      * @return the customizers (always not null)
      */
     public List<CompilationCustomizer> getCompilationCustomizers() {
@@ -1626,6 +1645,7 @@ public class CompilerConfiguration {
 
     /**
      * Returns the list of disabled global AST transformation class names.
+     *
      * @return a list of global AST transformation fully qualified class names
      */
     public Set<String> getDisabledGlobalASTTransformations() {

@@ -60,6 +60,13 @@ public class ASTTransformationCollectorCodeVisitor extends ClassCodeVisitorSuppo
     private final SourceUnit source;
     private final GroovyClassLoader transformLoader;
 
+    /**
+     * Creates a visitor for one source unit. Transform classes named by
+     * annotations are loaded with {@code transformLoader}.
+     *
+     * @param source source unit whose AST is walked
+     * @param transformLoader loader used to resolve those transform classes
+     */
     public ASTTransformationCollectorCodeVisitor(final SourceUnit source, final GroovyClassLoader transformLoader) {
         this.source = source;
         this.transformLoader = transformLoader;

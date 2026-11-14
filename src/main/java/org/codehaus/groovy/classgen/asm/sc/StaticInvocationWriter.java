@@ -966,6 +966,14 @@ public class StaticInvocationWriter extends InvocationWriter {
         private final Expression receiver;
         private final MethodNode target;
 
+        /**
+         * Stores {@code receiver} and {@code target} and leaves the expression type
+         * unset until the expression is visited. Visiting then checkcasts the
+         * receiver to the type chosen from {@code target}.
+         *
+         * @param receiver the receiver to visit
+         * @param target the method used to choose the checkcast type
+         */
         public CheckcastReceiverExpression(final Expression receiver, final MethodNode target) {
             this.receiver = receiver;
             this.target = target;

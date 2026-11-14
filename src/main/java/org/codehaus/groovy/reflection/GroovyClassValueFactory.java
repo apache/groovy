@@ -40,6 +40,16 @@ class GroovyClassValueFactory {
 	 */
 	private static final boolean SOFT_MODE = "soft".equalsIgnoreCase(CLASSVALUE_MODE);
 
+	/**
+	 * Creates the per-class store selected by {@code groovy.use.classvalue}.
+	 * {@code soft} uses {@link GroovyClassValueSoft}. A value Java parses as
+	 * {@code true}, which is the default, uses {@link GroovyClassValueJava7}.
+	 * Any other value uses {@link GroovyClassValueMapBased}.
+	 *
+	 * @param <T> the type of the value computed for each class
+	 * @param computeValue computes the value the first time a class is seen
+	 * @return the store that caches those values
+	 */
 	public static <T> GroovyClassValue<T> createGroovyClassValue(ComputeValue<T> computeValue) {
 		// GROOVY-12281: "soft" keeps ClassValue for all keys but holds values softly with
 		// resurrection and ephemeron pinning, so immortal keys hold no strong chain to the

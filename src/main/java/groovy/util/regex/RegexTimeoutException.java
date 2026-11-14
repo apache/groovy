@@ -37,6 +37,11 @@ public class RegexTimeoutException extends RuntimeException {
     @Serial
     private static final long serialVersionUID = 5023185918011980029L;
 
+    /**
+     * Creates an exception with the supplied detail message.
+     *
+     * @param message the detail message, passed to {@link RuntimeException#RuntimeException(String)}
+     */
     public RegexTimeoutException(String message) {
         super(message);
     }

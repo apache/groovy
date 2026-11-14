@@ -27,6 +27,13 @@ import org.codehaus.groovy.reflection.GroovyClassValue;
 */
 public class GroovyClassValueJava7<T> extends ClassValue<T> implements GroovyClassValue<T> {
    private final ComputeValue<T> computeValue;
+   /**
+    * Creates a class value that computes a missing entry with {@code computeValue}.
+    * The callback is stored and invoked from {@code computeValue(Class)} for a class
+    * that has no cached entry. It is not called for this constructor.
+    *
+    * @param computeValue callback that produces the value for a class
+    */
    public GroovyClassValueJava7(ComputeValue<T> computeValue){
       this.computeValue = computeValue;
    }

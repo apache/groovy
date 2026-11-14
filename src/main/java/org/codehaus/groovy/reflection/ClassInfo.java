@@ -84,6 +84,9 @@ public class ClassInfo implements Finalizable {
     private final LazyCachedClassRef cachedClassRef;
     private final LazyClassLoaderRef artifactClassLoader;
     private final LockableObject lock = new LockableObject();
+    /**
+     * Unused. Always {@code -1}.
+     */
     public final int hash = -1;
     private final WeakReference<Class<?>> classRef;
     private final AtomicInteger version = new AtomicInteger();
@@ -866,22 +869,53 @@ public class ClassInfo implements Finalizable {
         private final ConcurrentReferenceHashMap<Class<?>, ClassInfo> byClass =
                 new ConcurrentReferenceHashMap<>(ReferenceType.WEAK, ReferenceType.WEAK, EnumSet.of(Option.IDENTITY_COMPARISONS));
 
+        /**
+         * The number of {@link ClassInfo} instances still queued.
+         *
+         * @return the size of {@link #values()}
+         */
         public int size(){
             return values().size();
         }
 
+        /**
+         * The number of {@link ClassInfo} instances still queued.
+         * This is the same count {@link #size()} returns.
+         *
+         * @return the size of {@link #values()}
+         */
         public int fullSize(){
             return values().size();
         }
 
+        /**
+         * The {@link ClassInfo} instances still queued, including ones kept after
+         * their class was detached from the lookup map.
+         *
+         * @return the queued instances
+         */
         public Collection<ClassInfo> values(){
             return items.values();
         }
 
+        /**
+         * The {@link ClassInfo} already associated with {@code type}.
+         *
+         * @param type the class to look up
+         * @return the associated instance, or {@code null} when the map has none
+         */
         public ClassInfo get(Class<?> type){
             return byClass.get(type);
         }
 
+        /**
+         * Returns the {@link ClassInfo} for {@code type}, creating one when the map
+         * does not already hold it. Only the instance that is actually stored is
+         * added to the queue.
+         *
+         * @param type the class whose {@link ClassInfo} is required
+         * @return the instance already stored, or the one this call stored
+         */
         public ClassInfo getOrCreate(Class<?> type){
             ClassInfo info = byClass.get(type);
             if (info != null) return info;
