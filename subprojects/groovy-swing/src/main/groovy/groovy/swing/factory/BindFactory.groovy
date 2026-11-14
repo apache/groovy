@@ -51,6 +51,10 @@ class BindFactory extends AbstractFactory {
      */
     public static final String CONTEXT_DATA_KEY = "BindFactoryData";
 
+    /**
+     * Synthetic property triggers, keyed by {@code ClassName#property}.
+     * The constructor fills this from the Swing property tables.
+     */
     final Map<String, TriggerBinding> syntheticBindings
 
     /**

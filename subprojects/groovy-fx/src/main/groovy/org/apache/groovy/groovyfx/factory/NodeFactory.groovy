@@ -32,7 +32,12 @@ import org.codehaus.groovy.runtime.InvokerHelper
  */
 class NodeFactory extends AbstractFactory {
 
+    /** JavaFX type this factory builds. */
     final Class beanClass
+    /**
+     * {@code true} when the node does not accept children.
+     * {@link #isLeaf()} returns this value.
+     */
     final boolean leaf
 
     /**

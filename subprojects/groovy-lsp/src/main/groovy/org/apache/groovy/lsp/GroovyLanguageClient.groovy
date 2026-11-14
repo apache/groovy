@@ -69,7 +69,9 @@ import java.util.concurrent.CompletableFuture
 @CompileStatic
 final class GroovyLanguageClient implements LanguageClient, AutoCloseable {
 
+    /** In-process language server this client calls. */
     final GroovyLanguageServer server
+    /** Buffer URI sent with each {@code textDocument} request. */
     final String uri
     /** Serializes buffer version, sent text, and published diagnostics. */
     private final Object exchange = new Object()
@@ -512,7 +514,9 @@ final class GroovyLanguageClient implements LanguageClient, AutoCloseable {
 
     /** Parameter text and return type of one method completion. */
     static final class MethodDetail {
+        /** Text inside the parentheses. Empty when the method has no parameters. */
         final String parameters
+        /** Return-type text. Empty when the completion did not name one. */
         final String returns
 
         private MethodDetail(String parameters, String returns) {
