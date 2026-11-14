@@ -99,11 +99,21 @@ final class CompletionPopup {
     /** Document offset just after the name being completed. */
     private int completionEnd = -1
 
+    /**
+     * Binds the popup to {@code input}. The menu is not shown here.
+     *
+     * @param input the editor pane
+     */
     @PackageScope
     CompletionPopup(JTextPane input) {
         this.input = input
     }
 
+    /**
+     * Reports whether a completion menu is open.
+     *
+     * @return {@code true} while the popup is showing or armed
+     */
     @PackageScope
     boolean isOpen() {
         completionOpen
@@ -245,6 +255,11 @@ final class CompletionPopup {
         completionList
     }
 
+    /**
+     * Reports whether a completion menu is open.
+     *
+     * @return {@code true} while the popup is showing or armed
+     */
     @PackageScope
     boolean completionShowing() {
         completionOpen
@@ -372,6 +387,9 @@ final class CompletionPopup {
         acceptCompletion(item)
     }
 
+    /**
+     * Closes the popup and forgets the armed list and the completion range.
+     */
     @PackageScope
     void hideCompletion() {
         completionOpen = false
@@ -387,6 +405,13 @@ final class CompletionPopup {
         }
     }
 
+    /**
+     * Moves the completion range with {@code event}. An insert or delete that
+     * starts after that range closes the popup. A delete that crosses the start
+     * of the range closes it as well.
+     *
+     * @param event the document change; ignored when the popup is closed
+     */
     @PackageScope
     void onDocumentEdit(DocumentEvent event) {
         if (!completionOpen || event == null) {
@@ -510,11 +535,22 @@ final class CompletionPopup {
         GroovyLanguageClient.flattenSnippet(item.insertText ?: item.label)
     }
 
+    /**
+     * Inserts {@code item} at the caret. The popup is left as it is.
+     *
+     * @param item the chosen candidate
+     */
     @PackageScope
     void acceptCompletion(Candidate item) {
         ConsoleLanguageHost.insertAtCaret(input, completionInsert(item))
     }
 
+    /**
+     * Shows {@code items} under the caret. An empty list or a missing editor
+     * closes the popup instead.
+     *
+     * @param items the candidates to show
+     */
     @PackageScope
     void showMenu(List<Candidate> items) {
         if (input == null || !items) {
@@ -607,6 +643,12 @@ final class CompletionPopup {
             this.returns = returns
         }
 
+        /**
+         * Reads the parameter list and return type stored on {@code item}.
+         *
+         * @param item a method candidate, or null
+         * @return those parts, or null when {@code item} has neither
+         */
         static SignatureParts of(Candidate item) {
             if (item?.parameters() == null && item?.returns() == null) {
                 return null

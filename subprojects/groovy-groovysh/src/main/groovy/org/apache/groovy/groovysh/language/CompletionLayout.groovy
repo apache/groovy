@@ -51,12 +51,27 @@ final class CompletionLayout {
     private static final int MAX_COLUMNS = 4
     private static final int DEFAULT_WIDTH = 80
 
+    /**
+     * Lays out {@code items} for an 80-column terminal.
+     *
+     * @param items language-server completions
+     * @param line the line being completed
+     * @param candidates receives one JLine candidate per item
+     */
     @PackageScope
     static void mapEngineCandidates(List<CompletionItem> items, ParsedLine line, List<Candidate> candidates) {
         mapEngineCandidates(items, line, candidates, DEFAULT_WIDTH)
     }
 
     /**
+     * Lays out {@code items} into {@code candidates} using {@code width} columns.
+     * A method or function is inserted as its label. The text already typed,
+     * through the last dot, is kept in front of an insert that does not already
+     * start with it.
+     *
+     * @param items language-server completions
+     * @param line the line being completed
+     * @param candidates receives one JLine candidate per item
      * @param width terminal columns available for the list
      */
     @PackageScope
@@ -90,6 +105,13 @@ final class CompletionLayout {
         }
     }
 
+    /**
+     * Returns how many columns fit in {@code width} while each stays at least
+     * the preferred cell width, never more than four.
+     *
+     * @param width terminal columns
+     * @return the column count, at least one
+     */
     @PackageScope
     static int columnCount(int width) {
         int columns = 1
@@ -102,6 +124,14 @@ final class CompletionLayout {
         columns
     }
 
+    /**
+     * Returns the width of one cell when {@code width} is split into {@code columns},
+     * after the gaps between columns.
+     *
+     * @param width terminal columns
+     * @param columns how many columns to place
+     * @return the cell width, at least one
+     */
     @PackageScope
     static int cellWidth(int width, int columns) {
         int safe = width > 0 ? width : DEFAULT_WIDTH
@@ -113,6 +143,12 @@ final class CompletionLayout {
         available.intdiv(n)
     }
 
+    /**
+     * Returns the terminal width, or 80 when {@code reader} has none.
+     *
+     * @param reader the line reader, or null
+     * @return the width in columns
+     */
     @PackageScope
     static int terminalWidth(LineReader reader) {
         if (reader == null || reader.terminal == null) {
@@ -152,6 +188,14 @@ final class CompletionLayout {
         shown.toString()
     }
 
+    /**
+     * Shortens {@code text} to {@code room} columns, ending a longer value with
+     * {@code ...} when there is room for the mark.
+     *
+     * @param text the text to fit
+     * @param room the maximum length
+     * @return the fitted text, or empty when {@code text} is null or {@code room} is not positive
+     */
     @PackageScope
     static String fit(String text, int room) {
         if (text == null || room <= 0) {
@@ -175,6 +219,12 @@ final class CompletionLayout {
         new String(pad)
     }
 
+    /**
+     * Returns {@code display} with ANSI color sequences removed.
+     *
+     * @param display the painted completion cell
+     * @return the visible text
+     */
     @PackageScope
     static String visible(String display) {
         if (!display) {
@@ -183,6 +233,14 @@ final class CompletionLayout {
         display.replaceAll(/\u001B\[[0-9;]*m/, '')
     }
 
+    /**
+     * Returns the text JLine should insert for {@code item}. A method or function
+     * contributes its label, cut at the first newline. Any other kind contributes
+     * that same first line of its insert text, or the label when that line is empty.
+     *
+     * @param item the completion item, or null
+     * @return the insertion text, or empty when {@code item} is null
+     */
     @PackageScope
     static String insertedText(CompletionItem item) {
         if (item == null) {
@@ -198,6 +256,13 @@ final class CompletionLayout {
         insert
     }
 
+    /**
+     * Returns the JLine group for {@code kind}. Methods and functions are
+     * {@code Method}. A null kind is {@code Other}.
+     *
+     * @param kind the completion kind, or null
+     * @return the group name
+     */
     @PackageScope
     static String category(CompletionItemKind kind) {
         if (kind == null) {

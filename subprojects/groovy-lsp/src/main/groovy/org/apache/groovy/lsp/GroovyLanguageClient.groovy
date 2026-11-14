@@ -101,6 +101,11 @@ final class GroovyLanguageClient implements LanguageClient, AutoCloseable {
         client
     }
 
+    /**
+     * Sends {@code loader} to the server as {@code groovy.parentLoader}.
+     *
+     * @param loader the shell class loader, or null
+     */
     void parentLoader(ClassLoader loader) {
         server.workspaceService.executeCommand(new ExecuteCommandParams('groovy.parentLoader', [loader])).get()
     }
@@ -114,6 +119,12 @@ final class GroovyLanguageClient implements LanguageClient, AutoCloseable {
                 new ExecuteCommandParams('groovy.hostConfiguration', [configuration])).get()
     }
 
+    /**
+     * Publishes {@code groovy} as the {@code groovy} section of
+     * {@code workspace/didChangeConfiguration}.
+     *
+     * @param groovy settings for this buffer
+     */
     void settings(Map groovy) {
         server.workspaceService.didChangeConfiguration(new DidChangeConfigurationParams([groovy: groovy]))
     }
@@ -138,6 +149,13 @@ final class GroovyLanguageClient implements LanguageClient, AutoCloseable {
         }
     }
 
+    /**
+     * Compiles {@code text} immediately and returns the diagnostics published
+     * for this buffer.
+     *
+     * @param text buffer text
+     * @return the diagnostics, or an empty list when none were published
+     */
     List<Diagnostic> compile(String text) {
         sync(text)
         server.workspaceService.executeCommand(new ExecuteCommandParams('groovy.compile', [uri])).get()
@@ -147,6 +165,14 @@ final class GroovyLanguageClient implements LanguageClient, AutoCloseable {
         }
     }
 
+    /**
+     * Asks for completions at a 0-based UTF-16 position.
+     *
+     * @param text buffer text
+     * @param line 0-based line
+     * @param character 0-based character
+     * @return the completion items
+     */
     List<CompletionItem> complete(String text, int line, int character) {
         sync(text)
         completionItems(server.textDocumentService.completion(
@@ -170,6 +196,14 @@ final class GroovyLanguageClient implements LanguageClient, AutoCloseable {
         items == null ? [] : items
     }
 
+    /**
+     * Asks for hover markdown at a 0-based UTF-16 position.
+     *
+     * @param text buffer text
+     * @param line 0-based line
+     * @param character 0-based character
+     * @return the hover text, or empty when there is none
+     */
     String hover(String text, int line, int character) {
         sync(text)
         hoverText(server.textDocumentService.hover(
@@ -228,12 +262,26 @@ final class GroovyLanguageClient implements LanguageClient, AutoCloseable {
         return text ? text : ''
     }
 
+    /**
+     * Asks for signature help at a 0-based UTF-16 position.
+     *
+     * @param text buffer text
+     * @param line 0-based line
+     * @param character 0-based character
+     * @return the signature help from the server
+     */
     SignatureHelp signatures(String text, int line, int character) {
         sync(text)
         server.textDocumentService.signatureHelp(
                 new SignatureHelpParams(new TextDocumentIdentifier(uri), new Position(line, character))).get()
     }
 
+    /**
+     * Asks for semantic tokens for {@code text}.
+     *
+     * @param text buffer text
+     * @return the token data, or an empty list when the response has none
+     */
     List<Integer> semanticTokens(String text) {
         sync(text)
         tokenData(server.textDocumentService.semanticTokensFull(new SemanticTokensParams(
@@ -299,6 +347,12 @@ final class GroovyLanguageClient implements LanguageClient, AutoCloseable {
         return empty
     }
 
+    /**
+     * Returns the script-level names in {@code text}.
+     *
+     * @param text buffer text
+     * @return those names, or an empty list when the result is not a list
+     */
     List<String> scriptNames(String text) {
         sync(text)
         scriptNameList(server.workspaceService.executeCommand(
