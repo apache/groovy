@@ -851,8 +851,9 @@ backing field.
 
 Forms of reference::
 For a property `p`, the _simple name_ `p`, the _qualified name_ `this.p`, and the _method form_ `getP()`, `isP()`
-or `setP(v)`, with or without `this.`. An assignment, compound assignment, increment or decrement of `p` is a
-reference of the same form as the name it is applied to.
+or `setP(v)`, with or without `this.`. An assignment or a compound assignment of `p` is a reference of the same form
+as the name it is applied to. An increment or a decrement, such as `p++` or `--p`, is not covered by these rules
+(see <<Prefix and postfix operations>>).
 
 === Instance members
 
@@ -872,6 +873,8 @@ delegate and owner according to its resolve strategy, like any other name in a c
 no delegate that has the property, the owner is asked, and it answers through its accessor. The qualified name
 `this.p` is not offered to the delegate: it is a call of the accessor on the implementing instance. Rule 1 applies to
 the accessor in both cases. This is what the same names mean in a closure in the class that declares a property.
+Where closures and lambdas are nested, the innermost one decides: this rule applies in a closure within a lambda, and
+rule 5 in a lambda within a closure.
 . *In a lambda, a declared property is its backing field.* Rule 3 applies to the simple name `p` in a lambda as it
 does in a method body. A statically compiled lambda has no delegate or owner to resolve the name through.
 
@@ -907,7 +910,8 @@ and the trait's otherwise. A call from a closure or a lambda is not affected by 
 . *A static accessor-only property is its accessor.* A simple or qualified name that refers to a static accessor-only
 property is a call of the accessor, to which rules 2 and 3 apply: the trait's own accessor, or for a `@Virtual`
 accessor in a method body, the implementing class's. An assignment `p = v` is a call of the setter, and a compound
-assignment `p op= v` is a call of the setter with the value of `getP() op v`.
+assignment `p op= v` is a call of the setter with the value of `getP() op v`. An increment or a decrement is not
+such a call (see <<Prefix and postfix operations>>).
 . *A declared static property is its backing field.* The simple name `p` and the qualified name `this.p` read or
 write the implementing class's copy of the trait's static field, in a method body, a closure and a lambda. No accessor
 is called.
@@ -981,13 +985,19 @@ backing field.
 
 [NOTE]
 ====
-Two parts of this table describe the rules rather than what every compilation mode does today:
+Some parts of this table describe the rules rather than what every compilation mode does today:
 
 * A _name_ (`p` or `this.p`) of a static accessor-only property in a closure or a lambda is resolved by the closure,
 so that its delegate can supply the name. When no delegate does, dynamic and `@TypeChecked` code reach the
-implementing class's accessor, with or without `@Virtual`, where the rules give the trait's own. The method form
-`getP()` follows the rules in every mode.
+implementing class's accessor, where the rules give the trait's own. For a `@Virtual` accessor, `@CompileStatic` code
+reaches the implementing class's accessor as well. The method form `getP()` follows the rules in every mode.
 * A statically compiled lambda in a trait method cannot yet call an instance method of the trait in the method form.
+* In a closure within a lambda, the simple name `p` of a declared property is not offered to the closure's delegate:
+it is a call of the accessor on the implementing instance, as `this.p` is.
+* In a lambda in a trait annotated with `@CompileStatic`, the name of a static accessor-only property of a super
+trait is a call of that accessor, also where the lambda is passed as a closure whose delegate has a property of that
+name. When static compilation is applied by a compilation customizer and not by an annotation, such a name in a
+lambda fails at run time with a `MissingFieldException`; the method form `getP()` works in both cases.
 ====
 
 == Self types
@@ -1118,4 +1128,10 @@ include::../test/TraitsSpecificationTest.groovy[tags=prefix_postfix,indent=0]
 <2> `x` is defined within the trait, prefix decrement is not allowed
 
 A workaround is to use the `+=` operator instead.
+
+An increment or a decrement of an accessor-only property is allowed. For a static accessor-only property it is not
+a call of the trait's own accessors, as an assignment or a compound assignment is: it is an operation on the property
+of the implementing class, so a static getter or setter that the implementing class declares is used, also where the
+trait's accessors are not `@Virtual`. Under `@CompileStatic` the value is read with the trait's getter and written
+with the implementing class's setter. Use the `+=` operator where the trait's own accessors are wanted.
 

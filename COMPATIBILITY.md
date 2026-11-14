@@ -1195,7 +1195,9 @@ same names mean in a closure in a class that declares the property.
 **Who is affected.** A trait that declares a property and uses it in a
 closure, when an implementing class declares its own accessor for that
 property, or when the closure's delegate has a property of the same name and
-the closure's resolve strategy consults the delegate first. A getter or
+the closure's resolve strategy consults the delegate first. In a closure
+within a lambda the name is the accessor of the implementing instance, and the
+delegate is not consulted. A getter or
 setter that the trait itself declares for the property and that uses the
 property in a closure now calls itself; use the property outside the closure
 there.
@@ -1203,6 +1205,24 @@ there.
 **What is unchanged.** The property in a method body or a lambda, which is
 the trait's backing field; private and static fields of the trait; and
 `getName()` and `setName(v)`.
+
+### Groovy 7 — a lambda in a statically compiled trait reads a super trait's static accessor directly (GROOVY-12608)
+
+In a lambda in a trait annotated with `@CompileStatic`, the property form of
+a static accessor that a super trait declares (`cnt` for `static int getCnt()`)
+is now a call of that accessor. Before, such a lambda failed at run time with
+a `MissingMethodException`, unless it was passed as a closure whose delegate
+had a property of that name.
+
+**Who is affected.** A statically compiled trait that passes such a lambda
+where a closure is expected and relies on the closure's delegate to supply
+the name, as in `p.with((x) -> cnt)` where `p` has a `cnt` property: the
+lambda now reads the super trait's accessor. Use a closure (`p.with { cnt }`),
+which consults its delegate, or qualify the name (`x.cnt`).
+
+**What is unchanged.** Dynamic and `@TypeChecked` trait code, where the
+delegate of such a lambda still supplies the name; closures; and the method
+form `getCnt()`.
 
 ### Groovy 6.0.1 — statically compiled constructor references call the constructor directly (GROOVY-12488)
 
