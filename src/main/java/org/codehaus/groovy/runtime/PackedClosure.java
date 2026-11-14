@@ -96,6 +96,7 @@ public abstract class PackedClosure extends Closure<Object> {
         public Object doCall() { return dispatchAll(EMPTY); }
     }
 
+    /** Packed closure whose only {@code doCall} takes one argument and passes it to {@link #dispatchOne} after coercion. */
     public static final class Fixed1 extends PackedClosure implements GeneratedClosure {
         @Serial
         private static final long serialVersionUID = 1L;
@@ -121,6 +122,7 @@ public abstract class PackedClosure extends Closure<Object> {
         public Object doCall(final Object a) { return dispatchOne(coerceArg(a, parameterTypes[0])); }
     }
 
+    /** Packed closure whose only {@code doCall} takes two arguments and passes them to {@link #dispatchTwo}. */
     public static final class Fixed2 extends PackedClosure implements GeneratedClosure {
         @Serial
         private static final long serialVersionUID = 1L;
@@ -130,6 +132,7 @@ public abstract class PackedClosure extends Closure<Object> {
         public Object doCall(final Object a, final Object b) { return dispatchTwo(a, b); }
     }
 
+    /** Packed closure whose only {@code doCall} takes three arguments and forwards them to {@link #dispatchAll}. */
     public static final class Fixed3 extends PackedClosure implements GeneratedClosure {
         @Serial
         private static final long serialVersionUID = 1L;
@@ -139,6 +142,7 @@ public abstract class PackedClosure extends Closure<Object> {
         public Object doCall(final Object a, final Object b, final Object c) { return dispatchAll(new Object[]{a, b, c}); }
     }
 
+    /** Packed closure whose only {@code doCall} takes four arguments and forwards them to {@link #dispatchAll}. */
     public static final class Fixed4 extends PackedClosure implements GeneratedClosure {
         @Serial
         private static final long serialVersionUID = 1L;

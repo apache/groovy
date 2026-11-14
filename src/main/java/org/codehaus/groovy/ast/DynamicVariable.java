@@ -20,8 +20,10 @@ package org.codehaus.groovy.ast;
 
 import org.codehaus.groovy.ast.expr.Expression;
 
-// An implicitly created variable, such as a variable in a script that's doesn't have an explicit
-// declaration, or the "it" argument to a closure.
+/**
+ * A variable created without an explicit declaration, such as a script binding variable
+ * or the implicit {@code it} parameter of a closure.
+ */
 public class DynamicVariable implements Variable {
 
     private final String name;
