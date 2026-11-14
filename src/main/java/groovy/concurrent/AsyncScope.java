@@ -46,6 +46,21 @@ import java.util.function.Supplier;
  * task completes exceptionally, all sibling tasks are cancelled
  * immediately. The first failure becomes the primary exception;
  * subsequent failures are added as suppressed exceptions.
+ * <p>
+ * A failure is rethrown as the exception the task threw, including a
+ * checked exception, as {@code await} does.
+ *
+ * @apiNote {@link #close()} and {@code withScope} declare no checked
+ * exceptions but can still throw one. Java callers that need to handle a
+ * checked failure should catch {@code Exception} and test its type, as
+ * the Java compiler rejects a {@code catch} of a checked exception the
+ * try block does not declare.
+ * <p>
+ * Prefer {@code withScope} to try-with-resources over {@link #create()}.
+ * If the block and a child task fail with the same exception instance, for
+ * example by awaiting the same failed task, try-with-resources adds that
+ * exception to its own suppressed list, which throws
+ * {@code IllegalArgumentException}; {@code withScope} rethrows it once.
  *
  * <pre>{@code
  * def results = AsyncScope.withScope { scope ->
@@ -100,6 +115,9 @@ public interface AsyncScope extends AutoCloseable {
      * Closes the scope, waiting for all child tasks to complete.
      * If any child failed and fail-fast is enabled, remaining children
      * are cancelled and the first failure is rethrown.
+     *
+     * @apiNote The failure is rethrown as itself, so this method can throw a
+     * checked exception it does not declare; see the class documentation.
      */
     @Override
     void close();
@@ -145,6 +163,8 @@ public interface AsyncScope extends AutoCloseable {
      * @param body the function to execute within the scope
      * @param <T>  the result type
      * @return the body's return value
+     * @apiNote Can throw a checked exception it does not declare; see the
+     * class documentation.
      */
     static <T> T withScope(Function<AsyncScope, T> body) {
         return withScope(AsyncSupport.getExecutor(), body);
@@ -158,6 +178,8 @@ public interface AsyncScope extends AutoCloseable {
      * @param body     the function to execute within the scope
      * @param <T>      the result type
      * @return the body's return value
+     * @apiNote Can throw a checked exception it does not declare; see the
+     * class documentation.
      */
     static <T> T withScope(Executor executor, Function<AsyncScope, T> body) {
         Objects.requireNonNull(body, "body must not be null");
@@ -165,7 +187,9 @@ public interface AsyncScope extends AutoCloseable {
         T result;
         try {
             result = withCurrent(scope, () -> body.apply(scope));
-        } catch (Throwable bodyError) {
+        } catch (Throwable thrown) {
+            // A checked exception from a Closure body arrives wrapped by its SAM coercion
+            Throwable bodyError = AsyncSupport.unwrapUndeclared(thrown);
             try {
                 scope.close();
             } catch (Throwable closeError) {
@@ -173,9 +197,7 @@ public interface AsyncScope extends AutoCloseable {
                     bodyError.addSuppressed(closeError);
                 }
             }
-            if (bodyError instanceof RuntimeException re) throw re;
-            if (bodyError instanceof Error err) throw err;
-            throw new RuntimeException(bodyError);
+            throw AsyncSupport.rethrow(bodyError);
         }
         scope.close();
         return result;
@@ -191,6 +213,8 @@ public interface AsyncScope extends AutoCloseable {
      * @param <T>     the result type
      * @return the body's return value
      * @throws TimeoutException if the timeout expires
+     * @apiNote Can throw a checked exception it does not declare; see the
+     * class documentation.
      * @since 6.0.0
      */
     static <T> T withScope(Duration timeout, Function<AsyncScope, T> body) throws TimeoutException {
@@ -206,6 +230,8 @@ public interface AsyncScope extends AutoCloseable {
      * @param <T>      the result type
      * @return the body's return value
      * @throws TimeoutException if the timeout expires
+     * @apiNote Can throw a checked exception it does not declare; see the
+     * class documentation.
      * @since 6.0.0
      */
     static <T> T withScope(Executor executor, Duration timeout, Function<AsyncScope, T> body) throws TimeoutException {
