@@ -19,17 +19,26 @@
 package gls.innerClass
 
 import groovy.test.NotYetImplemented
+import groovy.transform.AnnotationCollector
 import org.codehaus.groovy.control.CompilationFailedException
 import org.codehaus.groovy.control.CompilerConfiguration
 import org.codehaus.groovy.tools.javac.JavaAwareCompilationUnit
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.CsvSource
 import org.junit.jupiter.params.provider.ValueSource
 
 import static groovy.test.GroovyAssert.assertScript
 import static groovy.test.GroovyAssert.shouldFail
 
 final class InnerClassTest {
+
+    @ParameterizedTest
+    @ValueSource(strings=['@groovy.transform.CompileDynamic','@groovy.transform.TypeChecked','@groovy.transform.CompileStatic'])
+    @AnnotationCollector
+    @interface CompileModesTest { }
+
+    //--------------------------------------------------------------------------
 
     @Test
     void testAIC() {
@@ -565,7 +574,7 @@ final class InnerClassTest {
         assert err.message =~ 'Could not find matching constructor for: A\\$B\\(Class\\)'
     }
 
-    @Test @NotYetImplemented
+    @NotYetImplemented @Test
     void testNonStaticInnerClass3() {
         shouldFail CompilationFailedException, '''
             class A {
@@ -577,7 +586,7 @@ final class InnerClassTest {
     }
 
     // GROOVY-9781
-    @Test @NotYetImplemented
+    @NotYetImplemented @Test
     void testNonStaticInnerClass4() {
         assertScript '''
             class A {
@@ -1462,17 +1471,14 @@ final class InnerClassTest {
     }
 
     // GROOVY-12574
-    @ParameterizedTest
-    @ValueSource(strings=['CompileDynamic','TypeChecked','CompileStatic'])
+    @CompileModesTest
     void testUsageOfOuterMethod12(String mode) {
         assertScript """
-            import groovy.transform.*
-
             class Base {
                 String base() { 'base:' + getClass().simpleName }
                 String getProp() { 'prop:' + getClass().simpleName }
             }
-            @$mode
+            $mode
             class Outer {
                 class Mid extends Base {
                     class Inner {
@@ -1481,7 +1487,7 @@ final class InnerClassTest {
                         String d = base() + ',' + prop
                         String c = { -> base() + ',' + prop }()
                         Inner() {}
-                        @CompileDynamic Inner(String x) {}
+                        @groovy.transform.CompileDynamic Inner(String x) {}
                         List<String> values() { [direct(), closure(), d, c] }
                     }
                 }
@@ -1495,12 +1501,10 @@ final class InnerClassTest {
         """
 
         assertScript """
-            import groovy.transform.*
-
             class Base {
                 String base() { 'base:' + getClass().simpleName }
             }
-            @$mode
+            $mode
             class Outer extends Base {
                 class Mid extends Base {
                     class Inner {
@@ -2165,14 +2169,14 @@ final class InnerClassTest {
     // GROOVY-7762
     @Test
     void testResolveInnerOfSuperType12() {
-        assertScript '''
-            class C extends gls.innerClass.Parent8914 {
+        assertScript """
+            class C extends ${Parent8914.canonicalName} {
                 C() {
                     def innerOfSuper = new Nested()
                 }
             }
             new C()
-        '''
+        """
     }
 
     // GROOVY-9866
@@ -2671,12 +2675,13 @@ final class InnerClassTest {
     @Test
     void testInnerClassOfInterfaceIsStatic() {
         assertScript '''
-            import java.lang.reflect.Modifier
+            import static java.lang.reflect.Modifier.*
+
             interface Baz {
                 class Pls {}
             }
 
-            assert Modifier.isStatic(Baz.Pls.modifiers)
+            assert isStatic(Baz.Pls.modifiers)
         '''
     }
 
@@ -2700,15 +2705,14 @@ final class InnerClassTest {
     // GROOVY-8914
     @Test
     void testNestedClassInheritingFromNestedClass() {
-        // control
-        assert new Outer8914.Nested()
+        assert new Outer8914.Nested() // control
 
-        assertScript '''
+        assertScript """
             class OuterReferencingPrecompiled {
-                static class Nested extends gls.innerClass.Parent8914.Nested {}
+                static class Nested extends ${Parent8914.Nested.canonicalName} {}
             }
             assert new OuterReferencingPrecompiled.Nested()
-        '''
+        """
     }
 
     // GROOVY-6809
@@ -2841,24 +2845,23 @@ final class InnerClassTest {
     }
 
     // GROOVY-12512: 'Outer.this' needs an enclosing instance at every level
-    @Test
-    void testOuterThisWithoutEnclosingInstance() {
-        [
-            'static m() { new Runnable() { void run() { Box.this.pm() } }.run() }'              : 'Box$1',
-            'static m() { def c = { -> new Runnable() { void run() { Box.this.pm() } } }; c() }' : 'Box$1',
-            'static Runnable r = new Runnable() { void run() { Box.this.pm() } }'               : 'Box$1',
-            'static class N { def m() { Box.this.pm() } }'                                      : 'Box$N',
-            'static class N { class In { def m() { Box.this.pm() } } }'                         : 'Box$N',
-            'Box(Runnable r) {}; Box() { this(new Runnable() { void run() { Box.this.pm() } }) }' : 'Box$1',
-        ].each { code, where ->
-            def err = shouldFail CompilationFailedException, '''
-                class Box {
-                    String pm() { 'pm' }
-                    CODE
-                }
-            '''.replace('CODE', code)
-            assert err.message.contains("The usage of 'Class.this' and 'Class.super' is not allowed in '$where', which has no enclosing instance of 'Box'.")
-        }
+    @ParameterizedTest
+    @CsvSource([
+        'static m() { new Runnable() { void run() { Box.this.pm() } }.run() }               ,Box$1',
+        'static m() { def c = { -> new Runnable() { void run() { Box.this.pm() } } }; c() } ,Box$1',
+        'static Runnable r = new Runnable() { void run() { Box.this.pm() } }                ,Box$1',
+        'static class N { def m() { Box.this.pm() } }                                       ,Box$N',
+        'static class N { class In { def m() { Box.this.pm() } } }                          ,Box$N',
+        'Box(Runnable r) {}; Box() { this(new Runnable() { void run() { Box.this.pm() } }) },Box$1'
+    ])
+    void testOuterThisWithoutEnclosingInstance(String code, String where) {
+        def err = shouldFail CompilationFailedException, '''
+            class Box {
+                String pm() { 'pm' }
+                CODE
+            }
+        '''.replace('CODE', code.trim())
+        assert err.message.contains("The usage of 'Class.this' and 'Class.super' is not allowed in '$where', which has no enclosing instance of 'Box'.")
     }
 
     // GROOVY-12512: an argument of this(...) or super(...) is in a static context
