@@ -22,8 +22,7 @@ import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
 /**
- * This class defines new Java 6 specific static groovy methods which extend the normal
- * JDK classes inside the Groovy environment.
+ * Static extension methods for {@link ScriptEngineManager}.
  */
 public class ScriptStaticExtensions {
     /**

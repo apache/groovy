@@ -2927,11 +2927,8 @@ public abstract class StaticTypeCheckingSupport {
     //--------------------------------------------------------------------------
 
     /**
-     * A DGM-like class which adds support for method calls which are handled by
-     * the Groovy compiler.
-     */
-    /**
-     * DGM-like helpers for object arrays.
+     * DGM-like helpers for object arrays, registered with the static type checker
+     * as an extension class.
      */
     public static class ObjectArrayStaticTypesHelper {
         /**

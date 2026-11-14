@@ -50,7 +50,7 @@ import java.lang.annotation.Target;
  * </pre>
  * Further information such as where artifacts are downloaded to, how to add additional resolvers,
  * how to customise artifact resolution etc., can be found on the Grape documentation page:
- * <a href="http://groovy-lang.org/grape.html">http://groovy-lang.org/grape.html</a>.
+ * <a href="https://groovy-lang.org/grape.html">https://groovy-lang.org/grape.html</a>.
  */
 @Documented
 @Retention(RetentionPolicy.SOURCE)

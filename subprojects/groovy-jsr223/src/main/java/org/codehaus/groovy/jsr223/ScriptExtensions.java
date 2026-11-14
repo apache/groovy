@@ -28,9 +28,8 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * This class defines new Java 6 specific groovy methods which extend the normal
- * JDK classes inside the Groovy environment. Static methods are used with the
- * first parameter the destination class.
+ * Extension methods for the {@code javax.script} types. Static methods are used,
+ * with the first parameter the destination class.
  */
 public class ScriptExtensions {
     /**

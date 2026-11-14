@@ -999,7 +999,7 @@ public class GroovyClassLoader extends URLClassLoader {
             // Do not use URL.equals.  It uses the network to resolve names and compares ip addresses!
             // That is a violation of RFC and just plain evil.
             // http://michaelscharf.blogspot.com/2006/11/javaneturlequals-and-hashcode-make.html
-            // http://docs.oracle.com/javase/7/docs/api/java/net/URL.html#equals(java.lang.Object)
+            // https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/net/URL.html#equals(java.lang.Object)
             // "Since hosts comparison requires name resolution, this operation is a blocking operation.
             // Note: The defined behavior for equals is known to be inconsistent with virtual hosting in HTTP."
             try {

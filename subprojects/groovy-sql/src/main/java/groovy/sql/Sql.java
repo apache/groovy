@@ -2524,7 +2524,7 @@ public class Sql implements AutoCloseable {
         try {
             rows = rows(sql, 1, 1, null);
         }
-        //should be SQLFeatureNotSupportedException instead once we move to Java 1.6
+        // A driver that rejects the limit arguments throws SQLException; repeat the query without them.
         catch (SQLException featureNotSupportedException) {
             rows = rows(sql);
         }
@@ -2596,7 +2596,7 @@ public class Sql implements AutoCloseable {
         try {
             rows = rows(sql, params, 1, 1, null);
         }
-        //should be SQLFeatureNotSupportedException instead once we move to Java 1.6
+        // A driver that rejects the limit arguments throws SQLException; repeat the query without them.
         catch (SQLException featureNotSupportedException) {
             rows = rows(sql, params);
         }

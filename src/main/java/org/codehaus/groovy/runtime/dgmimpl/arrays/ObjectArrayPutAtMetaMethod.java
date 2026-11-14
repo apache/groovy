@@ -25,6 +25,7 @@ import org.codehaus.groovy.runtime.typehandling.ShortTypeHandling;
 
 import static org.codehaus.groovy.reflection.ReflectionCache.OBJECT_ARRAY_CLASS;
 
+/** {@code putAt} for an {@code Object[]}. */
 public class ObjectArrayPutAtMetaMethod extends ArrayPutAtMetaMethod {
 
     @Override

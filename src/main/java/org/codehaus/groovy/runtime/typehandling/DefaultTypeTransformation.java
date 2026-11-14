@@ -913,8 +913,9 @@ public class DefaultTypeTransformation {
 
     /**
      * Determines whether the value object is a Class object representing a
-     * subclass of java.lang.Enum. Uses class name check to avoid breaking on
-     * pre-Java 5 JREs.
+     * subclass of java.lang.Enum. Walks superclass names and compares them with
+     * {@code java.lang.Enum}. {@code Enum} has been in the platform since Java 5;
+     * this method keeps the name comparison.
      *
      * @param value an object
      * @return true if the object is an Enum

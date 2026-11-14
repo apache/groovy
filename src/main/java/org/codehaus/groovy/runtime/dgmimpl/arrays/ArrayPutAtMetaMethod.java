@@ -22,6 +22,7 @@ import org.codehaus.groovy.reflection.CachedClass;
 
 import static org.codehaus.groovy.reflection.ReflectionCache.OBJECT_CLASS;
 
+/** {@code putAt} on an array, with an {@code int} index and an {@code Object} value. */
 public abstract class ArrayPutAtMetaMethod extends ArrayMetaMethod {
     private static final CachedClass[] PARAM_TYPES = {INTEGER_CLASS, OBJECT_CLASS};
 

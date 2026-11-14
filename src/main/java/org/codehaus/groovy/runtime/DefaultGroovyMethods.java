@@ -9219,7 +9219,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             return first;
 
         final Object[] tail = new Object[closures.length - 1];
-        System.arraycopy(closures, 1, tail, 0, closures.length - 1); // Arrays.copyOfRange only since JDK 1.6
+        System.arraycopy(closures, 1, tail, 0, closures.length - 1);
 
         // inject([:]) { a,e {@code ->} a {@code <<} [(e.key): e.value.groupBy(tail)] }
         Map<Object, Map> acc = new LinkedHashMap<>();
@@ -9358,7 +9358,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             return first;
 
         final Object[] tail = new Object[closures.length - 1];
-        System.arraycopy(closures, 1, tail, 0, closures.length - 1); // Arrays.copyOfRange only since JDK 1.6
+        System.arraycopy(closures, 1, tail, 0, closures.length - 1);
 
         Map<Object, Map> acc = new LinkedHashMap<>();
         for (Map.Entry<Object, Map> item: first.entrySet()) {

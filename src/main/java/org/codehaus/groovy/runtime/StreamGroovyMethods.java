@@ -47,6 +47,9 @@ import java.util.stream.LongStream;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
+/**
+ * Groovy methods added to {@link Stream} and the related primitive streams.
+ */
 public class StreamGroovyMethods {
 
     private StreamGroovyMethods() {
