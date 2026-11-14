@@ -1103,7 +1103,7 @@ public class AsmClassGenerator extends ClassGenerator {
     /**
      * Generates byte code for constants.
      *
-     * @see <a href="http://java.sun.com/docs/books/vmspec/2nd-edition/html/ClassFile.doc.html#14152">Class field types</a>
+     * @see <a href="https://docs.oracle.com/javase/specs/jvms/se17/html/jvms-4.html#jvms-4.4">The Constant Pool</a>
      */
     @Override
     public void visitConstantExpression(final ConstantExpression expression) {

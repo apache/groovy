@@ -21,6 +21,7 @@ package org.codehaus.groovy.runtime.dgmimpl.arrays;
 import org.codehaus.groovy.reflection.CachedClass;
 import org.codehaus.groovy.reflection.ReflectionCache;
 
+/** {@code getAt} for a {@code byte[]}. */
 public class ByteArrayGetAtMetaMethod extends ArrayGetAtMetaMethod {
     private static final CachedClass ARRAY_CLASS = ReflectionCache.getCachedClass(byte[].class);
 

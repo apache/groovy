@@ -51,17 +51,6 @@ public class CharSequenceValue implements Value, CharSequence {
     private Object value;
 
     /**
-     * Creates a value view over a character buffer slice.
-     *
-     * @param chop whether to copy the slice immediately
-     * @param type token type
-     * @param startIndex slice start
-     * @param endIndex slice end
-     * @param buffer backing buffer
-     * @param encoded whether string decoding should be applied
-     * @param dateHandling what a date-like string should become
-     */
-    /**
      * Retained so that the boolean form of this constructor keeps working.
      *
      * @param chop whether to eagerly copy the slice out of the buffer

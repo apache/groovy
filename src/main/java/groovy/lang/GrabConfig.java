@@ -72,7 +72,7 @@ import java.lang.annotation.Target;
  * </pre>
  * <p>
  * Further information about customising grape behavior can be found on the Grape documentation page:
- * <a href="http://groovy-lang.org/grape.html">http://groovy-lang.org/grape.html</a>.
+ * <a href="https://groovy-lang.org/grape.html">https://groovy-lang.org/grape.html</a>.
  */
 @Documented
 @Retention(RetentionPolicy.SOURCE)

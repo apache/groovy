@@ -21,6 +21,7 @@ package org.codehaus.groovy.runtime.dgmimpl;
 import org.apache.groovy.lang.annotation.GroovyABI;
 import org.codehaus.groovy.runtime.typehandling.NumberMath;
 
+/** Number {@code minus} implemented through {@link NumberMath}. */
 public final class NumberNumberMinus extends NumberNumberMetaMethod {
     @Override
     public String getName() {

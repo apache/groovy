@@ -27,6 +27,9 @@ import groovy.lang.MetaMethod;
 
 import java.lang.reflect.Method;
 
+/**
+ * A delegating meta-class that can replace the meta-class of one instance on demand.
+ */
 public class HandleMetaClass extends DelegatingMetaClass {
     private Object object;
     private static final Object NONE = new Object();

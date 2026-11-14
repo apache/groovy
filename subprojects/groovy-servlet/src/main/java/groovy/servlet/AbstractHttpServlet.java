@@ -319,10 +319,7 @@ public abstract class AbstractHttpServlet extends HttpServlet implements Resourc
             uri += info;
         }
 
-        /*
-         * TODO : Enable auto ".groovy" extension replacing here!
-         * http://cvs.groovy.codehaus.org/viewrep/groovy/groovy/groovy-core/src/main/groovy/servlet/GroovyServlet.java?r=1.10#l259
-         */
+        // TODO: optionally rewrite a URI that has no extension so that it ends in ".groovy".
 
         return applyResourceNameMatcher(uri);
     }

@@ -18,6 +18,7 @@
  */
 package org.codehaus.groovy.runtime.dgmimpl.arrays;
 
+/** {@code getAt} on an array, with an {@code int} index. */
 public abstract class ArrayGetAtMetaMethod extends ArrayMetaMethod {
 
     protected ArrayGetAtMetaMethod() {

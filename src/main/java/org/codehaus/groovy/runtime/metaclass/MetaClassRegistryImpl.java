@@ -223,12 +223,6 @@ public class MetaClassRegistryImpl implements MetaClassRegistry {
     }
 
     /**
-     * Looks for a class called 'groovy.runtime.metaclass.CustomMetaClassCreationHandle' and if it exists uses it as the MetaClassCreationHandle
-     * otherwise uses the default
-     *
-     * @see groovy.lang.MetaClassRegistry.MetaClassCreationHandle
-     */
-    /**
      * Detects when the concurrent API classes appear in more than one
      * classpath location — typically when both Groovy core and the
      * standalone groovy-concurrent-java jar are present. Logs a warning

@@ -77,7 +77,7 @@ abstract class RootPaneContainerFactory extends AbstractFactory {
         builder.context.defaultButtonDelegate =
             builder.addAttributeDelegate {myBuilder, node, myAttributes ->
                 if ((node instanceof JButton) && (builder.containingWindows[-1] == container)) {
-                    // in Java 6 use descending iterator
+                    // Walk to the end of the context list, then step back to this window.
                     ListIterator li = builder.contexts.listIterator()
                     Map context
                     while (li.hasNext()) context = li.next()

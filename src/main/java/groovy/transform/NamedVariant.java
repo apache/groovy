@@ -103,6 +103,9 @@ import java.lang.annotation.Target;
  * but the {@link VisibilityOptions} annotation can be added to customize the visibility. You could have the
  * annotated method/constructor private for instance but have the generated one be public.
  * <p>
+ * A parameter default is used only when the named-argument map has no entry for that name.
+ * A value that is present is passed through, including {@code 0}, {@code false}, and {@code ""}.
+ * <p>
  * Joint compilation note: the variant exposed to Java callers in the same compilation unit is the
  * simple all-Map form ({@code returnType methodName(Map namedArgs)}, or {@code ClassName(Map)} for
  * constructors). Mixed configurations using {@code @NamedParam} or {@code @NamedDelegate} alongside

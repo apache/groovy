@@ -245,11 +245,8 @@ public class MockProxyMetaClass extends ProxyMetaClass {
     }
 
     /**
-     * Unlike general impl in superclass, ctors are not intercepted but relayed
-     * unless interceptConstruction is set.
-     */
-    /**
      * Intercepts or delegates constructor invocation depending on {@link #interceptConstruction}.
+     * Unlike the superclass, constructors are relayed unless interception is enabled.
      *
      * @param arguments the constructor arguments
      * @return the constructed instance or interceptor-supplied replacement

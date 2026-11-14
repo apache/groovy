@@ -49,6 +49,9 @@ import java.util.logging.Logger;
 
 import static org.codehaus.groovy.reflection.stdclasses.CachedSAMClass.getSAMMethod;
 
+/**
+ * Helpers for choosing a meta-method and for the argument-distance used by that choice.
+ */
 public class MetaClassHelper {
 
     public static final Object[] EMPTY_ARRAY = {};

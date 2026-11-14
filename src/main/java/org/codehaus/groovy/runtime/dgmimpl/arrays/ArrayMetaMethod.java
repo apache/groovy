@@ -25,6 +25,7 @@ import org.codehaus.groovy.reflection.ReflectionCache;
 
 import java.lang.reflect.Modifier;
 
+/** Shared meta-method base for array {@code getAt} and {@code putAt}. */
 public abstract class ArrayMetaMethod extends MetaMethod {
     protected static final CachedClass   INTEGER_CLASS = ReflectionCache.getCachedClass(Integer.class);
     protected static final CachedClass[] INTEGER_CLASS_ARR = {INTEGER_CLASS};
