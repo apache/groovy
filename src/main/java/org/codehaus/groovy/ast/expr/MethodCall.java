@@ -26,8 +26,31 @@ import org.codehaus.groovy.ast.ASTNode;
  * @since 2.1.0
  */
 public interface MethodCall {
+    /**
+     * Returns the receiver of the call.
+     *
+     * @return the receiver node
+     */
     ASTNode getReceiver();
+
+    /**
+     * Returns the method name as source text.
+     *
+     * @return the name, or null when the call has no constant name
+     */
     String getMethodAsString();
+
+    /**
+     * Returns the argument expression.
+     *
+     * @return the arguments
+     */
     Expression getArguments();
+
+    /**
+     * Returns the source text of the call.
+     *
+     * @return the call text
+     */
     String getText();
 }
