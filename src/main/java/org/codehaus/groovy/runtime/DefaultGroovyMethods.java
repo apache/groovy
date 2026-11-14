@@ -2184,8 +2184,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
          * Takes the next chop size and returns up to that many elements from the source. The list is shorter
          * when the source runs out before that size is filled.
          *
+         * Throws {@code NoSuchElementException} if {@link #hasNext()} is false.
          * @return the next chopped list of source elements
-         * @throws NoSuchElementException if {@link #hasNext()} is false
          */
         @Override
         public List<T> next() {
@@ -2201,7 +2201,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         /**
          * ChopIterator does not support removal.
          *
-         * @throws UnsupportedOperationException always
+         * Throws {@code UnsupportedOperationException}.
          */
         @Override
         public void remove() {
@@ -2528,8 +2528,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         /**
          * Returns a copy of the next collated sublist.
          *
+         * Throws {@code NoSuchElementException} when the iterator has been exhausted.
          * @return the next group of source elements
-         * @throws NoSuchElementException when the iterator has been exhausted
          */
         @Override
         public List<T> next() {
@@ -2545,7 +2545,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         /**
          * CollateIterator does not support removal.
          *
-         * @throws UnsupportedOperationException always
+         * Throws {@code UnsupportedOperationException}.
          */
         @Override
         public void remove() {
@@ -2738,7 +2738,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         /**
          * CollectIterator does not support removal.
          *
-         * @throws UnsupportedOperationException always
+         * Throws {@code UnsupportedOperationException}.
          */
         @Override
         public void remove() {
@@ -2778,7 +2778,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         /**
          * CollectingFunctionIterator does not support removal.
          *
-         * @throws UnsupportedOperationException always
+         * Throws {@code UnsupportedOperationException}.
          */
         @Override
         public void remove() {
@@ -3132,7 +3132,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         /**
          * CollectEntriesIterator does not support removal.
          *
-         * @throws UnsupportedOperationException always
+         * Throws {@code UnsupportedOperationException}.
          */
         @Override
         public void remove() {
@@ -3834,8 +3834,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
          * Returns the next buffered element. When the buffer runs dry, later source elements are projected
          * until one of them contributes a value.
          *
+         * Throws {@code NoSuchElementException} when no projected element remains.
          * @return the next flattened element
-         * @throws NoSuchElementException when no projected element remains
          */
         @Override
         public T next() {
@@ -3861,7 +3861,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         /**
          * CollectManyIterator does not support removal.
          *
-         * @throws UnsupportedOperationException always
+         * Throws {@code UnsupportedOperationException}.
          */
         @Override
         public void remove() {
@@ -3895,8 +3895,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
          * Returns the next buffered element. When the buffer runs dry, later source elements are projected
          * with the function until one of them contributes a value.
          *
+         * Throws {@code NoSuchElementException} when no projected element remains.
          * @return the next flattened element
-         * @throws NoSuchElementException when no projected element remains
          */
         @Override
         public T next() {
@@ -3922,7 +3922,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         /**
          * CollectManyFunctionIterator does not support removal.
          *
-         * @throws UnsupportedOperationException always
+         * Throws {@code UnsupportedOperationException}.
          */
         @Override
         public void remove() {
@@ -5271,8 +5271,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         /**
          * Returns the next source element that is not one of the dropped trailing elements.
          *
+         * Throws {@code NoSuchElementException} when the kept elements are exhausted.
          * @return the next kept element
-         * @throws NoSuchElementException when the kept elements are exhausted
          */
         @Override
         public E next() {
@@ -5286,7 +5286,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
          * DropRightIterator does not support removal. It reads ahead into a buffer of elements that may still
          * be yielded, so removing from the source would drop the wrong element.
          *
-         * @throws UnsupportedOperationException always
+         * Throws {@code UnsupportedOperationException}.
          */
         @Override
         public void remove() {
@@ -5574,8 +5574,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
          * Returns the buffered first element that failed the drop condition, then later elements from the
          * source. Elements that matched the condition were already skipped.
          *
+         * Throws {@code NoSuchElementException} if {@link #hasNext()} is false.
          * @return the next kept element
-         * @throws NoSuchElementException if {@link #hasNext()} is false
          */
         @Override
         public E next() {
@@ -7066,8 +7066,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         /**
          * Returns the matching element found by the last search and looks ahead for the next match.
          *
+         * Throws {@code NoSuchElementException} when no further match remains.
          * @return the next element accepted by the filter
-         * @throws NoSuchElementException when no further match remains
          */
         @Override
         public T next() {
@@ -7083,7 +7083,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         /**
          * FindAllIterator does not support removal.
          *
-         * @throws UnsupportedOperationException always
+         * Throws {@code UnsupportedOperationException}.
          */
         @Override
         public void remove() {
@@ -7127,8 +7127,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         /**
          * Returns the matching element found by the last search and looks ahead for the next match.
          *
+         * Throws {@code NoSuchElementException} when no further match remains.
          * @return the next element accepted by the predicate
-         * @throws NoSuchElementException when no further match remains
          */
         @Override
         public T next() {
@@ -7144,7 +7144,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         /**
          * FindingAllPredicateIterator does not support removal.
          *
-         * @throws UnsupportedOperationException always
+         * Throws {@code UnsupportedOperationException}.
          */
         @Override
         public void remove() {
@@ -7444,8 +7444,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         /**
          * Returns that zero-based source index and continues the search after it.
          *
+         * Throws {@code NoSuchElementException} when no further match remains.
          * @return the next matching index
-         * @throws NoSuchElementException when no further match remains
          */
         @Override
         public Number next() {
@@ -7460,7 +7460,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         /**
          * FindIndexValuesIterator does not support removal.
          *
-         * @throws UnsupportedOperationException always
+         * Throws {@code UnsupportedOperationException}.
          */
         @Override
         public void remove() {
@@ -8003,8 +8003,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
          * Returns the buffered non-null transformed value and searches for the next one. Null results are
          * skipped.
          *
+         * Throws {@code NoSuchElementException} when no further result remains.
          * @return the next non-null transformed value
-         * @throws NoSuchElementException when no further result remains
          */
         @Override
         public T next() {
@@ -8020,7 +8020,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         /**
          * FindResultsIterator does not support removal.
          *
-         * @throws UnsupportedOperationException always
+         * Throws {@code UnsupportedOperationException}.
          */
         @Override
         public void remove() {
@@ -8307,8 +8307,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
          * expanded. Empty optionals are skipped when optional flattening is enabled, and a flatten-using
          * closure may expand a value further.
          *
+         * Throws {@code NoSuchElementException} if {@link #hasNext()} is false.
          * @return the next flattened value
-         * @throws NoSuchElementException if {@link #hasNext()} is false
          */
         @Override
         public V next() {
@@ -8321,7 +8321,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         /**
          * FlattenIterator does not support removal.
          *
-         * @throws UnsupportedOperationException always
+         * Throws {@code UnsupportedOperationException}.
          */
         @Override
         public void remove() {
@@ -9405,8 +9405,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         /**
          * Returns the element accepted by the last {@code isCase} test and looks ahead for the next match.
          *
+         * Throws {@code NoSuchElementException} when no further match remains.
          * @return the next element selected by the filter
-         * @throws NoSuchElementException when no further match remains
          */
         @Override
         public T next() {
@@ -9422,7 +9422,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         /**
          * GrepIterator does not support removal.
          *
-         * @throws UnsupportedOperationException always
+         * Throws {@code UnsupportedOperationException}.
          */
         @Override
         public void remove() {
@@ -10169,8 +10169,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         /**
          * Returns a tuple of the current index and the next source element, then increments the index.
          *
+         * Throws {@code NoSuchElementException} if {@link #hasNext()} is false.
          * @return the next (index, element) pair
-         * @throws NoSuchElementException if {@link #hasNext()} is false
          */
         @Override
         public Tuple2<Integer, E> next() {
@@ -10295,8 +10295,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
          * Returns the prefetched element and prefetches the following one, so every source element except the
          * last is yielded.
          *
+         * Throws {@code NoSuchElementException} when the remaining element is the last one.
          * @return the next element, excluding the final source element
-         * @throws NoSuchElementException when the remaining element is the last one
          */
         @Override
         public E next() {
@@ -10310,7 +10310,6 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
          * Throws {@link NoSuchElementException} when this iterator is exhausted. Otherwise discards the
          * prefetched element, so it is not yielded, without calling {@code remove} on the source iterator.
          *
-         * @throws NoSuchElementException if the iterator is exhausted
          */
         @Override
         public void remove() {
@@ -10896,8 +10895,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
          * Folds the next source element into the running value by calling the closure with the current value
          * and that element, then returns the updated value.
          *
+         * Throws {@code NoSuchElementException} if {@link #hasNext()} is false.
          * @return the running value after absorbing the next element
-         * @throws NoSuchElementException if {@link #hasNext()} is false
          */
         @SuppressWarnings("unchecked")
         @Override
@@ -10913,7 +10912,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         /**
          * InjectAllIterator does not support removal.
          *
-         * @throws UnsupportedOperationException always
+         * Throws {@code UnsupportedOperationException}.
          */
         @Override
         public void remove() {
@@ -10946,8 +10945,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
          * Folds the next source element into the running value with the function and returns the updated
          * value.
          *
+         * Throws {@code NoSuchElementException} if {@link #hasNext()} is false.
          * @return the running value after absorbing the next element
-         * @throws NoSuchElementException if {@link #hasNext()} is false
          */
         @Override
         public U next() {
@@ -10959,7 +10958,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         /**
          * InjectAllFunctionIterator does not support removal.
          *
-         * @throws UnsupportedOperationException always
+         * Throws {@code UnsupportedOperationException}.
          */
         @Override
         public void remove() {
@@ -11230,8 +11229,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
          * other iterator when that iterator can supply it. When {@code includeRemainder} is false, iteration
          * stops once a turn cannot be filled.
          *
+         * Throws {@code NoSuchElementException} if {@link #hasNext()} is false.
          * @return the next interleaved element
-         * @throws NoSuchElementException if {@link #hasNext()} is false
          */
         @Override
         public T next() {
@@ -11255,7 +11254,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         /**
          * InterleaveIterator does not support removal.
          *
-         * @throws UnsupportedOperationException always
+         * Throws {@code UnsupportedOperationException}.
          */
         @Override
         public void remove() {
@@ -12149,7 +12148,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             /**
              * This iterator does not support removal. An {@link Enumeration} provides no removal operation.
              *
-             * @throws UnsupportedOperationException always
+             * Throws {@code UnsupportedOperationException}.
              */
             @Override
             public void remove() {
@@ -15342,7 +15341,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         /**
          * RepeatIterator does not support removal.
          *
-         * @throws UnsupportedOperationException always
+         * Throws {@code UnsupportedOperationException}.
          */
         @Override
         public void remove() {
@@ -15353,8 +15352,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
          * Returns the next element of the current pass. When that pass is exhausted and another repetition is
          * still due, replays the elements saved from the first pass.
          *
+         * Throws {@code NoSuchElementException} when no repetition remains.
          * @return the next element of the current or replayed pass
-         * @throws NoSuchElementException when no repetition remains
          */
         @Override
         public T next() {
@@ -17311,8 +17310,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         /**
          * Returns the next source element and decrements the remaining count.
          *
+         * Throws {@code NoSuchElementException} when the requested count is already exhausted.
          * @return the next taken element
-         * @throws NoSuchElementException when the requested count is already exhausted
          */
         @Override
         public E next() {
@@ -17709,8 +17708,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
          * Returns the prefetched element and prefetches the following candidate, stopping once the condition
          * fails.
          *
+         * Throws {@code NoSuchElementException} when the condition has already failed.
          * @return the next element that satisfied the condition
-         * @throws NoSuchElementException when the condition has already failed
          */
         @Override
         public E next() {
@@ -17724,7 +17723,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
          * TakeWhileIterator does not support removal. It prefetches the next candidate, so removing from the
          * source would drop the wrong element.
          *
-         * @throws UnsupportedOperationException always
+         * Throws {@code UnsupportedOperationException}.
          */
         @Override
         public void remove() {
@@ -17870,8 +17869,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
          * argument, when the zero-based index is divisible by {@code every}, so the first element is always
          * included.
          *
+         * Throws {@code NoSuchElementException} if {@link #hasNext()} is false.
          * @return the next source element
-         * @throws NoSuchElementException if {@link #hasNext()} is false
          */
         @Override
         public T next() {
@@ -19152,8 +19151,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         /**
          * Returns the next source element that was not already accepted into the seen set.
          *
+         * Throws {@code NoSuchElementException} when no further unique element remains.
          * @return the next unique element
-         * @throws NoSuchElementException when no further unique element remains
          */
         @Override
         public E next() {
@@ -19167,7 +19166,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
          * ToUniqueIterator does not support removal. It prefetches the next unique element, so removing from
          * the source would drop the wrong element.
          *
-         * @throws UnsupportedOperationException always
+         * Throws {@code UnsupportedOperationException}.
          */
         @Override
         public void remove() {
@@ -21020,8 +21019,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         /**
          * Returns a tuple of the next source element and the current index, then increments the index.
          *
+         * Throws {@code NoSuchElementException} if {@link #hasNext()} is false.
          * @return the next (element, index) pair
-         * @throws NoSuchElementException if {@link #hasNext()} is false
          */
         @Override
         public Tuple2<E, Integer> next() {
@@ -21110,8 +21109,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         /**
          * Returns a tuple of the next element from each iterator.
          *
+         * Throws {@code NoSuchElementException} if {@link #hasNext()} is false.
          * @return the next pair
-         * @throws NoSuchElementException if {@link #hasNext()} is false
          */
         @Override
         public Tuple2<U, V> next() {
@@ -21122,7 +21121,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         /**
          * ZipIterator does not support removal.
          *
-         * @throws UnsupportedOperationException always
+         * Throws {@code UnsupportedOperationException}.
          */
         @Override
         public void remove() {
@@ -21209,8 +21208,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
          * Returns a tuple of the next left element, or the left default when the left iterator is exhausted,
          * and the next right element, or the right default.
          *
+         * Throws {@code NoSuchElementException} if {@link #hasNext()} is false.
          * @return the next pair, using a default for the exhausted side
-         * @throws NoSuchElementException if {@link #hasNext()} is false
          */
         @Override
         public Tuple2<U, V> next() {
@@ -21222,7 +21221,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         /**
          * ZipAllIterator does not support removal.
          *
-         * @throws UnsupportedOperationException always
+         * Throws {@code UnsupportedOperationException}.
          */
         @Override
         public void remove() {
@@ -21331,7 +21330,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             /**
              * This iterator does not support removal.
              *
-             * @throws UnsupportedOperationException always
+             * Throws {@code UnsupportedOperationException}.
              */
             @Override
             public void remove() {
@@ -21368,8 +21367,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
          * Returns the pair of the previous element and the next source element, then slides the window
          * forward.
          *
+         * Throws {@code NoSuchElementException} if {@link #hasNext()} is false.
          * @return the next adjacent pair
-         * @throws NoSuchElementException if {@link #hasNext()} is false
          */
         @Override
         public Tuple2<T, T> next() {
@@ -21383,7 +21382,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         /**
          * ZipWithNextIterator does not support removal.
          *
-         * @throws UnsupportedOperationException always
+         * Throws {@code UnsupportedOperationException}.
          */
         @Override
         public void remove() {
@@ -21534,8 +21533,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
          * Returns the next run of adjacent elements for which the predicate accepts each successive pair. The
          * element that breaks the run is kept as the start of the following run.
          *
+         * Throws {@code NoSuchElementException} when no pending element remains.
          * @return the next run
-         * @throws NoSuchElementException when no pending element remains
          */
         @Override
         public List<T> next() {
@@ -21561,7 +21560,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         /**
          * GroupConsecutiveIterator does not support removal.
          *
-         * @throws UnsupportedOperationException always
+         * Throws {@code UnsupportedOperationException}.
          */
         @Override
         public void remove() {
@@ -21600,8 +21599,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
          * Returns the next run of adjacent elements whose keys compare equal under Groovy's coerced equality.
          * Each element's key is computed once and reused when that element starts the following run.
          *
+         * Throws {@code NoSuchElementException} when no pending element remains.
          * @return the next run
-         * @throws NoSuchElementException when no pending element remains
          */
         @Override
         public List<T> next() {
@@ -21629,7 +21628,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         /**
          * GroupConsecutiveByKeyIterator does not support removal.
          *
-         * @throws UnsupportedOperationException always
+         * Throws {@code UnsupportedOperationException}.
          */
         @Override
         public void remove() {

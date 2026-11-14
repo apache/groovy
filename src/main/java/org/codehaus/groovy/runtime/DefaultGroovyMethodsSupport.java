@@ -155,10 +155,11 @@ public class DefaultGroovyMethodsSupport {
     /**
      * Converts a possibly negative index to a real index into the array.
      *
+     * Throws {@code ArrayIndexOutOfBoundsException} when {@code i} is negative and its magnitude
+     * exceeds {@code size}.
      * @param i    the unnormalized index
      * @param size the array size
      * @return the normalised index
-     * @throws ArrayIndexOutOfBoundsException when {@code i} is negative and its magnitude exceeds {@code size}
      */
     protected static int normaliseIndex(int i, int size) {
         int temp = i;
@@ -571,11 +572,10 @@ public class DefaultGroovyMethodsSupport {
      * Writes a UTF-16 byte-order mark to {@code writer} when {@code charset}
      * names {@code UTF-16BE} or {@code UTF-16LE}. Any other charset name
      * writes nothing. The name is resolved with {@link Charset#forName(String)}.
+     * An illegal name or an unsupported charset fails in that call.
      *
      * @param writer destination for the mark
      * @param charset charset name to test
-     * @throws java.nio.charset.IllegalCharsetNameException when {@code charset} is not a legal charset name
-     * @throws java.nio.charset.UnsupportedCharsetException when no charset is available for that name
      * @throws IOException when writing the mark fails
      */
     protected static void writeUTF16BomIfRequired(final Writer writer, final String charset) throws IOException {
@@ -603,11 +603,10 @@ public class DefaultGroovyMethodsSupport {
      * Writes a UTF-16 byte-order mark to {@code stream} when {@code charset}
      * names {@code UTF-16BE} or {@code UTF-16LE}. Any other charset name
      * writes nothing. The name is resolved with {@link Charset#forName(String)}.
+     * An illegal name or an unsupported charset fails in that call.
      *
      * @param stream destination for the mark
      * @param charset charset name to test
-     * @throws java.nio.charset.IllegalCharsetNameException when {@code charset} is not a legal charset name
-     * @throws java.nio.charset.UnsupportedCharsetException when no charset is available for that name
      * @throws IOException when writing the mark fails
      */
     protected static void writeUTF16BomIfRequired(final OutputStream stream, final String charset) throws IOException {

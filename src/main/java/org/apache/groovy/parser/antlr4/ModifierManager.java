@@ -57,12 +57,11 @@ class ModifierManager {
     /**
      * Checks {@code modifierNodeList} and keeps an unmodifiable copy.
      * A modifier that is not repeatable may occur once, and the list may
-     * contain only one visibility modifier.
+     * contain only one visibility modifier. Fails compilation when a
+     * non-repeatable modifier is repeated or a second visibility modifier appears.
      *
      * @param astBuilder builds the parsing failure raised when the list is illegal
      * @param modifierNodeList modifiers and annotations for one declaration, in source order
-     * @throws org.codehaus.groovy.control.CompilationFailedException when a non-repeatable modifier is repeated,
-     *         or a second visibility modifier appears
      */
     public ModifierManager(AstBuilder astBuilder, List<ModifierNode> modifierNodeList) {
         this.astBuilder = astBuilder;
@@ -104,10 +103,10 @@ class ModifierManager {
     /**
      * Rejects a held modifier that is illegal on a method.
      * {@code volatile} is rejected. {@code transient} is allowed here
-     * and is removed later for properties.
+     * and is removed later for properties. Fails compilation when a held
+     * modifier is not allowed on a method.
      *
      * @param methodNode method the failure is reported against
-     * @throws org.codehaus.groovy.control.CompilationFailedException when a held modifier is not allowed on a method
      */
     public void validate(MethodNode methodNode) {
         validate(INVALID_MODIFIERS_MAP.get(MethodNode.class), methodNode);
@@ -116,9 +115,9 @@ class ModifierManager {
     /**
      * Rejects a held modifier that is illegal on a constructor:
      * {@code static}, {@code final}, {@code abstract}, or {@code native}.
+     * Fails compilation when one of those modifiers is held.
      *
      * @param constructorNode constructor the failure is reported against
-     * @throws org.codehaus.groovy.control.CompilationFailedException when a held modifier is not allowed on a constructor
      */
     public void validate(ConstructorNode constructorNode) {
         validate(INVALID_MODIFIERS_MAP.get(ConstructorNode.class), constructorNode);

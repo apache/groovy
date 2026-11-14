@@ -653,7 +653,6 @@ class QueryableCollection<T> implements Queryable<T>, Serializable {
      *
      * @param mapper the number to average
      * @return the average
-     * @throws ArithmeticException when no mapped value is non-null
      */
     @Override
     public BigDecimal avg(Function<? super T, ? extends Number> mapper) {
