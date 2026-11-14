@@ -152,8 +152,22 @@ public class ClassNode extends AnnotatedNode {
         }
     }
 
+    /**
+     * Shared zero-length array for call sites that need a type list but have no classes, such as no
+     * superinterfaces or no declared exceptions.
+     */
     public static final ClassNode[] EMPTY_ARRAY = new ClassNode[0];
+    /**
+     * Sentinel type of a {@code this()} constructor call.
+     * The call is recognized by identity with this node, which is a distinct {@code Object} class node and
+     * not the enclosing class.
+     */
     public static final ClassNode THIS = new ClassNode(Object.class);
+    /**
+     * Sentinel type of a {@code super()} constructor call.
+     * The call is recognized by identity with this node, which is a distinct {@code Object} class node and
+     * not the superclass.
+     */
     public static final ClassNode SUPER = new ClassNode(Object.class);
 
     private String name;
@@ -169,12 +183,23 @@ public class ClassNode extends AnnotatedNode {
     private List<PropertyNode> properties;
     private Map<String, FieldNode> fieldIndex;
     private ClassNode superClass;
+    /**
+     * {@code true} when this node was built as a Groovy source class the compiler emits.
+     * Reflection classes, synthetic arrays, and plain references clear the flag.
+     * {@link #setRedirect(ClassNode)} rejects a primary node, and {@link #setModule} stores the module only
+     * while the flag is set.
+     * The flag is not read through a redirect; {@link #isPrimaryClassNode()} follows one.
+     */
     protected boolean isPrimaryNode;
     // TODO: initialize for primary nodes only!
     private List<ClassNode> permittedSubclasses = new ArrayList<>();
     private List<RecordComponentNode> recordComponents = Collections.emptyList();
 
     // use this to synchronize access for the lazy init
+    /**
+     * Lock for the one-time fill-in of members copied from a reflection class.
+     * Subclasses that initialize lazily synchronize on this same object. Each class node has its own lock.
+     */
     protected  final  Object lazyInitLock = new Object();
     // only false when this instance is constructed from a Class
     private volatile boolean lazyInitDone = true;
@@ -195,6 +220,12 @@ public class ClassNode extends AnnotatedNode {
     }
 
     // if not null then this instance is resolved
+    /**
+     * Reflection class this node wraps, or {@code null} for a source class, a placeholder, or an unresolved
+     * array.
+     * {@link #isResolved()} and {@link #getTypeClass()} treat a non-null value as resolved for this
+     * instance before they consult a redirect.
+     */
     protected Class<?> clazz;
     // if not null then this instance is an array
     private ClassNode componentType;
@@ -335,10 +366,30 @@ public class ClassNode extends AnnotatedNode {
         return redirect().isPrimaryNode || (componentType != null && componentType.isPrimaryClassNode());
     }
 
+    /**
+     * Returns a non-primary proxy that redirects to {@link #redirect()}, so generics or type annotations
+     * can be added without mutating the canonical class.
+     * A primitive is returned as {@code this}. Use {@link #getPlainNodeReference(boolean)} to force a
+     * proxy for a primitive.
+     *
+     * @return this node when it is a primitive, otherwise a new redirecting proxy
+     */
     public ClassNode getPlainNodeReference() {
         return getPlainNodeReference(true);
     }
 
+    /**
+     * Builds a non-primary proxy that redirects to {@link #redirect()}.
+     * The proxy keeps this node's own unresolved name, modifiers, and unresolved superclass, and has no
+     * interfaces or mixins of its own; getters that follow the redirect see the canonical class.
+     * An array proxy takes its component type from the redirect, and a recorded outer class type is copied
+     * onto the proxy.
+     * When {@code skipPrimitives} is true and this node is a primitive, {@code this} is returned so the
+     * shared primitive node keeps its identity.
+     *
+     * @param skipPrimitives {@code true} to return a primitive node unchanged
+     * @return {@code this} for a skipped primitive, otherwise a new proxy
+     */
     public ClassNode getPlainNodeReference(boolean skipPrimitives) {
         if (skipPrimitives && ClassHelper.isPrimitiveType(this)) return this;
         ClassNode n = new ClassNode(name, modifiers, superClass, null, null);
@@ -356,31 +407,74 @@ public class ClassNode extends AnnotatedNode {
 
     //
 
+    /**
+     * Returns the module recorded on the resolved class, or {@code null} when {@link #setModule} did not
+     * store one.
+     * The lookup follows {@link #redirect()}.
+     *
+     * @return the owning module, or {@code null}
+     */
     public ModuleNode getModule() {
         return redirect().getNodeMetaData(ModuleNode.class);
     }
 
+    /**
+     * Records the module that owns this source class.
+     * The module is stored as metadata on this node only when {@link #isPrimaryNode} is set; a placeholder
+     * or reflection class ignores the call.
+     * {@link #getModule()} finds it by following the redirect back to this node.
+     *
+     * @param module the module to associate with this primary class
+     */
     public void setModule(ModuleNode module) {
         if (isPrimaryNode) putNodeMetaData(ModuleNode.class, module);
     }
 
+    /**
+     * Returns the compile unit of the module that owns this class.
+     * A redirect is followed. The unit is taken from the module stored by {@link #setModule}, not from
+     * {@link #setCompileUnit}.
+     *
+     * @return the owning compile unit, or {@code null} when the class has no module
+     */
     public CompileUnit getCompileUnit() {
         if (redirect != null) return redirect.getCompileUnit();
         ModuleNode module = getModule();
         return module != null ? module.getUnit() : null;
     }
 
+    /**
+     * Walks the redirect chain and discards {@code cu}.
+     * The node at the end of the chain ignores the argument, so the compile unit is never stored here.
+     * {@link #getCompileUnit()} reads it from the module.
+     *
+     * @param cu unused compile unit
+     * @deprecated for removal since 5.0.0; the compile unit is no longer stored on the class node
+     */
     @Deprecated(forRemoval = true, since = "5.0.0")
     protected void setCompileUnit(CompileUnit cu) {
         if (redirect != null)
             redirect.setCompileUnit(cu);
     }
 
+    /**
+     * Returns the package of {@link #getModule()}, or {@code null} when this class has no module.
+     *
+     * @return the package node, or {@code null}
+     */
     public PackageNode getPackage() {
         ModuleNode module = getModule();
         return module != null ? module.getPackage() : null;
     }
 
+    /**
+     * Returns the package portion of {@link #getName()}, which follows the redirect.
+     * The portion is the text before the last dot, so an inner-class {@code $} suffix stays in the simple
+     * name.
+     * A name with no dot after its first character is treated as the default package.
+     *
+     * @return the package name, or {@code null} for the default package
+     */
     public String  getPackageName() {
         int idx = getName().lastIndexOf('.');
         if (idx > 0) {
@@ -389,10 +483,23 @@ public class ClassNode extends AnnotatedNode {
         return null;
     }
 
+    /**
+     * Reports whether {@link #getName()} has a dot after its first character.
+     * A default-package class, whose redirected name has no such dot, returns {@code false}.
+     *
+     * @return {@code true} when the redirected name includes a package
+     */
     public boolean hasPackageName() {
         return (getName().indexOf('.') > 0);
     }
 
+    /**
+     * Returns the text of {@link #getName()} after the last dot.
+     * When the redirected name has no dot after its first character, that whole name is returned.
+     * An inner class keeps its {@code $} suffix, so {@code pkg.Outer$Inner} yields {@code Outer$Inner}.
+     *
+     * @return the class name without its package
+     */
     public String getNameWithoutPackage() {
         int idx = getName().lastIndexOf('.');
         if (idx > 0) {
@@ -403,6 +510,14 @@ public class ClassNode extends AnnotatedNode {
 
     //
 
+    /**
+     * Returns the name stored on this node, without following a redirect.
+     * A placeholder can still report the name it was created with after {@link #getName()} reports the
+     * resolved class.
+     * A type variable is printed from this name.
+     *
+     * @return this node's own name, which may be unresolved
+     */
     public String getUnresolvedName() {
         return name;
     }
@@ -588,6 +703,15 @@ public class ClassNode extends AnnotatedNode {
         return interfaces;
     }
 
+    /**
+     * Collects the interfaces of this type into a {@link LinkedHashSet}, keeping the order of first
+     * encounter and dropping a repeat.
+     * If this node is itself an interface, it is included first. The walk then follows
+     * {@link #getInterfaces()} of this node and of each interface reached that way, depth-first.
+     * Interfaces that appear only on a superclass are not visited.
+     *
+     * @return the interfaces, never {@code null}
+     */
     public Set<ClassNode> getAllInterfaces() {
         Set<ClassNode> result = new LinkedHashSet<>();
         if (isInterface()) result.add(this);
@@ -633,6 +757,13 @@ public class ClassNode extends AnnotatedNode {
         return redirect().mixins;
     }
 
+    /**
+     * Replaces the mixins of the resolved class.
+     * A redirect is written through. The array is stored as given and is not copied; {@code null} clears
+     * it.
+     *
+     * @param mixins the mixin array to store, or {@code null}
+     */
     public void setMixins(final MixinNode[] mixins) {
         if (redirect != null) {
             redirect.setMixins(mixins);
@@ -651,6 +782,14 @@ public class ClassNode extends AnnotatedNode {
         return permittedSubclasses;
     }
 
+    /**
+     * Replaces the permitted-subclass list stored on the resolved node.
+     * A redirect is written through, and the list is stored as given.
+     * {@link #getPermittedSubclasses()} returns the list held after a reflection class is initialized,
+     * which may replace a list stored before that initialization.
+     *
+     * @param permittedSubclasses the classes a sealed type permits
+     */
     public void setPermittedSubclasses(final List<ClassNode> permittedSubclasses) {
         if (redirect != null) {
             redirect.setPermittedSubclasses(permittedSubclasses);
@@ -710,6 +849,12 @@ public class ClassNode extends AnnotatedNode {
         setInterfaces(interfaces);
     }
 
+    /**
+     * Appends a mixin to the resolved class when an equal mixin is not already present.
+     * An existing match leaves the mixin list unchanged.
+     *
+     * @param node the mixin to add
+     */
     public void addMixin(MixinNode node) {
         // let's check if it already uses a mixin
         MixinNode[] mixins = getMixins();
@@ -915,6 +1060,14 @@ public class ClassNode extends AnnotatedNode {
         return node;
     }
 
+    /**
+     * Appends a constructor to the resolved class and sets that constructor's declaring class to the
+     * resolved node.
+     * The constructor list is created on first use. A constructor with the same parameters is not detected
+     * or reused.
+     *
+     * @param node the constructor to add
+     */
     public void addConstructor(ConstructorNode node) {
         ClassNode r = redirect();
         node.setDeclaringClass(r);
@@ -923,6 +1076,16 @@ public class ClassNode extends AnnotatedNode {
         r.constructors.add(node);
     }
 
+    /**
+     * Creates a constructor from the given parts and appends it to the resolved class.
+     * A constructor with the same parameters is not reused; the new node is always added.
+     *
+     * @param modifiers the constructor modifiers
+     * @param parameters the parameters, or an empty array
+     * @param exceptions the declared exception types, or an empty array
+     * @param code the constructor body, or {@code null}
+     * @return the constructor that was added
+     */
     public ConstructorNode addConstructor(int modifiers, Parameter[] parameters, ClassNode[] exceptions, Statement code) {
         ConstructorNode node = new ConstructorNode(modifiers, parameters, exceptions, code);
         addConstructor(node);
@@ -938,6 +1101,17 @@ public class ClassNode extends AnnotatedNode {
         getObjectInitializerStatements().add(statement);
     }
 
+    /**
+     * Adds statements to the synthetic static initializer {@code <clinit>}, creating that method when the
+     * class does not already have one.
+     * When {@code fieldInit} is false the statements are appended, which is where a static initializer
+     * block goes.
+     * When {@code fieldInit} is true they are placed in front of the statements already in the initializer,
+     * and {@code statements} is mutated to hold that combined sequence.
+     *
+     * @param statements the statements to add; mutated when {@code fieldInit} is true
+     * @param fieldInit {@code true} for static field initializers, which precede other static statements
+     */
     public void addStaticInitializerStatements(List<Statement> statements, boolean fieldInit) {
         MethodNode method = getOrAddStaticInitializer();
         BlockStatement block = getCodeAsBlock(method);
@@ -956,6 +1130,15 @@ public class ClassNode extends AnnotatedNode {
         }
     }
 
+    /**
+     * Inserts static field initializers into {@code <clinit>} immediately after every binary expression
+     * whose left side is the synthetic {@code $VALUES} field.
+     * That expression marks the end of the generated enum constants. The initializer is created when the
+     * class does not have one.
+     * When its body is not a block, or it contains no such expression, the statements are not inserted.
+     *
+     * @param staticFieldInitializerStatements initializers of explicitly declared static fields
+     */
     public void positionStmtsAfterEnumInitStmts(List<Statement> staticFieldInitializerStatements) {
         MethodNode constructor = getOrAddStaticInitializer();
         Statement statement = constructor.getCode();
@@ -1142,6 +1325,15 @@ public class ClassNode extends AnnotatedNode {
         return new ArrayList<>(getDeclaredMethodsMap().values());
     }
 
+    /**
+     * Returns the constructors declared on the resolved class.
+     * A redirect is followed and a reflection class is initialized first. Superclass constructors are not
+     * included.
+     * The list is created empty when the class has none, and it is the live list updated by adding a
+     * constructor and by {@link #removeConstructor}.
+     *
+     * @return the mutable declared constructors, never {@code null}
+     */
     public List<ConstructorNode> getDeclaredConstructors() {
         if (redirect != null)
             return redirect.getDeclaredConstructors();
@@ -1233,6 +1425,14 @@ public class ClassNode extends AnnotatedNode {
         return null;
     }
 
+    /**
+     * Returns the instance-initializer statements stored on this node.
+     * The list is created on first access and is the live storage
+     * {@link #addObjectInitializerStatements(Statement)} appends to.
+     * A redirect is not followed, and a reflection class is not initialized to fill the list.
+     *
+     * @return the mutable initializer statements, never {@code null}
+     */
     public List<Statement> getObjectInitializerStatements() {
         if (objectInitializers == null)
             objectInitializers = new ArrayList<>();
@@ -1442,6 +1642,16 @@ public class ClassNode extends AnnotatedNode {
         return false;
     }
 
+    /**
+     * Compares parameter lists by length and declared type.
+     * Types are compared with class-node equality, so a primitive and its wrapper do not match. Delegates
+     * to {@link ParameterUtils#parametersEqual}.
+     *
+     * @param a the first parameter list
+     * @param b the second parameter list
+     * @return {@code true} when both lists have the same length and equal parameter types
+     * @deprecated for removal since 4.0.0; call {@link ParameterUtils#parametersEqual} instead
+     */
     @Deprecated(forRemoval = true, since = "4.0.0")
     protected boolean parametersEqual(Parameter[] a, Parameter[] b) {
         return ParameterUtils.parametersEqual(a, b);
@@ -1604,6 +1814,36 @@ public class ClassNode extends AnnotatedNode {
         return false;
     }
 
+    /**
+     * Searches for one method on this type that can accept the arguments.
+     * <p>
+     * A {@link TupleExpression} supplies the argument list; any other expression counts as a single
+     * argument. A spread is not expanded, so the count can be smaller than the number of values passed at
+     * runtime.
+     * The search walks this class and then each superclass. A candidate matches when the argument count
+     * equals the parameter count, or the last parameter is an array and the argument count reaches that
+     * parameter, so the array takes any arguments beyond it, including none. Each argument type must be
+     * derived from the parameter type in that position, or from the array component type for a
+     * variable-arity tail.
+     * Static and non-public methods take part in this walk. Unlike {@link #hasPossibleMethod}, argument
+     * types are checked.
+     * <p>
+     * The first match is kept. A second match found while still scanning this class yields {@code null}.
+     * Once the scan has moved to a superclass, a second match also yields {@code null} when the first match
+     * does not have exactly one parameter per argument.
+     * When it does, differing parameter types yield {@code null} as well; equal types, using the superclass
+     * method's trailing array component after its last fixed parameter, leave the first match in place.
+     * <p>
+     * When the class hierarchy has no match and {@link #getInterfaces()} is non-empty, the first public
+     * instance method on those interfaces and their superinterfaces with a compatible arity and argument
+     * types is returned.
+     * Interfaces that appear only on a superclass are not searched, and a second interface method does not
+     * cancel the first.
+     *
+     * @param name the method name
+     * @param arguments the call arguments, usually a {@link TupleExpression}
+     * @return the selected method, or {@code null} when none matches or the class hierarchy is ambiguous
+     */
     public MethodNode tryFindPossibleMethod(final String name, final Expression arguments) {
         List<Expression> args = arguments instanceof TupleExpression ? ((TupleExpression) arguments).getExpressions() : Collections.singletonList(arguments);
         int nArgs = args.size(); // TODO: this isn't strictly accurate when using spread argument expansion
@@ -1688,6 +1928,17 @@ faces:  if (method == null && asBoolean(getInterfaces())) { // GROOVY-11323
 
     //--------------------------------------------------------------------------
 
+    /**
+     * Rebinds the resolved class's field index from {@code oldName} to {@code newName}.
+     * The indexed field node is not renamed and the field list is not reordered, so only lookup through the
+     * index observes the new name.
+     * A name that is not in the index is recorded as {@code null} and replaces whatever was stored under
+     * {@code newName}.
+     * When the class has no field index yet, the call does nothing.
+     *
+     * @param oldName the index key to remove
+     * @param newName the index key that receives the removed entry
+     */
     public void renameField(String oldName, String newName) {
         ClassNode r = redirect();
         var index = r.fieldIndex;
@@ -1730,6 +1981,12 @@ faces:  if (method == null && asBoolean(getInterfaces())) { // GROOVY-11323
         r.methods.remove(node.getName(), node);
     }
 
+    /**
+     * Removes a constructor from the declared constructors of the resolved class.
+     * Comparison is by identity. A constructor that is not in the list leaves the list unchanged.
+     *
+     * @param node the constructor node to remove
+     */
     public void removeConstructor(ConstructorNode node) {
         getDeclaredConstructors().remove(node);
     }
@@ -1820,6 +2077,16 @@ faces:  if (method == null && asBoolean(getInterfaces())) { // GROOVY-11323
         return ret.toString();
     }
 
+    /**
+     * Visits the members of the resolved class in order: properties, fields, declared constructors, then
+     * methods.
+     * The class node itself and its inner classes are not visited.
+     * Each method is visited once, including a method added while another method is being visited. Methods
+     * already seen are tracked by identity, and the method list is scanned again until no unseen method
+     * remains.
+     *
+     * @param visitor the visitor that receives each member
+     */
     public void visitContents(GroovyClassVisitor visitor) {
         // now let's visit the contents of the class
         for (PropertyNode pn : getProperties()) {
@@ -2165,6 +2432,16 @@ faces:  if (method == null && asBoolean(getInterfaces())) { // GROOVY-11323
 
     private GenericsType[] genericsTypes;
 
+    /**
+     * Views this node as a generic type argument.
+     * A node that is not a type-variable placeholder becomes a generics type with no bounds.
+     * A placeholder whose stored generics type already has upper bounds returns that same object.
+     * Otherwise a new generics type is built with this node as the type variable and the redirect, or this
+     * node when there is no redirect, as its upper bound.
+     * A generic declaration already stored on the placeholder is copied onto that new type.
+     *
+     * @return a generics type representing this node
+     */
     public GenericsType asGenericsType() {
         if (!isGenericsPlaceHolder()) {
             return new GenericsType(this);
@@ -2213,10 +2490,23 @@ faces:  if (method == null && asBoolean(getInterfaces())) { // GROOVY-11323
 
     private boolean placeholder;
 
+    /**
+     * Reports whether this node stands for a type variable rather than a class.
+     * The flag lives on this node and is not read from the redirect.
+     *
+     * @return {@code true} when {@link #setGenericsPlaceHolder(boolean)} has marked this node as a
+     *     placeholder
+     */
     public boolean isGenericsPlaceHolder() {
         return placeholder;
     }
 
+    /**
+     * Sets or clears the type-variable flag on this node.
+     * Setting it also marks the node as using generics. Clearing it does not turn that mark off.
+     *
+     * @param placeholder {@code true} when this node stands for a type variable
+     */
     public void setGenericsPlaceHolder(boolean placeholder) {
         usesGenerics = usesGenerics || placeholder;
         this.placeholder = placeholder;
@@ -2226,10 +2516,24 @@ faces:  if (method == null && asBoolean(getInterfaces())) { // GROOVY-11323
 
     private boolean usesGenerics;
 
+    /**
+     * Reports the generics-usage flag stored on this node, without following a redirect.
+     * The flag is raised when type parameters or a placeholder are set, and when a primary node's
+     * superclass or interfaces already use generics. Those updates do not clear it.
+     *
+     * @return {@code true} when this node has been marked as using generics
+     */
     public boolean isUsingGenerics() {
         return usesGenerics;
     }
 
+    /**
+     * Sets the generics-usage flag on this node, including clearing it.
+     * Unlike {@link #setGenericsTypes} and {@link #setGenericsPlaceHolder(boolean)}, the argument replaces
+     * the previous value.
+     *
+     * @param usesGenerics {@code true} to mark the node as using generics
+     */
     public void setUsingGenerics(boolean usesGenerics) {
         this.usesGenerics = usesGenerics;
     }
@@ -2415,10 +2719,24 @@ faces:  if (method == null && asBoolean(getInterfaces())) { // GROOVY-11323
 
     private List<AnnotationNode> typeAnnotations = Collections.emptyList();
 
+    /**
+     * Returns a copy of the type-use annotations stored on this node.
+     * A redirect is not followed: type-use annotations belong to the use, not to the canonical class. The
+     * copy does not observe later additions.
+     *
+     * @return a new list of type-use annotations, empty when none were added
+     */
     public List<AnnotationNode> getTypeAnnotations() {
         return new ArrayList<>(typeAnnotations);
     }
 
+    /**
+     * Returns the type-use annotations on this node whose annotation class is equal to {@code type}.
+     * A redirect is not followed. The result is a new list.
+     *
+     * @param type the annotation class to select
+     * @return a new list of matching type-use annotations, possibly empty
+     */
     public List<AnnotationNode> getTypeAnnotations(ClassNode type) {
         List<AnnotationNode> annotations = new ArrayList<>();
         for (AnnotationNode node : typeAnnotations) {
@@ -2429,6 +2747,15 @@ faces:  if (method == null && asBoolean(getInterfaces())) { // GROOVY-11323
         return annotations;
     }
 
+    /**
+     * Appends a type-use annotation to this node and marks the node annotated.
+     * The annotation is stored here and not on the redirect target. A canonical class cannot carry type-use
+     * annotations, so the call fails when this node is not a redirect and it is resolved or primary.
+     *
+     * @param annotation the type-use annotation to add
+     * @throws GroovyBugError if this node is a resolved or primary non-redirect
+     * @throws NullPointerException if {@code annotation} is {@code null}
+     */
     public void addTypeAnnotation(final AnnotationNode annotation) {
         if (!isRedirectNode() && (isResolved() || isPrimaryClassNode())) {
             throw new GroovyBugError("Adding type annotation @" + annotation.getClassNode().getNameWithoutPackage() + " to non-redirect node: " + getName());
@@ -2440,6 +2767,13 @@ faces:  if (method == null && asBoolean(getInterfaces())) { // GROOVY-11323
         setAnnotated(true);
     }
 
+    /**
+     * Adds each type-use annotation through {@link #addTypeAnnotation}, in order.
+     * An empty list does nothing. Each element is subject to the same rejection of a resolved or primary
+     * non-redirect.
+     *
+     * @param annotations the type-use annotations to add
+     */
     public void addTypeAnnotations(final List<AnnotationNode> annotations) {
         for (AnnotationNode annotation : annotations) {
             addTypeAnnotation(annotation);
@@ -2448,6 +2782,17 @@ faces:  if (method == null && asBoolean(getInterfaces())) { // GROOVY-11323
 
     //
 
+    /**
+     * Records an AST node as a reason to run a global transform, when {@code transform} carries
+     * {@link GroovyASTTransformation}.
+     * The node is stored under that transform class, in insertion order, in the map for the annotation's
+     * {@link CompilePhase}. A node already recorded for that phase is ignored.
+     * A transform class without the annotation is ignored. The map lives on this node and is not
+     * redirected.
+     *
+     * @param transform the transform class to schedule
+     * @param node the AST node that triggered it, usually the annotation use
+     */
     public void addTransform(Class<? extends ASTTransformation> transform, ASTNode node) {
         GroovyASTTransformation annotation = transform.getAnnotation(GroovyASTTransformation.class);
         if (annotation != null) {
@@ -2457,6 +2802,16 @@ faces:  if (method == null && asBoolean(getInterfaces())) { // GROOVY-11323
         }
     }
 
+    /**
+     * Returns the live map from transform class to the AST nodes that scheduled it for one compilation
+     * phase.
+     * The first call creates an empty map for every phase, so a phase with no transforms yields an empty
+     * map rather than {@code null}.
+     * The map is the storage {@link #addTransform} updates, and it is not redirected.
+     *
+     * @param phase the compilation phase to query
+     * @return the mutable map of transform class to triggering nodes for {@code phase}
+     */
     public Map<Class<? extends ASTTransformation>, Set<ASTNode>> getTransforms(CompilePhase phase) {
         return getTransformInstances().get(phase);
     }

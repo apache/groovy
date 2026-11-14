@@ -187,7 +187,9 @@ public class ConcurrentReaderHashMap
    * Force a memory synchronization that will cause
    * all readers to see table. Call only when already
    * holding main sync lock.
-   **/
+   *
+   * @param x token published to {@link #lastWrite} so the write is ordered; the value is not read back
+   */
   protected final void recordModification(Object x) {
     synchronized(barrierLock) {
       lastWrite = x;
@@ -197,8 +199,10 @@ public class ConcurrentReaderHashMap
   /**
    * Get ref to table; the reference and the cells it
    * accesses will be at least as fresh as from last
-   * use of barrierLock
-   **/
+   * use of barrierLock.
+   *
+   * @return the table reference refreshed under {@link #barrierLock}
+   */
   protected final Entry[] getTableForReading() {
     synchronized(barrierLock) {
       return table;
@@ -228,9 +232,9 @@ public class ConcurrentReaderHashMap
   private static final int MAXIMUM_CAPACITY = 1 << 30;
 
   /**
-   * The default load factor for this table (1.0).
+   * The default load factor for this table (0.75).
    * Used when not otherwise specified in constructor.
-   **/
+   */
 
   public static final float DEFAULT_LOAD_FACTOR = 0.75f;
 
@@ -293,8 +297,13 @@ public class ConcurrentReaderHashMap
   }
 
   /**
-   * Check for equality of non-null references x and y.
-   **/
+   * Reports whether two non-null references are the same object
+   * or equal by {@code equals}.
+   *
+   * @param x first reference; not null
+   * @param y second reference; not null
+   * @return {@code true} when {@code x == y} or {@code x.equals(y)}
+   */
   protected boolean eq(Object x, Object y) {
     return x == y || x.equals(y);
   }
@@ -344,9 +353,12 @@ public class ConcurrentReaderHashMap
   }
 
   /**
-   * Constructs a new map with the same mappings as the given map.  The
-   * map is created with a capacity of twice the number of mappings in
-   * the given map or 16 (whichever is greater), and a default load factor.
+   * Constructs a map containing the mappings of {@code t}.
+   * The initial capacity fits those mappings at the default load factor
+   * and is at least 16, then rounded up to a power of two.
+   *
+   * @param t mappings copied into the new map; keys and values must be non-null
+   * @throws NullPointerException when {@code t} is null, or a key or value is null
    */
   public ConcurrentReaderHashMap(Map t) {
         this(Math.max((int) (t.size() / DEFAULT_LOAD_FACTOR) + 1, 16),
@@ -522,7 +534,12 @@ public class ConcurrentReaderHashMap
   /**
    * Continuation of put(), called only when sync lock is
    * held and interference has been detected.
-   **/
+   *
+   * @param key key to store
+   * @param value value to store
+   * @param hash hash already computed for {@code key}
+   * @return the value previously stored for {@code key}, or null when the key was absent
+   */
   protected Object sput(Object key, Object value, int hash) {
 
     Entry[] tab = table;
@@ -684,7 +701,11 @@ public class ConcurrentReaderHashMap
   /**
    * Continuation of remove(), called only when sync lock is
    * held and interference has been detected.
-   **/
+   *
+   * @param key key to remove
+   * @param hash hash already computed for {@code key}
+   * @return the value previously stored for {@code key}, or null when the key was absent
+   */
   protected Object sremove(Object key, int hash) {
     Entry[] tab = table;
     int index = hash & (tab.length-1);
@@ -842,8 +863,22 @@ public class ConcurrentReaderHashMap
 
   // Views
 
+  /**
+   * Key-set view cached by {@link #keySet()}, or null until that
+   * view is first requested.
+   */
   protected transient Set keySet = null;
+
+  /**
+   * Entry-set view cached by {@link #entrySet()}, or null until that
+   * view is first requested.
+   */
   protected transient Set entrySet = null;
+
+  /**
+   * Value collection cached by {@link #values()}, or null until that
+   * view is first requested.
+   */
   protected transient Collection values = null;
 
   /**
@@ -999,8 +1034,11 @@ public class ConcurrentReaderHashMap
   }
 
   /**
-   * Helper method for entrySet.remove
-   **/
+   * Removes {@code entry} when this map still holds that key and value.
+   *
+   * @param entry mapping to remove
+   * @return {@code true} when a matching mapping was removed
+   */
   protected synchronized boolean findAndRemoveEntry(Map.Entry entry) {
     Object key = entry.getKey();
     Object v = get(key);
@@ -1046,15 +1084,28 @@ public class ConcurrentReaderHashMap
    */
   protected static class Entry implements Map.Entry {
 
-    /*
-       The use of volatile for value field ensures that
-       we can detect status changes without synchronization.
-       The other fields are never changed, and are
-       marked as final.
-    */
+    /**
+     * Hash of {@link #key}. Fixed when the entry is constructed.
+     */
     protected final int hash;
+
+    /**
+     * Map key for this entry. Fixed when the entry is constructed.
+     */
     protected final Object key;
+
+    /**
+     * Next entry in this bin, or null at the end of the chain.
+     * The link is fixed at construction. Removal copies preceding
+     * nodes instead of rewriting this field.
+     */
     protected final Entry next;
+
+    /**
+     * Mapped value. Volatile so a reader can observe a replacement
+     * or an invalidation without taking the map lock. Null means
+     * the entry was removed or the map was cleared.
+     */
     protected volatile Object value;
 
     /**
@@ -1167,13 +1218,47 @@ public class ConcurrentReaderHashMap
 
   }
 
+  /**
+   * Walks a snapshot of the bins from last to first. {@link #next()}
+   * returns the current entry unless a subclass overrides
+   * {@link #returnValueOfNext()}. One thread should own an instance.
+   * A concurrent removal may be skipped, and the iterator does not
+   * throw ConcurrentModificationException.
+   */
   protected class HashIterator implements Iterator, Enumeration {
-    protected final Entry[] tab;           // snapshot of table
-    protected int index;                   // current slot
-    protected Entry entry = null;          // current node of slot
-    protected Object currentKey;           // key for current node
-    protected Object currentValue;         // value for current node
-    protected Entry lastReturned = null;   // last node returned by next
+    /**
+     * Bins captured when this iterator was constructed.
+     */
+    protected final Entry[] tab;
+
+    /**
+     * Next bin index to read. Counts down from the last bin.
+     */
+    protected int index;
+
+    /**
+     * Entry currently under consideration, or null when the next
+     * step must move to another bin.
+     */
+    protected Entry entry = null;
+
+    /**
+     * Key of the entry {@link #hasNext()} has already accepted.
+     * Null when no element is ready for {@link #next()}.
+     */
+    protected Object currentKey;
+
+    /**
+     * Value of the entry {@link #hasNext()} has already accepted.
+     * Null when no element is ready for {@link #next()}.
+     */
+    protected Object currentValue;
+
+    /**
+     * Entry most recently returned by {@link #next()}. Null before
+     * the first successful call and again after {@link #remove()}.
+     */
+    protected Entry lastReturned = null;
 
     /**
      * Constructs a new HashIterator over a snapshot of the table.
@@ -1367,15 +1452,19 @@ public class ConcurrentReaderHashMap
   }
 
   /**
+   * Returns the number of bins in the current table.
+   *
    * @return the number of slots in this table
-   **/
+   */
   public synchronized int capacity() {
     return table.length;
   }
 
   /**
+   * Returns the load factor fixed when this map was constructed.
+   *
    * @return the load factor
-   **/
+   */
   public float loadFactor() {
     return loadFactor;
   }

@@ -42,29 +42,93 @@ import static java.util.Objects.requireNonNull;
  */
 public class AnnotationNode extends ASTNode {
 
+    /**
+     * Bit for {@link ElementType#CONSTRUCTOR}. Combined with the other target bits by
+     * {@link #isTargetAllowed(int)}.
+     */
     public static final int CONSTRUCTOR_TARGET      = 1 << 1;
+    /**
+     * Bit for {@link ElementType#METHOD}. Combined with the other target bits by
+     * {@link #isTargetAllowed(int)}.
+     */
     public static final int METHOD_TARGET           = 1 << 2;
+    /**
+     * Bit for {@link ElementType#FIELD}. Combined with the other target bits by
+     * {@link #isTargetAllowed(int)}.
+     */
     public static final int FIELD_TARGET            = 1 << 3;
+    /**
+     * Bit for {@link ElementType#PARAMETER}. Combined with the other target bits by
+     * {@link #isTargetAllowed(int)}.
+     */
     public static final int PARAMETER_TARGET        = 1 << 4;
+    /**
+     * Bit for {@link ElementType#LOCAL_VARIABLE}. Combined with the other target bits by
+     * {@link #isTargetAllowed(int)}.
+     */
     public static final int LOCAL_VARIABLE_TARGET   = 1 << 5;
+    /**
+     * Bit for {@link ElementType#ANNOTATION_TYPE}. The low bit is clear, so {@link #targetToName(int)}
+     * reports it as ANNOTATION rather than TYPE.
+     */
     public static final int ANNOTATION_TARGET       = 1 << 6;
+    /**
+     * Bit for {@link ElementType#PACKAGE}. Combined with the other target bits by
+     * {@link #isTargetAllowed(int)}.
+     */
     public static final int PACKAGE_TARGET          = 1 << 7;
+    /**
+     * Bit for {@link ElementType#TYPE_PARAMETER}. Not part of the mask used when the annotation type has
+     * no {@link Target}.
+     */
     public static final int TYPE_PARAMETER_TARGET   = 1 << 8;
+    /**
+     * Bit for {@link ElementType#TYPE_USE}. Not part of the mask used when the annotation type has no
+     * {@link Target}.
+     */
     public static final int TYPE_USE_TARGET         = 1 << 9;
+    /**
+     * Bit for {@link ElementType#RECORD_COMPONENT}. Included in the mask used when the annotation type has
+     * no {@link Target}.
+     */
     public static final int RECORD_COMPONENT_TARGET = 1 << 10;
     /** Groovy-only target for statement-level annotations (e.g. on {@code for}/{@code while} loops). */
     public static final int STATEMENT_TARGET        = 1 << 11;
     /** Groovy-only target for annotations on import statements. */
     public static final int IMPORT_TARGET           = 1 << 12;
+    /**
+     * Mask for a type or module target. {@link ElementType#TYPE} and {@link ElementType#MODULE} both map
+     * here.
+     * The low bit keeps it distinct from {@link #ANNOTATION_TARGET}, and {@link #targetToName(int)}
+     * reports every value with that bit set as TYPE.
+     */
     public static final int TYPE_TARGET             = ANNOTATION_TARGET | 1; // GROOVY-7151
 
     private final ClassNode classNode;
     private Map<String, Expression> members;
 
+    /**
+     * Creates an annotation use of the given annotation type.
+     * No member values are stored until {@link #addMember(String, Expression)} or
+     * {@link #setMember(String, Expression)} is called.
+     *
+     * @param type the annotation class; stored as given and not copied
+     * @throws NullPointerException if {@code type} is {@code null}
+     */
     public AnnotationNode(final ClassNode type) {
         classNode = requireNonNull(type);
     }
 
+    /**
+     * Stores a member expression the first time {@code name} has no value.
+     * A missing member and a member set to {@code null} are both treated as unset.
+     * Members are kept in insertion order.
+     * {@link #setMember(String, Expression)} overwrites a stored value instead of rejecting it.
+     *
+     * @param name the annotation member name
+     * @param value the member expression, stored without checking it against the annotation type
+     * @throws GroovyBugError if a non-null value is already stored for {@code name}
+     */
     public void addMember(final String name, final Expression value) {
         ensureMembers();
         Expression oldValue = members.get(name);
@@ -75,6 +139,13 @@ public class AnnotationNode extends ASTNode {
         }
     }
 
+    /**
+     * Stores a member expression, replacing a value already recorded for the same name.
+     * The map preserves insertion order, so replacing a name does not move it.
+     *
+     * @param name the annotation member name
+     * @param value the member expression to store
+     */
     public void setMember(final String name, final Expression value) {
         ensureMembers();
         members.put(name, value);
@@ -86,28 +157,70 @@ public class AnnotationNode extends ASTNode {
         }
     }
 
+    /**
+     * Does nothing. Allowed targets are read from the annotation type's {@link Target} by
+     * {@link #isTargetAllowed(int)}.
+     *
+     * @param ignored unused bitmask of targets
+     * @deprecated since 6.0.0; targets are no longer stored on the annotation use
+     */
     @Deprecated(since = "6.0.0")
     public void setAllowedTargets(final int ignored) {
     }
 
+    /**
+     * Does nothing. Class retention is derived from the annotation type's {@link Retention} by
+     * {@link #hasClassRetention()}.
+     *
+     * @param ignored unused retention flag
+     * @deprecated since 6.0.0; retention is no longer stored on the annotation use
+     */
     @Deprecated(since = "6.0.0")
     public void setClassRetention(final boolean ignored) {
     }
 
+    /**
+     * Does nothing. Source retention is derived from the annotation type's {@link Retention} by
+     * {@link #hasSourceRetention()}.
+     *
+     * @param ignored unused retention flag
+     * @deprecated since 6.0.0; retention is no longer stored on the annotation use
+     */
     @Deprecated(since = "6.0.0")
     public void setSourceRetention(final boolean ignored) {
     }
 
+    /**
+     * Does nothing. Runtime retention is derived from the annotation type's {@link Retention} by
+     * {@link #hasRuntimeRetention()}.
+     *
+     * @param ignored unused retention flag
+     * @deprecated since 6.0.0; retention is no longer stored on the annotation use
+     */
     @Deprecated(since = "6.0.0")
     public void setRuntimeRetention(final boolean ignored) {
     }
 
     //--------------------------------------------------------------------------
 
+    /**
+     * Returns the annotation class passed to the constructor.
+     * This call does not resolve or redirect that class node.
+     *
+     * @return the annotation type
+     */
     public ClassNode getClassNode() {
         return classNode;
     }
 
+    /**
+     * Returns the member expressions in insertion order.
+     * Before any member is stored the result is an immutable empty map, and later additions are not visible
+     * through it.
+     * Once a member has been stored the result is the live map.
+     *
+     * @return the member map, never {@code null}
+     */
     public Map<String, Expression> getMembers() {
         if (members == null) {
             return Collections.emptyMap();
@@ -115,6 +228,12 @@ public class AnnotationNode extends ASTNode {
         return members;
     }
 
+    /**
+     * Returns the expression stored for one member.
+     *
+     * @param name the member name
+     * @return the member expression, or {@code null} when that member has not been set
+     */
     public Expression getMember(final String name) {
         if (members == null) {
             return null;
@@ -122,11 +241,41 @@ public class AnnotationNode extends ASTNode {
         return members.get(name);
     }
 
+    /**
+     * Always reports that the annotation is not built in.
+     * Annotation nodes no longer distinguish built-in annotations.
+     *
+     * @return {@code false}
+     * @deprecated since 6.0.0
+     */
     @Deprecated(since = "6.0.0")
     public boolean isBuiltIn() {
         return false;
     }
 
+    /**
+     * Reports whether every bit set in {@code target} is permitted for this annotation type.
+     * <p>
+     * The annotation class must already be a primary class node or resolved. The first check decodes
+     * {@link Target} from that class and caches the mask on the resolved class.
+     * Only a {@code value} that is a {@link ListExpression} is decoded. A {@link PropertyExpression} in
+     * that list contributes the bit for the {@link ElementType} it names; any other entry is skipped. If no
+     * {@link Target} annotation has such a list, the mask is the JLS 9.6.4.1 default: declaration contexts
+     * other than type parameters, and not type-use.
+     * {@link ElementType#TYPE} and {@link ElementType#MODULE} both contribute {@link #TYPE_TARGET}. An
+     * {@link ElementType} constant with no mapped bit fails with {@link GroovyBugError}. A property name
+     * that is not an {@link ElementType} constant aborts the lookup.
+     * {@link ExtendedTarget} is then OR-ed in. {@link ExtendedElementType#IMPORT} contributes
+     * {@link #IMPORT_TARGET} and {@link ExtendedElementType#LOOP} contributes {@link #STATEMENT_TARGET};
+     * an unknown extended element contributes nothing.
+     * A requested combination is allowed only when all of its bits are in the mask. A target of zero is
+     * always allowed.
+     *
+     * @param target bitmask of element kinds, usually one {@code *_TARGET} constant
+     * @return {@code true} when every bit set in {@code target} is allowed
+     * @throws IllegalStateException if the annotation class is neither primary nor resolved
+     * @throws GroovyBugError if {@link Target} names an {@link ElementType} that has no bit
+     */
     public boolean isTargetAllowed(final int target) {
         if (!(classNode.isPrimaryClassNode() || classNode.isResolved()))
             throw new IllegalStateException("cannot check target at this time");
@@ -289,6 +438,15 @@ public class AnnotationNode extends ASTNode {
         return text;
     }
 
+    /**
+     * Names one target bit for error messages.
+     * Any value with the low bit set is {@code TYPE}, which is how {@link #TYPE_TARGET} is told apart from
+     * {@link #ANNOTATION_TARGET}.
+     * Every other value must equal exactly one {@code *_TARGET} constant; a mix of bits is not split apart.
+     *
+     * @param target a target bitmask, normally one constant
+     * @return the element-kind name, or {@code unknown target} when nothing matches
+     */
     public static String targetToName(final int target) {
         if ((target & 1) == 1) return "TYPE"; // GROOVY-7151
         return switch (target) {

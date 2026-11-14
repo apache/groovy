@@ -71,7 +71,16 @@ import java.util.logging.Logger;
 public class DefaultGroovyMethodsSupport {
 
     /**
-     * Helper method for getAt and putAt.
+     * Resolves {@code range} to list borders for getAt and putAt.
+     * An {@link IntRange} or {@link NumberRange} supplies its own borders.
+     * Any other range has its endpoints normalised against {@code size},
+     * and the ends are swapped when the normalised start sits past the
+     * normalised end, which is how a range written with a negative end is applied.
+     * The end border is one past the last included index.
+     *
+     * @param size length of the list being indexed
+     * @param range range to resolve
+     * @return the start index, the exclusive end index, and whether the slice runs backwards
      */
     protected static RangeInfo subListBorders(int size, Range range) {
         if (range instanceof IntRange) {
@@ -94,7 +103,12 @@ public class DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Helper method for getAt and putAt.
+     * Resolves an empty range to list borders for getAt and putAt.
+     * Both borders are the normalised start, so the slice contains no elements.
+     *
+     * @param size length of the list being indexed
+     * @param range empty range whose start is normalised
+     * @return a forward slice whose start and exclusive end are equal
      */
     protected static RangeInfo subListBorders(int size, EmptyRange range) {
         int from = normaliseIndex(DefaultTypeTransformation.intUnbox(range.getFrom()), size);
@@ -102,7 +116,14 @@ public class DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Helper method for primitive array getAt.
+     * Rebuilds an {@link IntRange} from borders that were prepared for a
+     * sub-list. The exclusive end in {@code info} becomes an inclusive end,
+     * an exclusive bound is stepped back to the original endpoint, and the
+     * inclusive ends are swapped when {@code info} runs backwards.
+     *
+     * @param info borders previously computed for {@code range}
+     * @param range original range, whose inclusive ends are restored
+     * @return an inclusive-aware range covering the same indexes
      */
     protected static IntRange subListRange(RangeInfo info, IntRange range) {
         int from = info.from;
@@ -137,6 +158,7 @@ public class DefaultGroovyMethodsSupport {
      * @param i    the unnormalized index
      * @param size the array size
      * @return the normalised index
+     * @throws ArrayIndexOutOfBoundsException when {@code i} is negative and its magnitude exceeds {@code size}
      */
     protected static int normaliseIndex(int i, int size) {
         int temp = i;
@@ -198,6 +220,18 @@ public class DefaultGroovyMethodsSupport {
 
     //--------------------------------------------------------------------------
 
+    /**
+     * Copies {@code orig}. When {@code orig} implements {@link Cloneable},
+     * the copy is the result of calling {@code clone} and {@code newCapacity}
+     * is ignored. Otherwise an empty collection of a similar concrete type
+     * is created with room for {@code newCapacity} elements, then filled
+     * from {@code orig}.
+     *
+     * @param <T> element type
+     * @param orig collection to copy
+     * @param newCapacity capacity of the replacement when {@code orig} cannot be cloned
+     * @return a copy of {@code orig}
+     */
     protected static <T> Collection<T> cloneSimilarCollection(Collection<T> orig, int newCapacity) {
         var copy = maybeClone(orig);
         if (copy == null) {
@@ -207,6 +241,16 @@ public class DefaultGroovyMethodsSupport {
         return copy;
     }
 
+    /**
+     * Copies {@code orig}. When {@code orig} implements {@link Cloneable},
+     * the copy is the result of calling {@code clone}. Otherwise an empty
+     * map of a similar concrete type is created and filled from {@code orig}.
+     *
+     * @param <K> key type
+     * @param <V> value type
+     * @param orig map to copy
+     * @return a copy of {@code orig}
+     */
     protected static <K, V> Map<K ,V> cloneSimilarMap(Map<K, V> orig) {
         var copy = maybeClone(orig);
         if (copy == null) {
@@ -225,6 +269,14 @@ public class DefaultGroovyMethodsSupport {
         return null;
     }
 
+    /**
+     * Builds an empty collection whose concrete type matches {@code object}
+     * when {@code object} is a {@link Collection}. Any other value,
+     * including null, yields a new {@link ArrayList}.
+     *
+     * @param object collection to imitate, or any other value
+     * @return an empty collection of a similar type, or an {@link ArrayList}
+     */
     protected static Collection createSimilarOrDefaultCollection(Object object) {
         if (object instanceof Collection) {
             return createSimilarCollection((Collection<?>) object);
@@ -232,6 +284,15 @@ public class DefaultGroovyMethodsSupport {
         return new ArrayList<>();
     }
 
+    /**
+     * Builds an empty collection whose concrete type matches {@code iterable}
+     * when it is a {@link Collection}. Any other iterable yields a new
+     * {@link ArrayList}. Elements of {@code iterable} are not copied.
+     *
+     * @param <T> element type
+     * @param iterable source of the concrete collection type
+     * @return an empty collection of a similar type
+     */
     protected static <T> Collection<T> createSimilarCollection(Iterable<T> iterable) {
         if (iterable instanceof Collection) {
             return createSimilarCollection((Collection<T>) iterable);
@@ -240,10 +301,30 @@ public class DefaultGroovyMethodsSupport {
         }
     }
 
+    /**
+     * Builds an empty collection of the same kind as {@code collection},
+     * using {@code collection.size()} as the capacity where the kind
+     * accepts one.
+     *
+     * @param <T> element type
+     * @param collection collection to imitate
+     * @return an empty collection of a similar type
+     */
     protected static <T> Collection<T> createSimilarCollection(Collection<T> collection) {
         return createSimilarCollection(collection, collection.size());
     }
 
+    /**
+     * Builds an empty collection of the same kind as {@code orig}.
+     * A set, list, or queue keeps that kind. Anything else becomes an
+     * {@link ArrayList} with capacity {@code newCapacity}. The capacity
+     * is not applied to a set or a queue.
+     *
+     * @param <T> element type
+     * @param orig collection to imitate
+     * @param newCapacity initial capacity of a list that is not one of the preserved list classes
+     * @return an empty collection of a similar type
+     */
     protected static <T> Collection<T> createSimilarCollection(Collection<T> orig, int newCapacity) {
         if (orig instanceof Set) {
             return createSimilarSet((Set<T>) orig);
@@ -257,6 +338,17 @@ public class DefaultGroovyMethodsSupport {
         return new ArrayList<>(newCapacity);
     }
 
+    /**
+     * Builds an empty list of the same kind as {@code orig}.
+     * {@link LinkedList}, {@link Stack}, {@link Vector}, and
+     * {@link CopyOnWriteArrayList} are preserved. Any other list becomes
+     * an {@link ArrayList} with capacity {@code newCapacity}.
+     *
+     * @param <T> element type
+     * @param orig list to imitate
+     * @param newCapacity initial capacity when the result is an {@link ArrayList}
+     * @return an empty list of a similar type
+     */
     protected static <T> List<T> createSimilarList(List<T> orig, int newCapacity) {
         if (orig instanceof LinkedList) {
             return new LinkedList<>();
@@ -273,6 +365,17 @@ public class DefaultGroovyMethodsSupport {
         return new ArrayList<>(newCapacity);
     }
 
+    /**
+     * Allocates an array with the component type of {@code orig} and
+     * length {@code newCapacity}. Elements of {@code orig} are not copied.
+     * An {@code Object[]} source produces an {@code Object[]} result
+     * rather than a reflective array of {@code Object}.
+     *
+     * @param <T> component type
+     * @param orig array whose component type is reused
+     * @param newCapacity length of the allocated array
+     * @return a new array of length {@code newCapacity}
+     */
     @SuppressWarnings("unchecked")
     protected static <T> T[] createSimilarArray(final T[] orig, final int newCapacity) {
         Class<?> type = orig.getClass();
@@ -280,6 +383,17 @@ public class DefaultGroovyMethodsSupport {
         return (T[]) Array.newInstance(type.getComponentType(), newCapacity);
     }
 
+    /**
+     * Builds an empty set of the same kind as {@code orig}. A sorted set
+     * keeps its comparator: a {@link ConcurrentSkipListSet} stays that
+     * class, and any other {@link SortedSet} becomes a {@link TreeSet}.
+     * A {@link CopyOnWriteArraySet} is preserved. Any other set becomes
+     * a {@link LinkedHashSet}, so insertion order is kept.
+     *
+     * @param <T> element type
+     * @param orig set to imitate
+     * @return an empty set of a similar type
+     */
     protected static <T> Set<T> createSimilarSet(Set<T> orig) {
         if (orig instanceof SortedSet) {
             var comparator = ((SortedSet<T>)orig).comparator();
@@ -297,6 +411,21 @@ public class DefaultGroovyMethodsSupport {
         }
     }
 
+    /**
+     * Builds an empty queue of the same kind as {@code orig}.
+     * An {@link ArrayBlockingQueue} is recreated with its original
+     * capacity, the sum of its size and remaining capacity. A
+     * {@link PriorityQueue} keeps its comparator. {@link ArrayDeque},
+     * {@link ConcurrentLinkedQueue}, {@link DelayQueue},
+     * {@link LinkedBlockingDeque}, {@link LinkedBlockingQueue},
+     * {@link PriorityBlockingQueue}, and {@link SynchronousQueue} are
+     * each recreated as the same class. Any other queue becomes a
+     * {@link LinkedList}.
+     *
+     * @param <T> element type
+     * @param orig queue to imitate
+     * @return an empty queue of a similar type
+     */
     protected static <T> Queue<T> createSimilarQueue(Queue<T> orig) {
         if (orig instanceof ArrayBlockingQueue<T> queue) {
             return new ArrayBlockingQueue<>(queue.size() + queue.remainingCapacity());
@@ -321,6 +450,20 @@ public class DefaultGroovyMethodsSupport {
         }
     }
 
+    /**
+     * Builds an empty map of the same kind as {@code orig}. A sorted map
+     * keeps its comparator: a {@link ConcurrentSkipListMap} stays that
+     * class, and any other {@link SortedMap} becomes a {@link TreeMap}.
+     * {@link ConcurrentHashMap}, {@link Hashtable}, {@link Properties},
+     * {@link IdentityHashMap}, and {@link WeakHashMap} are preserved.
+     * Any other map becomes a {@link LinkedHashMap}, so insertion order
+     * is kept.
+     *
+     * @param <K> key type
+     * @param <V> value type
+     * @param orig map to imitate
+     * @return an empty map of a similar type
+     */
     protected static <K, V> Map<K, V> createSimilarMap(Map<K, V> orig) {
         if (orig instanceof SortedMap) {
             var comparator = ((SortedMap<K,V>)orig).comparator();
@@ -390,7 +533,13 @@ public class DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Determines if all items of given array are of the same type.
+     * Reports whether the elements of {@code iters} fit one type.
+     * The type is taken from the first element. When that element is a
+     * {@link Number}, later numbers of any numeric class are accepted.
+     * No elements counts as one type.
+     *
+     * @param iters iterables whose elements are compared
+     * @return {@code true} when every element fits the type of the first element
      */
     protected static boolean sameType(Iterable[] iters) {
         Object first;
@@ -418,10 +567,30 @@ public class DefaultGroovyMethodsSupport {
         return true;
     }
 
+    /**
+     * Writes a UTF-16 byte-order mark to {@code writer} when {@code charset}
+     * names {@code UTF-16BE} or {@code UTF-16LE}. Any other charset name
+     * writes nothing. The name is resolved with {@link Charset#forName(String)}.
+     *
+     * @param writer destination for the mark
+     * @param charset charset name to test
+     * @throws java.nio.charset.IllegalCharsetNameException when {@code charset} is not a legal charset name
+     * @throws java.nio.charset.UnsupportedCharsetException when no charset is available for that name
+     * @throws IOException when writing the mark fails
+     */
     protected static void writeUTF16BomIfRequired(final Writer writer, final String charset) throws IOException {
         writeUTF16BomIfRequired(writer, Charset.forName(charset));
     }
 
+    /**
+     * Writes a UTF-16 byte-order mark to {@code writer} when the canonical
+     * name of {@code charset} is {@code UTF-16BE} or {@code UTF-16LE}.
+     * Any other charset writes nothing.
+     *
+     * @param writer destination for the mark
+     * @param charset charset whose canonical name is tested
+     * @throws IOException when writing the mark fails
+     */
     protected static void writeUTF16BomIfRequired(final Writer writer, final Charset charset) throws IOException {
         if ("UTF-16BE".equals(charset.name())) {
             writeUtf16Bom(writer, true);
@@ -430,10 +599,31 @@ public class DefaultGroovyMethodsSupport {
         }
     }
 
+    /**
+     * Writes a UTF-16 byte-order mark to {@code stream} when {@code charset}
+     * names {@code UTF-16BE} or {@code UTF-16LE}. Any other charset name
+     * writes nothing. The name is resolved with {@link Charset#forName(String)}.
+     *
+     * @param stream destination for the mark
+     * @param charset charset name to test
+     * @throws java.nio.charset.IllegalCharsetNameException when {@code charset} is not a legal charset name
+     * @throws java.nio.charset.UnsupportedCharsetException when no charset is available for that name
+     * @throws IOException when writing the mark fails
+     */
     protected static void writeUTF16BomIfRequired(final OutputStream stream, final String charset) throws IOException {
         writeUTF16BomIfRequired(stream, Charset.forName(charset));
     }
 
+    /**
+     * Writes a UTF-16 byte-order mark to {@code stream} when the canonical
+     * name of {@code charset} is {@code UTF-16BE} or {@code UTF-16LE}.
+     * Big-endian writes {@code FE FF}; little-endian writes {@code FF FE}.
+     * Any other charset writes nothing.
+     *
+     * @param stream destination for the mark
+     * @param charset charset whose canonical name is tested
+     * @throws IOException when writing the mark fails
+     */
     protected static void writeUTF16BomIfRequired(final OutputStream stream, final Charset charset) throws IOException {
         if ("UTF-16BE".equals(charset.name())) {
             writeUtf16Bom(stream, true);

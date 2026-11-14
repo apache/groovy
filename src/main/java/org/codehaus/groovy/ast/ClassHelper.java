@@ -119,6 +119,10 @@ public class ClassHelper {
             Iterator.class, GeneratedClosure.class, GeneratedLambda.class, GroovyObjectSupport.class
     };
 
+    /**
+     * Classes of the fixed-arity tuple types, {@link Tuple0} through {@link Tuple16}.
+     * The array index is the number of components.
+     */
     public static final Class[] TUPLE_CLASSES = new Class[]{
             Tuple0.class, Tuple1.class, Tuple2.class, Tuple3.class, Tuple4.class, Tuple5.class, Tuple6.class,
             Tuple7.class, Tuple8.class, Tuple9.class, Tuple10.class, Tuple11.class, Tuple12.class, Tuple13.class,
@@ -129,6 +133,18 @@ public class ClassHelper {
             "", "boolean", "char", "byte", "short", "int", "long", "double", "float", "void"
     };
 
+    /**
+     * Canonical {@link ClassNode} constants for the types named by the fields.
+     * Callers reuse these instances instead of allocating a node for each comparison.
+     * <p>
+     * {@code OBJECT_TYPE} through {@code DEPRECATED_TYPE} are created with
+     * {@link #makeCached(Class)}. {@code MAP_TYPE} through
+     * {@code GROOVY_OBJECT_SUPPORT_TYPE} are created with
+     * {@link #makeWithoutCaching(Class)}. The one-argument form of that factory
+     * returns the soft-cached node, so those fields are still the single cached
+     * instance of their class. {@code VOID_TYPE} is primitive {@code void} and
+     * {@code void_WRAPPER_TYPE} is {@link Void}.
+     */
     public static final ClassNode
             OBJECT_TYPE = makeCached(Object.class),
             CLOSURE_TYPE = makeCached(Closure.class),
@@ -192,6 +208,13 @@ public class ClassHelper {
             GROOVY_INTERCEPTABLE_TYPE = makeWithoutCaching(GroovyInterceptable.class),
             GROOVY_OBJECT_SUPPORT_TYPE = makeWithoutCaching(GroovyObjectSupport.class);
 
+    /**
+     * Historical alias of {@link #OBJECT_TYPE}. The field does not carry the
+     * metadata flag that {@link #isDynamicTyped(ClassNode)} reads;
+     * {@link #dynamicType()} produces a node that does.
+     *
+     * @deprecated use {@link #dynamicType()} when the type is unknown
+     */
     @Deprecated
     public static final ClassNode DYNAMIC_TYPE = OBJECT_TYPE;
 
@@ -232,8 +255,14 @@ public class ClassHelper {
 
     private static final String DYNAMIC_TYPE_METADATA = "_DYNAMIC_TYPE_METADATA_";
 
+    /**
+     * Empty {@link ClassNode} array, the same instance as {@link ClassNode#EMPTY_ARRAY}.
+     */
     protected static final ClassNode[] EMPTY_TYPE_ARRAY = ClassNode.EMPTY_ARRAY;
 
+    /**
+     * Binary name of {@link Object}, for call sites that need the name as a string.
+     */
     public static final String OBJECT = "java.lang.Object";
 
     /**
@@ -437,6 +466,21 @@ public class ClassHelper {
 
     private static final Map<ClassNode, ClassNode> WRAPPER_TYPE_TO_PRIMITIVE_TYPE_MAP = Maps.inverse(PRIMITIVE_TYPE_TO_WRAPPER_TYPE_MAP);
 
+    /**
+     * Maps a wrapper {@link ClassNode} to its primitive node.
+     * The argument is replaced by its {@link ClassNode#redirect() redirect}.
+     * When {@link #isPrimitiveType(ClassNode)} is true, that redirected node is
+     * returned unchanged. Otherwise it is looked up as a wrapper and the matching
+     * primitive constant is returned. The wrappers in the table are {@link Boolean},
+     * {@link Byte}, {@link Character}, {@link Short}, {@link Integer}, {@link Long},
+     * {@link Float}, {@link Double}, and {@link Void}, the last of which unwraps to
+     * {@code void}. A node that is neither a primitive nor one of those wrappers is
+     * returned after redirection.
+     *
+     * @param cn the type to unwrap; a null node is rejected
+     * @return the primitive constant for a known wrapper, or the redirected node
+     * @see #getWrapper(ClassNode)
+     */
     public static ClassNode getUnwrapper(ClassNode cn) {
         cn = cn.redirect();
         if (isPrimitiveType(cn)) return cn;
@@ -488,6 +532,19 @@ public class ClassHelper {
                 isPrimitiveShort(cn);
     }
 
+    /**
+     * Tests whether {@code cn} redirects to a numeric primitive or the matching
+     * wrapper. The twelve nodes are {@code byte}, {@code short}, {@code int},
+     * {@code long}, {@code float}, {@code double}, and {@link Byte}, {@link Short},
+     * {@link Integer}, {@link Long}, {@link Float}, {@link Double}.
+     * {@link BigInteger}, {@link BigDecimal}, and {@link Number} are outside this
+     * test, as are {@code boolean}, {@code char}, and {@code void}. The wrapper
+     * checks accept a null node as a miss, and the later primitive checks
+     * dereference {@code cn}.
+     *
+     * @param cn the type to test; must not be null
+     * @return {@code true} when {@code cn} redirects to one of those twelve nodes
+     */
     public static boolean isNumberType(final ClassNode cn) {
         return isWrapperByte(cn) ||
                 isWrapperShort(cn) ||
@@ -503,114 +560,364 @@ public class ClassHelper {
                 isPrimitiveDouble(cn);
     }
 
+    /**
+     * Returns a new non-primary {@link ClassNode} for {@link Reference}.
+     * The node redirects to the cached reference type. Each call allocates a
+     * distinct node, leaving the shared reference constant unchanged.
+     *
+     * @return a plain node whose redirect is the cached {@code groovy.lang.Reference} type
+     */
     public static ClassNode makeReference() {
         return REFERENCE_TYPE.getPlainNodeReference();
     }
 
+    /**
+     * Tests whether {@code type} is identical to an entry in this class's
+     * predefined {@link ClassNode} table. A different node with the same resolved
+     * name yields {@code false}, including a redirect whose target sits in the
+     * table. {@code null} yields {@code false}.
+     *
+     * @param type the node to test, or {@code null}
+     * @return {@code true} when {@code type} is one of those instances
+     */
     public static boolean isCachedType(ClassNode type) {
         return cachedTypeSet.contains(type);
     }
 
+    /**
+     * Tests whether {@code type} carries the dynamic-type metadata written by
+     * {@link #dynamicType()}. The flag is stored on the node, so
+     * {@link #OBJECT_TYPE} and the {@link #DYNAMIC_TYPE} alias yield
+     * {@code false}. Only {@link Boolean#TRUE} counts, and {@code null} yields
+     * {@code false}.
+     *
+     * @param type the node to test, or {@code null}
+     * @return {@code true} when the dynamic-type metadata is {@link Boolean#TRUE}
+     */
     public static boolean isDynamicTyped(ClassNode type) {
         return type != null && Boolean.TRUE.equals(type.getNodeMetaData(DYNAMIC_TYPE_METADATA));
     }
 
+    /**
+     * Tests whether the {@link ClassNode#redirect() redirect} of {@code type}
+     * is {@link #boolean_TYPE} by identity. That constant is the cached primitive
+     * {@code boolean} node. A {@link Boolean} node is a different type.
+     * {@code type} is dereferenced, so a null argument is rejected.
+     *
+     * @param type the type to test
+     * @return {@code true} when the redirected node is {@link #boolean_TYPE}
+     */
     public static boolean isPrimitiveBoolean(ClassNode type) {
         return type.redirect() == boolean_TYPE;
     }
 
+    /**
+     * Tests whether the {@link ClassNode#redirect() redirect} of {@code type}
+     * is {@link #char_TYPE} by identity. That constant is the cached primitive
+     * {@code char} node. A {@link Character} node is a different type.
+     * {@code type} is dereferenced, so a null argument is rejected.
+     *
+     * @param type the type to test
+     * @return {@code true} when the redirected node is {@link #char_TYPE}
+     */
     public static boolean isPrimitiveChar(ClassNode type) {
         return type.redirect() == char_TYPE;
     }
 
+    /**
+     * Tests whether the {@link ClassNode#redirect() redirect} of {@code type}
+     * is {@link #byte_TYPE} by identity. That constant is the cached primitive
+     * {@code byte} node. A {@link Byte} node is a different type.
+     * {@code type} is dereferenced, so a null argument is rejected.
+     *
+     * @param type the type to test
+     * @return {@code true} when the redirected node is {@link #byte_TYPE}
+     */
     public static boolean isPrimitiveByte(ClassNode type) {
         return type.redirect() == byte_TYPE;
     }
 
+    /**
+     * Tests whether the {@link ClassNode#redirect() redirect} of {@code type}
+     * is {@link #int_TYPE} by identity. That constant is the cached primitive
+     * {@code int} node. A {@link Integer} node is a different type.
+     * {@code type} is dereferenced, so a null argument is rejected.
+     *
+     * @param type the type to test
+     * @return {@code true} when the redirected node is {@link #int_TYPE}
+     */
     public static boolean isPrimitiveInt(ClassNode type) {
         return type.redirect() == int_TYPE;
     }
 
+    /**
+     * Tests whether the {@link ClassNode#redirect() redirect} of {@code type}
+     * is {@link #long_TYPE} by identity. That constant is the cached primitive
+     * {@code long} node. A {@link Long} node is a different type.
+     * {@code type} is dereferenced, so a null argument is rejected.
+     *
+     * @param type the type to test
+     * @return {@code true} when the redirected node is {@link #long_TYPE}
+     */
     public static boolean isPrimitiveLong(ClassNode type) {
         return type.redirect() == long_TYPE;
     }
 
+    /**
+     * Tests whether the {@link ClassNode#redirect() redirect} of {@code type}
+     * is {@link #short_TYPE} by identity. That constant is the cached primitive
+     * {@code short} node. A {@link Short} node is a different type.
+     * {@code type} is dereferenced, so a null argument is rejected.
+     *
+     * @param type the type to test
+     * @return {@code true} when the redirected node is {@link #short_TYPE}
+     */
     public static boolean isPrimitiveShort(ClassNode type) {
         return type.redirect() == short_TYPE;
     }
 
+    /**
+     * Tests whether the {@link ClassNode#redirect() redirect} of {@code type}
+     * is {@link #double_TYPE} by identity. That constant is the cached primitive
+     * {@code double} node. A {@link Double} node is a different type.
+     * {@code type} is dereferenced, so a null argument is rejected.
+     *
+     * @param type the type to test
+     * @return {@code true} when the redirected node is {@link #double_TYPE}
+     */
     public static boolean isPrimitiveDouble(ClassNode type) {
         return type.redirect() == double_TYPE;
     }
 
+    /**
+     * Tests whether the {@link ClassNode#redirect() redirect} of {@code type}
+     * is {@link #float_TYPE} by identity. That constant is the cached primitive
+     * {@code float} node. A {@link Float} node is a different type.
+     * {@code type} is dereferenced, so a null argument is rejected.
+     *
+     * @param type the type to test
+     * @return {@code true} when the redirected node is {@link #float_TYPE}
+     */
     public static boolean isPrimitiveFloat(ClassNode type) {
         return type.redirect() == float_TYPE;
     }
 
+    /**
+     * Tests whether the {@link ClassNode#redirect() redirect} of {@code type}
+     * is {@link #VOID_TYPE} by identity. That constant is the cached primitive
+     * {@code void} node. A {@link Void} node is a different type.
+     * {@code type} is dereferenced, so a null argument is rejected.
+     *
+     * @param type the type to test
+     * @return {@code true} when the redirected node is {@link #VOID_TYPE}
+     */
     public static boolean isPrimitiveVoid(ClassNode type) {
         return type.redirect() == VOID_TYPE;
     }
 
+    /**
+     * Tests whether the {@link ClassNode#redirect() redirect} of {@code type}
+     * is {@link #Boolean_TYPE} by identity. {@code null} yields {@code false}.
+     * The primitive {@code boolean} node is a different type.
+     *
+     * @param type the type to test, or {@code null}
+     * @return {@code true} when {@code type} is non-null and redirects to {@link #Boolean_TYPE}
+     */
     public static boolean isWrapperBoolean(ClassNode type) {
         return type != null && type.redirect() == Boolean_TYPE;
     }
 
+    /**
+     * Tests whether the {@link ClassNode#redirect() redirect} of {@code type}
+     * is {@link #Character_TYPE} by identity. {@code null} yields {@code false}.
+     * The primitive {@code char} node is a different type.
+     *
+     * @param type the type to test, or {@code null}
+     * @return {@code true} when {@code type} is non-null and redirects to {@link #Character_TYPE}
+     */
     public static boolean isWrapperCharacter(ClassNode type) {
         return type != null && type.redirect() == Character_TYPE;
     }
 
+    /**
+     * Tests whether the {@link ClassNode#redirect() redirect} of {@code type}
+     * is {@link #Byte_TYPE} by identity. {@code null} yields {@code false}.
+     * The primitive {@code byte} node is a different type.
+     *
+     * @param type the type to test, or {@code null}
+     * @return {@code true} when {@code type} is non-null and redirects to {@link #Byte_TYPE}
+     */
     public static boolean isWrapperByte(ClassNode type) {
         return type != null && type.redirect() == Byte_TYPE;
     }
 
+    /**
+     * Tests whether the {@link ClassNode#redirect() redirect} of {@code type}
+     * is {@link #Integer_TYPE} by identity. {@code null} yields {@code false}.
+     * The primitive {@code int} node is a different type.
+     *
+     * @param type the type to test, or {@code null}
+     * @return {@code true} when {@code type} is non-null and redirects to {@link #Integer_TYPE}
+     */
     public static boolean isWrapperInteger(ClassNode type) {
         return type != null && type.redirect() == Integer_TYPE;
     }
 
+    /**
+     * Tests whether the {@link ClassNode#redirect() redirect} of {@code type}
+     * is {@link #Long_TYPE} by identity. {@code null} yields {@code false}.
+     * The primitive {@code long} node is a different type.
+     *
+     * @param type the type to test, or {@code null}
+     * @return {@code true} when {@code type} is non-null and redirects to {@link #Long_TYPE}
+     */
     public static boolean isWrapperLong(ClassNode type) {
         return type != null && type.redirect() == Long_TYPE;
     }
 
+    /**
+     * Tests whether the {@link ClassNode#redirect() redirect} of {@code type}
+     * is {@link #Short_TYPE} by identity. {@code null} yields {@code false}.
+     * The primitive {@code short} node is a different type.
+     *
+     * @param type the type to test, or {@code null}
+     * @return {@code true} when {@code type} is non-null and redirects to {@link #Short_TYPE}
+     */
     public static boolean isWrapperShort(ClassNode type) {
         return type != null && type.redirect() == Short_TYPE;
     }
 
+    /**
+     * Tests whether the {@link ClassNode#redirect() redirect} of {@code type}
+     * is {@link #Double_TYPE} by identity. {@code null} yields {@code false}.
+     * The primitive {@code double} node is a different type.
+     *
+     * @param type the type to test, or {@code null}
+     * @return {@code true} when {@code type} is non-null and redirects to {@link #Double_TYPE}
+     */
     public static boolean isWrapperDouble(ClassNode type) {
         return type != null && type.redirect() == Double_TYPE;
     }
 
+    /**
+     * Tests whether the {@link ClassNode#redirect() redirect} of {@code type}
+     * is {@link #Float_TYPE} by identity. {@code null} yields {@code false}.
+     * The primitive {@code float} node is a different type.
+     *
+     * @param type the type to test, or {@code null}
+     * @return {@code true} when {@code type} is non-null and redirects to {@link #Float_TYPE}
+     */
     public static boolean isWrapperFloat(ClassNode type) {
         return type != null && type.redirect() == Float_TYPE;
     }
 
+    /**
+     * Tests whether the {@link ClassNode#redirect() redirect} of {@code type}
+     * is {@link #void_WRAPPER_TYPE} by identity. {@code null} yields {@code false}.
+     * The primitive {@code void} node is a different type.
+     *
+     * @param type the type to test, or {@code null}
+     * @return {@code true} when {@code type} is non-null and redirects to {@link #void_WRAPPER_TYPE}
+     */
     public static boolean isWrapperVoid(ClassNode type) {
         return type != null && type.redirect() == void_WRAPPER_TYPE;
     }
 
+    /**
+     * Tests whether {@code type} names {@link BigInteger}, using
+     * {@link ClassNode#equals(Object)} against {@link #BigInteger_TYPE}.
+     * Equality follows the resolved name, so a redirect to that name matches
+     * even when the node is not the cached constant. {@code null} yields
+     * {@code false}.
+     *
+     * @param type the type to test, or {@code null}
+     * @return {@code true} when {@code type} equals {@link #BigInteger_TYPE}
+     */
     public static boolean isBigIntegerType(ClassNode type) {
         return BigInteger_TYPE.equals(type);
     }
 
+    /**
+     * Tests whether {@code type} names {@link BigDecimal}, using
+     * {@link ClassNode#equals(Object)} against {@link #BigDecimal_TYPE}.
+     * Equality follows the resolved name, so a redirect to that name matches
+     * even when the node is not the cached constant. {@code null} yields
+     * {@code false}.
+     *
+     * @param type the type to test, or {@code null}
+     * @return {@code true} when {@code type} equals {@link #BigDecimal_TYPE}
+     */
     public static boolean isBigDecimalType(ClassNode type) {
         return BigDecimal_TYPE.equals(type);
     }
 
+    /**
+     * Tests whether {@code type} names {@link String}, using
+     * {@link ClassNode#equals(Object)} against {@link #STRING_TYPE}.
+     * Equality follows the resolved name, so a redirect to that name matches
+     * even when the node is not the cached constant. {@code null} yields
+     * {@code false}.
+     *
+     * @param type the type to test, or {@code null}
+     * @return {@code true} when {@code type} equals {@link #STRING_TYPE}
+     */
     public static boolean isStringType(ClassNode type) {
         return STRING_TYPE.equals(type);
     }
 
+    /**
+     * Tests whether {@code type} names {@link GString}, using
+     * {@link ClassNode#equals(Object)} against {@link #GSTRING_TYPE}.
+     * Equality follows the resolved name, so a redirect to that name matches
+     * even when the node is not the cached constant. {@code null} yields
+     * {@code false}.
+     *
+     * @param type the type to test, or {@code null}
+     * @return {@code true} when {@code type} equals {@link #GSTRING_TYPE}
+     */
     public static boolean isGStringType(ClassNode type) {
         return GSTRING_TYPE.equals(type);
     }
 
+    /**
+     * Tests whether {@code type} names {@link Object}, using
+     * {@link ClassNode#equals(Object)} against {@link #OBJECT_TYPE}.
+     * Equality follows the resolved name, so a plain reference to object matches,
+     * including a node from {@link #dynamicType()}. The dynamic-type metadata
+     * flag is a separate test; use {@link #isDynamicTyped(ClassNode)} for it.
+     * {@code null} yields {@code false}.
+     *
+     * @param type the type to test, or {@code null}
+     * @return {@code true} when {@code type} equals {@link #OBJECT_TYPE}
+     */
     public static boolean isObjectType(ClassNode type) {
         return OBJECT_TYPE.equals(type);
     }
 
+    /**
+     * Tests whether {@code type} names {@link GroovyObject}, using
+     * {@link ClassNode#equals(Object)} against {@link #GROOVY_OBJECT_TYPE}.
+     * Equality follows the resolved name, so a redirect to that name matches
+     * even when the node is not the cached constant. {@code null} yields
+     * {@code false}.
+     *
+     * @param type the type to test, or {@code null}
+     * @return {@code true} when {@code type} equals {@link #GROOVY_OBJECT_TYPE}
+     */
     public static boolean isGroovyObjectType(ClassNode type) {
         return GROOVY_OBJECT_TYPE.equals(type);
     }
 
+    /**
+     * Tests whether {@code type} names {@link Class}, using
+     * {@link ClassNode#equals(Object)} against {@link #CLASS_Type}.
+     * Equality follows the resolved name, so a redirect to that name matches
+     * even when the node is not the cached constant. {@code null} yields
+     * {@code false}.
+     *
+     * @param type the type to test, or {@code null}
+     * @return {@code true} when {@code type} equals {@link #CLASS_Type}
+     */
     public static boolean isClassType(ClassNode type) {
         return CLASS_Type.equals(type);
     }
@@ -619,10 +926,31 @@ public class ClassHelper {
         static Map<Class, SoftReference<ClassNode>> classCache = new ManagedIdentityConcurrentMap<>(128);
     }
 
+    /**
+     * Tests whether {@link #findSAM(ClassNode)} finds one abstract method on
+     * {@code type}. On an interface, trait methods that already have a default
+     * implementation and methods {@link Object} already declares are set aside.
+     * On an abstract class, an abstract method that already has a usable
+     * implementation on a superclass is set aside. Zero remaining methods, or
+     * more than one, means the type is not a SAM type. {@code null} yields
+     * {@code false}.
+     *
+     * @param type the type to test, or {@code null}
+     * @return {@code true} when exactly one abstract method remains
+     */
     public static boolean isSAMType(final ClassNode type) {
         return findSAM(type) != null;
     }
 
+    /**
+     * Tests whether {@code type} is an interface and {@link #isSAMType(ClassNode)}
+     * is true. {@code null} yields {@code false}. An abstract class is rejected
+     * even when it has a single abstract method, because the JVM converts a
+     * lambda only when the target is an interface.
+     *
+     * @param type the type to test, or {@code null}
+     * @return {@code true} when {@code type} is a non-null interface with one remaining abstract method
+     */
     public static boolean isFunctionalInterface(final ClassNode type) {
         // Functional interface must be an interface at first, or the following exception will occur:
         // java.lang.invoke.LambdaConversionException: Functional interface SamCallable is not an interface
