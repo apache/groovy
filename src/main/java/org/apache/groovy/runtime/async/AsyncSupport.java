@@ -266,7 +266,7 @@ public class AsyncSupport {
                 if (firstError == null) {
                     firstError = t;
                 } else {
-                    firstError.addSuppressed(t);
+                    addSuppressedOnce(firstError, t);
                 }
             }
         }
@@ -274,6 +274,22 @@ public class AsyncSupport {
             if (firstError instanceof RuntimeException re) throw re;
             if (firstError instanceof Error err) throw err;
             throw new RuntimeException(firstError);
+        }
+    }
+
+    /**
+     * Adds {@code secondary} to the exceptions suppressed by {@code primary},
+     * unless it is {@code primary} itself or is already recorded there. Several
+     * child tasks or deferred actions may rethrow one shared exception instance,
+     * for example by awaiting the same failed task.
+     */
+    static void addSuppressedOnce(Throwable primary, Throwable secondary) {
+        if (secondary == primary) return;
+        synchronized (primary) {
+            for (Throwable recorded : primary.getSuppressed()) {
+                if (recorded == secondary) return;
+            }
+            primary.addSuppressed(secondary);
         }
     }
 
@@ -550,8 +566,9 @@ public class AsyncSupport {
      * Rethrows {@code failure} as itself, including a checked exception.
      * Kept in this package so the pure-Java concurrent jar stays self-contained.
      */
-    static void rethrow(Throwable failure) {
+    static RuntimeException rethrow(Throwable failure) {
         sneakyThrow(failure);
+        return null; // unreachable
     }
 
     @SuppressWarnings("unchecked")
