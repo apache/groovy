@@ -54,9 +54,22 @@ import static org.codehaus.groovy.reflection.stdclasses.CachedSAMClass.getSAMMet
  */
 public class MetaClassHelper {
 
+    /**
+     * Shared zero-length array for a call that passes no arguments.
+     */
     public static final Object[] EMPTY_ARRAY = {};
+    /**
+     * Shared zero-length class array for a signature with no parameters.
+     */
     public static final Class [] EMPTY_TYPE_ARRAY = {};
+    /**
+     * Shared zero-length class array, the same instance as {@link #EMPTY_TYPE_ARRAY}.
+     */
     public static final Class [] EMPTY_CLASS_ARRAY = EMPTY_TYPE_ARRAY;
+    /**
+     * Shared one-element array whose only slot is {@code null}.
+     * The array is mutable: a write to the slot is visible to every user of this field.
+     */
     public static final Object[] ARRAY_WITH_NULL = {null}; // mutable!
 
     private static final int MAX_ARG_LEN = 12;
@@ -70,6 +83,25 @@ public class MetaClassHelper {
     * 44-48: vargs penalty
     */
 
+    /**
+     * Tests whether {@code at} can access {@code constructor} under the visibility
+     * rules applied here.
+     * A public constructor is accessible.
+     * A private constructor is accessible when the binary name of {@code at} equals
+     * {@link Constructor#getName()}, which is the binary name of the declaring class.
+     * A protected constructor is accessible when {@code at} and the declaring
+     * class are in the same package, the unnamed package included. When both
+     * classes have named packages and those packages differ, it is accessible
+     * when the declaring class is {@code at} or a superclass of {@code at}.
+     * A package-private constructor is accessible in that same-package case,
+     * with no superclass exception.
+     * A class in the unnamed package and a class in a named package are
+     * treated as different packages for both of those modifiers.
+     *
+     * @param at the class attempting the access
+     * @param constructor the constructor being accessed
+     * @return {@code true} when the visibility rule for the constructor's modifiers accepts {@code at}
+     */
     public static boolean accessibleToConstructor(final Class at, final Constructor constructor) {
         boolean accessible = false;
         final int modifiers = constructor.getModifiers();
@@ -121,6 +153,19 @@ public class MetaClassHelper {
         return null;
     }
 
+    /**
+     * Boxes a primitive array into a new {@link Object} array.
+     * {@code parameters} is cast to the primitive array named by
+     * {@code componentType}, and each element is boxed. The component types
+     * handled are {@code boolean}, {@code char}, {@code byte}, {@code short},
+     * {@code int}, {@code long}, {@code float}, and {@code double}. Any other
+     * component type, {@code null} included, produces {@code null} and leaves
+     * {@code parameters} unread.
+     *
+     * @param parameters a primitive array of component type {@code componentType}
+     * @param componentType the primitive component type of {@code parameters}
+     * @return a new array of boxed elements, or {@code null} when {@code componentType} is not one of those eight primitives
+     */
     public static Object[] asWrapperArray(Object parameters, Class componentType) {
         Object[] ret = null;
         if (componentType == boolean.class) {
@@ -328,6 +373,9 @@ public class MetaClassHelper {
      * reference can implement only an interface whose abstract method it can be called with.
      * Such a choice must not be cached by argument classes.
      *
+     * @param types the {@code types} array
+     * @param arguments the arguments passed to the call
+     * @return the boolean result
      * @since 6.0.1
      */
     public static boolean dependsOnMethodClosureArity(final Object methodOrList, final Class[] types, final Object[] arguments) {
@@ -353,6 +401,7 @@ public class MetaClassHelper {
      * a number of arguments the method closure passed there cannot be called with; keeps
      * every candidate if none fits.
      *
+     * @param arguments the arguments passed to the call
      * @since 6.0.1
      */
     public static <M> List<M> filterByMethodClosureArity(final List<M> candidates, final Object[] arguments) {
@@ -375,6 +424,7 @@ public class MetaClassHelper {
      * The numbers of arguments a closure literal's class accepts, read from its
      * {@code doCall} methods; a trailing-array parameter accepts any count from one fewer.
      * Packed closures present the same view through their fixed-arity classes.
+     *
      */
     private record ClosureArgumentCounts(BitSet counts, int varargsFrom) {
         boolean accepts(final int n) {
@@ -406,6 +456,7 @@ public class MetaClassHelper {
      * from its class; keeps every candidate if none fits. The choice is still determined by
      * the argument classes.
      *
+     * @param arguments the arguments passed to the call
      * @since 7.0.0
      */
     public static <M> List<M> filterByClosureArity(final List<M> candidates, final Class[] arguments) {
@@ -503,6 +554,52 @@ public class MetaClassHelper {
         return objectDistance << OBJECT_SHIFT;
     }
 
+    /**
+     * Scores how far {@code arguments} are from the parameters of {@code pt}.
+     * A smaller non-negative score is a closer match. A negative score means
+     * an interface parameter the argument does not implement. An empty
+     * parameter list scores {@code 0}.
+     * <p>
+     * Every parameter except the last contributes one term for the argument
+     * in that position. An exact class match scores {@code 0}, as does a
+     * class assignable to {@link GeneratedClosure} passed to {@link Closure}.
+     * An interface parameter scores the longest path through superclasses and
+     * superinterfaces, and scores a negative value when no such path exists.
+     * A {@link Closure} that does not implement the interface is scored as an
+     * object instead, with a lower score when its {@code doCall} count matches
+     * the single abstract method. A class that declares more than one
+     * {@code doCall} matches an abstract method of zero or one parameter.
+     * Two types that are both in this class's primitive-distance table (the
+     * primitives, their wrappers, {@link BigInteger}, {@link BigDecimal},
+     * {@link Number}, and {@link Object}) contribute that table's conversion
+     * distance. Any other pair contributes a superclass walk from the argument
+     * toward the parameter, plus a further penalty when an array is passed to
+     * a non-array parameter. The walk stops early when {@link GString} is
+     * passed to {@link String}. A null argument scores {@code 0} for
+     * {@link NullObject} and {@code 1} for {@link Object}; otherwise the score
+     * is the distance from the parameter up to {@link Object}. A null argument
+     * passed to an interface uses a small fixed interface distance instead.
+     * <p>
+     * The last parameter is then treated as a possible varargs parameter.
+     * The varargs penalty occupies higher bits than those per-argument terms,
+     * so a non-varargs fit outranks every varargs fit, and a varargs fit that
+     * consumes fewer arguments outranks one that consumes more.
+     * Equal lengths with the last argument Java-assignable to the last
+     * parameter, null counting as assignable, add no penalty, and that
+     * argument is scored against the last parameter.
+     * Fewer arguments than parameters add one penalty unit and leave the
+     * missing tail unscored.
+     * Equal lengths where the last argument is not assignable to the last
+     * parameter add two penalty units, and that argument is scored against
+     * the parameter's component type.
+     * More arguments than parameters add two penalty units plus one unit per
+     * extra argument, and every argument from the last parameter onward is
+     * scored against that parameter's component type.
+     *
+     * @param arguments classes of the call arguments, in order; a null entry is a null argument
+     * @param pt the candidate parameter list
+     * @return the packed distance; a smaller non-negative value is a closer fit
+     */
     public static long calculateParameterDistance(Class[] arguments, ParameterTypes pt) {
         CachedClass[] parameters = pt.getParameterTypes();
         final int parametersLength = parameters.length;
@@ -775,6 +872,23 @@ public class MetaClassHelper {
         return types;
     }
 
+    /**
+     * Copies {@code arguments} from {@code offset} to the end into a new array
+     * whose component type is shared by that range.
+     * Null elements are skipped while the type is chosen. The type starts as the
+     * class of the first non-null element and walks toward {@link Object} until
+     * {@link Class#isAssignableFrom(Class)} accepts every later non-null element.
+     * A range of only nulls uses {@code fallback}. When the chosen class is
+     * {@link Object} and {@code fallback} is an interface, the interface is used
+     * instead when every slot in the range is non-null and, for each element,
+     * {@code fallback} is a direct interface of that element's class or of a
+     * superclass below {@link Object}.
+     *
+     * @param arguments the source values; elements before {@code offset} are ignored
+     * @param offset the first index copied into the result
+     * @param fallback component type of an all-null range, and the interface tried when the common class is {@link Object}
+     * @return the array of the chosen component type holding the copied elements
+     */
     public static Object makeCommonArray(Object[] arguments, int offset, Class fallback) {
         // arguments.length>0 && !=null
         Class baseClass = null;
@@ -822,6 +936,17 @@ public class MetaClassHelper {
         return result;
     }
 
+    /**
+     * Allocates an array of the given {@code length}. The component type is the
+     * runtime class of {@code obj} when {@code obj} is non-null, and
+     * {@code secondary} when it is null. The new array is empty; {@code obj} is
+     * not stored in it.
+     *
+     * @param obj instance whose class supplies the component type, or {@code null}
+     * @param secondary component type used when {@code obj} is null
+     * @param length the requested array length
+     * @return a new array of that component type and length
+     */
     public static Object makeArray(Object obj, Class secondary, int length) {
         Class baseClass = secondary;
         if (obj != null) {
@@ -833,6 +958,24 @@ public class MetaClassHelper {
         return Array.newInstance(baseClass, length);
     }
 
+    /**
+     * Builds a {@link GroovyRuntimeException} describing a failed meta-method call.
+     * The message is {@code init}, the {@code method}, {@code " on: "}, the
+     * receiver {@code object}, {@code " with arguments: "},
+     * {@link FormatHelper#toString(Object) FormatHelper.toString}{@code (args)},
+     * {@code " reason: "}, and {@code reason}, concatenated in that order.
+     * When {@code setReason} is true, {@code reason} is also the exception cause;
+     * when it is false, the cause is left null. This method returns the exception
+     * and does not throw it.
+     *
+     * @param init text that opens the message
+     * @param method the meta-method that failed
+     * @param object the receiver the method was invoked on
+     * @param args the arguments passed to the method
+     * @param reason the failure to report
+     * @param setReason whether {@code reason} is attached as the cause
+     * @return the populated exception
+     */
     public static GroovyRuntimeException createExceptionText(String init, MetaMethod method, Object object, Object[] args, Throwable reason, boolean setReason) {
         return new GroovyRuntimeException(
                 init
@@ -846,6 +989,15 @@ public class MetaClassHelper {
                 setReason ? reason : null);
     }
 
+    /**
+     * Returns the binary name associated with {@code object}.
+     * A null argument returns null. A {@link Class} contributes its own name,
+     * rather than the name {@code java.lang.Class}. Every other value contributes
+     * the name of its runtime class.
+     *
+     * @param object a class, an instance, or null
+     * @return the binary name, or null when {@code object} is null
+     */
     protected static String getClassName(Object object) {
         if (object == null) return null;
         return (object instanceof Class) ? ((Class) object).getName() : object.getClass().getName();
@@ -864,6 +1016,32 @@ public class MetaClassHelper {
         return new MethodClosure(object, methodName);
     }
 
+    /**
+     * Tests whether a value of {@code classToTransformFrom} may be passed where
+     * {@code classToTransformTo} is expected, including Groovy coercions beyond
+     * {@link Class#isAssignableFrom(Class)}.
+     * A null source is accepted for every target, and a target of {@link Object}
+     * accepts every source. Both classes are boxed before the remaining checks,
+     * so a primitive and its wrapper match. {@code boolean} and {@code char}
+     * take part through boxing and ordinary assignability. The further coercions are:
+     * <ul>
+     * <li>{@link Integer} also accepts {@link Short}, {@link Byte}, and {@link BigInteger}.</li>
+     * <li>{@link Long} also accepts {@link Integer}, {@link Short}, and {@link Byte}.</li>
+     * <li>{@link Float} also accepts {@link Integer}, {@link Long}, {@link Short}, and {@link Byte}.</li>
+     * <li>{@link Double} also accepts {@link Integer}, {@link Long}, {@link Short}, {@link Byte},
+     *     {@link Float}, {@link BigDecimal}, and {@link BigInteger}.</li>
+     * <li>{@link BigInteger} also accepts {@link Integer}, {@link Long}, {@link Short}, and {@link Byte}.</li>
+     * <li>{@link BigDecimal} also accepts {@link Double}, {@link Float}, {@link BigInteger},
+     *     {@link Integer}, {@link Long}, {@link Short}, and {@link Byte}.</li>
+     * <li>{@link Short} also accepts {@link Byte}.</li>
+     * <li>{@link String} also accepts {@link GString} and its subclasses.</li>
+     * </ul>
+     * Every other pair uses {@link Class#isAssignableFrom(Class)} on the boxed classes.
+     *
+     * @param classToTransformTo the destination type
+     * @param classToTransformFrom the source type, or null
+     * @return {@code true} when the source may be used as the destination
+     */
     public static boolean isAssignableFrom(Class classToTransformTo, Class classToTransformFrom) {
         if (classToTransformTo == classToTransformFrom
                 || classToTransformFrom == null
@@ -929,6 +1107,15 @@ public class MetaClassHelper {
                 || classToTransformFrom == Byte.class;
     }
 
+    /**
+     * Walks {@code clazz} and then each superclass, looking for {@code superclass}.
+     * The walk includes {@code clazz} itself, so a class counts as a superclass of
+     * itself here. A null {@code clazz} ends the walk immediately.
+     *
+     * @param clazz the class whose superclass chain is examined, or null
+     * @param superclass the class to find on that chain
+     * @return {@code true} when {@code superclass} is {@code clazz} or a superclass of it
+     */
     protected static boolean isSuperclass(Class clazz, Class superclass) {
         while (clazz != null) {
             if (clazz == superclass) return true;
@@ -937,6 +1124,16 @@ public class MetaClassHelper {
         return false;
     }
 
+    /**
+     * Tests whether each argument class is acceptable for the parameter class in
+     * the same position, using {@link #isAssignableFrom(Class, Class)}.
+     * The arrays must have the same length; a shorter or longer argument list is
+     * incompatible, varargs included.
+     *
+     * @param arguments the runtime argument classes
+     * @param parameters the formal parameter classes
+     * @return {@code true} when the lengths match and each argument is assignable to its parameter
+     */
     public static boolean parametersAreCompatible(Class[] arguments, Class[] parameters) {
         final int argumentsLength = arguments.length;
         if (argumentsLength != parameters.length) return false;
@@ -946,6 +1143,21 @@ public class MetaClassHelper {
         return true;
     }
 
+    /**
+     * Logs an invocation at {@link Level#FINER} when that level is enabled for
+     * the call's logger. The logger name is {@code methodCalls.} followed by
+     * {@link #getClassName(Object)} of {@code object} and {@code methodName};
+     * a null receiver is concatenated as the text {@code null}. The log record's
+     * source method is {@code methodName} plus the arguments rendered by
+     * {@link #normalizedValue(Object)}, separated by commas. A null
+     * {@code arguments} array produces an empty pair of parentheses. The log
+     * message is {@code called from MetaClass.invokeMethod}. A logger that is
+     * not at {@link Level#FINER} returns before the message is built.
+     *
+     * @param object the receiver, used in the logger name
+     * @param methodName the method that was invoked
+     * @param arguments the arguments, or null when there are none to render
+     */
     public static void logMethodCall(Object object, String methodName, Object[] arguments) {
         String className = getClassName(object);
         String logname = "methodCalls." + className + "." + methodName;
@@ -965,6 +1177,17 @@ public class MetaClassHelper {
         objLog.logp(Level.FINER, className, msg.toString(), "called from MetaClass.invokeMethod");
     }
 
+    /**
+     * Renders one argument for {@link #logMethodCall(Object, String, Object[])}.
+     * The text is {@link Object#toString()}. When that text is longer than twelve
+     * characters, the first ten are kept and {@code ..} is appended. A
+     * {@link String} is then wrapped in single quotes. When {@code toString}
+     * throws, the result is {@link #shortName(Object)} instead, which is also the
+     * result for a null argument.
+     *
+     * @param argument the value to render, or null
+     * @return the truncated text, quoted when the value is a {@link String}, or the short-name fallback
+     */
     protected static String normalizedValue(Object argument) {
         String value;
         try {
@@ -981,6 +1204,19 @@ public class MetaClassHelper {
         return value;
     }
 
+    /**
+     * Returns a simple name of {@code object} for a log line.
+     * A null argument, or an argument whose class is null, yields
+     * {@code unknownClass}. Otherwise the binary name from
+     * {@link #getClassName(Object)} is used: a {@link Class} contributes its own
+     * name, and any other value contributes its runtime class name. When that
+     * name contains a {@code '.'} with at least one character after it, the
+     * substring after the last dot is returned. A missing binary name yields
+     * {@code unknownClassName}.
+     *
+     * @param object the value whose class name is shortened, or null
+     * @return the simple name, {@code unknownClass}, or {@code unknownClassName}
+     */
     protected static String shortName(Object object) {
         if (object == null || object.getClass() == null) return "unknownClass";
         String name = getClassName(object);
@@ -990,6 +1226,18 @@ public class MetaClassHelper {
         return name.substring(lastDotPos + 1);
     }
 
+    /**
+     * Copies {@code classes}, boxing selected primitives and rewriting
+     * {@link GString} types to {@link String}. A null entry stays null.
+     * {@code int}, {@code byte}, {@code long}, {@code double}, and {@code float}
+     * become the matching wrapper class. {@code boolean}, {@code char},
+     * {@code short}, and {@code void} stay primitive. A type that is
+     * {@link GString} or a subclass of it becomes {@link String}. Every other
+     * class is copied unchanged.
+     *
+     * @param classes the classes to adapt; entries may be null
+     * @return a new array of the same length with those substitutions
+     */
     public static Class[] wrap(Class[] classes) {
         Class[] wrappedArguments = new Class[classes.length];
         for (int i = 0; i < wrappedArguments.length; i++) {
@@ -1015,6 +1263,19 @@ public class MetaClassHelper {
         return wrappedArguments;
     }
 
+    /**
+     * Tests whether each parameter class is identical to the class derived from
+     * the argument in the same position. The arrays must have the same length.
+     * A null argument matches a null parameter class. A {@link Wrapper} is
+     * represented by {@link Wrapper#getType()}, and every other argument by
+     * {@link Object#getClass()}. {@code weakNullCheck} is not consulted; null
+     * and non-null arguments share this comparison.
+     *
+     * @param params the parameter classes, null slots included
+     * @param arguments the call arguments
+     * @param weakNullCheck unused
+     * @return {@code true} when the lengths match and every slot matches by identity
+     */
     public static boolean sameClasses(Class[] params, Object[] arguments, boolean weakNullCheck) {
         if (params.length != arguments.length)
             return false;
@@ -1036,6 +1297,17 @@ public class MetaClassHelper {
         return arg.getClass();
     }
 
+    /**
+     * Tests whether each parameter class is identical to the class derived from
+     * the argument in the same position. The arrays must have the same length.
+     * A null argument matches a null parameter class. A {@link Wrapper} is
+     * represented by {@link Wrapper#getType()}, and every other argument by
+     * {@link Object#getClass()}.
+     *
+     * @param params the parameter classes, null slots included
+     * @param arguments the call arguments
+     * @return {@code true} when the lengths match and every slot matches by identity
+     */
     public static boolean sameClasses(Class[] params, Object[] arguments) {
         if (params.length != arguments.length)
             return false;
@@ -1054,10 +1326,27 @@ public class MetaClassHelper {
         return true;
     }
 
+    /**
+     * Tests a call that passed no arguments against {@code params}.
+     * No class is compared; the result is whether the array is empty.
+     *
+     * @param params the parameter classes of the candidate signature
+     * @return {@code true} when {@code params} has length zero
+     */
     public static boolean sameClasses(Class[] params) {
         return params.length == 0;
     }
 
+    /**
+     * Tests a one-argument call. {@code params} must have length one, and its
+     * only class must be identical to the class of {@code arg1}. A null argument
+     * matches a null parameter class, and a {@link Wrapper} is represented by
+     * {@link Wrapper#getType()}.
+     *
+     * @param params the parameter classes; the length must be one
+     * @param arg1 the sole argument, or null
+     * @return {@code true} when the length is one and the class matches by identity
+     */
     public static boolean sameClasses(Class[] params, Object arg1) {
         if (params.length != 1)
             return false;
@@ -1067,6 +1356,17 @@ public class MetaClassHelper {
         return true;
     }
 
+    /**
+     * Tests a two-argument call. {@code params} must have length two, and each
+     * class must be identical to the class of the argument in that position.
+     * A null argument matches a null parameter class, and a {@link Wrapper} is
+     * represented by {@link Wrapper#getType()}.
+     *
+     * @param params the parameter classes; the length must be two
+     * @param arg1 the first argument, or null
+     * @param arg2 the second argument, or null
+     * @return {@code true} when the length is two and both classes match by identity
+     */
     public static boolean sameClasses(Class[] params, Object arg1, Object arg2) {
         if (params.length != 2)
             return false;
@@ -1075,6 +1375,18 @@ public class MetaClassHelper {
         return params[1] == getClassWithNullAndWrapper(arg2);
     }
 
+    /**
+     * Tests a three-argument call. {@code params} must have length three, and
+     * each class must be identical to the class of the argument in that position.
+     * A null argument matches a null parameter class, and a {@link Wrapper} is
+     * represented by {@link Wrapper#getType()}.
+     *
+     * @param params the parameter classes; the length must be three
+     * @param arg1 the first argument, or null
+     * @param arg2 the second argument, or null
+     * @param arg3 the third argument, or null
+     * @return {@code true} when the length is three and every class matches by identity
+     */
     public static boolean sameClasses(Class[] params, Object arg1, Object arg2, Object arg3) {
         if (params.length != 3)
             return false;
@@ -1084,6 +1396,19 @@ public class MetaClassHelper {
         return params[2] == getClassWithNullAndWrapper(arg3);
     }
 
+    /**
+     * Tests a four-argument call. {@code params} must have length four, and
+     * each class must be identical to the class of the argument in that position.
+     * A null argument matches a null parameter class, and a {@link Wrapper} is
+     * represented by {@link Wrapper#getType()}.
+     *
+     * @param params the parameter classes; the length must be four
+     * @param arg1 the first argument, or null
+     * @param arg2 the second argument, or null
+     * @param arg3 the third argument, or null
+     * @param arg4 the fourth argument, or null
+     * @return {@code true} when the length is four and every class matches by identity
+     */
     public static boolean sameClasses(Class[] params, Object arg1, Object arg2, Object arg3, Object arg4) {
         if (params.length != 4)
             return false;
@@ -1094,6 +1419,16 @@ public class MetaClassHelper {
         return params[3] == getClassWithNullAndWrapper(arg4);
     }
 
+    /**
+     * Compares {@code params[0]} with the class of {@code arg}.
+     * The length of {@code params} is ignored; index zero is the slot that is read.
+     * A null argument matches a null slot, and a {@link Wrapper} is represented
+     * by {@link Wrapper#getType()}.
+     *
+     * @param params the parameter classes; index zero is read
+     * @param arg the argument to compare, or null
+     * @return {@code true} when the first parameter class is identical to the class of {@code arg}
+     */
     public static boolean sameClass(Class[] params, Object arg) {
         return params[0] == getClassWithNullAndWrapper(arg);
     }
@@ -1117,6 +1452,13 @@ public class MetaClassHelper {
         return types;
     }
 
+    /**
+     * Replaces each {@link Wrapper} in {@code arguments} with
+     * {@link Wrapper#unwrap()}. Slots that are not wrappers are left as they are.
+     * The array is updated in place.
+     *
+     * @param arguments the argument array to edit
+     */
     public static void unwrap(Object[] arguments) {
         //
         // Temp code to ignore wrapped parameters
@@ -1181,7 +1523,7 @@ public class MetaClassHelper {
      * Sets the metaclass for an object, by delegating to the appropriate
      * {@link DefaultGroovyMethods} helper method. This method was introduced as
      * a breaking change in 2.0 to solve rare cases of stack overflow. See GROOVY-5285.
-     *
+     * <p>
      * The method is named doSetMetaClass in order to prevent misuses. Do not use
      * this method directly unless you know what you do.
      *
