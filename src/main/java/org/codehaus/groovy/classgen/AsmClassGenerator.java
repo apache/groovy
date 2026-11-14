@@ -1831,21 +1831,16 @@ public class AsmClassGenerator extends ClassGenerator {
         // present on the stack for short-circuit RHS of || (where the pattern is
         // not definitely bound) or briefly on a non-live arm before hide. Treat
         // DynamicVariable as property access even when a same-named slot exists.
-        if (expression.getAccessedVariable() instanceof DynamicVariable) {
+        BytecodeVariable variable =
+            (expression.getAccessedVariable() instanceof DynamicVariable) ? null :
+            compileStack.getVariable(expression.getName(), /*throwIfMissing*/false);
+        if (variable != null) {
+            controller.getOperandStack().loadOrStoreVariable(variable, expression.isUseReferenceDirectly());
+        } else {
             PropertyExpression pexp = thisPropX(/*implicit-this*/true, expression.getName());
             pexp.getProperty().setSourcePosition(expression);
             pexp.copyNodeMetaData(expression);
             pexp.visit(this);
-        } else {
-            BytecodeVariable variable = compileStack.getVariable(expression.getName(), /*throwIfMissing*/false);
-            if (variable != null) {
-                controller.getOperandStack().loadOrStoreVariable(variable, expression.isUseReferenceDirectly());
-            } else {
-                PropertyExpression pexp = thisPropX(/*implicit-this*/true, expression.getName());
-                pexp.getProperty().setSourcePosition(expression);
-                pexp.copyNodeMetaData(expression);
-                pexp.visit(this);
-            }
         }
 
         if (!compileStack.isLHS()) {
