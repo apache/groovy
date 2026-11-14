@@ -512,10 +512,10 @@ public class FileSystemCompiler {
         @Option(names = {"-w", "--warningLevel"}, description = "The amount of warnings to print. Set to 0 for none, 1 for likely errors, 2 for possible errors, and 3 for as many warnings as possible.", defaultValue = "1")
         private String warningLevel;
 
-        @Option(names = {"-pa", "--parameters"}, description = "Generate metadata for reflection on method parameter names (jdk8+ only)")
+        @Option(names = {"-pa", "--parameters"}, description = "Generate metadata for reflection on method parameter names")
         private boolean parameterMetadata;
 
-        @Option(names = {"-pr", "--enable-preview"}, description = "Enable preview Java features (jdk12+ only) - must be after classpath but before other arguments")
+        @Option(names = {"-pr", "--enable-preview"}, description = "Enable preview Java features (Java 12 or later) - must be after classpath but before other arguments")
         private boolean previewFeatures;
 
         @Option(names = {"-j", "--jointCompilation"}, description = "Attach javac compiler to compile .java files")

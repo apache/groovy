@@ -252,12 +252,12 @@ public class Groovyc extends MatchingTask {
     private Set<String> scriptExtensions = new LinkedHashSet<>();
 
     /**
-     * If true, generates metadata for reflection on method parameter names (jdk8+ only).  Defaults to false.
+     * If true, generates metadata for reflection on method parameter names. Defaults to false.
      */
     private boolean parameters;
 
     /**
-     * If true, enable preview Java features (JEP 12) (jdk12+ only). Defaults to false.
+     * If true, enables preview features of the JDK running the build (Java 12 or later). Defaults to false.
      */
     private boolean previewFeatures;
 
@@ -945,7 +945,7 @@ public class Groovyc extends MatchingTask {
     }
 
     /**
-     * If true, generates metadata for reflection on method parameter names (jdk8+ only).  Defaults to false.
+     * If true, generates metadata for reflection on method parameter names. Defaults to false.
      *
      * @param parameters set to true to generate metadata.
      */
@@ -961,7 +961,7 @@ public class Groovyc extends MatchingTask {
     }
 
     /**
-     * If true, enable preview Java features (JEP 12) (jdk12+ only).
+     * If true, enables preview features of the JDK running the build (Java 12 or later).
      *
      * @param previewFeatures set to true to enable preview features
      */
