@@ -515,7 +515,7 @@ public class FileSystemCompiler {
         @Option(names = {"-pa", "--parameters"}, description = "Generate metadata for reflection on method parameter names")
         private boolean parameterMetadata;
 
-        @Option(names = {"-pr", "--enable-preview"}, description = "Enable preview Java features (Java 12 or later) - must be after classpath but before other arguments")
+        @Option(names = {"-pr", "--enable-preview"}, description = "Enable preview Java features - must be after classpath but before other arguments")
         private boolean previewFeatures;
 
         @Option(names = {"-j", "--jointCompilation"}, description = "Attach javac compiler to compile .java files")

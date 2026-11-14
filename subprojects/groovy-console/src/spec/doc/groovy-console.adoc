@@ -65,7 +65,7 @@ The Groovy Swing Console allows a user to enter and run Groovy scripts.
   -D, --define=<name=value>  Define a system property
   -h, --help                 Display this help message
   -pa, --parameters          Generate metadata for reflection on method parameter names
-  -pr, --enable-preview      Enable preview Java features (Java 12 or later) - must
+  -pr, --enable-preview      Enable preview Java features - must
                                be after classpath but before other arguments
   -V, --version              Display the version
 -----------------------------------------------------------------

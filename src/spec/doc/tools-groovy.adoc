@@ -59,7 +59,7 @@ int (disable any int based optimizations) |
 | -p | | process files line by line and print result (see also -n) |
 | -v | --version | display the Groovy and JVM versions | groovy -v
 | -pa | --parameters | Generates metadata for reflection on method parameter names. Defaults to false. | groovy --parameters Person.groovy
-| -pr | --enable-preview | Enables preview features of the JDK running the command (Java 12 or later). | groovy --enable-preview Person.groovy
+| -pr | --enable-preview | Enables preview features of the JDK running the command. | groovy --enable-preview Person.groovy
 | | --compile-static | Compiles the script with `@CompileStatic`. | groovy --compile-static MyScript.groovy
 | | --type-checked | Compiles the script with `@TypeChecked`. | groovy --type-checked MyScript.groovy
 |=======================================================================
