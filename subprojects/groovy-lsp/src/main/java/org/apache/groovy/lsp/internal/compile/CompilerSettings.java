@@ -109,22 +109,47 @@ public record CompilerSettings(List<String> classpath, List<String> sourcePaths,
         return new CompilerSettings(List.of(), List.of(), Phases.SEMANTIC_ANALYSIS, false, false, Map.of());
     }
 
+    /**
+     * Returns the classpath entries. A {@code null} argument is stored as an empty list.
+     *
+     * @return jar and directory entries, never {@code null}
+     */
     public List<String> getClasspath() {
         return classpath;
     }
 
+    /**
+     * Returns the extra Groovy source roots. A {@code null} argument is stored as an empty list.
+     *
+     * @return source roots, never {@code null}
+     */
     public List<String> getSourcePaths() {
         return sourcePaths;
     }
 
+    /**
+     * Returns the {@link Phases} value compilation is asked to reach.
+     *
+     * @return the compiler phase constant
+     */
     public int getThroughPhase() {
         return throughPhase;
     }
 
+    /**
+     * Returns whether {@code @Grab} is left enabled for this compile.
+     *
+     * @return {@code true} when Grape may run
+     */
     public boolean isGrapeEnabled() {
         return grapeEnabled;
     }
 
+    /**
+     * Returns whether {@code @ASTTest} closures are left enabled for this compile.
+     *
+     * @return {@code true} when those closures may run
+     */
     public boolean isAstTestEnabled() {
         return astTestEnabled;
     }

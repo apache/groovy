@@ -25,8 +25,14 @@ import groovy.lang.MetaClass;
 */
 public abstract class MetaClassSite extends AbstractCallSite {
 
+    /**
+     * Meta-class this site dispatches through.
+     */
     protected final MetaClass metaClass;
 
+    /**
+     * Retains {@code metaClass} for the call sites that dispatch through it.
+     */
     public MetaClassSite(final CallSite site, final MetaClass metaClass) {
         super(site);
         this.metaClass = metaClass;

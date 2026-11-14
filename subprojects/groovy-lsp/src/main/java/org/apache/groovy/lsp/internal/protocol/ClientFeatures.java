@@ -38,41 +38,98 @@ public final class ClientFeatures {
     private ClientFeatures() {
     }
 
+    /**
+     * Returns whether definition results may be {@code LocationLink}s.
+     * A missing text-document or definition capability is treated as unsupported.
+     *
+     * @param capabilities client capabilities, or {@code null}
+     * @return {@code true} when definition link support is explicitly enabled
+     */
     public static boolean definitionLinks(final ClientCapabilities capabilities) {
         DefinitionCapabilities definition = text(capabilities) == null ? null : text(capabilities).getDefinition();
         return definition != null && Boolean.TRUE.equals(definition.getLinkSupport());
     }
 
+    /**
+     * Returns whether type-definition results may be {@code LocationLink}s.
+     * A missing text-document or type-definition capability is treated as unsupported.
+     *
+     * @param capabilities client capabilities, or {@code null}
+     * @return {@code true} when type-definition link support is explicitly enabled
+     */
     public static boolean typeDefinitionLinks(final ClientCapabilities capabilities) {
         TypeDefinitionCapabilities typeDefinition = text(capabilities) == null ? null : text(capabilities).getTypeDefinition();
         return typeDefinition != null && Boolean.TRUE.equals(typeDefinition.getLinkSupport());
     }
 
+    /**
+     * Returns whether implementation results may be {@code LocationLink}s.
+     * A missing text-document or implementation capability is treated as unsupported.
+     *
+     * @param capabilities client capabilities, or {@code null}
+     * @return {@code true} when implementation link support is explicitly enabled
+     */
     public static boolean implementationLinks(final ClientCapabilities capabilities) {
         ImplementationCapabilities implementation = text(capabilities) == null ? null : text(capabilities).getImplementation();
         return implementation != null && Boolean.TRUE.equals(implementation.getLinkSupport());
     }
 
+    /**
+     * Returns whether declaration results may be {@code LocationLink}s.
+     * A missing text-document or declaration capability is treated as unsupported.
+     *
+     * @param capabilities client capabilities, or {@code null}
+     * @return {@code true} when declaration link support is explicitly enabled
+     */
     public static boolean declarationLinks(final ClientCapabilities capabilities) {
         DeclarationCapabilities declaration = text(capabilities) == null ? null : text(capabilities).getDeclaration();
         return declaration != null && Boolean.TRUE.equals(declaration.getLinkSupport());
     }
 
+    /**
+     * Returns whether document symbols may be returned as a hierarchy
+     * rather than a flat list. A missing text-document or document-symbol
+     * capability is treated as unsupported.
+     *
+     * @param capabilities client capabilities, or {@code null}
+     * @return {@code true} when hierarchical document symbols are explicitly enabled
+     */
     public static boolean hierarchicalDocumentSymbols(final ClientCapabilities capabilities) {
         DocumentSymbolCapabilities symbols = text(capabilities) == null ? null : text(capabilities).getDocumentSymbol();
         return symbols != null && Boolean.TRUE.equals(symbols.getHierarchicalDocumentSymbolSupport());
     }
 
+    /**
+     * Returns whether the client accepts {@code workspace/applyEdit}.
+     * A missing workspace capability is treated as unsupported.
+     *
+     * @param capabilities client capabilities, or {@code null}
+     * @return {@code true} when apply-edit is explicitly enabled
+     */
     public static boolean applyEdit(final ClientCapabilities capabilities) {
         WorkspaceClientCapabilities workspace = capabilities == null ? null : capabilities.getWorkspace();
         return workspace != null && Boolean.TRUE.equals(workspace.getApplyEdit());
     }
 
+    /**
+     * Returns whether the server may pull settings with {@code workspace/configuration}.
+     * A missing workspace capability is treated as unsupported.
+     *
+     * @param capabilities client capabilities, or {@code null}
+     * @return {@code true} when configuration pull is explicitly enabled
+     */
     public static boolean workspaceConfiguration(final ClientCapabilities capabilities) {
         WorkspaceClientCapabilities workspace = capabilities == null ? null : capabilities.getWorkspace();
         return workspace != null && Boolean.TRUE.equals(workspace.getConfiguration());
     }
 
+    /**
+     * Returns whether the client accepts work-done progress notifications.
+     * A missing window capability is treated as unsupported.
+     *
+     * @param capabilities client capabilities, or {@code null}
+     * @return {@code true} when work-done progress is explicitly enabled
+     */
     public static boolean workDoneProgress(final ClientCapabilities capabilities) {
         return capabilities != null && capabilities.getWindow() != null
                 && Boolean.TRUE.equals(capabilities.getWindow().getWorkDoneProgress());

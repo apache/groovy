@@ -538,6 +538,17 @@ public final class CodeActionService {
                 && left.getStart().getLine() <= right.getEnd().getLine();
     }
 
+    /**
+     * Builds code actions for {@code document}. The first is
+     * {@code Organize imports} ({@link CodeActionKind#SourceOrganizeImports}),
+     * with command {@code groovy.lsp.organizeImports}; its edit is attached
+     * only when {@link #organizeImports} changes the import block. Each
+     * unresolved class named in {@code diagnostics} then contributes one
+     * quick fix per candidate, and simple names that each resolve to a single
+     * type are also offered together once there are at least two such edits.
+     * {@link #contribute} supplies the remaining actions. A null document
+     * yields an empty list.
+     */
     public List<Either<Command, CodeAction>> collect(final TextDocument document,
                                                          final CompilationSnapshot snapshot,
                                                          final List<Diagnostic> diagnostics,
@@ -596,6 +607,13 @@ public final class CodeActionService {
         actions.add(Either.forRight(action));
     }
 
+    /**
+     * Sorts the module's import texts, placing static imports after the others
+     * and ordering both groups case-insensitively. Returns one edit from the
+     * first import through the last when that sorted text differs from the
+     * current span. A null document or module, or a module with no imports,
+     * yields an empty list.
+     */
     public List<TextEdit> organizeImports(final CompiledDocument document, final PositionEncoding encoding) {
         if (document == null || document.getModule() == null) {
             return List.of();

@@ -119,6 +119,12 @@ public final class FindReplaceUtility {
     private static final Segment SEGMENT = new Segment();
 
     private static final FocusAdapter TEXT_FOCUS_LISTENER = new FocusAdapter() {
+        /**
+         * Records the focused component as the active editor and keeps its
+         * document's default root attributes for later replacements.
+         *
+         * @param fe the focus event whose source is the text component
+         */
         @Override
         public void focusGained(FocusEvent fe) {
             textComponent = (JTextComponent) fe.getSource();
@@ -134,6 +140,11 @@ public final class FindReplaceUtility {
         /* KeyStroke keyStroke = */
         KeyStroke.getKeyStroke("enter");
         KeyAdapter keyAdapter = new KeyAdapter() {
+            /**
+             * Clicks the Find button when the typed character is Enter.
+             *
+             * @param ke the key event
+             */
             @Override
             public void keyTyped(KeyEvent ke) {
                 if (ke.getKeyChar() == KeyEvent.VK_ENTER) {
@@ -454,6 +465,14 @@ public final class FindReplaceUtility {
             putValue(Action.MNEMONIC_KEY, KeyEvent.VK_F);
         }
 
+        /**
+         * Searches from the caret, or from the selection start when text is
+         * selected. Shift reverses the direction chosen by the backwards
+         * checkbox. A match is selected and counted. The search string is
+         * stored in the history, and listeners are notified.
+         *
+         * @param ae the action event; Shift reverses the search direction
+         */
         @Override
         public void actionPerformed(ActionEvent ae) {
             lastAction = FIND_ACTION_COMMAND;
@@ -490,6 +509,14 @@ public final class FindReplaceUtility {
             putValue(Action.MNEMONIC_KEY, KeyEvent.VK_R);
         }
 
+        /**
+         * Replaces the next match in the dialog's search direction, searching
+         * from just before the caret or selection. Selects the following match,
+         * or leaves the caret after the inserted text. Counts one replacement
+         * when a match was found, updates the history, and notifies listeners.
+         *
+         * @param ae the action event whose command is recorded as the last action
+         */
         @Override
         public void actionPerformed(ActionEvent ae) {
             lastAction = ae.getActionCommand();
@@ -538,6 +565,14 @@ public final class FindReplaceUtility {
             putValue(Action.MNEMONIC_KEY, KeyEvent.VK_A);
         }
 
+        /**
+         * Replaces each match found in the dialog's search direction and counts
+         * each replacement. If a match position remains, that match is selected;
+         * otherwise the caret is placed after the last replacement. Updates the
+         * history and notifies listeners.
+         *
+         * @param ae the action event whose command is recorded as the last action
+         */
         @Override
         public void actionPerformed(ActionEvent ae) {
             lastAction = ae.getActionCommand();
@@ -588,6 +623,11 @@ public final class FindReplaceUtility {
             putValue(Action.ACCELERATOR_KEY, KeyStroke.getKeyStroke("ESCAPE"));
         }
 
+        /**
+         * Disposes the shared find/replace dialog.
+         *
+         * @param ae the action event
+         */
         @Override
         public void actionPerformed(ActionEvent ae) {
             FIND_REPLACE_DIALOG.dispose();

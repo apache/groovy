@@ -328,6 +328,14 @@ public class Sql implements AutoCloseable {
     // count per call — would otherwise grow this without limit.
     private final Map<String, Statement> statementCache = Collections.synchronizedMap(
             new LinkedHashMap<String, Statement>(16, 0.75f, true) {
+                /**
+                 * Evicts the least recently used cached statement once the cache is
+                 * bounded and over its limit, closing that statement first. A cache
+                 * whose limit is zero or less never evicts.
+                 *
+                 * @param eldest the least recently used entry
+                 * @return {@code true} when {@code eldest} should be dropped
+                 */
                 @Override
                 protected boolean removeEldestEntry(Map.Entry<String, Statement> eldest) {
                     if (statementCacheSize > 0 && size() > statementCacheSize) {
@@ -1099,11 +1107,21 @@ public class Sql implements AutoCloseable {
      */
     public static InParameter in(final int type, final Object value) {
         return new InParameter() {
+            /**
+             * Returns the JDBC type passed to {@link #in(int, Object)}.
+             *
+             * @return that type code
+             */
             @Override
             public int getType() {
                 return type;
             }
 
+            /**
+             * Returns the value passed to {@link #in(int, Object)}.
+             *
+             * @return that value
+             */
             @Override
             public Object getValue() {
                 return value;
@@ -1129,11 +1147,21 @@ public class Sql implements AutoCloseable {
      */
     public static InOutParameter inout(final InParameter in) {
         return new InOutParameter() {
+            /**
+             * Returns the JDBC type of the wrapped input parameter.
+             *
+             * @return {@code in.getType()}
+             */
             @Override
             public int getType() {
                 return in.getType();
             }
 
+            /**
+             * Returns the value of the wrapped input parameter.
+             *
+             * @return {@code in.getValue()}
+             */
             @Override
             public Object getValue() {
                 return in.getValue();
@@ -5315,6 +5343,19 @@ public class Sql implements AutoCloseable {
             this.returnGeneratedKeys = returnGeneratedKeys;
         }
 
+        /**
+         * Prepares {@code sql} on {@code connection}. When generated-key column names
+         * are configured, the statement returns those columns. A non-zero generated-key
+         * flag is passed through to {@code prepareStatement}. Text that looks like a
+         * stored-procedure call is prepared with {@code prepareCall}; other text is
+         * prepared with {@code prepareStatement}. The statement uses this {@link Sql}'s
+         * result-set type and concurrency, and its holdability when one has been set.
+         *
+         * @param connection the connection to prepare on
+         * @param sql the SQL text
+         * @return the prepared statement or call
+         * @throws SQLException if the driver cannot prepare {@code sql}
+         */
         @Override
         protected PreparedStatement execute(Connection connection, String sql) throws SQLException {
             if (returnGeneratedKeys == USE_COLUMN_NAMES && keyColumnNames != null) {
@@ -5366,6 +5407,14 @@ public class Sql implements AutoCloseable {
     }
 
     private class CreateCallableStatementCommand extends AbstractStatementCommand {
+        /**
+         * Prepares {@code sql} with {@link Connection#prepareCall(String)}.
+         *
+         * @param connection the connection to prepare on
+         * @param sql the call text
+         * @return the callable statement
+         * @throws SQLException if the driver cannot prepare the call
+         */
         @Override
         protected CallableStatement execute(Connection connection, String sql) throws SQLException {
             return connection.prepareCall(sql);
@@ -5373,6 +5422,16 @@ public class Sql implements AutoCloseable {
     }
 
     private class CreateStatementCommand extends AbstractStatementCommand {
+        /**
+         * Creates a plain statement on {@code conn}. The caller runs {@code sql}
+         * afterwards with {@code executeQuery}. The statement uses this {@link Sql}'s
+         * result-set type and concurrency, and its holdability when one has been set.
+         *
+         * @param conn the connection to create the statement on
+         * @param sql the SQL text the caller executes on the returned statement
+         * @return the new statement
+         * @throws SQLException if the driver cannot create the statement
+         */
         @Override
         protected Statement execute(Connection conn, String sql) throws SQLException {
             return createStatement(conn);
@@ -5484,6 +5543,15 @@ public class Sql implements AutoCloseable {
             params = queryParams;
         }
 
+        /**
+         * Prepares {@code sql} with this command's parameters, including named-parameter
+         * rewriting and in-list expansion, sets the maximum row count when one was
+         * requested, and runs {@code executeQuery}.
+         *
+         * @param connection the connection to query
+         * @return the result of {@code executeQuery}
+         * @throws SQLException if preparing or executing the query fails
+         */
         @Override
         protected ResultSet runQuery(Connection connection) throws SQLException {
             PreparedStatement s = getPreparedStatement(connection, sql, params);
@@ -5499,6 +5567,15 @@ public class Sql implements AutoCloseable {
             super(sql);
         }
 
+        /**
+         * Opens a plain statement for {@code sql}, sets the maximum row count when
+         * one was requested, runs {@code executeQuery} with that SQL, and then
+         * invokes {@link Sql#cleanup(Statement)}.
+         *
+         * @param connection the connection to query
+         * @return the result of {@code executeQuery}
+         * @throws SQLException if creating or executing the statement fails
+         */
         @Override
         protected ResultSet runQuery(Connection connection) throws SQLException {
             statement = getStatement(connection, sql);

@@ -1830,6 +1830,14 @@ public class GroovyEngine implements ScriptEngine {
     private static class AsCompleter implements Completer {
         private final Completer delegate = new StringsCompleter("as");
 
+        /**
+         * Adds the {@code as} candidate unless the word at the cursor,
+         * trimmed, already ends with {@code *}.
+         *
+         * @param reader the line reader, passed to the delegate
+         * @param line the parsed line
+         * @param candidates where the {@code as} candidate is added
+         */
         @Override
         public void complete(LineReader reader, ParsedLine line, List<Candidate> candidates) {
             String buffer = line.word().substring(0, line.wordCursor());
@@ -1853,6 +1861,15 @@ public class GroovyEngine implements ScriptEngine {
             this.isStatic = isStatic;
         }
 
+        /**
+         * Completes a static import's fields and methods when the prefix ends
+         * with a dot and that class can be evaluated. Otherwise adds package
+         * candidates for the prefix before the last dot.
+         *
+         * @param reader the line reader, unused
+         * @param line the parsed line
+         * @param candidates where matches are added
+         */
         @Override
         public void complete(LineReader reader, ParsedLine line, List<Candidate> candidates) {
             assert line != null;
@@ -1905,6 +1922,14 @@ public class GroovyEngine implements ScriptEngine {
             this.groovyEngine = groovyEngine;
         }
 
+        /**
+         * Adds candidates of this completer's type for the package prefix
+         * before the last dot in the word at the cursor.
+         *
+         * @param reader the line reader, unused
+         * @param line the parsed line
+         * @param candidates where matches are added
+         */
         @Override
         public void complete(LineReader reader, ParsedLine line, List<Candidate> candidates) {
             assert line != null;
@@ -1942,6 +1967,23 @@ public class GroovyEngine implements ScriptEngine {
             this.groovyEngine = engine;
         }
 
+        /**
+         * Fills {@code candidates} for the word at the cursor. Commands,
+         * scripts, and {@code import} lines are left unchanged, as are an
+         * open quote and a buffer whose brackets cannot be parsed. A
+         * single-word assignment offers the string value of the expression
+         * before {@code =}. A dotted receiver after a closing parenthesis is
+         * completed with its methods when restricted completion is off. A
+         * {@code new} expression completes constructors. Otherwise keywords
+         * or {@code true}/{@code false}, statement variables, and classes
+         * with static methods are offered, and a dot selects methods,
+         * declared classes, or static methods of the receiver. A known
+         * script or binding name is not scanned as a package.
+         *
+         * @param reader the line reader, passed on to constructor completion
+         * @param commandLine the parsed line
+         * @param candidates where matches are added
+         */
         @Override
         public void complete(LineReader reader, ParsedLine commandLine, List<Candidate> candidates) {
             assert commandLine != null;

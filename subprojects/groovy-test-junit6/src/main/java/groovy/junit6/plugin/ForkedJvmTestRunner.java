@@ -73,6 +73,16 @@ public final class ForkedJvmTestRunner {
 
     private ForkedJvmTestRunner() {}
 
+    /**
+     * Runs the single test named by {@code args} and writes the result file
+     * named by {@link #RESULT_FILE_PROP}. Exits with status 2 when the
+     * arguments or that property are missing, 3 when no test is discovered,
+     * {@link #ABORTED_EXIT_CODE} when the test aborts without failures,
+     * 0 after writing an empty file for success, and 1 after writing a failure.
+     *
+     * @param args the test class name and the method name
+     * @throws Exception when the test class cannot be loaded or the result file cannot be written
+     */
     public static void main(String[] args) throws Exception {
         if (args.length != 2) {
             System.err.println("Usage: ForkedJvmTestRunner <testClass> <methodName>");

@@ -94,6 +94,11 @@ public class LoopVariantASTTransformation implements ASTTransformation, Compilat
 
     private CompilationUnit compilationUnit;
 
+    /**
+     * Stores the compilation unit so variant expressions moved into the loop can be resolved.
+     *
+     * @param unit the unit compiling the annotated source
+     */
     @Override
     public void setCompilationUnit(final CompilationUnit unit) {
         this.compilationUnit = unit;

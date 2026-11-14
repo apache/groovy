@@ -37,14 +37,26 @@ import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 public class BooleanReturningMethodInvoker {
     private final CallSiteArray csa;
 
+    /**
+     * Caches a null method name and {@code asBoolean}.
+     */
     public BooleanReturningMethodInvoker() {
         this(null);
     }
 
+    /**
+     * Caches {@code methodName} and {@code asBoolean} on a
+     * {@link CallSiteArray} owned by this class.
+     */
     public BooleanReturningMethodInvoker(String methodName) {
         csa = new CallSiteArray(BooleanReturningMethodInvoker.class, new String[]{methodName, "asBoolean"});
     }
 
+    /**
+     * Calls the cached method on {@code receiver} with {@code args} and
+     * converts the result with {@link #convertToBoolean(Object)}.
+     * Any thrown exception is rethrown unchecked.
+     */
     public boolean invoke(Object receiver, Object... args) {
         try {
             // make cached call for given method
@@ -57,6 +69,11 @@ public class BooleanReturningMethodInvoker {
         }
     }
 
+    /**
+     * Returns {@code false} for null and the unboxed value for a {@link Boolean}.
+     * Any other value is sent through the cached {@code asBoolean} site and
+     * cast to {@link Boolean}. A failure of that call is rethrown unchecked.
+     */
     public boolean convertToBoolean(Object arg) {
         // handle conversion to boolean
         if (arg == null) return false;

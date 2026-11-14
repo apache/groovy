@@ -54,11 +54,19 @@ import java.util.List;
  */
 public final class SemanticTokensService {
 
+    /**
+     * LSP semantic-token type names, in the index order stored on each span
+     * and published by {@link #legend()}.
+     */
     public static final List<String> TOKEN_TYPES = List.of(
             "namespace", "class", "enum", "interface", "method", "property",
             "variable", "parameter", "keyword", "string", "number", "comment",
             "operator", "decorator", "delimiter"
     );
+    /**
+     * LSP semantic-token modifier names. Bit 0 is declaration, then static,
+     * deprecated, slashy, and singleQuoted.
+     */
     public static final List<String> TOKEN_MODIFIERS = List.of(
             "declaration", "static", "deprecated", "slashy", "singleQuoted");
 
@@ -106,6 +114,11 @@ public final class SemanticTokensService {
     public record TokenSpan(int line, int character, int length, int type, int modifiers) {
     }
 
+    /**
+     * Builds the protocol legend from {@link #TOKEN_TYPES} and {@link #TOKEN_MODIFIERS}.
+     *
+     * @return the legend advertised to the client
+     */
     public static SemanticTokensLegend legend() {
         return new SemanticTokensLegend(TOKEN_TYPES, TOKEN_MODIFIERS);
     }
@@ -234,10 +247,25 @@ public final class SemanticTokensService {
         return encode(lexicalTokenSpans(text, encoding));
     }
 
+    /**
+     * Delta-encodes every span of {@code document}.
+     *
+     * @param document compiled document
+     * @param encoding negotiated encoding
+     * @return protocol tokens
+     */
     public SemanticTokens semanticTokens(final CompiledDocument document, final PositionEncoding encoding) {
         return encode(tokenSpans(document, encoding));
     }
 
+    /**
+     * Delta-encodes the spans of {@code document} that overlap {@code range}.
+     *
+     * @param document compiled document
+     * @param encoding negotiated encoding
+     * @param range span filter
+     * @return protocol tokens
+     */
     public SemanticTokens semanticTokens(final CompiledDocument document, final PositionEncoding encoding,
                                          final Range range) {
         return encode(tokenSpans(document, encoding, range));

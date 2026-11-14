@@ -39,6 +39,7 @@ import java.util.stream.Stream;
  */
 public final class DiagnosticConverter {
 
+    /** LSP {@code source} written on diagnostics converted from Groovy messages. */
     public static final String SOURCE = "groovy";
 
     /**
@@ -150,6 +151,14 @@ public final class DiagnosticConverter {
         }
     }
 
+    /**
+     * Returns the message text of {@code diagnostic}. A string message is
+     * returned as-is. A markup message is returned from its value.
+     * Returns {@code null} when {@code diagnostic} or its message is {@code null}.
+     *
+     * @param diagnostic the diagnostic, possibly {@code null}
+     * @return the plain message, or {@code null}
+     */
     public static String diagnosticMessage(final Diagnostic diagnostic) {
         if (diagnostic == null || diagnostic.getMessage() == null) {
             return null;

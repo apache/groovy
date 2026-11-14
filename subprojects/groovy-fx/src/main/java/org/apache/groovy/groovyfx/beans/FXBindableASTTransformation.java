@@ -86,6 +86,14 @@ public class FXBindableASTTransformation extends AbstractASTTransformation {
         return false;
     }
 
+    /**
+     * Generates JavaFX property accessors for a field carrying this transform's
+     * annotation, or for each eligible property of a class carrying it.
+     * Other annotation types are ignored.
+     *
+     * @param nodes the annotation node and the annotated field or class
+     * @param source the source unit being transformed
+     */
     @Override
     public void visit(ASTNode[] nodes, SourceUnit source) {
         init(nodes, source);

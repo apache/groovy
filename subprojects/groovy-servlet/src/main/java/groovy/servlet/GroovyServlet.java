@@ -117,6 +117,11 @@ public class GroovyServlet extends AbstractHttpServlet {
         // Run the script
         try {
             Closure<?> closure = new Closure<>(gse) {
+                /**
+                 * Runs {@code scriptUri} with {@code binding}.
+                 * {@link ResourceException} and {@link ScriptException} are
+                 * wrapped in {@link RuntimeException}.
+                 */
                 @Override
                 public Object call() {
                     try {

@@ -28,10 +28,25 @@ import org.codehaus.groovy.runtime.ScriptBytecodeAdapter;
  * before the default call or property read. A non-null receiver is passed through unchanged.
  */
 public final class NullCallSite extends AbstractCallSite {
+    /**
+     * Copies the call metadata from {@code callSite}.
+     *
+     * @param callSite the site whose name and index are reused
+     */
     public NullCallSite(CallSite callSite) {
         super(callSite);
     }
 
+    /**
+     * When {@code receiver} is {@code null}, dispatches through
+     * {@link NullObject#getNullObject()}. Otherwise forwards {@code receiver}
+     * unchanged. A {@link GroovyRuntimeException} from the null path is
+     * rethrown via {@link ScriptBytecodeAdapter#unwrap(GroovyRuntimeException)}.
+     *
+     * @param receiver the call receiver, possibly {@code null}
+     * @param args the call arguments
+     * @return the call result
+     */
     @Override
     public Object call(Object receiver, Object[] args) throws Throwable {
         if (receiver == null) {
@@ -45,6 +60,18 @@ public final class NullCallSite extends AbstractCallSite {
         }
     }
 
+    /**
+     * When {@code receiver} is {@code null}, reads {@code name} from
+     * {@link NullObject#getNullObject()} through
+     * {@link InvokerHelper#getProperty(Object, String)}. Otherwise selects
+     * a property site with {@link #acceptGetProperty(Object)} and reads
+     * from {@code receiver}. A {@link GroovyRuntimeException} from the null
+     * path is rethrown via
+     * {@link ScriptBytecodeAdapter#unwrap(GroovyRuntimeException)}.
+     *
+     * @param receiver the property owner, possibly {@code null}
+     * @return the property value
+     */
     @Override
     public Object getProperty(Object receiver) throws Throwable {
         if (receiver == null) {

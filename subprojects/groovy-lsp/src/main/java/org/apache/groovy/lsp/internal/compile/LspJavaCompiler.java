@@ -83,11 +83,29 @@ public final class LspJavaCompiler implements JavaCompiler, JavaCompilerFactory 
         return Map.copyOf(messages);
     }
 
+    /**
+     * Returns this compiler. {@code config} is not retained; {@link #compile}
+     * reads the configuration from the compilation unit.
+     *
+     * @param config ignored
+     * @return this compiler
+     */
     @Override
     public JavaCompiler createCompiler(final CompilerConfiguration config) {
         return this;
     }
 
+    /**
+     * Clears the previous symbol index and diagnostics, then parses, analyzes,
+     * and generates the joint-compilation units with javac. Open buffers
+     * replace matching files. Returns after the clear when the system compiler
+     * or {@code cu} is {@code null}. Notes and sources whose URI scheme is
+     * {@code string} are dropped. A failure keeps the diagnostics collected
+     * so far; the symbol index is replaced only after generation returns.
+     *
+     * @param files Java source paths to add when they are not already overlaid
+     * @param cu the Groovy compilation unit supplying units, encoding, and classpath
+     */
     @Override
     public void compile(final List<String> files, final CompilationUnit cu) {
         index = JavaSymbolIndex.EMPTY;
@@ -252,6 +270,13 @@ public final class LspJavaCompiler implements JavaCompiler, JavaCompilerFactory 
             this.content = content == null ? "" : content;
         }
 
+        /**
+         * Returns the buffer text captured for this source. {@code ignoreEncodingErrors}
+         * is ignored. A {@code null} buffer is stored as an empty string.
+         *
+         * @param ignoreEncodingErrors unused
+         * @return the in-memory source
+         */
         @Override
         public CharSequence getCharContent(final boolean ignoreEncodingErrors) {
             return content;

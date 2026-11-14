@@ -41,6 +41,14 @@ public class NodeParents extends NodeChildren {
 
             private Node prev = null;
 
+            /**
+             * Returns the next parent that is non-null and different from the
+             * parent returned last time. Returns {@code null} when {@code iter}
+             * is exhausted.
+             *
+             * @param iter nodes whose parents are being visited
+             * @return the next distinct parent, or {@code null}
+             */
             @Override
             protected Object getNextNode(final Iterator iter) {
                 while (iter.hasNext()) {

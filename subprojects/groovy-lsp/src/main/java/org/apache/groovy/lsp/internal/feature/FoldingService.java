@@ -42,6 +42,15 @@ public final class FoldingService {
     private static final String REGION = "region";
     private static final String ENDREGION = "endregion";
 
+    /**
+     * Collects folding ranges for multi-line declarations, one contiguous
+     * import block, closed block comments, and {@code // region} /
+     * {@code // endregion} pairs. Returns an empty list when {@code document}
+     * has no module.
+     *
+     * @param document compiled document, possibly {@code null}
+     * @return folding ranges, never {@code null}
+     */
     public List<FoldingRange> folding(final CompiledDocument document) {
         List<FoldingRange> ranges = new ArrayList<>();
         if (document == null || document.getModule() == null) {

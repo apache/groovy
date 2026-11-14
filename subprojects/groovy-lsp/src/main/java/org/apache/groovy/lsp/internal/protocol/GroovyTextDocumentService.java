@@ -106,17 +106,35 @@ public final class GroovyTextDocumentService implements TextDocumentService {
     private final LanguageServerContext context;
     private final LanguageFeatures features;
 
+    /**
+     * Binds {@code textDocument/*} dispatch to one session and its features.
+     *
+     * @param context session state the notifications update
+     * @param features feature objects that answer the requests
+     */
     public GroovyTextDocumentService(final LanguageServerContext context, final LanguageFeatures features) {
         this.context = context;
         this.features = features;
     }
 
+    /**
+     * Handles {@code textDocument/didOpen} by storing the document on the
+     * session and scheduling a recompile after 50 milliseconds.
+     *
+     * @param params open notification
+     */
     @Override
     public void didOpen(final DidOpenTextDocumentParams params) {
         context.getDocuments().open(params.getTextDocument());
         context.scheduleRecompile(50);
     }
 
+    /**
+     * Handles {@code textDocument/didChange} by applying the edits to the
+     * open document and scheduling a recompile after 150 milliseconds.
+     *
+     * @param params change notification
+     */
     @Override
     public void didChange(final DidChangeTextDocumentParams params) {
         context.getDocuments().change(params.getTextDocument().getUri(), params.getTextDocument().getVersion(),
@@ -124,6 +142,13 @@ public final class GroovyTextDocumentService implements TextDocumentService {
         context.scheduleRecompile(150);
     }
 
+    /**
+     * Handles {@code textDocument/didClose} by dropping the document,
+     * publishing an empty diagnostic list when a client is connected, and
+     * scheduling a recompile after 50 milliseconds.
+     *
+     * @param params close notification
+     */
     @Override
     public void didClose(final DidCloseTextDocumentParams params) {
         String uri = params.getTextDocument().getUri();
@@ -134,11 +159,26 @@ public final class GroovyTextDocumentService implements TextDocumentService {
         context.scheduleRecompile(50);
     }
 
+    /**
+     * Handles {@code textDocument/didSave} by scheduling a recompile
+     * with no debounce delay.
+     *
+     * @param params save notification
+     */
     @Override
     public void didSave(final DidSaveTextDocumentParams params) {
         context.scheduleRecompile(0);
     }
 
+    /**
+     * Handles {@code textDocument/completion}. Recompiles, then delegates
+     * to {@link LanguageFeatures#completions()} and returns that
+     * {@link CompletionList} on the right of the {@link Either}. The list
+     * is empty when the document is missing.
+     *
+     * @param params completion request
+     * @return the completion list
+     */
     @Override
     public CompletableFuture<Either<List<CompletionItem>, CompletionList>> completion(final CompletionParams params) {
         context.recompile();
@@ -148,11 +188,27 @@ public final class GroovyTextDocumentService implements TextDocumentService {
                         context.getParentLoader(), context.getHostConfiguration(), context.getSettings())));
     }
 
+    /**
+     * Handles {@code completionItem/resolve} by delegating to
+     * {@link LanguageFeatures#completions()} with the current compilation
+     * snapshot.
+     *
+     * @param unresolved item from a prior completion
+     * @return the resolved item
+     */
     @Override
     public CompletableFuture<CompletionItem> resolveCompletionItem(final CompletionItem unresolved) {
         return CompletableFuture.completedFuture(features.completions().resolve(unresolved, context.getSnapshot()));
     }
 
+    /**
+     * Handles {@code textDocument/hover}. Recompiles, then delegates to
+     * {@link LanguageFeatures#hovers()}. Returns {@code null} when the
+     * document is missing.
+     *
+     * @param params hover request
+     * @return hover contents, or {@code null}
+     */
     @Override
     public CompletableFuture<Hover> hover(final HoverParams params) {
         context.recompile();
@@ -161,6 +217,14 @@ public final class GroovyTextDocumentService implements TextDocumentService {
                         context.getPositionEncoding()));
     }
 
+    /**
+     * Handles {@code textDocument/signatureHelp}. Recompiles, then
+     * delegates to {@link LanguageFeatures#signatureHelp()}. Returns an
+     * empty {@link SignatureHelp} when the document is missing.
+     *
+     * @param params signature-help request
+     * @return signature help
+     */
     @Override
     public CompletableFuture<SignatureHelp> signatureHelp(final SignatureHelpParams params) {
         context.recompile();
@@ -169,6 +233,16 @@ public final class GroovyTextDocumentService implements TextDocumentService {
                         context.getPositionEncoding()));
     }
 
+    /**
+     * Handles {@code textDocument/definition} by delegating to
+     * {@link LanguageFeatures#navigation()}. Returns an empty link list
+     * when the document is missing. When it is present, a client with link
+     * support receives {@link LocationLink}s and any other client receives
+     * {@link Location}s.
+     *
+     * @param params definition request
+     * @return locations or location links
+     */
     @Override
     public CompletableFuture<Either<List<? extends Location>, List<? extends LocationLink>>> definition(
             final DefinitionParams params) {
@@ -178,6 +252,16 @@ public final class GroovyTextDocumentService implements TextDocumentService {
                 ClientFeatures.definitionLinks(context.getClientCapabilities()));
     }
 
+    /**
+     * Handles {@code textDocument/typeDefinition} by delegating to
+     * {@link LanguageFeatures#navigation()}. Returns an empty link list
+     * when the document is missing. When it is present, a client with link
+     * support receives {@link LocationLink}s and any other client receives
+     * {@link Location}s.
+     *
+     * @param params type-definition request
+     * @return locations or location links
+     */
     @Override
     public CompletableFuture<Either<List<? extends Location>, List<? extends LocationLink>>> typeDefinition(
             final TypeDefinitionParams params) {
@@ -187,6 +271,16 @@ public final class GroovyTextDocumentService implements TextDocumentService {
                 ClientFeatures.typeDefinitionLinks(context.getClientCapabilities()));
     }
 
+    /**
+     * Handles {@code textDocument/implementation} by delegating to
+     * {@link LanguageFeatures#navigation()}. Returns an empty link list
+     * when the document is missing. When it is present, a client with link
+     * support receives {@link LocationLink}s and any other client receives
+     * {@link Location}s.
+     *
+     * @param params implementation request
+     * @return locations or location links
+     */
     @Override
     public CompletableFuture<Either<List<? extends Location>, List<? extends LocationLink>>> implementation(
             final ImplementationParams params) {
@@ -196,6 +290,16 @@ public final class GroovyTextDocumentService implements TextDocumentService {
                 ClientFeatures.implementationLinks(context.getClientCapabilities()));
     }
 
+    /**
+     * Handles {@code textDocument/declaration} by delegating to
+     * {@link LanguageFeatures#navigation()}. Returns an empty link list
+     * when the document is missing. When it is present, a client with link
+     * support receives {@link LocationLink}s and any other client receives
+     * {@link Location}s.
+     *
+     * @param params declaration request
+     * @return locations or location links
+     */
     @Override
     public CompletableFuture<Either<List<? extends Location>, List<? extends LocationLink>>> declaration(
             final DeclarationParams params) {
@@ -205,6 +309,15 @@ public final class GroovyTextDocumentService implements TextDocumentService {
                 ClientFeatures.declarationLinks(context.getClientCapabilities()));
     }
 
+    /**
+     * Handles {@code textDocument/references} by delegating to
+     * {@link LanguageFeatures#navigation()}. The declaration is included
+     * when the request context is absent or asks for it. Returns an empty
+     * list when the document is missing.
+     *
+     * @param params references request
+     * @return reference locations
+     */
     @Override
     public CompletableFuture<List<? extends Location>> references(final ReferenceParams params) {
         boolean include = params.getContext() == null || params.getContext().isIncludeDeclaration();
@@ -213,6 +326,14 @@ public final class GroovyTextDocumentService implements TextDocumentService {
                         context.getPositionEncoding(), include));
     }
 
+    /**
+     * Handles {@code textDocument/documentHighlight} by delegating to
+     * {@link LanguageFeatures#highlights()}. Returns an empty list when
+     * the document is missing.
+     *
+     * @param params highlight request
+     * @return highlights in this document
+     */
     @Override
     public CompletableFuture<List<? extends DocumentHighlight>> documentHighlight(final DocumentHighlightParams params) {
         return withDocument(params.getTextDocument().getUri(), List.of(),
@@ -220,6 +341,16 @@ public final class GroovyTextDocumentService implements TextDocumentService {
                         context.getPositionEncoding()));
     }
 
+    /**
+     * Handles {@code textDocument/documentSymbol} on the compiled snapshot.
+     * Delegates to {@link LanguageFeatures#symbols()}, returning
+     * hierarchical {@link DocumentSymbol}s when the client supports them
+     * and flat {@link SymbolInformation} for every other client. A
+     * snapshot with no document yields an empty list.
+     *
+     * @param params document-symbol request
+     * @return symbols for the compiled document
+     */
     @Override
     public CompletableFuture<List<Either<SymbolInformation, DocumentSymbol>>> documentSymbol(
             final DocumentSymbolParams params) {
@@ -239,6 +370,17 @@ public final class GroovyTextDocumentService implements TextDocumentService {
         });
     }
 
+    /**
+     * Handles {@code textDocument/codeAction} by delegating to
+     * {@link LanguageFeatures#codeActions()}. Actions that create a file
+     * are removed when the client cannot create files. When the request
+     * names kinds, a kind is kept only when it equals a requested kind
+     * or extends it with a dot. Returns an empty list when the document
+     * is missing.
+     *
+     * @param params code-action request
+     * @return commands or code actions
+     */
     @Override
     public CompletableFuture<List<Either<Command, CodeAction>>> codeAction(final CodeActionParams params) {
         return withDocument(params.getTextDocument().getUri(), List.of(), document -> {
@@ -255,6 +397,14 @@ public final class GroovyTextDocumentService implements TextDocumentService {
         });
     }
 
+    /**
+     * Handles {@code textDocument/codeLens} by delegating to
+     * {@link LanguageFeatures#codeLenses()} on the compiled snapshot.
+     * A snapshot with no document yields an empty list.
+     *
+     * @param params code-lens request
+     * @return code lenses
+     */
     @Override
     public CompletableFuture<List<? extends CodeLens>> codeLens(final CodeLensParams params) {
         return fromCompiled(params.getTextDocument().getUri(),
@@ -262,6 +412,14 @@ public final class GroovyTextDocumentService implements TextDocumentService {
                         context.getPositionEncoding()));
     }
 
+    /**
+     * Handles {@code textDocument/formatting} by delegating to
+     * {@link LanguageFeatures#formatting()} for the whole document.
+     * Returns an empty edit list when the document is missing.
+     *
+     * @param params formatting request
+     * @return text edits
+     */
     @Override
     public CompletableFuture<List<? extends TextEdit>> formatting(final DocumentFormattingParams params) {
         return withDocument(params.getTextDocument().getUri(), List.of(),
@@ -269,6 +427,14 @@ public final class GroovyTextDocumentService implements TextDocumentService {
                         insertSpaces(params.getOptions()), context.getPositionEncoding()));
     }
 
+    /**
+     * Handles {@code textDocument/rangeFormatting} by delegating to
+     * {@link LanguageFeatures#formatting()} for the requested range.
+     * Returns an empty edit list when the document is missing.
+     *
+     * @param params range-formatting request
+     * @return text edits
+     */
     @Override
     public CompletableFuture<List<? extends TextEdit>> rangeFormatting(final DocumentRangeFormattingParams params) {
         return withDocument(params.getTextDocument().getUri(), List.of(),
@@ -276,6 +442,14 @@ public final class GroovyTextDocumentService implements TextDocumentService {
                         insertSpaces(params.getOptions()), context.getPositionEncoding()));
     }
 
+    /**
+     * Handles {@code textDocument/onTypeFormatting} by delegating to
+     * {@link LanguageFeatures#formatting()}. Returns an empty edit list
+     * when the document is missing.
+     *
+     * @param params on-type formatting request
+     * @return text edits
+     */
     @Override
     public CompletableFuture<List<? extends TextEdit>> onTypeFormatting(final DocumentOnTypeFormattingParams params) {
         return withDocument(params.getTextDocument().getUri(), List.of(),
@@ -284,6 +458,15 @@ public final class GroovyTextDocumentService implements TextDocumentService {
                         context.getPositionEncoding()));
     }
 
+    /**
+     * Handles {@code textDocument/prepareRename} by delegating to
+     * {@link LanguageFeatures#rename()}. Returns {@code null} when the
+     * document is missing or the feature declines. A {@link Range} is the
+     * first alternative and a {@link PrepareRenameResult} is the second.
+     *
+     * @param params prepare-rename request
+     * @return the range or prepare result, or {@code null}
+     */
     @Override
     public CompletableFuture<Either3<Range, PrepareRenameResult, PrepareRenameDefaultBehavior>> prepareRename(
             final PrepareRenameParams params) {
@@ -297,6 +480,14 @@ public final class GroovyTextDocumentService implements TextDocumentService {
         });
     }
 
+    /**
+     * Handles {@code textDocument/rename} by delegating to
+     * {@link LanguageFeatures#rename()}. Returns an empty
+     * {@link WorkspaceEdit} when the document is missing.
+     *
+     * @param params rename request
+     * @return the workspace edit
+     */
     @Override
     public CompletableFuture<WorkspaceEdit> rename(final RenameParams params) {
         return withDocument(params.getTextDocument().getUri(), new WorkspaceEdit(Map.of()),
@@ -304,11 +495,27 @@ public final class GroovyTextDocumentService implements TextDocumentService {
                         params.getNewName(), context.getPositionEncoding()));
     }
 
+    /**
+     * Handles {@code textDocument/foldingRange} by delegating to
+     * {@link LanguageFeatures#folding()} on the compiled snapshot.
+     * A snapshot with no document yields an empty list.
+     *
+     * @param params folding-range request
+     * @return folding ranges
+     */
     @Override
     public CompletableFuture<List<FoldingRange>> foldingRange(final FoldingRangeRequestParams params) {
         return fromCompiled(params.getTextDocument().getUri(), features.folding()::folding);
     }
 
+    /**
+     * Handles {@code textDocument/selectionRange} by delegating to
+     * {@link LanguageFeatures#selectionRanges()}. Returns an empty list
+     * when the document is missing.
+     *
+     * @param params selection-range request
+     * @return selection ranges
+     */
     @Override
     public CompletableFuture<List<SelectionRange>> selectionRange(final SelectionRangeParams params) {
         return withDocument(params.getTextDocument().getUri(), List.of(),
@@ -316,6 +523,15 @@ public final class GroovyTextDocumentService implements TextDocumentService {
                         params.getPositions(), context.getPositionEncoding()));
     }
 
+    /**
+     * Handles {@code textDocument/semanticTokens/full} by delegating to
+     * {@link LanguageFeatures#semanticTokens()} with the document text and
+     * its compiled snapshot entry. Returns empty tokens when the document
+     * is missing.
+     *
+     * @param params full semantic-token request
+     * @return semantic tokens
+     */
     @Override
     public CompletableFuture<SemanticTokens> semanticTokensFull(final SemanticTokensParams params) {
         return withDocument(params.getTextDocument().getUri(), new SemanticTokens(List.of()),
@@ -323,6 +539,15 @@ public final class GroovyTextDocumentService implements TextDocumentService {
                         context.getSnapshot().get(document), context.getPositionEncoding()));
     }
 
+    /**
+     * Handles {@code textDocument/semanticTokens/range} by delegating to
+     * {@link LanguageFeatures#semanticTokens()} on the compiled snapshot
+     * for the requested range. A snapshot with no document yields empty
+     * tokens.
+     *
+     * @param params ranged semantic-token request
+     * @return semantic tokens
+     */
     @Override
     public CompletableFuture<SemanticTokens> semanticTokensRange(final SemanticTokensRangeParams params) {
         return fromCompiled(params.getTextDocument().getUri(),
@@ -330,6 +555,14 @@ public final class GroovyTextDocumentService implements TextDocumentService {
                         params.getRange()));
     }
 
+    /**
+     * Handles {@code textDocument/inlayHint} by delegating to
+     * {@link LanguageFeatures#inlays()} on the compiled snapshot for the
+     * requested range. A snapshot with no document yields an empty list.
+     *
+     * @param params inlay-hint request
+     * @return inlay hints
+     */
     @Override
     public CompletableFuture<List<InlayHint>> inlayHint(final InlayHintParams params) {
         return fromCompiled(params.getTextDocument().getUri(),
@@ -337,6 +570,14 @@ public final class GroovyTextDocumentService implements TextDocumentService {
                         context.getPositionEncoding(), context.getSnapshot()));
     }
 
+    /**
+     * Handles {@code textDocument/documentLink} by delegating to
+     * {@link LanguageFeatures#documentLinks()} on the compiled snapshot.
+     * A snapshot with no document yields an empty list.
+     *
+     * @param params document-link request
+     * @return document links
+     */
     @Override
     public CompletableFuture<List<DocumentLink>> documentLink(final DocumentLinkParams params) {
         return fromCompiled(params.getTextDocument().getUri(),
@@ -344,6 +585,15 @@ public final class GroovyTextDocumentService implements TextDocumentService {
                         context.getPositionEncoding()));
     }
 
+    /**
+     * Handles {@code textDocument/diagnostic} by wrapping
+     * {@link LanguageServerContext#diagnosticsFor(CompiledDocument)} for
+     * the compiled snapshot in a full report. A snapshot with no document
+     * yields an empty report.
+     *
+     * @param params diagnostic request
+     * @return the full document report
+     */
     @Override
     public CompletableFuture<DocumentDiagnosticReport> diagnostic(final DocumentDiagnosticParams params) {
         return fromCompiled(params.getTextDocument().getUri(), compiled -> {
@@ -353,6 +603,14 @@ public final class GroovyTextDocumentService implements TextDocumentService {
         });
     }
 
+    /**
+     * Handles {@code textDocument/prepareCallHierarchy} by delegating to
+     * {@link LanguageFeatures#hierarchy()}. Returns an empty list when
+     * the document is missing.
+     *
+     * @param params prepare request
+     * @return call-hierarchy items
+     */
     @Override
     public CompletableFuture<List<CallHierarchyItem>> prepareCallHierarchy(final CallHierarchyPrepareParams params) {
         return withDocument(params.getTextDocument().getUri(), List.of(),
@@ -360,6 +618,13 @@ public final class GroovyTextDocumentService implements TextDocumentService {
                         params.getPosition(), context.getPositionEncoding()));
     }
 
+    /**
+     * Handles {@code callHierarchy/incomingCalls} by delegating to
+     * {@link LanguageFeatures#hierarchy()} for the item in the request.
+     *
+     * @param params incoming-calls request
+     * @return incoming calls
+     */
     @Override
     public CompletableFuture<List<CallHierarchyIncomingCall>> callHierarchyIncomingCalls(
             final CallHierarchyIncomingCallsParams params) {
@@ -367,6 +632,13 @@ public final class GroovyTextDocumentService implements TextDocumentService {
                 params.getItem(), context.getSnapshot(), context.getPositionEncoding()));
     }
 
+    /**
+     * Handles {@code callHierarchy/outgoingCalls} by delegating to
+     * {@link LanguageFeatures#hierarchy()} for the item in the request.
+     *
+     * @param params outgoing-calls request
+     * @return outgoing calls
+     */
     @Override
     public CompletableFuture<List<CallHierarchyOutgoingCall>> callHierarchyOutgoingCalls(
             final CallHierarchyOutgoingCallsParams params) {
@@ -374,6 +646,14 @@ public final class GroovyTextDocumentService implements TextDocumentService {
                 params.getItem(), context.getSnapshot(), context.getPositionEncoding()));
     }
 
+    /**
+     * Handles {@code textDocument/prepareTypeHierarchy} by delegating to
+     * {@link LanguageFeatures#hierarchy()}. Returns an empty list when
+     * the document is missing.
+     *
+     * @param params prepare request
+     * @return type-hierarchy items
+     */
     @Override
     public CompletableFuture<List<TypeHierarchyItem>> prepareTypeHierarchy(final TypeHierarchyPrepareParams params) {
         return withDocument(params.getTextDocument().getUri(), List.of(),
@@ -381,12 +661,26 @@ public final class GroovyTextDocumentService implements TextDocumentService {
                         params.getPosition(), context.getPositionEncoding()));
     }
 
+    /**
+     * Handles {@code typeHierarchy/supertypes} by delegating to
+     * {@link LanguageFeatures#hierarchy()} for the item in the request.
+     *
+     * @param params supertypes request
+     * @return supertype items
+     */
     @Override
     public CompletableFuture<List<TypeHierarchyItem>> typeHierarchySupertypes(final TypeHierarchySupertypesParams params) {
         return CompletableFuture.completedFuture(features.hierarchy().supertypes(
                 params.getItem(), context.getSnapshot(), context.getPositionEncoding()));
     }
 
+    /**
+     * Handles {@code typeHierarchy/subtypes} by delegating to
+     * {@link LanguageFeatures#hierarchy()} for the item in the request.
+     *
+     * @param params subtypes request
+     * @return subtype items
+     */
     @Override
     public CompletableFuture<List<TypeHierarchyItem>> typeHierarchySubtypes(final TypeHierarchySubtypesParams params) {
         return CompletableFuture.completedFuture(features.hierarchy().subtypes(

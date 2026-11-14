@@ -128,6 +128,14 @@ public final class WorkspaceScanner {
         Path start = normalized(root);
         try {
             Files.walkFileTree(root, new SimpleFileVisitor<Path>() {
+                /**
+                 * Stops the walk once 4000 files have been collected. Skips a
+                 * directory whose name is ignored, except the search root itself.
+                 *
+                 * @param dir the directory about to be entered
+                 * @param attrs directory attributes, unused
+                 * @return terminate, skip, or continue
+                 */
                 @Override
                 public FileVisitResult preVisitDirectory(final Path dir, final BasicFileAttributes attrs) {
                     if (files.size() >= MAX_FILES) {
@@ -139,6 +147,14 @@ public final class WorkspaceScanner {
                     return FileVisitResult.CONTINUE;
                 }
 
+                /**
+                 * Adds a Groovy or Java file that has not already been seen.
+                 * Stops the walk once 4000 files have been collected.
+                 *
+                 * @param file the file being visited
+                 * @param attrs file attributes, unused
+                 * @return terminate or continue
+                 */
                 @Override
                 public FileVisitResult visitFile(final Path file, final BasicFileAttributes attrs) {
                     if (files.size() >= MAX_FILES) {
@@ -152,6 +168,13 @@ public final class WorkspaceScanner {
                     return FileVisitResult.CONTINUE;
                 }
 
+                /**
+                 * Continues the walk when a file or directory cannot be read.
+                 *
+                 * @param file the path that could not be visited
+                 * @param exc the failure, unused
+                 * @return continue
+                 */
                 @Override
                 public FileVisitResult visitFileFailed(final Path file, final IOException exc) {
                     return FileVisitResult.CONTINUE;

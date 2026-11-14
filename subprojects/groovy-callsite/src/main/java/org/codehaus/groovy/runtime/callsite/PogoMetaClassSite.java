@@ -25,12 +25,31 @@ import groovy.lang.MissingMethodException;
 import org.codehaus.groovy.runtime.ScriptBytecodeAdapter;
 import org.codehaus.groovy.runtime.metaclass.MissingMethodExecutionFailed;
 
+/**
+ * Call site for a Groovy object whose meta-class is cached and whose method is not.
+ * Dispatch uses that meta-class while {@link #checkCall(Object)} still matches,
+ * and the default call path otherwise. A missing method for the receiver's own
+ * type is retried through {@link GroovyObject#invokeMethod(String, Object)}.
+ */
 public class PogoMetaClassSite extends MetaClassSite {
 
+    /**
+     * Caches {@code metaClass} for later dispatch from this site.
+     */
     public PogoMetaClassSite(final CallSite site, final MetaClass metaClass) {
         super(site, metaClass);
     }
 
+    /**
+     * When {@link #checkCall(Object)} matches, invokes {@code name} on
+     * {@code receiver} through the cached meta-class. A
+     * {@link MissingMethodExecutionFailed} is rethrown as its cause. A
+     * {@link MissingMethodException} for this name on the receiver's class
+     * is retried with {@link GroovyObject#invokeMethod(String, Object)}.
+     * A {@link GroovyRuntimeException} is rethrown via
+     * {@link ScriptBytecodeAdapter#unwrap(GroovyRuntimeException)}.
+     * Otherwise falls back to {@link CallSiteArray#defaultCall(CallSite, Object, Object[])}.
+     */
     @Override
     public final Object call(final Object receiver, final Object[] args) throws Throwable {
         if (checkCall(receiver)) {
@@ -55,6 +74,20 @@ public class PogoMetaClassSite extends MetaClassSite {
         }
     }
 
+    /**
+     * When {@link #checkCall(Object)} matches, invokes {@code name} through the
+     * cached meta-class as a call from inside the call-site array's owner
+     * ({@code isCallToSuper} false, {@code fromInsideClass} true).
+     * A {@link MissingMethodExecutionFailed} is rethrown as its cause. A
+     * {@link MissingMethodException} for this name on the receiver's class is
+     * retried with {@link GroovyObject#invokeMethod(String, Object)}; if that
+     * also misses and is not a {@link MissingMethodExecutionFailed}, the cached
+     * meta-class is invoked again without the sender. A
+     * {@link GroovyRuntimeException} is rethrown via
+     * {@link ScriptBytecodeAdapter#unwrap(GroovyRuntimeException)}.
+     * Otherwise falls back to
+     * {@link CallSiteArray#defaultCallCurrent(CallSite, GroovyObject, Object[])}.
+     */
     @Override
     public final Object callCurrent(final GroovyObject receiver, final Object[] args) throws Throwable {
         if (checkCall(receiver)) {
@@ -86,6 +119,10 @@ public class PogoMetaClassSite extends MetaClassSite {
         }
     }
 
+    /**
+     * Returns whether {@code receiver} is a {@link GroovyObject} whose current
+     * meta-class is still the one cached by this site.
+     */
     protected final boolean checkCall(final Object receiver) {
         return (receiver instanceof GroovyObject && ((GroovyObject) receiver).getMetaClass() == metaClass);
     }

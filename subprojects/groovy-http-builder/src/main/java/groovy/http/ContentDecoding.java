@@ -134,16 +134,26 @@ final class ContentDecoding {
             this.codings = codings;
         }
 
+        /**
+         * Returns the target subscriber's body future. Decoding happens before
+         * that subscriber is given any bytes.
+         */
         @Override
         public CompletionStage<T> getBody() {
             return target.getBody();
         }
 
+        /**
+         * Requests the entire encoded body in one demand.
+         */
         @Override
         public void onSubscribe(final Flow.Subscription subscription) {
             subscription.request(Long.MAX_VALUE);
         }
 
+        /**
+         * Copies each buffer into the encoded-body accumulator.
+         */
         @Override
         public void onNext(final List<ByteBuffer> items) {
             for (ByteBuffer item : items) {
@@ -153,12 +163,22 @@ final class ContentDecoding {
             }
         }
 
+        /**
+         * Forwards {@code throwable} to the target subscriber after subscribing
+         * it to a delivery that has nothing to send.
+         */
         @Override
         public void onError(final Throwable throwable) {
             target.onSubscribe(new Delivery(null));
             target.onError(throwable);
         }
 
+        /**
+         * Decodes the accumulated bytes. An empty result subscribes the target
+         * to a delivery with nothing to send and then completes it. A non-empty
+         * result subscribes the target to a delivery of that one buffer.
+         * A decode failure is forwarded through {@link #onError(Throwable)}.
+         */
         @Override
         public void onComplete() {
             byte[] decoded;
@@ -186,6 +206,11 @@ final class ContentDecoding {
                 if (body == null) done.set(true);
             }
 
+            /**
+             * On the first positive request, delivers the decoded buffer and
+             * completes the target. A non-positive request fails the target.
+             * Later requests do nothing.
+             */
             @Override
             public void request(final long n) {
                 if (!done.compareAndSet(false, true)) return;
@@ -197,6 +222,9 @@ final class ContentDecoding {
                 }
             }
 
+            /**
+             * Drops a body that has not yet been delivered.
+             */
             @Override
             public void cancel() {
                 done.set(true);

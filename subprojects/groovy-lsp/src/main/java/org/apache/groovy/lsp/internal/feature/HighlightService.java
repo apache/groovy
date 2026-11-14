@@ -34,6 +34,12 @@ import java.util.List;
  */
 public final class HighlightService {
 
+    /**
+     * Highlights references of the symbol at {@code position} that lie in
+     * {@code document}, including the declaration. A null document or URI
+     * yields an empty list. Each retained location is reported as
+     * {@link DocumentHighlightKind#Text}.
+     */
     public List<DocumentHighlight> highlights(final TextDocument document, final CompilationSnapshot snapshot,
                                               final Position position, final PositionEncoding encoding) {
         if (document == null || document.getUri() == null) {

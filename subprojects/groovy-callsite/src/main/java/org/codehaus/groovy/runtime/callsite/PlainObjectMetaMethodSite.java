@@ -35,10 +35,31 @@ import java.lang.reflect.Method;
  *
  */
 public abstract class PlainObjectMetaMethodSite extends MetaMethodSite {
+    /**
+     * Caches {@code metaClass}, {@code metaMethod}, and the parameter classes.
+     *
+     * @param site the site whose name and index are reused
+     * @param metaClass the receiver's meta-class
+     * @param metaMethod the cached method
+     * @param params the parameter classes used to match a later call
+     */
     public PlainObjectMetaMethodSite(CallSite site, MetaClass metaClass, MetaMethod metaMethod, Class[] params) {
         super(site, metaClass, metaMethod, params);
     }
 
+    /**
+     * Invokes {@code reflect} on {@code receiver} with {@code args} and
+     * normalizes a primitive return through {@link MetaClassHelper} so the
+     * boxed value keeps the identity reflection produced.
+     * The cause of an {@link InvocationTargetException} is rethrown; a
+     * {@link GroovyRuntimeException} cause goes through
+     * {@link ScriptBytecodeAdapter#unwrap(GroovyRuntimeException)}.
+     *
+     * @param receiver the object {@code reflect} is invoked on
+     * @param args the arguments passed to {@code reflect}
+     * @param reflect the method to invoke
+     * @return the normalized return value
+     */
     protected static Object doInvoke(Object receiver, Object[] args, Method reflect) throws Throwable {
         try {
             // GROOVY-12140: keep === identity of primitive returns consistent

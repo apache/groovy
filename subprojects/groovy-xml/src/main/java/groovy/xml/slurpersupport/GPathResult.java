@@ -104,19 +104,52 @@ public abstract class GPathResult extends GroovyObjectSupport implements Writabl
     @Override
     public void setMetaClass(final MetaClass metaClass) {
         super.setMetaClass(new DelegatingMetaClass(metaClass) {
+            /**
+             * Reads the GPath property named {@code @} plus {@code attribute}.
+             *
+             * @param object the receiver, ignored in favour of this GPath result
+             * @param attribute the attribute name
+             * @return the attribute value
+             */
             @Override
             public Object getAttribute(final Object object, final String attribute) {
                 return GPathResult.this.getProperty("@" + attribute);
             }
+            /**
+             * Delegates to {@link #getAttribute(Object, String)}, ignoring the caller and the super flag.
+             *
+             * @param sender the caller, ignored
+             * @param object the receiver, ignored
+             * @param attribute the attribute name
+             * @param isSuper whether the lookup is for a super class, ignored
+             * @return the attribute value
+             */
             @Override
             public Object getAttribute(final Class sender, final Object object, final String attribute, final boolean isSuper) {
                 return this.getAttribute(object, attribute);
             }
 
+            /**
+             * Writes the GPath property named {@code @} plus {@code attribute}.
+             *
+             * @param object the receiver, ignored in favour of this GPath result
+             * @param attribute the attribute name
+             * @param newValue the value to store
+             */
             @Override
             public void setAttribute(final Object object, final String attribute, final Object newValue) {
                 GPathResult.this.setProperty("@" + attribute, newValue);
             }
+            /**
+             * Delegates to {@link #setAttribute(Object, String, Object)}, ignoring the caller and the super flags.
+             *
+             * @param sender the caller, ignored
+             * @param object the receiver, ignored
+             * @param attribute the attribute name
+             * @param newValue the value to store
+             * @param isSuper whether the write is for a super class, ignored
+             * @param isInner whether the write is for an inner class, ignored
+             */
             @Override
             public void setAttribute(final Class sender, final Object object, final String attribute, final Object newValue, final boolean isSuper, final boolean isInner) {
                 this.setAttribute(object, attribute, newValue);
@@ -216,6 +249,12 @@ public abstract class GPathResult extends GroovyObjectSupport implements Writabl
      */
     public Object plus(final Object newValue) {
         this.replaceNode(new Closure(this) {
+            /**
+             * Yields the original builder arguments, then yields {@code newValue}.
+             * The {@code mkp} property is read before each yield so the markup builder accepts it.
+             *
+             * @param args the content the builder was already yielding
+             */
             public void doCall(Object[] args) {
                 final GroovyObject delegate = (GroovyObject) getDelegate();
                 delegate.getProperty("mkp");
@@ -551,11 +590,21 @@ public abstract class GPathResult extends GroovyObjectSupport implements Writabl
             private Iterator iter = iterator();
             private GPathResult next = getNextByDepth();
 
+            /**
+             * Returns whether a depth-first node has already been prefetched.
+             *
+             * @return {@code true} when {@code next} is non-null
+             */
             @Override
             public boolean hasNext() {
                 return this.next != null;
             }
 
+            /**
+             * Returns the prefetched node and prefetches the next depth-first node.
+             *
+             * @return the node that was pending
+             */
             @Override
             public Object next() {
                 try {
@@ -565,6 +614,9 @@ public abstract class GPathResult extends GroovyObjectSupport implements Writabl
                 }
             }
 
+            /**
+             * Refuses removal. Depth-first traversal does not modify the tree.
+             */
             @Override
             public void remove() {
                 throw new UnsupportedOperationException();
@@ -601,11 +653,21 @@ public abstract class GPathResult extends GroovyObjectSupport implements Writabl
             private Iterator iter = iterator();
             private GPathResult next = getNextByBreadth();
 
+            /**
+             * Returns whether a breadth-first node has already been prefetched.
+             *
+             * @return {@code true} when {@code next} is non-null
+             */
             @Override
             public boolean hasNext() {
                 return this.next != null;
             }
 
+            /**
+             * Returns the prefetched node and prefetches the next breadth-first node.
+             *
+             * @return the node that was pending
+             */
             @Override
             public Object next() {
                 try {
@@ -615,6 +677,9 @@ public abstract class GPathResult extends GroovyObjectSupport implements Writabl
                 }
             }
 
+            /**
+             * Refuses removal. Breadth-first traversal does not modify the tree.
+             */
             @Override
             public void remove() {
                 throw new UnsupportedOperationException();
@@ -683,6 +748,13 @@ public abstract class GPathResult extends GroovyObjectSupport implements Writabl
      */
     public Closure getBody() {
         return new Closure(this.parent,this) {
+            /**
+             * Yields the children of the first node in this result.
+             * Element children are yielded as {@link NodeChild} values; other children are yielded as themselves.
+             * The {@code mkp} property is read before each yield.
+             *
+             * @param args ignored builder arguments
+             */
             public void doCall(Object[] args) {
                 final GroovyObject delegate = (GroovyObject)getDelegate();
                 final GPathResult thisObject = (GPathResult)getThisObject();
@@ -764,11 +836,21 @@ public abstract class GPathResult extends GroovyObjectSupport implements Writabl
         return new Iterator() {
             private boolean hasNext = true;
 
+            /**
+             * Returns whether {@code obj} has not yet been returned.
+             *
+             * @return {@code true} until {@link #next()} has been called
+             */
             @Override
             public boolean hasNext() {
                 return this.hasNext;
             }
 
+            /**
+             * Returns {@code obj} on the first call and null afterwards.
+             *
+             * @return {@code obj} once, then null
+             */
             @Override
             public Object next() {
                 try {
@@ -778,6 +860,9 @@ public abstract class GPathResult extends GroovyObjectSupport implements Writabl
                 }
             }
 
+            /**
+             * Refuses removal. The single-element iterator does not modify the result.
+             */
             @Override
             public void remove() {
                 throw new UnsupportedOperationException();

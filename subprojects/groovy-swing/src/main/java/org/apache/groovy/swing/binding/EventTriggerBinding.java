@@ -104,6 +104,10 @@ public class EventTriggerBinding implements TriggerBinding {
             setSourceBinding(sourceBinding);
             setTargetBinding(targetBinding);
             handler = new Closure(triggerBean) {
+                /**
+                 * Stores {@code params} on a {@link ClosureSourceBinding} source,
+                 * runs the full binding update, and returns {@code null}.
+                 */
                 @Override
                 public Object call(Object... params) {
                     if (sourceBinding instanceof ClosureSourceBinding) {
@@ -115,16 +119,25 @@ public class EventTriggerBinding implements TriggerBinding {
             };
         }
 
+        /**
+         * Installs the handler as the bean's {@code eventName} property.
+         */
         @Override
         public void bind() {
             InvokerHelper.setProperty(triggerBean, eventName, handler);
         }
 
+        /**
+         * Not supported; the installed handler is left in place.
+         */
         @Override
         public void unbind() {
             throw new UnsupportedOperationException();
         }
 
+        /**
+         * Not supported; the installed handler is left in place.
+         */
         @Override
         public void rebind() {
             throw new UnsupportedOperationException();

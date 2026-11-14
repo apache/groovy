@@ -34,12 +34,25 @@ class GetEffectivePogoPropertySite extends AbstractCallSite {
     private final MetaClass metaClass;
     private final MetaProperty effective;
 
+    /**
+     * Captures the meta class and property used when a later read still matches.
+     *
+     * @param site the site whose name and index are copied
+     * @param metaClass the meta class the receiver must still report
+     * @param effective the property read when the receiver still matches
+     */
     public GetEffectivePogoPropertySite(CallSite site, MetaClass metaClass, MetaProperty effective) {
         super(site);
         this.metaClass = metaClass;
         this.effective = effective;
     }
 
+    /**
+     * Reads the property when {@code receiver} is a {@link GroovyObject} whose
+     * meta class is still the one captured here and no category is active.
+     * Otherwise a newly created get-property site performs the read.
+     * A {@link GroovyRuntimeException} from the cached property is unwrapped.
+     */
     @Override
     public final Object callGetProperty (Object receiver) throws Throwable {
         if (GroovyCategorySupport.hasCategoryInCurrentThread() || !(receiver instanceof GroovyObject) || ((GroovyObject) receiver).getMetaClass() != metaClass) {
@@ -53,6 +66,11 @@ class GetEffectivePogoPropertySite extends AbstractCallSite {
         }
     }
 
+    /**
+     * Returns this site when {@code receiver} is a {@link GroovyObject} whose
+     * meta class is still the one captured here and no category is active.
+     * Otherwise returns a newly created get-property site.
+     */
     @Override
     public final CallSite acceptGetProperty(Object receiver) {
         if (GroovyCategorySupport.hasCategoryInCurrentThread() || !(receiver instanceof GroovyObject) || ((GroovyObject)receiver).getMetaClass() != metaClass) {
@@ -62,6 +80,12 @@ class GetEffectivePogoPropertySite extends AbstractCallSite {
         }
     }
 
+    /**
+     * Reads the property under the same receiver and category checks as
+     * {@link #callGetProperty(Object)}. A mismatch is handled by a newly
+     * created get-property site. A {@link GroovyRuntimeException} from the
+     * cached property is unwrapped.
+     */
     @Override
     public final Object callGroovyObjectGetProperty (Object receiver) throws Throwable {
         if (GroovyCategorySupport.hasCategoryInCurrentThread() || !(receiver instanceof GroovyObject) || ((GroovyObject) receiver).getMetaClass() != metaClass) {
@@ -75,6 +99,11 @@ class GetEffectivePogoPropertySite extends AbstractCallSite {
         }
     }
 
+    /**
+     * Returns this site under the same receiver and category checks as
+     * {@link #acceptGetProperty(Object)}. Otherwise returns a site created
+     * for a Groovy object property read.
+     */
     @Override
     public final CallSite acceptGroovyObjectGetProperty(Object receiver) {
         if (GroovyCategorySupport.hasCategoryInCurrentThread() || !(receiver instanceof GroovyObject) || ((GroovyObject)receiver).getMetaClass() != metaClass) {
@@ -84,6 +113,11 @@ class GetEffectivePogoPropertySite extends AbstractCallSite {
         }
     }
 
+    /**
+     * Reads the property through the cached {@link MetaProperty}.
+     * A {@link GroovyRuntimeException} is unwrapped. The receiver's meta
+     * class and any active category are not checked here.
+     */
     @Override
     public final Object getProperty(Object receiver) throws Throwable {
         try {
