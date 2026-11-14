@@ -4242,4 +4242,113 @@ final class AsyncAwaitTest {
         '''
     }
 
+    // One failure instance reaching close or defer twice is rethrown once, not suppressed into itself
+
+    @Test
+    void testScopeCloseSharedFailureIsNotSelfSuppressed() {
+        assertScript '''
+            import groovy.concurrent.AsyncScope
+            import static groovy.test.GroovyAssert.shouldFail
+
+            def shared = new IllegalStateException('shared')
+            def e = shouldFail(IllegalStateException) {
+                AsyncScope.withScope { scope ->
+                    scope.async { throw shared }
+                    scope.async { throw shared }
+                    null
+                }
+            }
+            assert e.is(shared)
+            assert e.suppressed.length == 0
+        '''
+    }
+
+    @Test
+    void testDeferSharedFailureIsNotSelfSuppressed() {
+        assertScript '''
+            import static groovy.test.GroovyAssert.shouldFail
+
+            def shared = new IllegalStateException('shared')
+            def e = shouldFail(IllegalStateException) {
+                await async {
+                    defer { throw shared }
+                    defer { throw shared }
+                    1
+                }
+            }
+            assert e.is(shared)
+            assert e.suppressed.length == 0
+        '''
+    }
+
+    @Test
+    void testTimedScopeSharedFailureIsNotSelfSuppressed() {
+        assertScript '''
+            import groovy.concurrent.AsyncScope
+            import java.time.Duration
+            import static groovy.test.GroovyAssert.shouldFail
+
+            def shared = new IllegalStateException('shared')
+            def e = shouldFail(IllegalStateException) {
+                AsyncScope.withScope(Duration.ofSeconds(5)) { scope ->
+                    def child = scope.async { throw shared }
+                    try { await child } catch (IllegalStateException ignored) { }
+                    throw shared
+                }
+            }
+            assert e.is(shared)
+            assert e.suppressed.length == 0
+        '''
+    }
+
+    @Test
+    void testSharedLaterFailureIsSuppressedOnce() {
+        assertScript '''
+            import groovy.concurrent.AsyncScope
+            import static groovy.test.GroovyAssert.shouldFail
+
+            def first = new IllegalStateException('first')
+            def shared = new IllegalStateException('shared')
+            def e = shouldFail(IllegalStateException) {
+                AsyncScope.withScope { scope ->
+                    def a = scope.async { throw first }
+                    try { await a } catch (IllegalStateException ignored) { }
+                    scope.async { throw shared }
+                    scope.async { throw shared }
+                    null
+                }
+            }
+            assert e.is(first)
+            assert e.suppressed as List == [shared]
+
+            e = shouldFail(IllegalStateException) {
+                await async {
+                    defer { throw shared }
+                    defer { throw shared }
+                    defer { throw first }
+                    1
+                }
+            }
+            assert e.is(first)
+            assert e.suppressed as List == [shared]
+        '''
+    }
+
+    @Test
+    void testTimedScopeDoesNotLeaveCallerInterrupted() {
+        assertScript '''
+            import groovy.concurrent.AsyncScope
+            import java.time.Duration
+
+            // The body outlives the timeout without blocking, so it returns normally
+            def result = AsyncScope.withScope(Duration.ofMillis(20)) { scope ->
+                long end = System.nanoTime() + 300_000_000L
+                while (System.nanoTime() < end) { }
+                'done'
+            }
+            assert result == 'done'
+            assert !Thread.interrupted()
+        '''
+    }
+
 }
