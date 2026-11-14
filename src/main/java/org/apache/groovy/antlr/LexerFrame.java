@@ -280,6 +280,16 @@ public class LexerFrame extends JFrame implements ActionListener {
         jSplitPane1.setResizeWeight(0.5);
     }
 
+    /**
+     * Opens the token viewer. With no arguments, shows an empty frame and an open
+     * button. With one argument, reads that file and displays its tokens. With more
+     * than one argument, logs {@code usage: java LexerFrame [filename.ext]} and
+     * exits with status 1. A failure to install the system look and feel is ignored.
+     * The file reader is not closed here.
+     *
+     * @param args optional path of one script to display
+     * @throws FileNotFoundException if the named file cannot be opened
+     */
     public static void main(String[] args) throws Exception {
         try {
             UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());

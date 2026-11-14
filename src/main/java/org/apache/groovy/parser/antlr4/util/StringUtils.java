@@ -30,10 +30,36 @@ import java.util.regex.Pattern;
  *
  */
 public class StringUtils {
+    /**
+     * Slashy kind for an ordinary string. {@link #replaceEscapes} then
+     * rewrites hex, octal, and standard escapes, drops a backslash that
+     * continues a line, and turns {@code \$} into {@code $}.
+     */
     public static final int NONE_SLASHY = 0;
+    /**
+     * Slashy kind for a {@code /.../} string. {@link #replaceEscapes}
+     * rewrites hex escapes, drops a backslash that continues a line, and
+     * turns {@code \/} into {@code /}.
+     */
     public static final int SLASHY = 1;
+    /**
+     * Slashy kind for a {@code $/.../$} string. {@link #replaceEscapes}
+     * rewrites hex escapes, drops a backslash that continues a line, turns
+     * {@code $/} into {@code /}, and turns {@code $$} into {@code $}.
+     */
     public static final int DOLLAR_SLASHY = 2;
 
+    /**
+     * Rewrites escapes in {@code text} according to {@code slashyType}.
+     * {@link #NONE_SLASHY} applies the full set used for an ordinary
+     * string. {@link #SLASHY} and {@link #DOLLAR_SLASHY} apply the smaller
+     * slashy sets. Any other {@code slashyType} is rejected.
+     *
+     * @param text source text, still containing escape sequences
+     * @param slashyType {@link #NONE_SLASHY}, {@link #SLASHY}, or
+     *        {@link #DOLLAR_SLASHY}
+     * @return {@code text} with those escapes replaced
+     */
     public static String replaceEscapes(String text, int slashyType) {
         if (slashyType == NONE_SLASHY) {
             text = replaceEscapes(text);
@@ -54,6 +80,15 @@ public class StringUtils {
         return text;
     }
 
+    /**
+     * Replaces each {@code \uXXXX} whose leading backslashes are even with
+     * the corresponding character. A match with an odd run of backslashes
+     * is left unchanged. A string that contains no backslash is returned
+     * as it was given.
+     *
+     * @param text source text
+     * @return {@code text} with those hex escapes replaced
+     */
     public static String replaceHexEscapes(String text) {
 		if (!text.contains(BACKSLASH)) return text;
 		return replaceAll(text, HEX_ESCAPES_PATTERN, m -> {
@@ -63,6 +98,15 @@ public class StringUtils {
         });
 	}
 
+    /**
+     * Replaces an octal escape of up to three digits, when its leading
+     * backslashes are even, with the corresponding character. A match with
+     * an odd run of backslashes is left unchanged. A string that contains
+     * no backslash is returned as it was given.
+     *
+     * @param text source text
+     * @return {@code text} with those octal escapes replaced
+     */
 	public static String replaceOctalEscapes(String text) {
 		if (!text.contains(BACKSLASH)) return text;
 		return replaceAll(text, OCTAL_ESCAPES_PATTERN, m -> {
@@ -72,6 +116,16 @@ public class StringUtils {
         });
 	}
 
+    /**
+     * Replaces {@code \b}, {@code \t}, {@code \n}, {@code \f}, {@code \r},
+     * {@code \s} (a space), {@code \"}, and {@code \'} when the leading
+     * backslashes are even. Any other escaped character is kept. Each
+     * remaining {@code \\} then becomes one backslash. A string that
+     * contains no backslash is returned as it was given.
+     *
+     * @param text source text
+     * @return {@code text} with those standard escapes replaced
+     */
     public static String replaceStandardEscapes(String text) {
 		if (!text.contains(BACKSLASH)) return text;
 		final String result = replaceAll(text, STANDARD_ESCAPES_PATTERN, m -> {
@@ -83,19 +137,49 @@ public class StringUtils {
 		return replace(result,"\\\\", "\\");
 	}
 
+    /**
+     * Replaces every {@code \r\n} in {@code text} with {@code \n}. A lone
+     * {@code \r} is left in place.
+     *
+     * @param text source text
+     * @return {@code text} with CRLF pairs folded to LF
+     */
 	public static String removeCR(String text) {
 		return replace(text,"\r\n", "\n");
 	}
 
+    /**
+     * Counts how many UTF-16 code units in {@code text} equal {@code c}.
+     *
+     * @param text source text
+     * @param c code unit to count
+     * @return how many times {@code c} occurs
+     */
 	public static long countChar(String text, char c) {
 		return text.chars().filter(e -> c == e).count();
 	}
 
+    /**
+     * Drops {@code quotationLength} characters from each end of
+     * {@code text}. When {@code text} is exactly twice that long, the
+     * result is empty.
+     *
+     * @param text quoted text, including the quote characters
+     * @param quotationLength number of characters in one quote delimiter
+     * @return the characters between the two delimiters
+     */
 	public static String trimQuotations(String text, int quotationLength) {
 		int length = text.length();
 		return length == quotationLength << 1 ? "" : text.substring(quotationLength, length - quotationLength);
 	}
 
+    /**
+     * Reports whether the whole of {@code text} matches {@code pattern}.
+     *
+     * @param text text to test
+     * @param pattern pattern applied with {@link Matcher#matches}
+     * @return {@code true} when {@code pattern} matches all of {@code text}
+     */
 	public static boolean matches(String text, Pattern pattern) {
 		return pattern.matcher(text).matches();
 	}

@@ -50,6 +50,14 @@ public final class Realm {
         this.parent = parent;
     }
 
+    /**
+     * Creates a realm with the given name. A {@code null} parent is replaced by the root realm.
+     *
+     * @param name realm name; must not be {@code null}
+     * @param parent parent realm, or {@code null} to attach the new realm under the root
+     * @return the new realm
+     * @throws NullPointerException if {@code name} is {@code null}
+     */
     public static Realm newRealm(String name, Realm parent) {
         Objects.requireNonNull(name, "missing realm name");
         if (parent == null) {
@@ -67,6 +75,14 @@ public final class Realm {
                 '}';
     }
 
+    /**
+     * Returns a {@link MetaClass} whose constant is cached on this realm's {@link ClassValue}
+     * and re-read when that constant's {@link SwitchPoint} is invalidated.
+     *
+     * @param <T> the class the meta-class describes
+     * @param theClass the class to look up
+     * @return a meta-class bound to the cached constant for {@code theClass}
+     */
     public <T> MetaClass<T> getMetaClass(final Class<T> theClass) {
         Supplier<MetaClassConstant<T>> valueSupplier = () -> (MetaClassConstant<T>) cv.get(theClass);
         Function<MetaClassConstant<T>, SwitchPoint> validationSupplier = MetaClassConstant::getSwitchPoint;

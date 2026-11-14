@@ -520,6 +520,13 @@ public class AsyncSupport {
 
     // ---- exception utilities --------------------------------------------
 
+    /**
+     * Returns {@code t} when it is already a {@link CompletionException}.
+     * Otherwise returns a new {@link CompletionException} caused by {@code t}.
+     *
+     * @param t the failure to complete a future with; may be {@code null}
+     * @return {@code t} if it is a {@link CompletionException}, otherwise a wrapper around it
+     */
     public static CompletionException wrapForFuture(Throwable t) {
         if (t instanceof CompletionException ce) return ce;
         return new CompletionException(t);

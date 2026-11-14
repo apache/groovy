@@ -80,10 +80,22 @@ public final class DefaultAsyncChannel<T> implements AsyncChannel<T> {
      */
     private final AtomicReference<Runnable> onClose = new AtomicReference<>();
 
+    /**
+     * Creates a channel that does not buffer. A send completes immediately
+     * only when a receiver is already waiting; otherwise the send stays
+     * queued.
+     */
     public DefaultAsyncChannel() {
         this(0);
     }
 
+    /**
+     * Creates a channel that buffers at most {@code capacity} values. Zero
+     * does not buffer: a send stays queued unless a receiver is already
+     * waiting. A negative capacity is rejected.
+     *
+     * @param capacity maximum number of buffered values
+     */
     public DefaultAsyncChannel(int capacity) {
         if (capacity < 0) {
             throw new IllegalArgumentException("channel capacity must not be negative: " + capacity);
