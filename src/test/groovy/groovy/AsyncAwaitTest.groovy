@@ -4115,18 +4115,298 @@ final class AsyncAwaitTest {
     }
 
     @Test
-    void testScopeCloseWithCheckedExceptionWrapped() {
+    void testScopeCloseRethrowsCheckedExceptionUnwrapped() {
         assertScript '''
             import groovy.concurrent.AsyncScope
 
             def scope = AsyncScope.create()
-            scope.async { throw new Exception('checked-err') }
+            scope.async { throw new IOException('checked-err') }
             try {
                 scope.close()
                 assert false
-            } catch (RuntimeException e) {
-                assert e.cause.message == 'checked-err'
+            } catch (IOException e) {
+                assert e.message == 'checked-err'
             }
+        '''
+    }
+
+    // Checked exceptions surface as themselves from every async construct, as from await
+
+    @Test
+    void testWithScopeChildCheckedExceptionTransparency() {
+        assertScript '''
+            import groovy.concurrent.AsyncScope
+
+            try {
+                AsyncScope.withScope { scope ->
+                    scope.async { throw new IOException('child') }
+                    null
+                }
+                assert false
+            } catch (IOException e) {
+                assert e.message == 'child'
+            }
+        '''
+    }
+
+    @Test
+    void testWithScopeBodyCheckedExceptionTransparency() {
+        assertScript '''
+            import groovy.concurrent.AsyncScope
+            import java.time.Duration
+
+            try {
+                AsyncScope.withScope { scope -> throw new IOException('body') }
+                assert false
+            } catch (IOException e) {
+                assert e.message == 'body'
+            }
+            try {
+                AsyncScope.withScope(Duration.ofSeconds(5)) { scope -> throw new IOException('timed body') }
+                assert false
+            } catch (IOException e) {
+                assert e.message == 'timed body'
+            }
+        '''
+    }
+
+    @Test
+    void testWithScopeBodyKeepsAWrapperTheCodeThrew() {
+        assertScript '''
+            import groovy.concurrent.AsyncScope
+            import java.util.concurrent.ExecutionException
+
+            try {
+                AsyncScope.withScope { scope -> throw new ExecutionException(new IOException('inner')) }
+                assert false
+            } catch (ExecutionException e) {
+                assert e.cause instanceof IOException
+            }
+        '''
+    }
+
+    @Test
+    void testGeneratorKeepsAWrapperTheCodeThrew() {
+        assertScript '''
+            import java.util.concurrent.ExecutionException
+
+            def gen = async {
+                yield return 1
+                throw new ExecutionException(new IOException('inner'))
+            }
+            try {
+                for (x in gen) { }
+                assert false
+            } catch (ExecutionException e) {
+                assert e.cause instanceof IOException
+            }
+        '''
+    }
+
+    @Test
+    void testDeferCheckedExceptionTransparency() {
+        assertScript '''
+            try {
+                await async {
+                    defer { throw new IOException('cleanup') }
+                    1
+                }
+                assert false
+            } catch (IOException e) {
+                assert e.message == 'cleanup'
+            }
+        '''
+    }
+
+    @Test
+    void testGeneratorCheckedExceptionTransparency() {
+        assertScript '''
+            def gen = async {
+                yield return 1
+                throw new IOException('gen')
+            }
+            def seen = []
+            try {
+                for (x in gen) { seen << x }
+                assert false
+            } catch (IOException e) {
+                assert e.message == 'gen'
+            }
+            assert seen == [1]
+        '''
+    }
+
+    @Test
+    void testFlowPublisherCheckedExceptionTransparency() {
+        assertScript '''
+            import java.util.concurrent.SubmissionPublisher
+
+            def pub = new SubmissionPublisher<Integer>()
+            def seen = []
+            def producer = Thread.start {
+                while (pub.numberOfSubscribers == 0) Thread.onSpinWait()
+                pub.submit(1)
+                // closeExceptionally may overtake an undelivered item
+                while (pub.estimateMaximumLag() > 0) Thread.onSpinWait()
+                pub.closeExceptionally(new IOException('flow'))
+            }
+            try {
+                for await (x in pub) { seen << x }
+                assert false
+            } catch (IOException e) {
+                assert e.message == 'flow'
+            }
+            producer.join()
+            assert seen == [1]
+        '''
+    }
+
+    @Test
+    void testFlowPublisherKeepsAWrapperTheCodeThrew() {
+        assertScript '''
+            import java.util.concurrent.ExecutionException
+            import java.util.concurrent.SubmissionPublisher
+
+            def pub = new SubmissionPublisher<Integer>()
+            def producer = Thread.start {
+                while (pub.numberOfSubscribers == 0) Thread.onSpinWait()
+                pub.closeExceptionally(new ExecutionException(new IOException('inner')))
+            }
+            try {
+                for await (x in pub) { }
+                assert false
+            } catch (ExecutionException e) {
+                assert e.cause instanceof IOException
+            }
+            producer.join()
+        '''
+    }
+
+    // A wrapper thrown by a child task, or by a deferred action of an awaited task, is removed
+    // exactly as await removes it; a generator keeps it, as it keeps a wrapper its body throws
+
+    @Test
+    void testScopeChildAndDeferUnwrapAsAwaitDoes() {
+        assertScript '''
+            import groovy.concurrent.AsyncScope
+            import java.util.concurrent.ExecutionException
+            import static groovy.test.GroovyAssert.shouldFail
+
+            def wrapped = { new ExecutionException(new IOException('inner')) }
+            def viaAwait = shouldFail(IOException) { await async { throw wrapped() } }
+            def viaChild = shouldFail(IOException) {
+                AsyncScope.withScope { scope -> scope.async { throw wrapped() }; null }
+            }
+            def viaDefer = shouldFail(IOException) {
+                await async { defer { throw wrapped() }; 1 }
+            }
+            assert [viaAwait, viaChild, viaDefer]*.message == ['inner'] * 3
+
+            def gen = async { defer { throw wrapped() }; yield return 1 }
+            def viaGeneratorDefer = shouldFail(ExecutionException) { for (x in gen) { } }
+            assert viaGeneratorDefer.cause.message == 'inner'
+        '''
+    }
+
+    @Test
+    void testCheckedExceptionTransparencyUnderCompileStatic() {
+        assertScript '''
+            import groovy.concurrent.AsyncScope
+            import groovy.transform.CompileStatic
+            import java.time.Duration
+            import java.util.concurrent.SubmissionPublisher
+            import static groovy.test.GroovyAssert.shouldFail
+
+            @CompileStatic
+            class Paths {
+                static void child() {
+                    AsyncScope.withScope { AsyncScope scope -> scope.async { throw new IOException('child') }; null }
+                }
+                static void body() {
+                    AsyncScope.withScope { AsyncScope scope -> throw new IOException('body') }
+                }
+                static void deferred() {
+                    await async { defer { throw new IOException('defer') }; 1 }
+                }
+                static void generator() {
+                    def gen = async { yield return 1; throw new IOException('gen') }
+                    for (x in gen) { }
+                }
+                static void timedBody() {
+                    AsyncScope.withScope(Duration.ofSeconds(5)) { AsyncScope scope -> throw new IOException('timed') }
+                }
+                static void flow() {
+                    def pub = new SubmissionPublisher<Integer>()
+                    Thread.start {
+                        while (pub.numberOfSubscribers == 0) Thread.onSpinWait()
+                        pub.closeExceptionally(new IOException('flow'))
+                    }
+                    for await (x in pub) { }
+                }
+            }
+
+            ['child', 'body', 'defer', 'gen', 'timed', 'flow'].eachWithIndex { String msg, int i ->
+                def e = shouldFail(IOException) {
+                    switch (i) {
+                        case 0 -> Paths.child()
+                        case 1 -> Paths.body()
+                        case 2 -> Paths.deferred()
+                        case 3 -> Paths.generator()
+                        case 4 -> Paths.timedBody()
+                        default -> Paths.flow()
+                    }
+                }
+                assert e.message == msg
+            }
+        '''
+    }
+
+    @Test
+    void testTimedScopeCheckedExceptionTransparency() {
+        assertScript '''
+            import groovy.concurrent.AsyncScope
+            import java.time.Duration
+            import java.util.concurrent.TimeoutException
+            import static groovy.test.GroovyAssert.shouldFail
+
+            def shared = new IOException('shared')
+            def e = shouldFail(IOException) {
+                AsyncScope.withScope(Duration.ofSeconds(5)) { scope ->
+                    def child = scope.async { throw shared }
+                    try { await child } catch (IOException ignored) { }
+                    throw shared
+                }
+            }
+            assert e.is(shared)
+            assert e.suppressed.length == 0
+
+            def te = shouldFail(TimeoutException) {
+                AsyncScope.withScope(Duration.ofMillis(50)) { scope -> Thread.sleep(5000) }
+            }
+            assert te.cause instanceof InterruptedException
+            assert !Thread.interrupted()
+        '''
+    }
+
+    @Test
+    void testSuppressedFailuresSurviveUnwrapping() {
+        assertScript '''
+            import java.util.concurrent.ExecutionException
+            import static groovy.test.GroovyAssert.shouldFail
+
+            def task = async {
+                defer { throw new IOException('cleanup') }
+                defer { throw new ExecutionException(new IOException('primary')) }
+                1
+            }
+            def first = shouldFail(IOException) { await task }
+            assert first.message == 'primary'
+            assert first.suppressed*.message == ['cleanup']
+
+            // Awaiting the same failed task again neither loses nor repeats the cleanup failure
+            def again = shouldFail(IOException) { await task }
+            assert again.is(first)
+            assert again.suppressed*.message == ['cleanup']
         '''
     }
 

@@ -1683,6 +1683,33 @@ time, is unaffected.
 **Who is not affected (binary).** Existing call sites are compiled against
 the unchanged existing overloads.
 
+### Groovy 6.0.1 — async constructs rethrow a checked exception as itself (GROOVY-12763)
+
+In 6.0.0, `await` rethrew a checked exception from an async task unchanged,
+but other async constructs wrapped it: a scope's child task failure and a
+`defer` action in `RuntimeException`, a `withScope` body and a generator body
+in `UndeclaredThrowableException`, and a `Flow.Publisher` error consumed with
+`for await` in `RuntimeException`. All of them now rethrow the original
+exception, as `await` does, and a timed `withScope` uses it as the cause of
+its `TimeoutException`. Async/await is incubating.
+
+**Who is affected.** Code that catches `RuntimeException` or
+`UndeclaredThrowableException` around these constructs and reads
+`getCause()` to find a checked exception. Catch the checked exception
+directly instead. Java callers of `AsyncScope.close()` and `withScope`,
+which declare no checked exceptions, catch `Exception` and test its type.
+
+An `UndeclaredThrowableException` around a checked exception that a
+`withScope` or generator body throws is removed too, because it cannot be
+told apart from the layer closure conversion adds. Such a wrapper most
+often comes from a `java.lang.reflect.Proxy`, such as a Spring AOP proxy or
+an RPC stub, called in the body.
+
+**What is unchanged.** Unchecked exceptions and errors, which were never
+wrapped, and the exception `await` rethrows. Exceptions suppressed by a
+wrapper that `await` or a scope removes now move to the exception
+rethrown. There are no API signature changes in `groovy.concurrent`.
+
 ## The binary-compatibility check
 
 The [`subprojects/binary-compatibility/`](subprojects/binary-compatibility)
