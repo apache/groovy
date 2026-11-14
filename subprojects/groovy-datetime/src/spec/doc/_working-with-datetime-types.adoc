@@ -150,8 +150,8 @@ The unit of these integers depends on the JSR 310 type operand. As evident above
 integers used with `ChronoLocalDate` types like `LocalDate` have a unit of
 https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/time/temporal/ChronoUnit.html#DAYS[days].
 Integers used with `Year` and `YearMonth` have a unit of
-https://docs.oracle.com/javase/8/docs/api/java/time/temporal/ChronoUnit.html#YEARS[years] and
-https://docs.oracle.com/javase/8/docs/api/java/time/temporal/ChronoUnit.html#MONTHS[months], respectively.
+https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/time/temporal/ChronoUnit.html#YEARS[years] and
+https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/time/temporal/ChronoUnit.html#MONTHS[months], respectively.
 All other types have a unit of
 https://docs.oracle.com/javase/8/docs/api/java/time/temporal/ChronoUnit.html#SECONDS[seconds],
 such as `LocalTime`, for instance:
