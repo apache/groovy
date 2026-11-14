@@ -883,7 +883,9 @@ public class InvokerHelper {
      * as the no-argument method {@code bitwiseNegate}.
      *
      * @param value the value to negate
-     * @return the negated value, or the {@link Pattern} compiled from a string
+     * @return the negated number, the {@link Pattern} compiled from a string or GString,
+     *     a list of the element-wise results, or the value returned by the no-argument
+     *     {@code bitwiseNegate} method
      */
     public static Object bitwiseNegate(Object value) {
         if (value instanceof Integer number) {

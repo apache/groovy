@@ -66,7 +66,6 @@ public class ExpectedToFailExtension implements InvocationInterceptor {
      */
     public static final String DEFERRED_TO_PARENT_PROP = "groovy.junit6.expectedtofail.deferred";
 
-    @Override
     /**
      * Runs the test and inverts its outcome when ExpectedToFail applies to the
      * method or the test class. A missing annotation, or the child-JVM deferral
@@ -77,6 +76,7 @@ public class ExpectedToFailExtension implements InvocationInterceptor {
      * annotation's type, exception, and closure predicate: a match is swallowed
      * and a pass or a mismatch becomes an assertion error.
      */
+    @Override
     public void interceptTestMethod(Invocation<Void> invocation,
                                     ReflectiveInvocationContext<Method> invocationContext,
                                     ExtensionContext extensionContext) throws Throwable {

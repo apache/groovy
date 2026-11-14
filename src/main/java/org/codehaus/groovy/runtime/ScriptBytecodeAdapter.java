@@ -98,13 +98,13 @@ public class ScriptBytecodeAdapter {
     //  --------------------------------------------------------
     /**
      * Invokes {@code messageName} on a {@link GroovyObject} from inside the receiver.
-     *
+     * <p>
      * A {@link GroovyInterceptable} receiver is dispatched with
      * {@link GroovyObject#invokeMethod(String, Object)}. Any other receiver is dispatched
      * through its metaclass
      * {@link MetaClass#invokeMethod(Class, Object, String, Object[], boolean, boolean)}, with
      * {@code isCallToSuper} false and {@code fromInsideClass} true.
-     *
+     * <p>
      * A {@link MissingMethodExecutionFailed} is rethrown as its {@link MissingMethodException}
      * cause and then unwrapped. Any other {@link MissingMethodException} whose type is the
      * receiver's class and whose method name equals {@code messageName} falls back to
@@ -233,7 +233,7 @@ public class ScriptBytecodeAdapter {
     //  --------------------------------------------------------
     /**
      * Invokes {@code messageName} on the super class of a {@link GroovyObject}.
-     *
+     * <p>
      * The receiver's metaclass is called directly, with no {@link GroovyInterceptable} dispatch
      * and no missing-method fallback.
      * {@link MetaClass#invokeMethod(Class, Object, String, Object[], boolean, boolean)} is
@@ -570,7 +570,7 @@ public class ScriptBytecodeAdapter {
     /**
      * Reads the field named {@code messageName}, using the super-class attribute unless
      * {@code receiver} is a {@code Class}.
-     *
+     * <p>
      * When {@code receiver} is a {@code Class}, the read is {@code InvokerHelper.getAttribute}.
      * Any other receiver is cast to {@link GroovyObject} and read with
      * {@link MetaClass#getAttribute(Class, Object, String, boolean)} passing {@code useSuper}
@@ -638,7 +638,7 @@ public class ScriptBytecodeAdapter {
     /**
      * Writes the field named {@code messageName}, using the super-class attribute unless
      * {@code receiver} is a {@code Class}.
-     *
+     * <p>
      * When {@code receiver} is a {@code Class}, the write is {@code InvokerHelper.setAttribute}.
      * Any other receiver is cast to {@link GroovyObject} and written with
      * {@link MetaClass#setAttribute(Class, Object, String, Object, boolean, boolean)}, passing
@@ -1081,7 +1081,7 @@ public class ScriptBytecodeAdapter {
 
     /**
      * Reads the property named {@code messageName} from {@code receiver}.
-     *
+     * <p>
      * A null receiver is read from {@code NullObject.getNullObject()}. A {@link GroovyObject} is
      * read with {@link GroovyObject#getProperty(String)} when {@code senderClass} is null or
      * {@link GroovyObjectOverrides#overridesGetProperty(Class)} is true for the receiver's
@@ -1165,7 +1165,7 @@ public class ScriptBytecodeAdapter {
 
     /**
      * Writes {@code messageArgument} to the property named {@code messageName}.
-     *
+     * <p>
      * A null receiver is written through {@code NullObject.getNullObject()}. A
      * {@link GroovyObject} is written with {@link GroovyObject#setProperty(String, Object)} when
      * {@code senderClass} is null or {@link GroovyObjectOverrides#overridesSetProperty(Class)}
@@ -1173,7 +1173,7 @@ public class ScriptBytecodeAdapter {
      * other receiver is written through the metaclass from {@code InvokerHelper.getMetaClass},
      * calling {@link MetaClass#setProperty(Class, Object, String, Object, boolean, boolean)}
      * with {@code isCallToSuper} false and {@code fromInsideClass} false.
-     *
+     * <p>
      * If that write throws {@link MissingPropertyException}, {@code receiver} is a
      * {@link GroovyObject}, and {@code senderClass} is a {@code GeneratedClosure}, the sender is
      * replaced by its enclosing class and that replacement repeats while the class is a
@@ -1265,7 +1265,7 @@ public class ScriptBytecodeAdapter {
     /**
      * Reads {@code messageName} from a {@link GroovyObject}, falling back to the metaclass for a
      * superclass sender.
-     *
+     * <p>
      * {@link GroovyObject#getProperty(String)} is called first. A
      * {@link MissingPropertyException} is passed to {@link #unwrap} and rethrown when
      * {@code senderClass} is null, is the receiver's own class, or the receiver is not an
@@ -1343,7 +1343,7 @@ public class ScriptBytecodeAdapter {
     /**
      * Writes {@code messageName} on a {@link GroovyObject}, using the object's own setter when
      * the sender requires it.
-     *
+     * <p>
      * When {@code senderClass} is null or
      * {@link GroovyObjectOverrides#overridesSetProperty(Class)} is true,
      * {@link GroovyObject#setProperty(String, Object)} is called and the method returns. A
@@ -1541,7 +1541,7 @@ public class ScriptBytecodeAdapter {
 
     /**
      * Builds a range from {@code from} to {@code to}, honoring exclusive ends.
-     *
+     * <p>
      * When both ends are exclusive, an {@link EmptyRange} at {@code from} is returned if
      * {@link #compareEqual} considers the ends equal, or if stepping from {@code from} toward
      * {@code to} lands on {@code to} and the ends have the same sign. The step is {@code next}
@@ -1551,7 +1551,7 @@ public class ScriptBytecodeAdapter {
      * so a fully exclusive range from zero to a negative number is not emptied by this rule.
      * An equal pair with either end exclusive is also an
      * {@link EmptyRange}.
-     *
+     * <p>
      * Otherwise, two {@code Integer} endpoints produce an {@link IntRange} whose inclusive flags
      * are the negations of {@code exclusiveLeft} and {@code exclusiveRight}. Two other
      * {@code Number} endpoints produce a {@link NumberRange} with those same inclusive flags.
@@ -1678,7 +1678,7 @@ public class ScriptBytecodeAdapter {
     /**
      * Tests whether {@code caseExpression} matches {@code switchValue} by calling
      * {@code isCase}.
-     *
+     * <p>
      * A null case expression matches only a null switch value. Otherwise {@link #invokeMethodN}
      * calls {@code isCase} on the case expression with {@code switchValue} as its only argument,
      * and the result is converted with {@link DefaultTypeTransformation#castToBoolean(Object)}.
@@ -1712,7 +1712,7 @@ public class ScriptBytecodeAdapter {
     //isIn  (GROOVY-9848: membership operator, decoupled from isCase)
     /**
      * Tests whether {@code switchValue} is a member of {@code caseExpression}.
-     *
+     * <p>
      * A null case expression matches only a null switch value. A {@link Map} matches when
      * {@link Map#containsKey(Object)} returns true for {@code switchValue}. When both operands are
      * character sequences, the case expression's string form is tested with {@code contains} for
@@ -1780,7 +1780,7 @@ public class ScriptBytecodeAdapter {
 
     /**
      * Compares {@code left} and {@code right} for equality.
-     *
+     * <p>
      * The same reference is equal, including both null. When both values are non-null and have
      * the same class, {@code Integer}, {@code Long}, {@code Double}, {@code Float},
      * {@code String}, and {@code GStringImpl} use {@code equals}, and {@code BigDecimal} and
@@ -1857,7 +1857,7 @@ public class ScriptBytecodeAdapter {
 
     /**
      * Reports whether {@code left} is less than {@code right}.
-     *
+     * <p>
      * When both values are non-null and have the same class, {@code Integer}, {@code Long},
      * {@code Double}, and {@code Float} use the {@code <} operator, and {@code BigDecimal} and
      * {@code BigInteger} are less when {@code compareTo} is negative. Every other pair is less
@@ -1896,7 +1896,7 @@ public class ScriptBytecodeAdapter {
 
     /**
      * Reports whether {@code left} is less than or equal to {@code right}.
-     *
+     * <p>
      * When both values are non-null and have the same class, {@code Integer}, {@code Long},
      * {@code Double}, and {@code Float} use the {@code <=} operator, and {@code BigDecimal} and
      * {@code BigInteger} are less or equal when {@code compareTo} is not positive. Every other
@@ -1937,7 +1937,7 @@ public class ScriptBytecodeAdapter {
 
     /**
      * Reports whether {@code left} is greater than {@code right}.
-     *
+     * <p>
      * When both values are non-null and have the same class, {@code Integer}, {@code Long},
      * {@code Double}, and {@code Float} use the {@code >} operator, and {@code BigDecimal} and
      * {@code BigInteger} are greater when {@code compareTo} is positive. Every other pair is
@@ -1976,7 +1976,7 @@ public class ScriptBytecodeAdapter {
 
     /**
      * Reports whether {@code left} is greater than or equal to {@code right}.
-     *
+     * <p>
      * When both values are non-null and have the same class, {@code Integer}, {@code Long},
      * {@code Double}, and {@code Float} use the {@code >=} operator, and {@code BigDecimal} and
      * {@code BigInteger} are greater or equal when {@code compareTo} is not negative. Every
@@ -2053,7 +2053,7 @@ public class ScriptBytecodeAdapter {
      *
      * @param regex the expression to compile; its {@code toString()} result is compiled
      * @return the compiled pattern
-     * @throws PatternSyntaxException if {@code regex} is not a valid regular expression
+     * @throws java.util.regex.PatternSyntaxException if {@code regex} is not a valid regular expression
      */
     public static Pattern regexPattern(final Object regex) {
         return StringGroovyMethods.bitwiseNegate(regex.toString());
@@ -2062,7 +2062,7 @@ public class ScriptBytecodeAdapter {
     //spread
     /**
      * Spreads selected argument values into one flat argument array.
-     *
+     * <p>
      * Each entry of {@code positions} is an index in {@code args}. Arguments from the current
      * index up to that position are copied, then the matching {@code spreads} value is expanded.
      * After the last position, any remaining arguments are appended. A spread value is tested in
@@ -2125,7 +2125,7 @@ public class ScriptBytecodeAdapter {
      *
      * @param value the map to spread
      * @return the spread map of {@code value}'s entries
-     * @throws SpreadMapEvaluatingException if {@code value} is non-null and not a {@link Map}
+     * @throws groovy.lang.SpreadMapEvaluatingException if {@code value} is non-null and not a {@link Map}
      * @throws NullPointerException if {@code value} is null
      */
     public static Object spreadMap(final Object value) {

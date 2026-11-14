@@ -41,13 +41,13 @@ public class PerInstancePojoMetaClassSite extends AbstractCallSite{
         this.info = info;
     }
 
-    @Override
     /**
      * Invokes this site's method on the receiver's meta class when the
      * receiver is non-null and per-instance meta classes are in use.
      * A {@link GroovyRuntimeException} is unwrapped. Otherwise uses the
      * default call.
      */
+    @Override
     public Object call(Object receiver, Object[] args) throws Throwable {
         if (receiver != null && info.hasPerInstanceMetaClasses()) {
             try {

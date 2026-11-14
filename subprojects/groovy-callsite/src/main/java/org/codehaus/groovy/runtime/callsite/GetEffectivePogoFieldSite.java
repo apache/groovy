@@ -45,48 +45,48 @@ public class GetEffectivePogoFieldSite extends AbstractCallSite {
         this.effective = effective;
     }
 
-    @Override
     /**
      * Returns a newly created get-property site when {@code receiver} is not a
      * {@link GroovyObject} with {@code metaClass}, or a category is active.
      * Otherwise returns this site.
      */
+    @Override
     public final CallSite acceptGetProperty(final Object receiver) {
         return isEffective(receiver) ? this : createGetPropertySite(receiver);
     }
 
-    @Override
     /**
      * Returns a newly created Groovy-object get-property site when
      * {@code receiver} is not a {@link GroovyObject} with {@code metaClass},
      * or a category is active. Otherwise returns this site.
      */
+    @Override
     public final CallSite acceptGroovyObjectGetProperty(final Object receiver) {
         return isEffective(receiver) ? this : createGroovyObjectGetPropertySite(receiver);
     }
 
-    @Override
     /**
      * Reads the cached field when {@code receiver} still matches this site.
      * Otherwise creates a get-property site and reads through that.
      */
+    @Override
     public final Object callGetProperty(final Object receiver) throws Throwable {
         return isEffective(receiver) ? getProperty(receiver) : createGetPropertySite(receiver).getProperty(receiver);
     }
 
-    @Override
     /**
      * Reads the cached field when {@code receiver} still matches this site.
      * Otherwise creates a Groovy-object get-property site and reads through that.
      */
+    @Override
     public final Object callGroovyObjectGetProperty (final Object receiver) throws Throwable {
         return isEffective(receiver) ? getProperty(receiver) : createGroovyObjectGetPropertySite(receiver).getProperty(receiver);
     }
 
-    @Override
     /**
      * Reads the field through the cached {@link CachedField}.
      */
+    @Override
     public final Object getProperty(final Object receiver) {
         return effective.getProperty(receiver);
     }

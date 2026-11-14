@@ -616,6 +616,8 @@ public abstract class GPathResult extends GroovyObjectSupport implements Writabl
 
             /**
              * Refuses removal. Depth-first traversal does not modify the tree.
+             *
+             * @throws UnsupportedOperationException always
              */
             @Override
             public void remove() {
@@ -679,6 +681,8 @@ public abstract class GPathResult extends GroovyObjectSupport implements Writabl
 
             /**
              * Refuses removal. Breadth-first traversal does not modify the tree.
+             *
+             * @throws UnsupportedOperationException always
              */
             @Override
             public void remove() {
@@ -862,6 +866,8 @@ public abstract class GPathResult extends GroovyObjectSupport implements Writabl
 
             /**
              * Refuses removal. The single-element iterator does not modify the result.
+             *
+             * @throws UnsupportedOperationException always
              */
             @Override
             public void remove() {

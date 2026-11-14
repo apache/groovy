@@ -37,12 +37,12 @@ public class ConstructorMetaClassSite extends MetaClassSite {
         super(site, metaClass);
     }
 
-    @Override
     /**
      * Invokes the meta class constructor when {@code receiver} is that meta
      * class's class. A {@link GroovyRuntimeException} is unwrapped. Any other
      * receiver is handled by the default constructor call.
      */
+    @Override
     public Object callConstructor(Object receiver, Object[] args) throws Throwable {
         if (receiver == metaClass.getTheClass()) {
             try {

@@ -303,10 +303,13 @@ public class GroovyFilter extends StructuredSyntaxDocumentFilter {
         }
 
         /**
-         * Scans backward from {@code offset} for {@code '{'} or {@code '}'} that
+         * Scans backward from {@code offset} for an opening or closing brace that
          * is not painted with the comment color. Returns the leading-whitespace
-         * width of that line, minus four when the brace is {@code '}'} or no
+         * width of that line, minus four when the brace is closing or no
          * brace was found.
+         *
+         * @param offset the character index to scan backward from
+         * @return that adjusted indent width
          */
         public int findTabLocation(int offset) {
 

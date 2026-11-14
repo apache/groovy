@@ -74,11 +74,11 @@ public class LoopInvariantASTTransformation implements ASTTransformation, Compil
 
     private CompilationUnit compilationUnit;
 
-    @Override
     /**
      * Stores {@code unit} so invariant expressions moved into a loop body can
      * be resolved from {@link #visit(ASTNode[], SourceUnit)}.
      */
+    @Override
     public void setCompilationUnit(final CompilationUnit unit) {
         this.compilationUnit = unit;
     }
