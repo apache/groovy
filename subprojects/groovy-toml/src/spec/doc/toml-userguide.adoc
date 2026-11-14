@@ -35,8 +35,7 @@ primitive types like `Integer`, `Double`, `Boolean` and `String`.
 
 The class comes with a bunch of overloaded `parse` methods plus some special methods such as `parseText`
 and others. For the next example we will use the `parseText` method. It parses a TOML `String` and recursively converts it to a
-list or map of objects. The other `parse*` methods are similar in that they return a TOML `String` but for different parameter
-types.
+list or map of objects. The other `parse` methods take a different source, such as a reader, a stream or a file, and return that same kind of structure.
 
 [source,groovy]
 ----
@@ -79,16 +78,13 @@ The following table gives an overview of the TOML types and the corresponding Gr
 |false
 |`false`
 
-|null
-|`null`
-
 |offset/local date-time, local date, local time
 |`java.lang.String` (see the note below)
 |===
 
 [NOTE]
-Whenever a value in TOML is `null`, `TomlSlurper` supplements it with the Groovy `null` value. This is in contrast to other
-TOML parsers that represent a `null` value with a library-provided singleton object.
+TOML has no null literal. `TomlBuilder.toToml(null)` writes an empty string, and parsing that text
+back yields `''`, not `null`.
 
 [NOTE]
 ====

@@ -159,7 +159,7 @@ reported when the code is compiled:
 include::../test/SemanticsTest.groovy[tags=multiple_assignment_overflow_type_checked,indent=0]
 ----
 
-If the right hand side has too many variables, the extra ones are ignored:
+If the right-hand side has too many values for the variables on the left, the extra values are ignored:
 
 [source,groovy]
 ----

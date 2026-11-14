@@ -68,8 +68,9 @@ answers questions about the buffer.
 A completion or tail-tip compile that is already running is not started
 again, and one that exceeds two seconds is abandoned so the prompt stays
 responsive.
-Set the Groovy option `noSyntaxCheck` in `groovysh_init.groovy`, or on
-the engine before the shell starts, to skip the language session.
+Set `GROOVY_OPTIONS = [noSyntaxCheck: true]` in `groovysh_init.groovy`, or put
+that map on the engine before the shell starts, to skip the language session.
+The option is read from the `GROOVY_OPTIONS` map, not from a bare `noSyntaxCheck` variable.
 The init file is read before that session is attached.
 Tab then uses the shell's own completer, and syntax tail-tips stay on
 the previous inspector path. A missing `groovy-lsp` or Gson jar does
