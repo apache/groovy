@@ -373,9 +373,16 @@ public class MetaClassHelper {
      * reference can implement only an interface whose abstract method it can be called with.
      * Such a choice must not be cached by argument classes.
      *
-     * @param types the {@code types} array
-     * @param arguments the arguments passed to the call
-     * @return the boolean result
+     * @param methodOrList the overload set, as a {@link FastArray} of {@link ParameterTypes};
+     *                     any other value makes this method return {@code false}
+     * @param types argument classes passed to {@link ParameterTypes#isValidMethod(Class[])};
+     *              {@code null} makes this method return {@code false}
+     * @param arguments the call arguments. A {@link MethodClosure} is compared with the
+     *                  SAM arity of the functional-interface parameter at the same index.
+     *                  {@code null} makes this method return {@code false}
+     * @return {@code true} when two candidates that are still valid for {@code types}
+     *         accept a method closure at the same position through functional interfaces
+     *         whose abstract methods take different numbers of parameters
      * @since 6.0.1
      */
     public static boolean dependsOnMethodClosureArity(final Object methodOrList, final Class[] types, final Object[] arguments) {
@@ -401,7 +408,13 @@ public class MetaClassHelper {
      * a number of arguments the method closure passed there cannot be called with; keeps
      * every candidate if none fits.
      *
-     * @param arguments the arguments passed to the call
+     * @param <M> the candidate type. Each element is read as {@link ParameterTypes}
+     * @param candidates the overload candidates to filter
+     * @param arguments the call arguments. A {@link MethodClosure} is kept only when
+     *                  the functional-interface parameter at the same index has an abstract
+     *                  method that the closure can be called with
+     * @return the candidates that accept those method closures, or {@code candidates}
+     *         itself when none of them fit
      * @since 6.0.1
      */
     public static <M> List<M> filterByMethodClosureArity(final List<M> candidates, final Object[] arguments) {
@@ -456,7 +469,13 @@ public class MetaClassHelper {
      * from its class; keeps every candidate if none fits. The choice is still determined by
      * the argument classes.
      *
-     * @param arguments the arguments passed to the call
+     * @param <M> the candidate type. Each element is read as {@link ParameterTypes}
+     * @param candidates the overload candidates to filter
+     * @param arguments the argument classes. A closure-literal class constrains the
+     *                  SAM arity of the functional-interface parameter at the same index.
+     *                  When none of the classes is a closure literal, {@code candidates} is returned unchanged
+     * @return the candidates that accept those closure classes, or {@code candidates}
+     *         itself when none of them fit
      * @since 7.0.0
      */
     public static <M> List<M> filterByClosureArity(final List<M> candidates, final Class[] arguments) {

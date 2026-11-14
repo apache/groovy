@@ -61,7 +61,7 @@ class ModifierManager {
      *
      * @param astBuilder builds the parsing failure raised when the list is illegal
      * @param modifierNodeList modifiers and annotations for one declaration, in source order
-     * @throws CompilationFailedException when a non-repeatable modifier is repeated,
+     * @throws org.codehaus.groovy.control.CompilationFailedException when a non-repeatable modifier is repeated,
      *         or a second visibility modifier appears
      */
     public ModifierManager(AstBuilder astBuilder, List<ModifierNode> modifierNodeList) {
@@ -107,7 +107,7 @@ class ModifierManager {
      * and is removed later for properties.
      *
      * @param methodNode method the failure is reported against
-     * @throws CompilationFailedException when a held modifier is not allowed on a method
+     * @throws org.codehaus.groovy.control.CompilationFailedException when a held modifier is not allowed on a method
      */
     public void validate(MethodNode methodNode) {
         validate(INVALID_MODIFIERS_MAP.get(MethodNode.class), methodNode);
@@ -118,7 +118,7 @@ class ModifierManager {
      * {@code static}, {@code final}, {@code abstract}, or {@code native}.
      *
      * @param constructorNode constructor the failure is reported against
-     * @throws CompilationFailedException when a held modifier is not allowed on a constructor
+     * @throws org.codehaus.groovy.control.CompilationFailedException when a held modifier is not allowed on a constructor
      */
     public void validate(ConstructorNode constructorNode) {
         validate(INVALID_MODIFIERS_MAP.get(ConstructorNode.class), constructorNode);
