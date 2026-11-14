@@ -73,7 +73,6 @@ public final class DefaultAsyncScope implements AsyncScope {
      *
      * @param executor the executor used for child tasks
      * @param failFast whether a failed child cancels the other registered children
-     * @throws NullPointerException if {@code executor} is {@code null}
      */
     public DefaultAsyncScope(Executor executor, boolean failFast) {
         Objects.requireNonNull(executor, "executor must not be null");
@@ -88,9 +87,9 @@ public final class DefaultAsyncScope implements AsyncScope {
     /**
      * Creates a scope on {@code executor} with fail-fast cancellation enabled.
      * Equivalent to {@link #DefaultAsyncScope(Executor, boolean) DefaultAsyncScope(executor, true)}.
+     * <p>A null {@code executor} fails immediately.
      *
      * @param executor the executor used for child tasks
-     * @throws NullPointerException if {@code executor} is {@code null}
      */
     public DefaultAsyncScope(Executor executor) {
         this(executor, true);

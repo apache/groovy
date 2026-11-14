@@ -286,9 +286,9 @@ public class LexerFrame extends JFrame implements ActionListener {
      * than one argument, logs {@code usage: java LexerFrame [filename.ext]} and
      * exits with status 1. A failure to install the system look and feel is ignored.
      * The file reader is not closed here.
+     * <p>Opening the named file can fail with {@link FileNotFoundException}.
      *
      * @param args optional path of one script to display
-     * @throws FileNotFoundException if the named file cannot be opened
      */
     public static void main(String[] args) throws Exception {
         try {

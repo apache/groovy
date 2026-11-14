@@ -840,11 +840,11 @@ public class ProxyGeneratorAdapter extends ClassVisitor {
      * with a cached no-argument constructor calls that constructor with {@code map}
      * alone. Otherwise {@code map} is appended after the constructor arguments, and a
      * {@code null} argument list is treated as empty.
+     * <p>A failure of the cached constructor is wrapped in {@link GroovyRuntimeException}.
      *
      * @param map closure or property map passed to the proxy constructor
      * @param constructorArgs arguments for the super constructor; {@code null} means none
      * @return the new proxy
-     * @throws GroovyRuntimeException when the cached constructor fails
      */
     @SuppressWarnings("unchecked")
     public GroovyObject proxy(final Map<Object, Object> map, Object... constructorArgs) {
@@ -870,12 +870,12 @@ public class ProxyGeneratorAdapter extends ClassVisitor {
      * {@code map} and {@code delegate}. Otherwise those two values are appended, in
      * that order, after the constructor arguments, and a {@code null} argument list
      * is treated as empty.
+     * <p>A failure of the cached constructor is wrapped in {@link GroovyRuntimeException}.
      *
      * @param delegate the object later methods are forwarded to
      * @param map closure or property map passed to the proxy constructor
      * @param constructorArgs arguments for the super constructor; {@code null} means none
      * @return the new proxy
-     * @throws GroovyRuntimeException when the cached constructor fails
      */
     @SuppressWarnings("unchecked")
     public GroovyObject delegatingProxy(final Object delegate, final Map<Object, Object> map, Object... constructorArgs) {

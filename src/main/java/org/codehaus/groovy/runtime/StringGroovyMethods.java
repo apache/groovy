@@ -1801,11 +1801,11 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
          * Re-finds the match this list was built for, then returns its named group.
          * {@link Matcher#reset()} runs first, then {@link Matcher#find()} once more
          * than {@code count}, so the matcher is left on that match.
+         * <p>The re-find fails when it does not land on a match, and an unknown
+         * group name is rejected.
          *
          * @param name the capturing-group name
          * @return the text captured by that group
-         * @throws IllegalStateException when the re-find does not land on a match
-         * @throws IllegalArgumentException when {@code name} is not a named group
          */
         public String get(String name) {
             matcher.reset();
@@ -1817,11 +1817,10 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
 
         /**
          * Returns the named group of the matcher's current match, without resetting it.
+         * <p>A matcher with no current match fails, and an unknown group name is rejected.
          *
          * @param name the capturing-group name
          * @return the text captured by that group
-         * @throws IllegalStateException when the matcher has no current match
-         * @throws IllegalArgumentException when {@code name} is not a named group
          */
         public String getAt(String name) {
             return matcher.group(name);

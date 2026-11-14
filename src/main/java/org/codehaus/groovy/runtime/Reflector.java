@@ -36,7 +36,6 @@ public class Reflector {
      * @param object the receiver, passed through unused by this implementation
      * @param arguments the arguments, passed through
      * @return nothing; this implementation always throws
-     * @throws MissingMethodException always
      */
     public Object invoke(CachedMethod method, Object object, Object[] arguments) {
         return noSuchMethod(method, object, arguments);
@@ -51,7 +50,6 @@ public class Reflector {
      * @param object unused
      * @param arguments arguments recorded on the exception; {@code null} becomes an empty array
      * @return nothing; this method always throws
-     * @throws MissingMethodException always
      */
     protected Object noSuchMethod(CachedMethod method, Object object, Object[] arguments) {
         throw new MissingMethodException(method.getName(), method.getDeclaringClass().getTheClass(), arguments, false);

@@ -34,8 +34,7 @@ public class FieldExpression extends Expression {
 
     /**
      * Creates an access to {@code field}.
-     *
-     * Fails with {@link NullPointerException} if {@code field} is {@code null}.
+     * <p>Fails with {@link NullPointerException} if {@code field} is {@code null}.
      *
      * @param field the field being read or written
      */

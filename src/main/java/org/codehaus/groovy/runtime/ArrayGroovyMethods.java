@@ -1384,10 +1384,10 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Iterates the columns of {@code self}. Each element is a new {@code double[]}
      * holding one column, and iteration stops at the shortest row.
+     * <p>A null matrix fails immediately.
      *
      * @param self the matrix to read by column
      * @return an iterator of one column array per column
-     * @throws NullPointerException if {@code self} is {@code null}
      * @deprecated retained; the body still returns a column iterator
      */
     @Deprecated
@@ -1398,10 +1398,10 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Iterates the columns of {@code self}. Each element is a new {@code float[]}
      * holding one column, and iteration stops at the shortest row.
+     * <p>A null matrix fails immediately.
      *
      * @param self the matrix to read by column
      * @return an iterator of one column array per column
-     * @throws NullPointerException if {@code self} is {@code null}
      * @deprecated retained; the body still returns a column iterator
      */
     @Deprecated
@@ -1412,10 +1412,10 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Iterates the columns of {@code self}. Each element is a new {@code int[]}
      * holding one column, and iteration stops at the shortest row.
+     * <p>A null matrix fails immediately.
      *
      * @param self the matrix to read by column
      * @return an iterator of one column array per column
-     * @throws NullPointerException if {@code self} is {@code null}
      * @deprecated retained; the body still returns a column iterator
      */
     @Deprecated
@@ -1426,10 +1426,10 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Iterates the columns of {@code self}. Each element is a new {@code long[]}
      * holding one column, and iteration stops at the shortest row.
+     * <p>A null matrix fails immediately.
      *
      * @param self the matrix to read by column
      * @return an iterator of one column array per column
-     * @throws NullPointerException if {@code self} is {@code null}
      * @deprecated retained; the body still returns a column iterator
      */
     @Deprecated

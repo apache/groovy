@@ -251,6 +251,8 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
         final String className;
 
         /**
+         * Stores {@code name} on a node that is not a primary class node.
+         *
          * @param name the lower-case identifier stored as this node's class name.
          *             The node is not a primary class node.
          */

@@ -81,7 +81,7 @@ public class StringUtils {
     }
 
     /**
-     * Replaces each {@code \u005CuXXXX} whose leading backslashes are even with
+     * Replaces each <code>&#92;uXXXX</code> whose leading backslashes are even with
      * the corresponding character. A match with an odd run of backslashes
      * is left unchanged. A string that contains no backslash is returned
      * as it was given.

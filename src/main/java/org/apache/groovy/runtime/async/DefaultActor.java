@@ -146,7 +146,6 @@ public final class DefaultActor<T> implements Actor<T> {
      * @param handler applied to each message
      * @param options mailbox, executor, and failure options
      * @return a running actor
-     * @throws NullPointerException if {@code handler} or {@code options} is {@code null}
      */
     public static <T, R> Actor<T> reactor(Function<T, R> handler, ActorOptions options) {
         Objects.requireNonNull(handler, "handler must not be null");
@@ -166,7 +165,6 @@ public final class DefaultActor<T> implements Actor<T> {
      * @param handler applied to the context and each message
      * @param options mailbox, executor, and failure options
      * @return a running actor
-     * @throws NullPointerException if {@code handler} or {@code options} is {@code null}
      */
     public static <T, R> Actor<T> reactor(ReactorHandler<T, R> handler, ActorOptions options) {
         Objects.requireNonNull(handler, "handler must not be null");
@@ -189,7 +187,6 @@ public final class DefaultActor<T> implements Actor<T> {
      * @param handler computes the next state from the current state and the message
      * @param options mailbox, executor, and failure options
      * @return a running actor
-     * @throws NullPointerException if {@code handler} or {@code options} is {@code null}
      */
     public static <T, S> Actor<T> stateful(S initialState, BiFunction<S, T, S> handler, ActorOptions options) {
         Objects.requireNonNull(handler, "handler must not be null");
@@ -212,7 +209,6 @@ public final class DefaultActor<T> implements Actor<T> {
      * @param handler computes the next state from the context, current state, and message
      * @param options mailbox, executor, and failure options
      * @return a running actor
-     * @throws NullPointerException if {@code handler} or {@code options} is {@code null}
      */
     public static <T, S> Actor<T> stateful(S initialState, StatefulHandler<S, T> handler, ActorOptions options) {
         Objects.requireNonNull(handler, "handler must not be null");

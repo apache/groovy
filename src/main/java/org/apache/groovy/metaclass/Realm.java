@@ -52,11 +52,11 @@ public final class Realm {
 
     /**
      * Creates a realm with the given name. A {@code null} parent is replaced by the root realm.
+     * <p>A null {@code name} fails immediately.
      *
      * @param name realm name; must not be {@code null}
      * @param parent parent realm, or {@code null} to attach the new realm under the root
      * @return the new realm
-     * @throws NullPointerException if {@code name} is {@code null}
      */
     public static Realm newRealm(String name, Realm parent) {
         Objects.requireNonNull(name, "missing realm name");
