@@ -602,51 +602,117 @@ final class ConsoleLanguageHost implements AutoCloseable {
     }
 
 
+    /**
+     * Returns the popup that would list {@code items}.
+     *
+     * @param items the candidates to show
+     * @return that popup
+     */
     @PackageScope
     JPopupMenu completionMenu(List<Candidate> items) {
         completions.completionMenu(items)
     }
 
+    /**
+     * Arms the completion list at {@code anchor} without showing it.
+     *
+     * @param items the candidates
+     * @param anchor caret offset where the prefix starts
+     * @return the list that holds {@code items}
+     */
     @PackageScope
     JList<Candidate> armCompletion(List<Candidate> items, int anchor) {
         completions.armCompletion(items, anchor)
     }
 
+    /**
+     * Reports whether the completion popup is visible.
+     *
+     * @return {@code true} when a completion menu is showing
+     */
     @PackageScope
     boolean completionShowing() {
         completions.completionShowing()
     }
 
+    /**
+     * Inserts {@code item} at the caret and hides the popup.
+     *
+     * @param item the candidate that was chosen
+     */
     @PackageScope
     void acceptCompletion(Candidate item) {
         completions.acceptCompletion(item)
     }
 
+    /**
+     * Returns the preferred cell width and height for {@code items}.
+     *
+     * @param list the list whose font is measured
+     * @param items the candidates that will be shown
+     * @return width at index 0 and height at index 1
+     */
     @PackageScope
     static int[] completionCellSize(JList<Candidate> list, List<Candidate> items) {
         CompletionPopup.completionCellSize(list, items)
     }
 
+    /**
+     * Returns the row under {@code point}, or {@code -1} when the point misses every cell.
+     *
+     * @param list the completion list
+     * @param point a point in list coordinates
+     * @return the row index
+     */
     @PackageScope
     static int completionRowAt(JList<?> list, Point point) {
         CompletionPopup.completionRowAt(list, point)
     }
 
+    /**
+     * Returns the start of the Java identifier that ends at {@code caret}.
+     *
+     * @param text the buffer
+     * @param caret the caret offset
+     * @return the offset of the first character of that identifier
+     */
     @PackageScope
     static int prefixStart(String text, int caret) {
         CompletionPopup.prefixStart(text, caret)
     }
 
+    /**
+     * Reports whether {@code label} starts with {@code prefix}, ignoring case.
+     * An empty prefix matches every label.
+     *
+     * @param label the candidate label
+     * @param prefix the text already typed
+     * @return {@code true} when {@code label} matches {@code prefix}
+     */
     @PackageScope
     static boolean matchesPrefix(String label, String prefix) {
         CompletionPopup.matchesPrefix(label, prefix)
     }
 
+    /**
+     * Returns the text written into the editor for {@code item}. A method or
+     * function contributes its label; any other kind contributes the flattened snippet.
+     *
+     * @param item the chosen candidate
+     * @return the insertion text, or an empty string when {@code item} is null
+     */
     @PackageScope
     static String completionInsert(Candidate item) {
         CompletionPopup.completionInsert(item)
     }
 
+    /**
+     * Replaces the identifier around the caret with {@code insert}. A shared
+     * prefix is left in place and only the rest of {@code insert} is written.
+     *
+     * @param pane the editor
+     * @param insert the completion text
+     */
     @PackageScope
     static void insertAtCaret(JTextPane pane, String insert) {
         if (pane?.document == null) {
@@ -716,6 +782,12 @@ final class ConsoleLanguageHost implements AutoCloseable {
         CompletionChord.matches(e, completionStroke())
     }
 
+    /**
+     * Returns the completion keystroke from the console preference, or Alt+/ when
+     * the stored stroke cannot be parsed.
+     *
+     * @return the stroke
+     */
     @PackageScope
     static KeyStroke completionStroke() {
         Preferences preferences = (Preferences) Console.prefs
@@ -724,6 +796,9 @@ final class ConsoleLanguageHost implements AutoCloseable {
         stroke == null ? CompletionChord.parse(Console.DEFAULT_COMPLETION_SHORTCUT) : stroke
     }
 
+    /**
+     * One diagnostic range in 0-based UTF-16 coordinates.
+     */
     @PackageScope
     static final class Hit {
         final int startLine
@@ -740,8 +815,20 @@ final class ConsoleLanguageHost implements AutoCloseable {
             this.message = message
         }
 
+        /**
+         * Returns the diagnostic message.
+         *
+         * @return the message text
+         */
         String message() { message }
 
+        /**
+         * Copies the range and message from {@code diagnostic}. A missing range
+         * is stored as zeros.
+         *
+         * @param diagnostic the language-server diagnostic
+         * @return the hit
+         */
         static Hit from(Diagnostic diagnostic) {
             def range = diagnostic?.range
             def start = range?.start
@@ -752,6 +839,9 @@ final class ConsoleLanguageHost implements AutoCloseable {
         }
     }
 
+    /**
+     * One completion row: label, kind, detail, and the text to insert.
+     */
     @PackageScope
     static final class Candidate {
         final String label
@@ -773,28 +863,85 @@ final class ConsoleLanguageHost implements AutoCloseable {
             this.returns = returns
         }
 
+        /**
+         * Returns the text shown for this candidate.
+         *
+         * @return the label
+         */
         String label() { label }
 
+        /**
+         * Returns the completion kind name.
+         *
+         * @return the kind
+         */
         String kind() { kind }
 
+        /**
+         * Returns the extra detail shown beside the label.
+         *
+         * @return the detail, or null
+         */
         String detail() { detail }
 
+        /**
+         * Returns the text inserted when this candidate is chosen.
+         *
+         * @return the insertion text
+         */
         String insertText() { insertText }
 
+        /**
+         * Returns the parameter text stored for a method candidate.
+         *
+         * @return the parameter text, or null
+         */
         String parameters() { parameters }
 
+        /**
+         * Returns the return type stored for a method candidate.
+         *
+         * @return the return type, or null
+         */
         String returns() { returns }
 
+        /**
+         * Copies a language-server completion item. Method candidates also
+         * store the parameter list and return type.
+         *
+         * @param item the completion item
+         * @return the candidate
+         */
         static Candidate from(CompletionItem item) {
             GroovyLanguageClient.MethodDetail method = GroovyLanguageClient.methodDetail(item)
             new Candidate(item?.label, item?.kind?.name(), item?.detail, item?.insertText ?: item?.label,
                     method?.parameters, method?.returns)
         }
 
+        /**
+         * Creates a candidate that is not a method.
+         *
+         * @param label the text shown
+         * @param kind the completion kind name
+         * @param detail extra text, or null
+         * @param insertText the text inserted when chosen
+         * @return the candidate
+         */
         static Candidate of(String label, String kind, String detail, String insertText) {
             of(label, kind, detail, insertText, null, null)
         }
 
+        /**
+         * Creates a method candidate.
+         *
+         * @param label the text shown
+         * @param kind the completion kind name
+         * @param detail extra text, or null
+         * @param insertText the text inserted when chosen
+         * @param parameters the parameter list, or null
+         * @param returns the return type, or null
+         * @return the candidate
+         */
         static Candidate of(String label, String kind, String detail, String insertText,
                             String parameters, String returns) {
             new Candidate(label, kind, detail, insertText, parameters, returns)
