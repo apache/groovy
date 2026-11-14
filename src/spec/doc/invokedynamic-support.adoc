@@ -24,87 +24,28 @@
 
 == Foreword
 
-Since Groovy 2.0, support was added for the JVM http://docs.oracle.com/javase/7/docs/technotes/guides/vm/multiple-language-support.html#invokedynamic[invokedynamic] instruction. This instruction is supported since Java 7 and is a new bytecode instruction in the JVM that allows easier implementation of dynamic languages. This instruction will also be used internally, by the JVM, for the lambda support in Java 8.
+Since Groovy 2.0 the compiler can emit the JVM
+https://docs.oracle.com/javase/specs/jvms/se17/html/jvms-6.html#jvms-6.5.invokedynamic[`invokedynamic`]
+instruction for dynamic call sites. From Groovy 4.0 that is the default, and the
+distribution is a single set of jars. Older documentation described a second
+distribution under an `indy/` directory and a `groovy --indy` switch. Neither exists.
 
-This means that unlike APIs, AST transformations or syntactic sugar, this feature is **not visible** to the developer or the end user. It is a compilation and runtime feature only. This means that given two programs written in Groovy, you have the choice to compile it with or without invokedynamic support. Whatever you choose, it comes with pros and cons:
+The feature is not a language construct. It changes how a dynamic call is linked,
+not the source you write. `@CompileStatic` does not go through that call site.
 
-- it is possible to mix classes compiled with and without invokedynamic in the same project, as long as you run JDK 1.7+
-- depending on the JVM (even different minor versions of the JVM), you can target close to Java performance for dynamic Groovy with invokedynamic support activated
+Classes compiled with and without invokedynamic can be mixed in one application.
+Classic (non-`invokedynamic`) call sites are what Groovy 4 and Groovy 5 emitted
+when indy was turned off, and what those compilers emitted by default before Groovy 4.
+To compile that bytecode, or to run it on Groovy 6 or later, put the optional
+module `org.apache.groovy:groovy-callsite` on the compile classpath and on the
+runtime classpath. Turn indy off with the system property `groovy.target.indy=false`,
+or by setting the compiler optimization option `indy` to `false`. Compiling with
+indy disabled and without `groovy-callsite` fails, rather than writing bytecode
+that will not load. There is no command-line `--indy` flag. The Ant `<groovy>`
+and `<groovyc>` tasks accept `indy="true"` and reject `indy="false"`.
 
-== The distributions
-
-=== Two jars
-
-The Groovy distribution comes with **two** jars:
-
-- groovy-x.y.z.jar : contains Groovy sources compiled with call site caching
-- groovy-x-y-z-indy.jar : contains Groovy sources compiled with invokedynamic instructions
-
-As Groovy core and the Groovy modules are sometimes written in Groovy, we currently have no choice but to distribute two
-distinct versions of Groovy. This means that if you pick the "normal" jar, the Groovy classes of Groovy itself are
-compiled with call site caching (1.6+), while if you use the "indy" jar, the Groovy classes of Groovy itself are
-compiled using invokedynamic.
-
-Both jars contain a fully working Groovy implementation that is capable of compiling user supplied Groovy sources using either
-invokedynamic or call site caching. The sets of jars are mutually exclusive (don't put both on classpath) and the key difference between
-them has to do with how the Groovy source files that make up Groovy itself are compiled.
-
-=== Command-line and indy
-If you download the distribution and use the command line, it's always the "normal" version of Groovy which is picked up in classpath. This means that whatever command you use (`groovy`, `groovyc`, `groovysh` or `groovyConsole`), invokedynamic support is not available out of the box. To use a Groovy distribution that was compiled with invokedynamic for its Groovy sources you have to switch the jars manually. The distribution makes use of the jars in the ++lib++ directory, while the indy jars are available in the ++indy++ directory. You have three things to do:
-
-- remove or rename the groovy-*.jar files in the lib directory
-- replace them with the indy version from the indy directory
-- remove the -indy classifier from jar names
-
-Here's a bash script that would do it all at once:
-
-[source,bash]
-----
-$ for f in `ls lib/groovy*.jar | cut -d/ -f2`;do k=`basename $f .jar`; mv lib/$k.jar lib/$k.jar.old; cp indy/$k-indy.jar lib/$k.jar ; done
-----
-
-== Running groovy script from command line
-
-The usual way to run a script from the command line is by `groovy foo.groovy`, where `foo.groovy` is the Groovy program
-in source form. To use indy for this you have to use the indy compilation flag, `groovy --indy foo.groovy`.
-
-== The compilation flag
-
-Independently of the jar version that you use (and after having exchanged the jars as described), invokedynamic support requires a specific compilation flag (__indy__). If you want to compile your classes with invokedynamic support, this flag must be set at compile time. The following tables show you what happens with user compiled classes and Groovy core classes depending on the jar you use and the compilation flag:
-
-[cols="1,1,1" options="header"]
-.user compiled classes
-|===
-|indy flag
-|**off**
-|**on**
-
-|normal jar
-|call site caching
-|invokedynamic
-
-|indy jar
-|call site caching
-|invokedynamic
-|===
-
-[cols="1,1,1" options="header"]
-.core Groovy classes
-|===
-|indy flag
-|**off**
-|**on**
-
-|normal jar
-|call site caching
-|call site caching
-
-|indy jar
-|invokedynamic
-|invokedynamic
-|===
-
-So even if you use the indy jar, if you don't use the invokedynamic flag at compile time, then the compiled classes will use the "old" format.
+How close dynamic Groovy then runs to static code depends on the program and on
+the JVM. Measure both before choosing `@CompileStatic` for speed.
 
 == Runtime properties
 
@@ -231,9 +172,9 @@ Groovy needs configuring; the recipe is the JDK's own:
 
 ----
 # training run: exercise the application; the JVM writes the cache on exit
-java -XX:AOTCacheOutput=app.aot -cp app.jar:groovy-6.0.0.jar my.Main
+java -XX:AOTCacheOutput=app.aot -cp app.jar:groovy.jar my.Main
 # every run after that
-java -XX:AOTCache=app.aot -cp app.jar:groovy-6.0.0.jar my.Main
+java -XX:AOTCache=app.aot -cp app.jar:groovy.jar my.Main
 ----
 
 Three constraints come from the JDK. The class path must consist of jars: a populated directory
@@ -282,7 +223,7 @@ used, so there is no reason to set it there.
 
 === Reachability metadata for the runtime
 
-Groovy 6 needs GraalVM for JDK 25.0.4 or later. Earlier releases carry a built-in substitution for
+Groovy 6 and later need GraalVM for JDK 25.0.4 or later. Earlier GraalVM releases carry a built-in substitution for
 Groovy's invokedynamic support that targets a method Groovy 6 no longer has, and `native-image`
 fails with `Could not find target method ... IndyInterface_invalidateSwitchPoints` before it reads
 any metadata; their agent also writes the older split configuration files rather than the single
