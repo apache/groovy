@@ -47,12 +47,12 @@ public class GroovySyntaxError extends AssertionError {
     /**
      * Creates an error with no cause. {@code source} must be {@link #LEXER} or {@link #PARSER}.
      * {@code line} and {@code column} are stored as given; callers supply 1-based caret coordinates.
+     * <p>Any other {@code source} is rejected.
      *
      * @param message the diagnostic text
      * @param source {@link #LEXER} or {@link #PARSER}
      * @param line the line stored for this error
      * @param column the column stored for this error
-     * @throws IllegalArgumentException if {@code source} is neither {@link #LEXER} nor {@link #PARSER}
      */
     public GroovySyntaxError(String message, int source, int line, int column) {
         super(message, null);

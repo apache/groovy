@@ -49,6 +49,9 @@ public abstract class GeneratedMetaMethod extends MetaMethod {
     private final Class returnType;
 
     /**
+     * Stores the name, declaring class, and return type, and passes
+     * {@code parameters} to {@link MetaMethod}.
+     *
      * @param name method name
      * @param declaringClass class that declares the method
      * @param returnType method return type
@@ -134,6 +137,8 @@ public abstract class GeneratedMetaMethod extends MetaMethod {
         private final String className;
 
         /**
+         * Stores {@code className} and forwards the method shape to {@link GeneratedMetaMethod}.
+         *
          * @param className internal name of the adapter {@link #proxy()} will load
          * @param name method name
          * @param declaringClass declaring class passed to {@link GeneratedMetaMethod}
@@ -205,7 +210,6 @@ public abstract class GeneratedMetaMethod extends MetaMethod {
          * {@link GroovyRuntimeException} after the cause is printed.
          *
          * @return the real meta-method for this proxy
-         * @throws GroovyRuntimeException when the adapter cannot be created
          */
         public final MetaMethod proxy() {
             if (proxy == null) {
@@ -336,10 +340,10 @@ public abstract class GeneratedMetaMethod extends MetaMethod {
          * Reads {@code META-INF/dgminfo} from this class's loader. A record is omitted when
          * its return type or any parameter type could not be loaded. Primitive classes are
          * taken from the fixed table rather than loaded by name.
+         * <p>A missing {@code META-INF/dgminfo} fails immediately.
          *
          * @return the records whose classes all loaded
          * @throws IOException when the resource cannot be read
-         * @throws NullPointerException when {@code META-INF/dgminfo} is missing
          */
         public static List<DgmMethodRecord> loadDgmInfo() throws IOException {
             ClassLoader loader = DgmMethodRecord.class.getClassLoader();

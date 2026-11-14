@@ -409,6 +409,7 @@ public class ImmutableASTTransformation extends AbstractASTTransformation implem
      * itself built-in, marked immutable, or listed in {@code knownImmutableClasses}
      * is returned as given. A missing declared field is ignored and the value is
      * then rejected.
+     * <p>A value that is not accepted as immutable fails with {@link RuntimeException}.
      *
      * @param clazz the immutable class that declares {@code fieldName}
      * @param fieldName the property or field being assigned
@@ -416,7 +417,6 @@ public class ImmutableASTTransformation extends AbstractASTTransformation implem
      * @param knownImmutableFieldNames field names that skip the check
      * @param knownImmutableClasses runtime classes, and some declared collection types, that skip the check
      * @return {@code field}, or an unmodifiable copy of a declared collection
-     * @throws RuntimeException when the value is not accepted as immutable
      */
     public static Object checkImmutable(final Class<?> clazz, final String fieldName, final Object field, final List<String> knownImmutableFieldNames, final List<Class> knownImmutableClasses) {
         if (field == null || field instanceof Enum || builtinOrMarkedImmutableClass(field.getClass()) || knownImmutableFieldNames.contains(fieldName) || knownImmutableClasses.contains(field.getClass())) {

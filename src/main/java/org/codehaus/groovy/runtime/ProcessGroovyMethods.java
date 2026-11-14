@@ -769,6 +769,8 @@ public class ProcessGroovyMethods extends DefaultGroovyMethodsSupport {
         private boolean finished;
 
         /**
+         * Binds this runner to {@code process}.
+         *
          * @param process the process {@link #run()} waits for and {@link #waitForOrKill(long)} may destroy
          */
         public ProcessRunner(Process process) {

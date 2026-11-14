@@ -74,11 +74,11 @@ public abstract class MethodKey {
      * Compares sender, super-call flag, name, parameter count, and parameter types.
      * The senders are compared with {@code !=}. Each parameter type is compared
      * by identity, not by {@link Class#equals(Object)}.
+     * <p>A null {@code that} fails immediately.
      *
      * @param that the other key
      * @return {@code true} when the sender, super-call flag, name, count, and each
      *         parameter type match
-     * @throws NullPointerException if {@code that} is {@code null}
      */
     public boolean equals(MethodKey that) {
       int size;

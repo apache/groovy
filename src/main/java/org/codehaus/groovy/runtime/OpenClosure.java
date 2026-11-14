@@ -289,12 +289,10 @@ public final class OpenClosure {
      * Dispatches the body with {@code args}. A {@code null} array is treated as
      * no arguments. The dispatcher receives the receiver, then the captured
      * values, then the arguments.
-     *
-     * Fails with {@link MissingMethodException} when the number of arguments is not the length.
+     * <p>Throws {@link MissingMethodException} when the number of arguments differs from the length of {@link #getParameterTypes()}.
      *
      * @param args the arguments; {@code null} means none
-     * @return the object produced by {@link GeneratedDispatcher#dispatch(int, Object[])}
-     *         of {@link #getParameterTypes()}
+     * @return the result of {@link GeneratedDispatcher#dispatch(int, Object[])}
      */
     public Object call(final Object... args) {
         Object[] provided = (args != null) ? args : new Object[0];

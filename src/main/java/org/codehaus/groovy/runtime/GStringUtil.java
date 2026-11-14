@@ -89,19 +89,19 @@ public final class GStringUtil {
     }
 
     /**
-     * Writes each string in {@code ss}, and the value at the same index when
-     * {@code i} is in range of {@code vs}. A {@link Closure} value with no
-     * parameters is called and {@link FormatHelper#write(Writer, Object)} writes
-     * the call's result. A closure with one parameter is called with {@code out}
-     * and its result is not written. Any other value, including {@code null}, is
-     * passed to {@link FormatHelper#write(Writer, Object)}. Returns the same writer.
+     * Writes each string in {@code ss}, and, when {@code vs} has an element at the
+     * same index, that value. A {@link Closure} value with no parameters is called
+     * and {@link FormatHelper#write(Writer, Object)} writes the call's result. A
+     * closure with one parameter is called with {@code out} and its result is not
+     * written. Any other value, including {@code null}, is passed to
+     * {@link FormatHelper#write(Writer, Object)}. Returns the same writer.
+     * <p>A closure value that takes more than one parameter is rejected.
      *
      * @param out the writer that receives the text
      * @param vs the interpolated values
      * @param ss the literal strings
      * @return {@code out}
      * @throws IOException if a write fails
-     * @throws GroovyRuntimeException if a closure value takes more than one parameter
      */
     public static Writer writeToImpl(Writer out, Object[] vs, String[] ss) throws IOException {
         int numberOfValues = vs.length;

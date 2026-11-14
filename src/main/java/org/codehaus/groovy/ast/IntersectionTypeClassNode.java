@@ -63,10 +63,9 @@ public final class IntersectionTypeClassNode extends ClassNode {
      * Every component starts in the interfaces array and the superclass is
      * {@code Object}; {@link #reclassifyComponents()} moves a class component
      * into the superclass after resolution. Fewer than two components is rejected.
+     * <p>A null {@code components} array fails immediately.
      *
      * @param components the intersection members, in user-written order; at least two
-     * @throws IllegalArgumentException if {@code components} has fewer than two elements
-     * @throws NullPointerException if {@code components} is {@code null}
      */
     public IntersectionTypeClassNode(final ClassNode[] components) {
         super("IntersectionType", ACC_PUBLIC | ACC_FINAL, ClassHelper.OBJECT_TYPE, components.clone(), MixinNode.EMPTY_ARRAY);

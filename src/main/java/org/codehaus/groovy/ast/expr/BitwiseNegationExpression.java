@@ -31,6 +31,8 @@ public class BitwiseNegationExpression extends Expression {
     private final Expression expression;
 
     /**
+     * Creates the negation of {@code expression}.
+     *
      * @param expression the operand of {@code ~}
      */
     public BitwiseNegationExpression(final Expression expression) {

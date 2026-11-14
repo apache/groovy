@@ -103,6 +103,8 @@ public class FinalVariableAnalyzer extends ClassCodeVisitorSupport {
         }
 
         /**
+         * Reports whether this state is {@code is_final}.
+         *
          * @return {@code true} only for {@code is_final}
          */
         public boolean isFinal() {

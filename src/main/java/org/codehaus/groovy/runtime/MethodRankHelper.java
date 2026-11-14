@@ -506,15 +506,19 @@ public class MethodRankHelper {
     private static class NullObject{
     }
 
+    /**
+     * An argument class paired with the parameter class that shares its name
+     * but was loaded by a different class loader.
+     *
+     * @param <U> class of the argument that was passed
+     * @param <V> class of the suggested parameter
+     */
     private static final class Pair<U,V> {
         private final U u;
         private final V v;
         /**
-         * Holds an argument class and the parameter class that shares its
-         * name but was loaded by a different class loader.
+         * Stores the two classes.
          *
-         * @param <U> class of the argument that was passed
-         * @param <V> class of the suggested parameter
          * @param u argument class
          * @param v parameter class loaded separately from {@code u}
          */

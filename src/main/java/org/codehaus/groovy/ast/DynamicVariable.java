@@ -31,6 +31,9 @@ public class DynamicVariable implements Variable {
     private boolean staticContext = false;
 
     /**
+     * Creates a dynamic variable. {@code context} is the static-context flag
+     * later returned by {@link #isInStaticContext()}.
+     *
      * @param name the variable name
      * @param context {@code true} when the variable occurs in a static context.
      *                {@link #isInStaticContext()} returns this flag

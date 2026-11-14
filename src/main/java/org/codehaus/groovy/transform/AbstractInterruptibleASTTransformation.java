@@ -194,14 +194,12 @@ public abstract class AbstractInterruptibleASTTransformation extends ClassCodeVi
      * Reads a boolean annotation member. A missing member yields
      * {@code defaultValue}. A constant is converted with Groovy's
      * {@code as Boolean} coercion.
-     *
-     * Fails with {@link GroovyBugError} when the member is present but is not a.
+     * <p>Fails with {@link GroovyBugError} when the member is present but is not a constant, or cannot be coerced to {@code boolean}.
      *
      * @param node annotation to read
      * @param parameterName member name
      * @param defaultValue used when the member is absent
      * @return the member as a boolean, or {@code defaultValue}
-     *         constant, or cannot be coerced to {@code boolean}
      */
     protected static boolean getBooleanAnnotationParameter(AnnotationNode node, String parameterName, boolean defaultValue) {
         Expression member = node.getMember(parameterName);
@@ -222,8 +220,7 @@ public abstract class AbstractInterruptibleASTTransformation extends ClassCodeVi
     /**
      * Reads a class annotation member. A missing member yields
      * {@code defaultValue}. A class expression yields its type.
-     *
-     * Fails with {@link GroovyBugError} when the member is present but is not a class expression.
+     * <p>Fails with {@link GroovyBugError} when the member is present but is not a class expression.
      *
      * @param node annotation to read
      * @param parameterName member name
@@ -248,8 +245,7 @@ public abstract class AbstractInterruptibleASTTransformation extends ClassCodeVi
 
     /**
      * Throws a bug error prefixed with {@code Internal error:}.
-     *
-     * Fails with {@link GroovyBugError} always.
+     * <p>Fails with {@link GroovyBugError} always.
      *
      * @param message detail appended to that prefix
      */

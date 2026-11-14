@@ -40,7 +40,6 @@ public abstract class ArrayMetaMethod extends MetaMethod {
      * @param i the requested index, which may be negative
      * @param size the array length added to a negative index
      * @return {@code i} when {@code i} is non-negative, otherwise {@code i + size}
-     * @throws ArrayIndexOutOfBoundsException when {@code i + size} is still negative
      */
     protected static int normaliseIndex(int i, int size) {
         int temp = i;
