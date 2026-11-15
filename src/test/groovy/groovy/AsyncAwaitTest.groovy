@@ -4389,6 +4389,53 @@ final class AsyncAwaitTest {
     }
 
     @Test
+    void testTimeoutDoesNotSuppressItsOwnCause() {
+        assertScript '''
+            import groovy.concurrent.AsyncScope
+            import java.time.Duration
+            import java.util.concurrent.TimeoutException
+            import static groovy.test.GroovyAssert.shouldFail
+
+            def shared = new IOException('shared')
+            def te = shouldFail(TimeoutException) {
+                AsyncScope.withScope(Duration.ofMillis(50)) { scope ->
+                    def child = scope.async { throw shared }
+                    try { await child } catch (IOException ignored) { }
+                    try { Thread.sleep(5000) } catch (InterruptedException e) { throw shared }
+                }
+            }
+            assert te.cause.is(shared)
+            assert te.suppressed.length == 0
+        '''
+    }
+
+    @Test
+    void testFirstKeepsEveryFailureOnce() {
+        assertScript '''
+            import groovy.concurrent.Awaitable
+            import java.util.concurrent.CountDownLatch
+            import static groovy.test.GroovyAssert.shouldFail
+
+            def shared = new IllegalStateException('shared')
+            def e = shouldFail(IllegalStateException) {
+                await Awaitable.first(async { throw shared }, async { throw shared })
+            }
+            assert e.is(shared)
+            assert e.suppressed.length == 0
+
+            // Await before the sources fail, so the result is read while still pending
+            def go = new CountDownLatch(1)
+            def x = async { go.await(); throw new IllegalStateException('x') }
+            def y = async { go.await(); throw new IllegalStateException('y') }
+            def both = Awaitable.first(x, y)
+            Thread.start { Thread.sleep(100); go.countDown() }
+            e = shouldFail(IllegalStateException) { await both }
+            assert e.suppressed.length == 1
+            assert ([e.message] + e.suppressed*.message).sort() == ['x', 'y']
+        '''
+    }
+
+    @Test
     void testSuppressedFailuresSurviveUnwrapping() {
         assertScript '''
             import java.util.concurrent.ExecutionException
@@ -4621,11 +4668,16 @@ final class AsyncAwaitTest {
             import java.time.Duration
 
             // The body outlives the timeout without blocking, so it returns normally
+            boolean sawInterrupt = false
             def result = AsyncScope.withScope(Duration.ofMillis(20)) { scope ->
-                long end = System.nanoTime() + 300_000_000L
-                while (System.nanoTime() < end) { }
+                long end = System.nanoTime() + 5_000_000_000L
+                while (!Thread.currentThread().isInterrupted() && System.nanoTime() < end) {
+                    Thread.onSpinWait()
+                }
+                sawInterrupt = Thread.currentThread().isInterrupted()
                 'done'
             }
+            assert sawInterrupt
             assert result == 'done'
             assert !Thread.interrupted()
         '''
