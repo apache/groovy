@@ -151,8 +151,8 @@ moduleDeclaration
     ;
 
 moduleHeader
-    :   {contextualKeyword("open")}? identifier NL* MODULE qualifiedName
-    |   MODULE qualifiedName
+    :   {contextualKeyword("open")}? identifier NL* MODULE NL* qualifiedName
+    |   MODULE NL* qualifiedName
     ;
 
 moduleDirectives

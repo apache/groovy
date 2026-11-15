@@ -573,6 +573,8 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
         moduleInfo.addAnnotations(declaration.getAnnotations());
         moduleInfo.putNodeMetaData(ModuleInfoNode.class, declaration);
         configureAST(moduleInfo, ctx);
+        this.groovydocManager.handle(declaration, ctx);
+        this.groovydocManager.handle(moduleInfo, ctx);
         this.moduleNode.addClass(moduleInfo);
         return this.moduleNode;
     }
@@ -689,8 +691,14 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
         } catch (IllegalArgumentException e) {
             throw createParsingFailedException(e.getMessage(), ctx);
         }
-        Set<String> skip = new HashSet<>(Arrays.asList(
-                ResolveVisitor.DEFAULT_IMPORTS));
+        Set<String> skip = new HashSet<>();
+        if (this.moduleDescriptor) {
+            // module-info name resolution only implies java.lang, not Groovy's
+            // default imports (java.io, java.net, java.util, groovy.lang, …).
+            skip.add("java.lang.");
+        } else {
+            skip.addAll(Arrays.asList(ResolveVisitor.DEFAULT_IMPORTS));
+        }
         moduleNode.getStarImports().stream().map(ImportNode::getPackageName).forEach(skip::add);
         moduleNode.getModuleStarImports().stream().map(ImportNode::getPackageName).forEach(skip::add);
         ImportNode lastImport = null;
@@ -707,7 +715,14 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
         if (lastImport == null) {
             // All exported packages were already covered by existing imports
             List<ImportNode> existing = moduleNode.getModuleStarImports();
-            lastImport = !existing.isEmpty() ? last(existing) : last(moduleNode.getStarImports());
+            if (!existing.isEmpty()) {
+                lastImport = last(existing);
+            } else if (!moduleNode.getStarImports().isEmpty()) {
+                lastImport = last(moduleNode.getStarImports());
+            } else {
+                lastImport = new ImportNode(moduleName);
+                lastImport.addAnnotations(annotations);
+            }
         }
         return configureAST(lastImport, ctx);
     }

@@ -19,6 +19,7 @@
 package org.codehaus.groovy.tools.javac;
 
 import groovy.lang.GroovyClassLoader;
+import org.apache.groovy.ast.ModuleInfoNode;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.GroovyClassVisitor;
 import org.codehaus.groovy.ast.ModuleNode;
@@ -42,10 +43,13 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.URL;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Stream;
 
 import static org.codehaus.groovy.control.CompilerConfiguration.MEM_STUB;
 
@@ -195,6 +199,7 @@ public class JavaAwareCompilationUnit extends CompilationUnit {
                 }
                 addJavaCompilationUnits(stubGenerator.getJavaStubCompilationUnitSet()); // add java stubs
                 compiler.compile(new ArrayList<>(javaSources), this);
+                indexCompiledClassFiles();
                 warnIfShadowed();
             } finally {
                 if (!keepStubs) stubGenerator.clean();
@@ -379,10 +384,40 @@ public class JavaAwareCompilationUnit extends CompilationUnit {
     }
 
     private void addJavaOrGroovySource(final File file) {
-        if (file.getName().endsWith(".java")) {
+        // module-info.java is a modular compilation unit (JLS §7.3). Routing it
+        // to javac would put the joint compilation in single-module mode, where
+        // the unnamed classpath (Groovy stubs and the runtime) is unreadable.
+        // Groovy parses and emits module-info; javac compiles the sibling .java files.
+        if (ModuleInfoNode.isModuleInfoSource(file.getName())) {
+            addSource(file);
+        } else if (file.getName().endsWith(".java")) {
             addJavaSource(file);
         } else {
             addSource(file);
+        }
+    }
+
+    /**
+     * After javac writes sibling .java classes (and Groovy stubs) to the target
+     * directory, record their binary names so module verification and
+     * {@code ModulePackages} treat them as members of the module being compiled.
+     */
+    private void indexCompiledClassFiles() {
+        File targetDir = this.configuration.getTargetDirectory();
+        if (targetDir == null || !targetDir.isDirectory()) {
+            return;
+        }
+        Path root = targetDir.toPath();
+        try (Stream<Path> paths = Files.walk(root)) {
+            paths.filter(Files::isRegularFile).forEach(path -> {
+                String relative = root.relativize(path).toString().replace(File.separatorChar, '/');
+                if (!relative.endsWith(".class")) {
+                    return;
+                }
+                String binary = relative.substring(0, relative.length() - 6).replace('/', '.');
+                getAST().addCompiledClassName(binary);
+            });
+        } catch (IOException ignored) {
         }
     }
 

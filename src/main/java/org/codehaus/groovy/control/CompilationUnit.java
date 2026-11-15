@@ -321,6 +321,14 @@ public class CompilationUnit extends ProcessingUnit {
 
         addPhaseOperation(verification, Phases.CLASS_GENERATION);
 
+        // After Verifier has synthesized default-argument constructors and
+        // CANONICALIZATION has applied record / @Singleton / @Delegate, and
+        // before AsmClassGenerator emits bytecode (JLS §7.7.4).
+        addPhaseOperation((final SourceUnit source, final GeneratorContext context, final ClassNode classNode) -> {
+            ModuleInfoVerifier.check(source, classNode);
+            getErrorCollector().failIfErrors();
+        }, Phases.CLASS_GENERATION);
+
         addPhaseOperation(classgen, Phases.CLASS_GENERATION);
 
         addPhaseOperation((final SourceUnit source) -> {
@@ -345,11 +353,6 @@ public class CompilationUnit extends ProcessingUnit {
         ASTTransformationVisitor.addPhaseOperations(this);
 
         // post-transform operations:
-
-        // After resolution and semantic transforms (visibility, etc.). JLS §7.7.
-        addPhaseOperation((final SourceUnit source, final GeneratorContext context, final ClassNode classNode) -> {
-            ModuleInfoVerifier.check(source, classNode);
-        }, Phases.SEMANTIC_ANALYSIS);
 
         addPhaseOperation((final SourceUnit source, final GeneratorContext context, final ClassNode classNode) -> {
             StaticVerifier verifier = new StaticVerifier();

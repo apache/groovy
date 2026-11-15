@@ -538,9 +538,13 @@ public class AsmClassGenerator extends ClassGenerator {
                     packages.add(pkg);
                 }
             }
+            packages.addAll(classNode.getCompileUnit().getCompiledPackages());
         }
         for (Provides provides : declaration.getProvides()) {
             for (ClassNode provider : provides.getResolvedProviders()) {
+                if (provider == null) {
+                    continue;
+                }
                 String pkg = provider.getPackageName();
                 if (pkg != null) {
                     packages.add(pkg);
@@ -550,6 +554,7 @@ public class AsmClassGenerator extends ClassGenerator {
         for (String pkg : packages) {
             moduleVisitor.visitPackage(pkg.replace('.', '/'));
         }
+        ModuleFinder versionFinder = source != null ? ModuleImportHelper.moduleFinder(source) : ModuleFinder.ofSystem();
         boolean implicitJavaBase = !"java.base".equals(declaration.getName());
         if (implicitJavaBase) {
             for (Requires requires : declaration.getRequires()) {
@@ -560,7 +565,7 @@ public class AsmClassGenerator extends ClassGenerator {
             }
         }
         if (implicitJavaBase) {
-            moduleVisitor.visitRequire("java.base", ACC_MANDATED, moduleVersion("java.base"));
+            moduleVisitor.visitRequire("java.base", ACC_MANDATED, moduleVersion(versionFinder, "java.base"));
         }
         for (Requires requires : declaration.getRequires()) {
             int access = 0;
@@ -570,7 +575,7 @@ public class AsmClassGenerator extends ClassGenerator {
             if (requires.isStaticPhase()) {
                 access |= ACC_STATIC_PHASE;
             }
-            moduleVisitor.visitRequire(requires.getModuleName(), access, moduleVersion(requires.getModuleName()));
+            moduleVisitor.visitRequire(requires.getModuleName(), access, moduleVersion(versionFinder, requires.getModuleName()));
         }
         for (Exports exports : declaration.getExports()) {
             moduleVisitor.visitExport(exports.getPackageName().replace('.', '/'), 0, friendModules(exports.getTargets()));
@@ -613,8 +618,7 @@ public class AsmClassGenerator extends ClassGenerator {
      * Platform and explicit modules record their version on {@code requires}, as javac does.
      * A module without a version contributes {@code null}.
      */
-    private String moduleVersion(final String moduleName) {
-        ModuleFinder lookup = source != null ? ModuleImportHelper.moduleFinder(source) : ModuleFinder.ofSystem();
+    private static String moduleVersion(final ModuleFinder lookup, final String moduleName) {
         return ModuleInfoVerifier.readModuleVersion(lookup, moduleName);
     }
 
