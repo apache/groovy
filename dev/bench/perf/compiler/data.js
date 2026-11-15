@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1794639562261,
+  "lastUpdate": 1794725949909,
   "repoUrl": "https://github.com/apache/groovy",
   "entries": {
     "Compiler Performance": [
@@ -9703,6 +9703,63 @@ window.BENCHMARK_DATA = {
             "name": "compile@groovy-6",
             "value": 497.5366666666667,
             "range": "±24.79",
+            "unit": "ms",
+            "extra": "6.0.0"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "dependabot[bot]",
+            "username": "dependabot[bot]",
+            "email": "49699333+dependabot[bot]@users.noreply.github.com"
+          },
+          "committer": {
+            "name": "Paul King",
+            "username": "paulk-asert",
+            "email": "paulk@asert.com.au"
+          },
+          "id": "83420487e0c3226b4f45b1ca3b3373ff2ba733c4",
+          "message": "build(deps): bump com.fasterxml.jackson:jackson-bom\n\nBumps [com.fasterxml.jackson:jackson-bom](https://github.com/FasterXML/jackson-bom) from 2.22.4 to 2.23.0.\n- [Commits](https://github.com/FasterXML/jackson-bom/compare/jackson-bom-2.22.4...jackson-bom-2.23.0)\n\n---\nupdated-dependencies:\n- dependency-name: com.fasterxml.jackson:jackson-bom\n  dependency-version: 2.23.0\n  dependency-type: direct:production\n  update-type: version-update:semver-minor\n...\n\nSigned-off-by: dependabot[bot] <support@github.com>",
+          "timestamp": "2026-11-15T01:22:54Z",
+          "url": "https://github.com/apache/groovy/commit/83420487e0c3226b4f45b1ca3b3373ff2ba733c4"
+        },
+        "date": 1794725943254,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "compile@current",
+            "value": 468.31666666666666,
+            "range": "±21.21",
+            "unit": "ms",
+            "extra": "current"
+          },
+          {
+            "name": "compile@groovy-3",
+            "value": 673.6566666666666,
+            "range": "±220.75",
+            "unit": "ms",
+            "extra": "3.0.25"
+          },
+          {
+            "name": "compile@groovy-4",
+            "value": 594.7666666666667,
+            "range": "±153.15",
+            "unit": "ms",
+            "extra": "4.0.33"
+          },
+          {
+            "name": "compile@groovy-5",
+            "value": 467.17999999999995,
+            "range": "±23.51",
+            "unit": "ms",
+            "extra": "5.1.3"
+          },
+          {
+            "name": "compile@groovy-6",
+            "value": 473.15999999999997,
+            "range": "±22.3",
             "unit": "ms",
             "extra": "6.0.0"
           }
