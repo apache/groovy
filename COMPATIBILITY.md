@@ -1509,7 +1509,9 @@ other type.
   `Map<Class<? extends T>, T>.put` within `Box<T>`, and so is
   `List<Class<? extends T>> l = items*.getClass()` for a `List<T> items`.
   `T` may be a parameterized type, such as `List<String>`, and a class does
-  not have type arguments. Add the cast that Java requires.
+  not have type arguments. With a `Class<T> type`,
+  `items*.getClass()*.asSubclass(type)` compiles and checks each class when
+  run; otherwise add the cast that Java requires.
 - **The class of a variable follows `instanceof`.** After
   `o instanceof String` for an `Object o`, `o.getClass()` and `o.class` are a
   `Class<? extends String>`, like every other member of `o` there; this is
