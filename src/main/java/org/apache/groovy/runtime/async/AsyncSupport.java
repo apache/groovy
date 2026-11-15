@@ -277,12 +277,14 @@ public class AsyncSupport {
 
     /**
      * Adds {@code secondary} to the exceptions suppressed by {@code primary},
-     * unless it is {@code primary} itself or is already recorded there. Several
-     * child tasks or deferred actions may rethrow one shared exception instance,
-     * for example by awaiting the same failed task.
+     * unless it is already recorded there or is, once JDK wrapper layers are
+     * removed, {@code primary} itself or its cause. Several child tasks or
+     * deferred actions may rethrow one shared exception instance, for example
+     * by awaiting the same failed task.
      */
     static void addSuppressedOnce(Throwable primary, Throwable secondary) {
-        if (secondary == primary) return;
+        Throwable failure = innermost(secondary);
+        if (failure == primary || failure == primary.getCause()) return;
         synchronized (primary) {
             for (Throwable recorded : primary.getSuppressed()) {
                 if (recorded == secondary) return;
@@ -559,13 +561,25 @@ public class AsyncSupport {
      * Exceptions suppressed by a removed layer move to the cause.
      */
     public static Throwable unwrap(Throwable t) {
-        while ((t instanceof CompletionException || t instanceof ExecutionException
-                || t instanceof InvocationTargetException
-                || t instanceof UndeclaredThrowableException)
-                && t.getCause() != null) {
+        while (isJdkWrapper(t)) {
             t = transferSuppressed(t, t.getCause());
         }
         return t;
+    }
+
+    /** The exception inside any JDK wrapper layers, found without moving suppressed exceptions. */
+    private static Throwable innermost(Throwable t) {
+        while (isJdkWrapper(t)) {
+            t = t.getCause();
+        }
+        return t;
+    }
+
+    private static boolean isJdkWrapper(Throwable t) {
+        return (t instanceof CompletionException || t instanceof ExecutionException
+                || t instanceof InvocationTargetException
+                || t instanceof UndeclaredThrowableException)
+                && t.getCause() != null;
     }
 
     /**
