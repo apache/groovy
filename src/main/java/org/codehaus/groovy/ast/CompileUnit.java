@@ -30,7 +30,9 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.LinkedHashSet;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Represents a complete compilation step involving one or more {@link ModuleNode} instances.
@@ -59,6 +61,11 @@ public class CompileUnit implements NodeMetaDataHandler {
     private final Map<String, ClassNode> classesToCompile = new LinkedHashMap<>();
     private final Map<String, SourceUnit> classNameToSource = new LinkedHashMap<>();
     private final Map<String, InnerClassNode> generatedInnerClasses = new LinkedHashMap<>();
+    // Binary names and packages of .class files compiled into the target
+    // directory during joint compilation (sibling .java sources and stubs).
+    private final Set<String> compiledClassNames = new LinkedHashSet<>();
+    private final Set<String> compiledPackages = new LinkedHashSet<>();
+    private boolean unnamedCompiledClass;
 
     /**
      * Creates a compile unit with the given classloader and compiler configuration.
@@ -317,5 +324,46 @@ public class CompileUnit implements NodeMetaDataHandler {
      */
     public void addGeneratedInnerClass(final InnerClassNode icn) {
         generatedInnerClasses.put(icn.getName(), icn);
+    }
+
+    /**
+     * Records a class file written to the target directory, typically by {@code javac}
+     * during joint compilation. {@code module-info} is ignored. A class in the
+     * unnamed package is remembered so a named module can reject it (JLS §7.4.2).
+     *
+     * @param binaryName the binary name, using {@code $} to separate nested types
+     */
+    public void addCompiledClassName(final String binaryName) {
+        if (binaryName == null || binaryName.isEmpty() || "module-info".equals(binaryName)) {
+            return;
+        }
+        compiledClassNames.add(binaryName);
+        int dot = binaryName.lastIndexOf('.');
+        if (dot < 0) {
+            unnamedCompiledClass = true;
+        } else {
+            compiledPackages.add(binaryName.substring(0, dot));
+        }
+    }
+
+    /**
+     * Whether a class of this binary name was recorded from the target directory.
+     */
+    public boolean containsCompiledClassName(final String binaryName) {
+        return compiledClassNames.contains(binaryName);
+    }
+
+    /**
+     * Packages of class files recorded from the target directory.
+     */
+    public Set<String> getCompiledPackages() {
+        return Collections.unmodifiableSet(compiledPackages);
+    }
+
+    /**
+     * Whether a recorded class file lives in the unnamed package.
+     */
+    public boolean hasUnnamedCompiledClass() {
+        return unnamedCompiledClass;
     }
 }

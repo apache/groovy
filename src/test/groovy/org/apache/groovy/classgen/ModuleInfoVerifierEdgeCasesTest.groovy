@@ -36,8 +36,8 @@ import org.codehaus.groovy.control.CompilerConfiguration
 import org.codehaus.groovy.control.ErrorCollector
 import org.codehaus.groovy.control.ProcessingUnit
 import org.codehaus.groovy.control.SourceUnit
-import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.io.TempDir
 import org.objectweb.asm.ClassVisitor
 import org.objectweb.asm.ClassWriter
 import org.objectweb.asm.Opcodes
@@ -52,12 +52,6 @@ import java.lang.module.ModuleReference
  * required by {@code ModuleReference}, and emitter fallbacks.
  */
 final class ModuleInfoVerifierEdgeCasesTest {
-
-    @AfterEach
-    void clearFinderOverrides() {
-        ModuleInfoVerifier.classpathFinderOverride = null
-        ModuleInfoVerifier.accessibilityFinderOverride = null
-    }
 
     @Test
     void testSourceNameAndMissingDeclaration() {
@@ -81,10 +75,9 @@ final class ModuleInfoVerifierEdgeCasesTest {
     }
 
     @Test
-    void testVerifierWithoutCompileUnit() {
+    void testVerifierWithoutCompileUnit(@TempDir File looseDir) {
         def config = new CompilerConfiguration()
         def loader = new GroovyClassLoader()
-        def looseDir = File.createTempDir()
         def loose = new File(looseDir, 'Loose.class')
         def cw = new ClassWriter(0)
         cw.visit(Opcodes.V17, Opcodes.ACC_PUBLIC, 'Loose', null, 'java/lang/Object', null)
@@ -229,7 +222,9 @@ final class ModuleInfoVerifierEdgeCasesTest {
         ])
         def hosted = ClassHelper.makeWithoutCaching('not.yet.Resolved')
         hosted.putNodeMetaData(ModuleNode, new ModuleNode(new CompileUnit(loader, null, config)))
-        declaration.addAnnotation(new AnnotationNode(hosted))
+        def annotation = new AnnotationNode(hosted)
+        declaration.addAnnotation(annotation)
+        info.addAnnotation(annotation)
         info.putNodeMetaData(ModuleInfoNode.class, declaration)
         assert unparsed.AST == null
         ModuleInfoVerifier.check(unparsed, info)
@@ -238,7 +233,7 @@ final class ModuleInfoVerifierEdgeCasesTest {
 
     @Test
     void testResolvedModuleNoLongerOpenable() {
-        ModuleInfoVerifier.accessibilityFinderOverride = new ModuleFinder() {
+        def emptyFinder = new ModuleFinder() {
             @Override
             Optional<ModuleReference> find(String name) {
                 Optional.empty()
@@ -250,7 +245,8 @@ final class ModuleInfoVerifierEdgeCasesTest {
             }
         }
         def parsed = parsed('module demo.gap { uses java.lang.Runnable; }')
-        ModuleInfoVerifier.check(parsed, parsed.AST.classes.find { it.name == 'module-info' })
+        def moduleInfo = parsed.AST.classes.find { it.name == 'module-info' }
+        ModuleInfoVerifier.check(parsed, moduleInfo, null, emptyFinder)
         assert messages(parsed).contains('not accessible')
     }
 
@@ -293,7 +289,7 @@ final class ModuleInfoVerifierEdgeCasesTest {
     }
 
     private static void assertResolutionFailure(String failureMessage, String moduleName, String missing) {
-        ModuleInfoVerifier.classpathFinderOverride = new ModuleFinder() {
+        def failing = new ModuleFinder() {
             @Override
             Optional<ModuleReference> find(String name) {
                 if (missing == name) {
@@ -307,13 +303,9 @@ final class ModuleInfoVerifierEdgeCasesTest {
                 Set.of()
             }
         }
-        try {
-            def parsed = parsed("module ${moduleName} { requires ${missing}; }")
-            ModuleInfoVerifier.check(parsed, parsed.AST.classes.find { it.name == 'module-info' })
-            assert messages(parsed).contains('module resolution failed for ' + moduleName)
-        } finally {
-            ModuleInfoVerifier.classpathFinderOverride = null
-        }
+        def parsed = parsed("module ${moduleName} { requires ${missing}; }")
+        ModuleInfoVerifier.check(parsed, parsed.AST.classes.find { it.name == 'module-info' }, failing, null)
+        assert messages(parsed).contains('module resolution failed for ' + moduleName)
     }
 
     private static SourceUnit parsed(String text) {

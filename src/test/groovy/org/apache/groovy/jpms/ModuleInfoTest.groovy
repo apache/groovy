@@ -19,10 +19,13 @@
 package org.apache.groovy.jpms
 
 import groovy.test.GroovyAssert
+import groovy.transform.CompileStatic
 import org.apache.groovy.ast.ModuleInfoNode
 import org.codehaus.groovy.control.CompilationFailedException
 import org.codehaus.groovy.control.CompilationUnit
 import org.codehaus.groovy.control.CompilerConfiguration
+import org.codehaus.groovy.control.customizers.ASTTransformationCustomizer
+import org.codehaus.groovy.tools.javac.JavaAwareCompilationUnit
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
 import org.objectweb.asm.ClassReader
@@ -150,8 +153,7 @@ final class ModuleInfoTest {
             ''',
             'A.groovy': 'package demo.normal.api; class A {}',
             'O.groovy': 'package demo.normal.opened; class O {}',
-            'H.groovy': 'package demo.normal.hidden; class H {}',
-            'Loose.groovy': 'class Loose {}'
+            'H.groovy': 'package demo.normal.hidden; class H {}'
         ])
         def md = descriptor(unit)
         assert !md.open
@@ -971,6 +973,372 @@ final class ModuleInfoTest {
     }
 
     @Test
+    void testUnnamedPackageClassRejectedInNamedModule() {
+        def err = fail(dir('unnamed-pkg'), [
+            'module-info.groovy': 'module demo.loose { }',
+            'Loose.groovy': 'class Loose {}'
+        ])
+        assert err.contains('unnamed package is not allowed in named modules')
+    }
+
+    @Test
+    void testRequiresJavaSe() {
+        def unit = compile(dir('java-se'), [
+            'module-info.groovy': 'module demo.se { requires java.se; }'
+        ])
+        assert require(descriptor(unit), 'java.se') != null
+    }
+
+    @Test
+    void testConcealedPackageInRequiredModuleIsNotASplit() {
+        def lib = dir('conceal-lib')
+        compile(lib, [
+            'module-info.groovy': 'module conceal.lib { }',
+            'H.groovy': 'package com.acme.internal; class Hidden {}'
+        ])
+        def libJar = new File(tmp, 'conceal-lib.jar')
+        moduleJar(libJar, 'conceal.lib', null, null, lib)
+        compile(dir('conceal-app'), libJar, [
+            'module-info.groovy': 'module conceal.app { requires conceal.lib; }',
+            'A.groovy': 'package com.acme.internal; class Also {}'
+        ])
+    }
+
+    @Test
+    void testDuplicateRequiresDoesNotHideJavaBaseTypes() {
+        def err = fail(dir('dup-noise'), [
+            'module-info.groovy': '''
+                @Deprecated
+                module demo.dup { requires java.sql; requires java.sql; uses java.lang.Runnable; }
+            '''
+        ])
+        assert err.contains('duplicate requires on module java.sql')
+        assert !err.contains('not accessible')
+    }
+
+    @Test
+    void testNestedTypeNameResolutionAndModuleImport() {
+        def unit = compile(dir('nested-names'), [
+            'module-info.groovy': '''
+                import demo.names.Outer
+                import module java.base
+                module demo.names {
+                    uses System.LoggerFinder;
+                    uses URLStreamHandlerFactory;
+                    provides java.lang.Runnable with Outer.Inner;
+                }
+            ''',
+            'Outer.groovy': '''
+                package demo.names
+                class Outer {
+                    static class Inner implements Runnable { void run() {} }
+                }
+            '''
+        ])
+        def md = descriptor(unit)
+        assert md.uses().contains('java.lang.System$LoggerFinder')
+        assert md.uses().contains('java.net.URLStreamHandlerFactory')
+        assert md.provides().find { it.service() == 'java.lang.Runnable' }.providers() as List ==
+            ['demo.names.Outer$Inner']
+    }
+
+    @Test
+    void testStarImportShadowsModuleImport() {
+        def unit = compile(dir('shadow-mod'), [
+            'module-info.groovy': '''
+                import demo.shadow.*
+                import module java.base
+                module demo.shadow { uses List; }
+            ''',
+            'List.groovy': 'package demo.shadow; interface List {}'
+        ])
+        assert descriptor(unit).uses() == ['demo.shadow.List'] as Set
+    }
+
+    @Test
+    void testStaticImportOfMemberType() {
+        def unit = compile(dir('static-member'), [
+            'module-info.groovy': '''
+                import static demo.st.Outer.Inner
+                module demo.st { provides java.lang.Runnable with Inner; }
+            ''',
+            'Outer.groovy': '''
+                package demo.st
+                class Outer {
+                    static class Inner implements Runnable { void run() {} }
+                }
+            '''
+        ])
+        assert descriptor(unit).provides().find { it.service() == 'java.lang.Runnable' }.providers() as List ==
+            ['demo.st.Outer$Inner']
+    }
+
+    @Test
+    void testImportModuleWithNoExports() {
+        def empty = dir('empty-mod-classes')
+        compile(empty, ['module-info.groovy': 'module empty.mod { }'])
+        def jar = new File(tmp, 'empty-mod.jar')
+        moduleJar(jar, 'empty.mod', null, null, empty)
+        compile(dir('import-empty'), jar, [
+            'module-info.groovy': '''
+                import module empty.mod
+                module demo.importer { }
+            '''
+        ])
+    }
+
+    @Test
+    void testProviderAfterCanonicalizationAndDefaultArguments() {
+        compile(dir('providers-ok'), [
+            'module-info.groovy': '''
+                module demo.ok {
+                    provides java.lang.Runnable with demo.ok.Delegated, demo.ok.DefaultCtor, demo.ok.Factory;
+                }
+            ''',
+            'Delegated.groovy': '''
+                package demo.ok
+                class Delegated {
+                    @Delegate Runnable r = new Runnable() { void run() {} }
+                }
+            ''',
+            'DefaultCtor.groovy': '''
+                package demo.ok
+                class DefaultCtor implements Runnable {
+                    DefaultCtor(String env = 'prod') {}
+                    void run() {}
+                }
+            ''',
+            'Factory.groovy': '''
+                package demo.ok
+                class Factory {
+                    static Runnable provider(int retries = 3) { return new Runnable() { void run() {} } }
+                }
+            '''
+        ])
+
+        assert fail(dir('record-provider'), [
+            'module-info.groovy': '''
+                module demo.bad { provides java.lang.Runnable with demo.bad.Rec; }
+            ''',
+            'Rec.groovy': 'package demo.bad; record Rec(String url) implements Runnable { void run() {} }'
+        ]).contains('public no-arg constructor')
+
+        assert fail(dir('singleton-provider'), [
+            'module-info.groovy': '''
+                module demo.bad { provides java.lang.Runnable with demo.bad.Single; }
+            ''',
+            'Single.groovy': '''
+                package demo.bad
+                @Singleton
+                class Single implements Runnable { void run() {} }
+            '''
+        ]).contains('public no-arg constructor')
+    }
+
+    @Test
+    void testEnclosingTypeMustBePublicAndPrimitiveProviderRejected() {
+        assert fail(dir('pkg-outer'), [
+            'module-info.groovy': '''
+                module demo.p { provides java.lang.Runnable with demo.p.Outer.Inner; }
+            ''',
+            'O.groovy': '''
+                package demo.p
+                import groovy.transform.PackageScope
+                @PackageScope
+                class Outer {
+                    static class Inner implements Runnable { void run() {} }
+                }
+            '''
+        ]).contains('must be public')
+
+        assert fail(dir('prim-provider'), [
+            'module-info.groovy': '''
+                module demo.p { provides java.lang.Object with demo.p.Factory; }
+            ''',
+            'F.groovy': '''
+                package demo.p
+                class Factory {
+                    static int provider() { 1 }
+                }
+            '''
+        ]).contains('must return a subtype')
+    }
+
+    @Test
+    void testGlobalCompileStaticCustomizerOnModuleInfo() {
+        def target = dir('cs-customizer')
+        def config = new CompilerConfiguration(targetDirectory: target)
+        config.addCompilationCustomizers(new ASTTransformationCustomizer(CompileStatic))
+        def loader = new GroovyClassLoader(GroovyAssert.class.classLoader)
+        try {
+            def unit = new CompilationUnit(config, null, loader)
+            unit.addSource('module-info.groovy', 'module demo.cs { }')
+            unit.compile()
+            assert descriptor(unit).name() == 'demo.cs'
+        } finally {
+            loader.close()
+        }
+    }
+
+    @Test
+    void testAnnotationCollectorOnModule() {
+        def unit = compile(dir('ann-coll'), [
+            'module-info.groovy': '''
+                import demo.coll.ModAnns
+                @ModAnns
+                module demo.coll { }
+            ''',
+            'ModAnns.groovy': '''
+                package demo.coll
+                import groovy.transform.AnnotationCollector
+                import java.lang.annotation.ElementType
+                import java.lang.annotation.Retention
+                import java.lang.annotation.RetentionPolicy
+                import java.lang.annotation.Target
+                @Target(ElementType.MODULE)
+                @Retention(RetentionPolicy.RUNTIME)
+                @interface Mark {}
+                @AnnotationCollector([Deprecated, Mark])
+                @interface ModAnns {}
+            '''
+        ])
+        def text = new String(unit.classes.find { it.name == 'module-info' }.bytes, 'ISO-8859-1')
+        assert text.contains('Ljava/lang/Deprecated;') || descriptorHasDeprecated(unit)
+        assert text.contains('Ldemo/coll/Mark;')
+    }
+
+    @Test
+    void testNewlineAfterModuleAndRuntimeGroovydoc() {
+        def target = dir('nl-doc')
+        def config = new CompilerConfiguration(targetDirectory: target)
+        config.optimizationOptions[CompilerConfiguration.GROOVYDOC] = true
+        config.optimizationOptions[CompilerConfiguration.RUNTIME_GROOVYDOC] = true
+        def loader = new GroovyClassLoader(GroovyAssert.class.classLoader)
+        try {
+            def unit = new CompilationUnit(config, null, loader)
+            unit.addSource('module-info.groovy', '''
+                /**@ Module documentation. */
+                module
+                demo.nl {
+                }
+            ''')
+            unit.compile()
+            def cn = unit.ast.classes.find { it.name == 'module-info' }
+            assert cn.groovydoc?.content?.contains('Module documentation')
+            def text = new String(unit.classes.find { it.name == 'module-info' }.bytes, 'ISO-8859-1')
+            assert text.contains('Lgroovy/lang/Groovydoc;')
+            assert descriptor(unit).name() == 'demo.nl'
+        } finally {
+            loader.close()
+        }
+    }
+
+    @Test
+    void testRequiresTransitiveJavaBaseOnTarget25() {
+        def target = dir('trans-base-25')
+        def config = new CompilerConfiguration(targetDirectory: target)
+        config.targetBytecode = CompilerConfiguration.JDK25
+        def loader = new GroovyClassLoader(GroovyAssert.class.classLoader)
+        try {
+            def unit = new CompilationUnit(config, null, loader)
+            unit.addSource('module-info.groovy', 'module demo.tb { requires transitive java.base; }')
+            unit.compile()
+            // JDK 17 cannot ModuleDescriptor.read a V25 class file; inspect flags with ASM.
+            def flags = [:]
+            new ClassReader(unit.classes.find { it.name == 'module-info' }.bytes).accept(new ClassVisitor(Opcodes.ASM9) {
+                @Override
+                ModuleVisitor visitModule(String moduleName, int moduleAccess, String moduleVersion) {
+                    new ModuleVisitor(Opcodes.ASM9) {
+                        @Override
+                        void visitRequire(String requiredName, int requireAccess, String requireVersion) {
+                            flags[requiredName] = requireAccess
+                        }
+                    }
+                }
+            }, 0)
+            assert (flags['java.base'] & Opcodes.ACC_TRANSITIVE) != 0
+        } finally {
+            loader.close()
+        }
+    }
+
+    @Test
+    void testJointCompilationSeesJavaOnlyPackagesAndProviders() {
+        def root = dir('joint-java')
+        def unit = compileJoint(root, [
+            'module-info.groovy': '''
+                module demo.jointx {
+                    exports demo.javaonly;
+                    uses demo.internal.JavaSpi;
+                    provides demo.internal.JavaSpi with demo.impl.JavaProvider;
+                }
+            ''',
+            'demo/javaonly/Api.java': '''
+                package demo.javaonly;
+                public class Api {}
+            ''',
+            'demo/internal/JavaSpi.java': '''
+                package demo.internal;
+                public interface JavaSpi {}
+            ''',
+            'demo/impl/JavaProvider.java': '''
+                package demo.impl;
+                public class JavaProvider implements demo.internal.JavaSpi {}
+            '''
+        ])
+        def md = descriptor(unit)
+        assert md.exports()*.source() == ['demo.javaonly']
+        assert md.packages().containsAll(['demo.javaonly', 'demo.internal', 'demo.impl'])
+        assert md.uses() == ['demo.internal.JavaSpi'] as Set
+        assert md.provides().find { it.service() == 'demo.internal.JavaSpi' }.providers() as List ==
+            ['demo.impl.JavaProvider']
+    }
+
+    @Test
+    void testJointCompilationWithModuleInfoJava() {
+        def root = dir('joint-minfo-java')
+        def unit = compileJoint(root, [
+            'module-info.java': '''
+                module demo.minfo {
+                    exports demo.api;
+                }
+            ''',
+            'demo/api/Greeter.groovy': '''
+                package demo.api
+                class Greeter {
+                    static String hi() { 'hi' }
+                }
+            ''',
+            'demo/api/JavaGreeter.java': '''
+                package demo.api;
+                public class JavaGreeter {
+                    public static String hello() {
+                        return Greeter.hi();
+                    }
+                }
+            '''
+        ])
+        def md = descriptor(unit)
+        assert md.name() == 'demo.minfo'
+        assert md.exports()*.source() == ['demo.api']
+        assert new File(unit.configuration.targetDirectory, 'demo/api/JavaGreeter.class').isFile()
+    }
+
+    @Test
+    void testModuleHeaderNewlineAfterKeyword() {
+        def unit = compile(dir('open-nl'), [
+            'module-info.groovy': '''
+                open
+                module
+                demo.open.nl {
+                }
+            '''
+        ])
+        assert descriptor(unit).open
+        assert descriptor(unit).name() == 'demo.open.nl'
+    }
+
+    @Test
     void testOrdinaryCodeIsUnchanged() {
         // GROOVY-11896
         assertScript '''
@@ -1024,6 +1392,33 @@ final class ModuleInfoTest {
             '''
         ])
         assert err.contains('not accessible') || err.contains('unable to resolve')
+    }
+
+    private CompilationUnit compileJoint(File root, Map<String, String> sources) {
+        def srcDir = new File(root, 'src')
+        def outDir = new File(root, 'out')
+        def stubDir = new File(root, 'stubs')
+        srcDir.mkdirs()
+        outDir.mkdirs()
+        stubDir.mkdirs()
+        def files = []
+        sources.each { name, text ->
+            def file = new File(srcDir, name)
+            file.parentFile.mkdirs()
+            file.text = text
+            files << file
+        }
+        def config = new CompilerConfiguration(targetDirectory: outDir)
+        config.jointCompilationOptions = [stubDir: stubDir]
+        def loader = new GroovyClassLoader(GroovyAssert.class.classLoader)
+        try {
+            def unit = new JavaAwareCompilationUnit(config, loader)
+            unit.addSources(files as File[])
+            unit.compile()
+            unit
+        } finally {
+            loader.close()
+        }
     }
 
     private File dir(String name) {

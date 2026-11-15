@@ -34,7 +34,7 @@ import java.lang.annotation.Target;
  * @since 3.0.0
  */
 @Documented
-@Target({ElementType.TYPE, ElementType.ANNOTATION_TYPE, ElementType.FIELD, ElementType.METHOD, ElementType.CONSTRUCTOR})
+@Target({ElementType.TYPE, ElementType.ANNOTATION_TYPE, ElementType.FIELD, ElementType.METHOD, ElementType.CONSTRUCTOR, ElementType.MODULE})
 @Retention(RetentionPolicy.RUNTIME)
 public @interface Groovydoc {
     /**
