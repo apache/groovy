@@ -8931,28 +8931,25 @@ trying: for (ClassNode[] signature : signatures) {
                                             ? null : extractPlaceHoldersVisibleToDeclaration(receiver, method, arguments);
         GenericsType[] methodGenericTypes = method.isConstructor() ? method.getDeclaringClass().getGenericsTypes() : applyGenericsContext(context, method.getGenericsTypes());
 
-        // 1) resolve type parameters of method
+        // 1) resolve type parameters of method and 2) of method's enclosing context, in one pass:
+        // a type argument from the call may name a type variable of the caller that has the same
+        // name as one of the receiver's type parameters, such as T of "<T> m(Class<T> t) { c.asSubclass(t) }"
 
+        boolean erase = context != null && isRawType(receiver) && !returnType.isGenericsPlaceHolder() && !returnType.isArray()
+                && mentionsTypeParameterWithRawBound(returnType, receiver); // JLS 4.8: the erasure, not a raw bound
+        Map<GenericsTypeName, GenericsType> resolvedPlaceholders = context != null ? new HashMap<>(context) : new HashMap<>();
         if (methodGenericTypes != null) {
-            Map<GenericsTypeName, GenericsType> resolvedPlaceholders = new HashMap<>();
-            for (GenericsType gt : methodGenericTypes) resolvedPlaceholders.put(new GenericsTypeName(gt.getName()), gt);
+            Map<GenericsTypeName, GenericsType> methodPlaceholders = new HashMap<>();
+            for (GenericsType gt : methodGenericTypes) methodPlaceholders.put(new GenericsTypeName(gt.getName()), gt);
             applyGenericsConnections(extractGenericsConnectionsFromArguments(methodGenericTypes, Arrays.stream(method.getParameters()).map(param ->
                 new Parameter(applyGenericsContext(context, param.getType()), param.getName())
-            ).toArray(Parameter[]::new), arguments, explicitTypeHints), resolvedPlaceholders);
-
-            returnType = applyGenericsContext(resolvedPlaceholders, returnType);
+            ).toArray(Parameter[]::new), arguments, explicitTypeHints), methodPlaceholders);
+            resolvedPlaceholders.putAll(methodPlaceholders);
         }
+        returnType = applyGenericsContext(resolvedPlaceholders, returnType);
 
-        // 2) resolve type parameters of method's enclosing context
-
-        if (context != null) {
-            boolean erase = isRawType(receiver) && !returnType.isGenericsPlaceHolder() && !returnType.isArray()
-                    && mentionsTypeParameterWithRawBound(returnType, receiver); // JLS 4.8: the erasure, not a raw bound
-            returnType = applyGenericsContext(context, returnType);
-
-            if (erase || (isRawType(receiver) && GenericsUtils.hasUnresolvedGenerics(returnType))) {
-                returnType = returnType.getPlainNodeReference(); // GROOVY-10049: not "Stream<E>" for raw type
-            }
+        if (context != null && (erase || (isRawType(receiver) && GenericsUtils.hasUnresolvedGenerics(returnType)))) {
+            returnType = returnType.getPlainNodeReference(); // GROOVY-10049: not "Stream<E>" for raw type
         }
 
         // 3) resolve bounds of type parameters from calling context
