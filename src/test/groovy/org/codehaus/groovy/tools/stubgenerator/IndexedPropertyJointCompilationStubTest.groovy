@@ -131,13 +131,12 @@ final class IndexedPropertyJointCompilationStubTest extends StringSourcesStubTes
         def abox = arrayBoxClass.getConstructor(String[]).newInstance([new String[] {'p', 'q'}] as Object[])
         assert arrayBoxClass.getMethod('getTags', int.class).invoke(abox, 1) == 'q'
 
-        // Records are immutable, so the stub exposes the indexed getter only.
-        // TODO: also assert the RecordBox and BaseBox class files have no indexed
-        // setter, as ImmutableBox does above. GROOVY-12730 owns that record behavior.
+        // Records are immutable, so the stub and class file expose the indexed getter only.
         String recordStub = stubJavaSourceFor('foo.RecordBox')
         assert recordStub =~ /java\.lang\.String\s+getItems\(\s*int\s+\w+\s*\)/
         assert !(recordStub =~ /void\s+setItems\(\s*int\s+\w+\s*,\s*java\.lang\.String\s+\w+\s*\)/)
         Class recordClass = loader.loadClass('foo.RecordBox')
+        assert recordClass.declaredMethods.every { it.name != 'setItems' }
         def record = recordClass.getConstructor(List).newInstance(['a', 'b'])
         assert recordClass.getMethod('getItems', int.class).invoke(record, 1) == 'b'
 
@@ -145,6 +144,7 @@ final class IndexedPropertyJointCompilationStubTest extends StringSourcesStubTes
         assert baseStub =~ /java\.lang\.Integer\s+getNums\(\s*int\s+\w+\s*\)/
         assert !(baseStub =~ /void\s+setNums\(\s*int\s+\w+\s*,\s*java\.lang\.Integer\s+\w+\s*\)/)
         Class baseClass = loader.loadClass('foo.BaseBox')
+        assert baseClass.declaredMethods.every { it.name != 'setNums' }
         def base = baseClass.getConstructor(List).newInstance([1, 2])
         assert baseClass.getMethod('getNums', int.class).invoke(base, 0) == 1
     }
