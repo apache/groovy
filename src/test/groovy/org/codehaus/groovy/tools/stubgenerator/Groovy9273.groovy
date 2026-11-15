@@ -18,6 +18,7 @@
  */
 package org.codehaus.groovy.tools.stubgenerator
 
+import groovy.io.FileType
 import java.lang.module.ModuleDescriptor
 
 /**
@@ -57,7 +58,7 @@ final class Groovy9273 extends StringSourcesStubTestCase {
     @Override
     void verifyStubs() {
         assert !new File(stubDir, 'module-info.java').exists()
-        stubDir.eachFileRecurse(groovy.io.FileType.FILES) { File stub ->
+        stubDir.eachFileRecurse(FileType.FILES) { File stub ->
             if (stub.name.endsWith('.java')) {
                 assert !stub.text.contains('interface module-info')
             }
