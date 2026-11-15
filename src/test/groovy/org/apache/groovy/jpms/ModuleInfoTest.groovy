@@ -511,9 +511,13 @@ final class ModuleInfoTest {
             module demo.self { requires demo.self; }
         ''']).contains('requires itself')
 
+        // requires transitive java.base is legal at class file version 25+ (JEP 511).
+        // Pin to JDK 17, the project minimum, so this assertion still holds on a
+        // JDK 25 host whose default target bytecode is V25. The legal V25 case is
+        // covered by testRequiresTransitiveJavaBaseOnTarget25.
         assert fail(dir('base-mod'), ['module-info.groovy': '''
             module demo.base { requires transitive java.base; }
-        ''']).contains('requires java.base must not have modifiers')
+        '''], CompilerConfiguration.JDK17).contains('requires java.base must not have modifiers')
 
         assert fail(dir('base-static'), ['module-info.groovy': '''
             module demo.base2 { requires static java.base; }
@@ -1602,7 +1606,14 @@ final class ModuleInfoTest {
     }
 
     private CompilationUnit compile(File target, File classpathEntry, Map<String, String> sources) {
+        compile(target, classpathEntry, sources, null)
+    }
+
+    private CompilationUnit compile(File target, File classpathEntry, Map<String, String> sources, String targetBytecode) {
         def config = new CompilerConfiguration(targetDirectory: target)
+        if (targetBytecode != null) {
+            config.targetBytecode = targetBytecode
+        }
         def loader = new GroovyClassLoader(GroovyAssert.class.classLoader)
         try {
             if (classpathEntry != null) {
@@ -1623,6 +1634,15 @@ final class ModuleInfoTest {
 
     private String fail(File target, Map<String, String> sources) {
         fail(target, null, sources)
+    }
+
+    private String fail(File target, Map<String, String> sources, String targetBytecode) {
+        try {
+            compile(target, null, sources, targetBytecode)
+            throw new AssertionError('expected compilation to fail for ' + target.name)
+        } catch (CompilationFailedException e) {
+            return e.message
+        }
     }
 
     private String fail(File target, File classpathEntry, Map<String, String> sources) {
