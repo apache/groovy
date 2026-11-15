@@ -6322,6 +6322,23 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-12755
+    @Test
+    void testTypeArgumentOfCallNamedLikeTypeParameterOfReceiver() {
+        assertScript '''
+            def <T> List<Class<? extends T>> classes(List<T> items, Class<T> type) {
+                Class<?> c = items[0].getClass()
+                @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                    assert node.getNodeMetaData(INFERRED_TYPE).toString(false) == 'java.lang.Class<? extends T>'
+                })
+                def one = c.asSubclass(type)
+                List<Class<? extends T>> list = items*.getClass()*.asSubclass(type)
+                list
+            }
+            assert classes(['a'], CharSequence) == [String]
+        '''
+    }
+
     // GROOVY-12775: compiles with 5.1.3 and 6.0.0; javac rejects
     @NotYetImplemented
     @Test
