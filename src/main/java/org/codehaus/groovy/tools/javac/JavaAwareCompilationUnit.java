@@ -21,6 +21,7 @@ package org.codehaus.groovy.tools.javac;
 import groovy.lang.GroovyClassLoader;
 import org.apache.groovy.ast.ModuleInfoNode;
 import org.codehaus.groovy.ast.ClassNode;
+import org.codehaus.groovy.ast.CompileUnit;
 import org.codehaus.groovy.ast.GroovyClassVisitor;
 import org.codehaus.groovy.ast.ModuleNode;
 import org.codehaus.groovy.classgen.GeneratorContext;
@@ -207,16 +208,14 @@ public class JavaAwareCompilationUnit extends CompilationUnit {
                             "memClassOutput requires the default javac joint compiler", this));
                 }
                 addJavaCompilationUnits(stubGenerator.getJavaStubCompilationUnitSet()); // add java stubs
-                File targetDir = this.configuration.getTargetDirectory();
-                Map<String, ClassFileStamp> before;
-                try {
-                    before = snapshotClassFiles(targetDir);
-                } catch (IOException e) {
-                    failIndexing(targetDir, e);
-                    return;
-                }
+                Object snapshot = snapshotCompiledClassOutput();
                 compiler.compile(new ArrayList<>(javaSources), this);
-                indexCompiledClassFiles(before);
+                Set<String> compiledNames = collectCompiledClassNames(snapshot);
+                if (compiledNames != null) {
+                    for (String name : compiledNames) {
+                        getAST().addCompiledClassName(name);
+                    }
+                }
                 warnIfShadowed();
             } finally {
                 if (!keepStubs) stubGenerator.clean();
@@ -415,25 +414,73 @@ public class JavaAwareCompilationUnit extends CompilationUnit {
     }
 
     /**
+     * Snapshots whatever state is needed to identify class files produced by
+     * the upcoming javac invocation.
+     * <p>
+     * The default implementation records stamps of {@code .class} files under
+     * the configured target directory. An absent or non-directory target yields
+     * an empty snapshot. A subclass that does not write class files to the
+     * filesystem may return {@code null}.
+     *
+     * @return an opaque snapshot consumed by {@link #collectCompiledClassNames(Object)},
+     *         or {@code null} when no snapshot is required
+     * @throws CompilationFailedException if the default snapshot of the target directory fails
+     * @since 7.0.0
+     */
+    protected Object snapshotCompiledClassOutput() {
+        File targetDir = this.configuration.getTargetDirectory();
+        try {
+            return snapshotClassFiles(targetDir);
+        } catch (IOException e) {
+            failIndexing(targetDir, e);
+            return null;
+        }
+    }
+
+    /**
+     * Returns the binary names of classes produced by this javac invocation.
+     * Each returned name is recorded with {@link CompileUnit#addCompiledClassName(String)}.
+     * <p>
+     * The default implementation compares the target directory against
+     * {@code snapshot} and also includes inner classes of just-compiled Java
+     * sources. When there is no target directory the default returns an empty
+     * set and records nothing. A subclass that stores class bytes elsewhere,
+     * for example in memory, MUST override this method; otherwise Java-only
+     * packages will not be recorded for module verification or {@code ModulePackages}.
+     *
+     * @param snapshot the value returned by {@link #snapshotCompiledClassOutput()}
+     *                 before javac ran, which may be {@code null}
+     * @return binary names of classes produced by this javac invocation;
+     *         never {@code null}
+     * @throws CompilationFailedException if the default scan of the target directory fails
+     * @since 7.0.0
+     */
+    protected Set<String> collectCompiledClassNames(final Object snapshot) {
+        return indexCompiledClassFiles(classFileStamps(snapshot));
+    }
+
+    /**
      * After javac writes sibling .java classes (and Groovy stubs) to the target
-     * directory, record the binary names of class files written by this
+     * directory, collect the binary names of class files written by this
      * invocation so module verification and {@code ModulePackages} treat them
      * as members of the module being compiled. A reused target directory may
      * already contain leftover {@code .class} files; those are ignored unless
      * javac replaces them, or they are an inner class of a just-compiled source.
+     * When there is no target directory this default index is empty.
      */
-    private void indexCompiledClassFiles(final Map<String, ClassFileStamp> before) {
+    private Set<String> indexCompiledClassFiles(final Map<String, ClassFileStamp> before) {
         File targetDir = this.configuration.getTargetDirectory();
         if (targetDir == null || !targetDir.isDirectory()) {
-            return;
+            return Set.of();
         }
         Map<String, ClassFileStamp> after;
         try {
             after = snapshotClassFiles(targetDir);
         } catch (IOException e) {
             failIndexing(targetDir, e);
-            return;
+            return Set.of();
         }
+        Set<String> names = new LinkedHashSet<>();
         Set<String> compiledSources = binaryNamesFromJavaSources();
         for (Map.Entry<String, ClassFileStamp> entry : after.entrySet()) {
             String relative = entry.getKey();
@@ -441,9 +488,18 @@ public class JavaAwareCompilationUnit extends CompilationUnit {
             boolean written = previous == null || !previous.sameAs(entry.getValue());
             String binary = relative.substring(0, relative.length() - 6).replace('/', '.');
             if (written || isInnerClassOfCompiledSource(binary, compiledSources)) {
-                getAST().addCompiledClassName(binary);
+                names.add(binary);
             }
         }
+        return names;
+    }
+
+    @SuppressWarnings("unchecked")
+    private Map<String, ClassFileStamp> classFileStamps(final Object snapshot) {
+        if (snapshot instanceof Map<?, ?>) {
+            return (Map<String, ClassFileStamp>) snapshot;
+        }
+        return Map.of();
     }
 
     /**
@@ -547,8 +603,9 @@ public class JavaAwareCompilationUnit extends CompilationUnit {
 
     private void failIndexing(final File targetDir, final IOException e) {
         String detail = e.getMessage() == null || e.getMessage().isBlank() ? e.getClass().getSimpleName() : e.getMessage();
+        String where = targetDir == null ? "the compiler class output" : targetDir.toString();
         getErrorCollector().addError(Message.create(
-                "Failed to index class files in " + targetDir + " for joint compilation: " + detail, this));
+                "Failed to index class files in " + where + " for joint compilation: " + detail, this));
         throw new CompilationFailedException(getPhase(), this);
     }
 

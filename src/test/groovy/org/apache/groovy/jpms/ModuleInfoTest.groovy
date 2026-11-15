@@ -1387,6 +1387,77 @@ final class ModuleInfoTest {
     }
 
     @Test
+    void testSubclassCanRecordCompiledClassNameWithoutTargetDirectorySnapshot() {
+        def root = dir('hooked-output')
+        def srcDir = new File(root, 'src')
+        def files = []
+        [
+            'module-info.groovy': '''
+                module demo.hooked {
+                    exports com.hooked;
+                }
+            ''',
+            'demo/fresh/Fresh.java': '''
+                package demo.fresh;
+                public class Fresh {}
+            '''
+        ].each { name, text ->
+            def file = new File(srcDir, name)
+            file.parentFile.mkdirs()
+            file.text = text
+            files << file
+        }
+
+        def defaultOut = new File(root, 'default-out')
+        def defaultStubs = new File(root, 'default-stubs')
+        defaultOut.mkdirs()
+        defaultStubs.mkdirs()
+        def defaultConfig = new CompilerConfiguration(targetDirectory: defaultOut)
+        defaultConfig.jointCompilationOptions = [stubDir: defaultStubs]
+        def defaultLoader = new GroovyClassLoader(GroovyAssert.class.classLoader)
+        try {
+            def unit = new JavaAwareCompilationUnit(defaultConfig, defaultLoader)
+            unit.addSources(files as File[])
+            unit.compile()
+            throw new AssertionError('expected compilation to fail for hooked-output default')
+        } catch (CompilationFailedException e) {
+            assert e.message.contains('package is empty or does not exist: com.hooked')
+        } finally {
+            defaultLoader.close()
+        }
+
+        def hookOut = new File(root, 'hook-out')
+        def hookStubs = new File(root, 'hook-stubs')
+        hookOut.mkdirs()
+        hookStubs.mkdirs()
+        def hookConfig = new CompilerConfiguration(targetDirectory: hookOut)
+        hookConfig.jointCompilationOptions = [stubDir: hookStubs]
+        def hookLoader = new GroovyClassLoader(GroovyAssert.class.classLoader)
+        try {
+            def unit = new JavaAwareCompilationUnit(hookConfig, hookLoader) {
+                @Override
+                protected Object snapshotCompiledClassOutput() {
+                    return null
+                }
+
+                @Override
+                protected Set<String> collectCompiledClassNames(Object snapshot) {
+                    return Set.of('com.hooked.Hooked')
+                }
+            }
+            unit.addSources(files as File[])
+            unit.compile()
+            def md = descriptor(unit)
+            assert md.name() == 'demo.hooked'
+            assert md.exports()*.source() == ['com.hooked']
+            assert md.packages().contains('com.hooked')
+            assert !md.packages().contains('demo.fresh')
+        } finally {
+            hookLoader.close()
+        }
+    }
+
+    @Test
     void testUnrelatedAutomaticModulesWithSplitPackageDoNotFailResolution() {
         // Both automatic JARs share conflict.pkg and provide ToolProvider.
         // The compiling module uses that service, so Configuration.resolveAndBind
