@@ -297,7 +297,7 @@ public class GroovyCodeSource {
      * answers the {@code Customizer} probe without delegation.
      *
      * @param generated {@code true} when Groovy minted the name
-     * @since 7.0.0
+     * @since 6.0.1
      */
     public void setNameGenerated(boolean generated) {
         nameGenerated = generated;
@@ -307,7 +307,7 @@ public class GroovyCodeSource {
      * Indicates whether {@link #getName()} was chosen by Groovy.
      *
      * @return {@code true} when the name was generated for this source
-     * @since 7.0.0
+     * @since 6.0.1
      */
     public boolean isNameGenerated() {
         return nameGenerated;
