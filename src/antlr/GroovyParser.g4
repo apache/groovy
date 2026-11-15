@@ -96,17 +96,6 @@ options {
     }
 
     /**
-     * True when the source file is a modular compilation unit
-     * ({@code module-info.groovy} or {@code module-info.java}).
-     * Set before parsing; the two compilation-unit alternatives are mutually exclusive.
-     */
-    private boolean moduleDescriptor;
-
-    public void setModuleDescriptor(final boolean moduleDescriptor) {
-        this.moduleDescriptor = moduleDescriptor;
-    }
-
-    /**
      * JPMS directive keywords ({@code requires}, {@code exports}, {@code to}, …)
      * stay ordinary identifiers outside a module declaration. Inside one, the
      * next token is that keyword only when it is an identifier spelling {@code text}.
@@ -137,9 +126,18 @@ options {
 }
 
 // starting point for parsing a groovy file
+// A separate start rule for module-info keeps this decision out of
+// compilationUnit, so a failed import (or other script syntax) still
+// reports the local unexpected token rather than a span from the start
+// of the compilation unit (for example, "import long" must stay
+// Unexpected input: 'long', not 'import long').
 compilationUnit
-    :   {moduleDescriptor}? NL* modularCompilationUnit EOF
-    |   {!moduleDescriptor}? NL* (packageDeclaration sep?)? scriptStatements? EOF
+    :   NL* (packageDeclaration sep?)? scriptStatements? EOF
+    ;
+
+// starting point for a JPMS module descriptor (module-info.groovy / module-info.java)
+moduleCompilationUnit
+    :   NL* modularCompilationUnit EOF
     ;
 
 // JLS 7.3 ModularCompilationUnit: {ImportDeclaration} ModuleDeclaration
