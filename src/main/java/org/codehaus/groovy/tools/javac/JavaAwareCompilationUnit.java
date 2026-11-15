@@ -33,6 +33,7 @@ import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.control.Phases;
 import org.codehaus.groovy.control.ResolveVisitor;
 import org.codehaus.groovy.control.SourceUnit;
+import org.codehaus.groovy.control.messages.Message;
 import org.codehaus.groovy.control.messages.SimpleMessage;
 import org.codehaus.groovy.control.messages.WarningMessage;
 import org.codehaus.groovy.tools.GroovyClass;
@@ -42,13 +43,21 @@ import org.codehaus.groovy.transform.ASTTransformationVisitor;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.attribute.BasicFileAttributes;
+import java.nio.file.attribute.FileTime;
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 import static org.codehaus.groovy.control.CompilerConfiguration.MEM_STUB;
@@ -198,8 +207,16 @@ public class JavaAwareCompilationUnit extends CompilationUnit {
                             "memClassOutput requires the default javac joint compiler", this));
                 }
                 addJavaCompilationUnits(stubGenerator.getJavaStubCompilationUnitSet()); // add java stubs
+                File targetDir = this.configuration.getTargetDirectory();
+                Map<String, ClassFileStamp> before;
+                try {
+                    before = snapshotClassFiles(targetDir);
+                } catch (IOException e) {
+                    failIndexing(targetDir, e);
+                    return;
+                }
                 compiler.compile(new ArrayList<>(javaSources), this);
-                indexCompiledClassFiles();
+                indexCompiledClassFiles(before);
                 warnIfShadowed();
             } finally {
                 if (!keepStubs) stubGenerator.clean();
@@ -399,13 +416,44 @@ public class JavaAwareCompilationUnit extends CompilationUnit {
 
     /**
      * After javac writes sibling .java classes (and Groovy stubs) to the target
-     * directory, record their binary names so module verification and
-     * {@code ModulePackages} treat them as members of the module being compiled.
+     * directory, record the binary names of class files written by this
+     * invocation so module verification and {@code ModulePackages} treat them
+     * as members of the module being compiled. A reused target directory may
+     * already contain leftover {@code .class} files; those are ignored unless
+     * javac replaces them, or they are an inner class of a just-compiled source.
      */
-    private void indexCompiledClassFiles() {
+    private void indexCompiledClassFiles(final Map<String, ClassFileStamp> before) {
         File targetDir = this.configuration.getTargetDirectory();
         if (targetDir == null || !targetDir.isDirectory()) {
             return;
+        }
+        Map<String, ClassFileStamp> after;
+        try {
+            after = snapshotClassFiles(targetDir);
+        } catch (IOException e) {
+            failIndexing(targetDir, e);
+            return;
+        }
+        Set<String> compiledSources = binaryNamesFromJavaSources();
+        for (Map.Entry<String, ClassFileStamp> entry : after.entrySet()) {
+            String relative = entry.getKey();
+            ClassFileStamp previous = before.get(relative);
+            boolean written = previous == null || !previous.sameAs(entry.getValue());
+            String binary = relative.substring(0, relative.length() - 6).replace('/', '.');
+            if (written || isInnerClassOfCompiledSource(binary, compiledSources)) {
+                getAST().addCompiledClassName(binary);
+            }
+        }
+    }
+
+    /**
+     * Snapshots {@code .class} files under {@code targetDir}. An absent or
+     * non-directory path yields an empty snapshot (nothing has been written yet).
+     */
+    private Map<String, ClassFileStamp> snapshotClassFiles(final File targetDir) throws IOException {
+        Map<String, ClassFileStamp> stamps = new LinkedHashMap<>();
+        if (targetDir == null || !targetDir.isDirectory()) {
+            return stamps;
         }
         Path root = targetDir.toPath();
         try (Stream<Path> paths = Files.walk(root)) {
@@ -414,10 +462,126 @@ public class JavaAwareCompilationUnit extends CompilationUnit {
                 if (!relative.endsWith(".class")) {
                     return;
                 }
-                String binary = relative.substring(0, relative.length() - 6).replace('/', '.');
-                getAST().addCompiledClassName(binary);
+                try {
+                    stamps.put(relative, ClassFileStamp.of(path));
+                } catch (IOException e) {
+                    throw new UncheckedIOException(e);
+                }
             });
+        } catch (UncheckedIOException e) {
+            throw e.getCause();
+        }
+        return stamps;
+    }
+
+    private Set<String> binaryNamesFromJavaSources() {
+        Set<String> names = new LinkedHashSet<>();
+        for (String path : javaSources) {
+            String binary = binaryNameFromJavaSource(new File(path));
+            if (binary != null) {
+                names.add(binary);
+            }
+        }
+        return names;
+    }
+
+    private static final Pattern JAVA_PACKAGE = Pattern.compile("package\\s+([\\w.]+)\\s*;");
+    private static final Pattern BLOCK_COMMENT = Pattern.compile("/\\*.*?\\*/", Pattern.DOTALL);
+
+    /**
+     * Top-level binary name inferred from a {@code .java} file's package
+     * declaration and file name. {@code module-info.java} is skipped.
+     * Inner classes are recognized separately by prefix ({@code Top$Inner}).
+     */
+    private static String binaryNameFromJavaSource(final File file) {
+        String name = file.getName();
+        if (!name.endsWith(".java")) {
+            return null;
+        }
+        String simple = name.substring(0, name.length() - 5);
+        if ("module-info".equals(simple)) {
+            return null;
+        }
+        String pkg = packageNameFromJavaSource(file);
+        if (pkg == null || pkg.isEmpty()) {
+            return simple;
+        }
+        return pkg + "." + simple;
+    }
+
+    private static String packageNameFromJavaSource(final File file) {
+        String content;
+        try {
+            content = Files.readString(file.toPath(), StandardCharsets.UTF_8);
         } catch (IOException ignored) {
+            // The snapshot of new/replaced files is the primary index; this is a supplement.
+            return null;
+        }
+        content = BLOCK_COMMENT.matcher(content).replaceAll(" ");
+        for (String line : content.split("\\R")) {
+            int comment = line.indexOf("//");
+            if (comment >= 0) {
+                line = line.substring(0, comment);
+            }
+            String trimmed = line.trim();
+            if (trimmed.isEmpty() || trimmed.startsWith("@")) {
+                continue;
+            }
+            Matcher matcher = JAVA_PACKAGE.matcher(trimmed);
+            if (matcher.matches()) {
+                return matcher.group(1);
+            }
+            break;
+        }
+        return null;
+    }
+
+    private static boolean isInnerClassOfCompiledSource(final String binary, final Set<String> compiledSources) {
+        for (String top : compiledSources) {
+            if (binary.equals(top) || binary.startsWith(top + "$")) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private void failIndexing(final File targetDir, final IOException e) {
+        String detail = e.getMessage() == null || e.getMessage().isBlank() ? e.getClass().getSimpleName() : e.getMessage();
+        getErrorCollector().addError(Message.create(
+                "Failed to index class files in " + targetDir + " for joint compilation: " + detail, this));
+        throw new CompilationFailedException(getPhase(), this);
+    }
+
+    /**
+     * Identity of a class file used to detect replacements in a reused target directory.
+     */
+    private static final class ClassFileStamp {
+        private final long size;
+        private final FileTime lastModified;
+        private final Object fileKey;
+
+        private ClassFileStamp(final long size, final FileTime lastModified, final Object fileKey) {
+            this.size = size;
+            this.lastModified = lastModified;
+            this.fileKey = fileKey;
+        }
+
+        static ClassFileStamp of(final Path path) throws IOException {
+            BasicFileAttributes attributes = Files.readAttributes(path, BasicFileAttributes.class);
+            return new ClassFileStamp(attributes.size(), attributes.lastModifiedTime(), attributes.fileKey());
+        }
+
+        boolean sameAs(final ClassFileStamp other) {
+            if (other == null) {
+                return false;
+            }
+            if (size != other.size || !lastModified.equals(other.lastModified)) {
+                return false;
+            }
+            if (fileKey != null && other.fileKey != null) {
+                return fileKey.equals(other.fileKey);
+            }
+            return true;
         }
     }
 

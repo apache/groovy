@@ -1339,6 +1339,98 @@ final class ModuleInfoTest {
     }
 
     @Test
+    void testStaleClassInTargetDirectoryIsNotPartOfTheModule() {
+        def root = dir('stale-target')
+        def seed = { File outDir ->
+            def stale = new File(outDir, 'com/stale')
+            stale.mkdirs()
+            def cw = new ClassWriter(0)
+            cw.visit(Opcodes.V17, Opcodes.ACC_PUBLIC, 'com/stale/Old', null, 'java/lang/Object', null)
+            cw.visitEnd()
+            new File(stale, 'Old.class').bytes = cw.toByteArray()
+        }
+        try {
+            compileJoint(root, [
+                'module-info.groovy': '''
+                    module demo.stale {
+                        exports com.stale;
+                        exports demo.fresh;
+                    }
+                ''',
+                'demo/fresh/Fresh.java': '''
+                    package demo.fresh;
+                    public class Fresh {}
+                '''
+            ], seed)
+            throw new AssertionError('expected compilation to fail for stale-target')
+        } catch (CompilationFailedException e) {
+            assert e.message.contains('package is empty or does not exist: com.stale')
+            assert !e.message.contains('demo.fresh')
+        }
+
+        def okRoot = dir('stale-target-ok')
+        def unit = compileJoint(okRoot, [
+            'module-info.groovy': '''
+                module demo.staleok {
+                    exports demo.fresh;
+                }
+            ''',
+            'demo/fresh/Fresh.java': '''
+                package demo.fresh;
+                public class Fresh {}
+            '''
+        ], seed)
+        def md = descriptor(unit)
+        assert md.exports()*.source() == ['demo.fresh']
+        assert !md.packages().contains('com.stale')
+        assert md.packages().contains('demo.fresh')
+    }
+
+    @Test
+    void testUnrelatedAutomaticModulesWithSplitPackageDoNotFailResolution() {
+        // Both automatic JARs share conflict.pkg and provide ToolProvider.
+        // The compiling module uses that service, so Configuration.resolveAndBind
+        // would pull both JARs into the graph and fail on the split package.
+        // Configuration.resolve must not.
+        def oneDir = dir('auto-split-one')
+        compile(oneDir, [
+            'A.groovy': '''
+                package conflict.pkg
+                class A implements java.util.spi.ToolProvider {
+                    String name() { 'split-one' }
+                    int run(PrintWriter out, PrintWriter err, String... args) { 0 }
+                }
+            '''
+        ])
+        def twoDir = dir('auto-split-two')
+        compile(twoDir, [
+            'B.groovy': '''
+                package conflict.pkg
+                class B implements java.util.spi.ToolProvider {
+                    String name() { 'split-two' }
+                    int run(PrintWriter out, PrintWriter err, String... args) { 0 }
+                }
+            '''
+        ])
+        def svcOne = new File(oneDir, 'META-INF/services')
+        svcOne.mkdirs()
+        new File(svcOne, 'java.util.spi.ToolProvider').text = "conflict.pkg.A\n"
+        def svcTwo = new File(twoDir, 'META-INF/services')
+        svcTwo.mkdirs()
+        new File(svcTwo, 'java.util.spi.ToolProvider').text = "conflict.pkg.B\n"
+        def libDir = dir('auto-split-libs')
+        packJar(new File(libDir, 'auto-one-1.0.jar'), 'auto.one', oneDir)
+        packJar(new File(libDir, 'auto-two-1.0.jar'), 'auto.two', twoDir)
+        compile(dir('auto-split-app'), libDir, [
+            'module-info.groovy': '''
+                module demo.splitauto {
+                    uses java.util.spi.ToolProvider;
+                }
+            '''
+        ])
+    }
+
+    @Test
     void testOrdinaryCodeIsUnchanged() {
         // GROOVY-11896
         assertScript '''
@@ -1395,12 +1487,19 @@ final class ModuleInfoTest {
     }
 
     private CompilationUnit compileJoint(File root, Map<String, String> sources) {
+        compileJoint(root, sources, null)
+    }
+
+    private CompilationUnit compileJoint(File root, Map<String, String> sources, Closure seedTargetDirectory) {
         def srcDir = new File(root, 'src')
         def outDir = new File(root, 'out')
         def stubDir = new File(root, 'stubs')
         srcDir.mkdirs()
         outDir.mkdirs()
         stubDir.mkdirs()
+        if (seedTargetDirectory != null) {
+            seedTargetDirectory.call(outDir)
+        }
         def files = []
         sources.each { name, text ->
             def file = new File(srcDir, name)
