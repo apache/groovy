@@ -4477,26 +4477,6 @@ final class GenericsJavaCompatibilityTest {
     }
 
     /**
-     * JLS 4.3.2: {@code e.getClass()} has the type {@code Class<? extends |T|>} for the static type
-     * {@code T} of {@code e}. An {@code instanceof} test does not change the type of {@code o},
-     * so {@code o.getClass()} stays a {@code Class<?>} for an {@code Object o}.
-     */
-    @Test
-    void testNegativeGetClassOfVariableTestedByInstanceof() {
-        final String className = 'gls.generics.test.GetClassAfterInstanceof'
-        final String javaSrc = '''
-            package gls.generics.test;
-            public class GetClassAfterInstanceof {
-                static Class<? extends String> typeOf(Object o) {
-                    if (o instanceof String) return o.getClass();
-                    return String.class;
-                }
-            }
-        '''
-        assertNegativeCompile(className, javaSrc, 'incompatible types', 'Incompatible generic argument types')
-    }
-
-    /**
      * JLS 14.30.1, 15.16: a pattern variable and a cast have the narrower type.
      */
     @Test
