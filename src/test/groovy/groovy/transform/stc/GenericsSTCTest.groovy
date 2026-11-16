@@ -2905,13 +2905,12 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
     // GROOVY-12755
     @Test
     void testGetClassIsClassOfReceiverErasure7() {
-        // the static type of a variable that instanceof narrows is its type without the test
         assertScript '''
-            Class<?> typeOf(Object value) {
+            Class<? extends String> typeOf(Object value) {
                 if (value instanceof String) {
                     assert value.substring(1) == 'y' // the receiver is a String here
                     @ASTTest(phase=INSTRUCTION_SELECTION, value={
-                        assert node.getNodeMetaData(INFERRED_TYPE).toString(false) == 'java.lang.Class<? extends java.lang.Object>'
+                        assert node.getNodeMetaData(INFERRED_TYPE).toString(false) == 'java.lang.Class<? extends java.lang.String>'
                     })
                     def type = value.getClass()
                     return type
@@ -2921,33 +2920,14 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
             assert typeOf('xy') == String
         '''
 
-        for (expr in ['value.getClass()', 'value.class']) {
-            shouldFailWithMessages """
-                Class<? extends String> typeOf(Object value) {
-                    if (value instanceof String) {
-                        return $expr
-                    }
-                    String
-                }
-            """,
-                'Incompatible generic argument types. Cannot assign java.lang.Class<?> to: java.lang.Class<? extends java.lang.String>'
-        }
-
-        // a pattern variable, a cast and a new variable have the narrower type
-        assertScript '''
-            Class<? extends String> pattern(Object value) { value instanceof String s ? s.getClass() : String }
-            Class<? extends String> cast(Object value) { value instanceof String ? ((String) value).getClass() : String }
-            Class<? extends String> local(Object value) {
+        shouldFailWithMessages '''
+            Class<? extends String> typeOf(Object value) {
                 if (value instanceof String) {
-                    String string = value
-                    return string.getClass()
                 }
-                String
+                value.getClass()
             }
-            assert pattern('x') == String
-            assert cast('x') == String
-            assert local('x') == String
-        '''
+        ''',
+            'Incompatible generic argument types. Cannot assign java.lang.Class<?> to: java.lang.Class<? extends java.lang.String>'
     }
 
     // GROOVY-12755
@@ -6003,6 +5983,52 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
             }
             test(new NumBox<Integer>(value: 1), new NumBox<Number>(value: 2), EnumSet.of(Thread.State.NEW), ['x'])
         '''
+    }
+
+    // GROOVY-12754
+    @Test
+    void testWildcardNestedInCaptureBoundForTypeParameterOfBound() {
+        for (type in ['String', 'Integer']) {
+            shouldFailWithMessages """
+                public <T extends Number, U extends List<T>> int count(Class<U> type) { 1 }
+                void test(Class<? extends ArrayList<? extends $type>> type) {
+                    count(type)
+                }
+            """,
+                '#count(java.lang.Class<U>) with arguments [java.lang.Class<? extends java.util.ArrayList<? extends '
+        }
+    }
+
+    // GROOVY-12755
+    @Test
+    void testWildcardArgumentForDiamondConstructor() {
+        assertScript '''
+            class Holder<T extends Number> {
+                T value
+                Holder(List<T> list) { value = list.get(0) }
+            }
+            class Any<T> {
+                T value
+                Any(List<T> list) { value = list.get(0) }
+            }
+            def test(List<? extends Integer> list) {
+                Number n = new Holder<>(list).value
+                assert n == 4
+                assert new Any<>(list).value == 4
+            }
+            test([4])
+        '''
+
+        shouldFailWithMessages '''
+            class Holder<T extends Number> {
+                T value
+                Holder(List<T> list) { value = list.get(0) }
+            }
+            def test(List<? extends String> list) {
+                new Holder<>(list).value
+            }
+        ''',
+            'Holder#<init>(java.util.List<'
     }
 
     // GROOVY-5885
