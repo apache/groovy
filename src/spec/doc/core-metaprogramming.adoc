@@ -773,6 +773,31 @@ globally using the `ExpandoMetaClass.enableGlobally()` method before application
 include::../test/metaprogramming/ExpandoMetaClassTest.groovy[tags=emc_interface,indent=0]
 ----
 
+==== Metaclass shared with another class
+
+A class can override `getMetaClass()` to answer the metaclass of another class. Generated proxies and mocks do this:
+a subclass that stands in for a type answers the metaclass of that type, so that methods added to the type at runtime
+are found on the stand-in too.
+
+[source,groovy]
+----
+include::../test/metaprogramming/ExpandoMetaClassTest.groovy[tags=emc_shared_with_another_class,indent=0]
+----
+<1> `GreeterProxy` stands in for `Greeter` and answers the metaclass of `Greeter`
+<2> a single call site, used before and after the metaclass changes
+<3> a method added to the metaclass of `Greeter` is found on the proxy
+<4> the metaclass selects `Greeter.greet()`, and the call runs the override in `GreeterProxy`
+<5> a later change to the metaclass applies to the next call through the same call site
+
+This is supported when the receiver is an instance of the class the metaclass belongs to, usually a subclass that
+stands in for it. Method calls and property access on the receiver select the methods and properties of that class,
+including those added to its metaclass at runtime, and an override in the receiver's class runs when such a method is
+selected. A change to the metaclass applies to later calls on the receiver.
+
+What the metaclass answers for members that only the receiver's class has is not specified. This includes methods and
+properties that only the subclass declares, `super` calls in the subclass, private members and fields, and the members
+that closures and trait methods resolve.
+
 [[extension-modules]]
 === Extension modules
 ==== Extending existing classes
