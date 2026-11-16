@@ -6333,6 +6333,100 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
 
     // GROOVY-12755
     @Test
+    void testTargetTypeResultIsCheckedAgainstBoundsOfMethodReference() {
+        // the target expects a String where the type parameter of the method returns only a Number
+        for (code in [
+                'Supplier<List<String>> s = toSupplier(C::numbers)',
+                'Supplier<List<String>> s = toSupplier(C.&numbers)',
+                'Supplier<Collection<String>> s = toSupplier(C::numbers)',
+                'Supplier<Map<String, String>> s = toSupplier(C::numbersByName)',
+                'Function<Object, List<String>> f = toFunction(C::numbersOf)'
+        ]) {
+            shouldFailWithMessages """
+                import java.util.function.*
+                class C {
+                    static <T extends Number> List<T> numbers() { new ArrayList<T>() }
+                    static <T extends Number> List<T> numbersOf(Object o) { new ArrayList<T>() }
+                    static <T extends Number> Map<String, T> numbersByName() { new HashMap<String, T>() }
+                }
+                def <T> Supplier<T> toSupplier(Supplier<T> s) { s }
+                def <T, R> Function<T, R> toFunction(Function<T, R> f) { f }
+                $code
+            """,
+                'Incompatible generic argument types'
+        }
+
+        assertScript '''
+            import java.util.function.*
+            class C {
+                static <T extends Number> List<T> numbers() { new ArrayList<T>() }
+                static <T extends Number> List<T> numbersOf(Object o) { new ArrayList<T>() }
+                static <T> List<T> things() { new ArrayList<T>() }
+            }
+            def <T> Supplier<T> toSupplier(Supplier<T> s) { s }
+            def <T, R> Function<T, R> toFunction(Function<T, R> f) { f }
+            Supplier<List<Integer>> numbers = toSupplier(C::numbers)
+            Supplier<Collection<Integer>> collection = toSupplier(C::numbers)
+            Supplier<List<? extends Number>> bounded = toSupplier(C::numbers)
+            Function<Object, List<Integer>> numbersOf = toFunction(C::numbersOf)
+            Supplier<List<String>> things = toSupplier(C::things)
+            numbers.get().add(1)
+            things.get().add('x')
+            assert collection.get().isEmpty() && bounded.get().isEmpty() && numbersOf.apply('x').isEmpty()
+        '''
+    }
+
+    // GROOVY-12755
+    @Test
+    void testTargetTypeIsPassedToNestedGenericCallOfMethodReference() {
+        // the target reaches the method reference through each generic call
+        for (code in [
+                'Consumer<String> c = toConsumer(sameConsumer(C::takeNumber))',
+                'Consumer<String> c = sameConsumer(toConsumer(C::takeNumber))',
+                'Supplier<List<String>> s = toSupplier(toSupplier(C::numbers))',
+                'Function<String, String> f = toFunction(toFunction(C::sameNumber))'
+        ]) {
+            shouldFailWithMessages """
+                import java.util.function.*
+                class C {
+                    static <T extends Number> void takeNumber(T t) { }
+                    static <T extends Number> T sameNumber(T t) { t }
+                    static <T extends Number> List<T> numbers() { new ArrayList<T>() }
+                }
+                def <T> Consumer<T> toConsumer(Consumer<T> c) { c }
+                def <T> Consumer<T> sameConsumer(Consumer<T> c) { c }
+                def <T> Supplier<T> toSupplier(Supplier<T> s) { s }
+                def <T, R> Function<T, R> toFunction(Function<T, R> f) { f }
+                $code
+            """,
+                'Incompatible generic argument types'
+        }
+
+        assertScript '''
+            import java.util.function.*
+            class C {
+                static <T extends Number> void takeNumber(T t) { }
+                static <T extends Number> T sameNumber(T t) { t }
+                static <T extends Number> List<T> numbers() { new ArrayList<T>() }
+            }
+            def <T> Consumer<T> toConsumer(Consumer<T> c) { c }
+            def <T> Consumer<T> sameConsumer(Consumer<T> c) { c }
+            def <T> Supplier<T> toSupplier(Supplier<T> s) { s }
+            def <T, R> Function<T, R> toFunction(Function<T, R> f) { f }
+            Consumer<Integer> number = toConsumer(sameConsumer(C::takeNumber))
+            Supplier<List<Integer>> numbers = toSupplier(toSupplier(C::numbers))
+            Function<Integer, Integer> same = toFunction(toFunction(C::sameNumber))
+            Function<String, List<String>> list = toFunction(toFunction(Arrays::asList))
+            Supplier<List<String>> empty = toSupplier(toSupplier(Collections::emptyList))
+            List<List<String>> lists = Collections.singletonList(Collections.emptyList())
+            number.accept(1)
+            numbers.get().add(1)
+            assert same.apply(1) == 1 && list.apply('x') == ['x'] && empty.get().isEmpty() && lists == [[]]
+        '''
+    }
+
+    // GROOVY-12755
+    @Test
     void testTargetTypeSelectsMethodOfMethodReference() {
         // the method is selected, and its variadic parameter filled, as for a direct assignment
         assertScript '''
