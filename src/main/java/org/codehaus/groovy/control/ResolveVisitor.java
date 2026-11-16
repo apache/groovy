@@ -1036,13 +1036,19 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
      * as a class of the default package that is being compiled does, unless the
      * {@link CompilerConfiguration#DEFAULT_PACKAGE_FIRST} option is {@code false}. A miss leaves {@code type}
      * untouched and is cached by the {@link ClassNodeResolver}, so the later {@link #resolveToOuter} of the same
-     * lookup is a no-op.
+     * lookup is a no-op. If the {@link CompilerConfiguration#DEFAULT_PACKAGE_SOURCES} option is {@code false}, only
+     * a {@code .class} file is looked up and a miss is not cached, so the later {@link #resolveToOuter} can still find
+     * a source, after the default imports.
      *
      * @param type the type to resolve
      * @return {@code true} if the type was resolved
      */
     private boolean resolveFromDefaultPackage(final ClassNode type) {
-        if (compilationUnit == null || Boolean.FALSE.equals(compilationUnit.getConfiguration().getOptimizationOptions().get(CompilerConfiguration.DEFAULT_PACKAGE_FIRST))) {
+        if (compilationUnit == null) {
+            return false;
+        }
+        Map<String, Boolean> options = compilationUnit.getConfiguration().getOptimizationOptions();
+        if (Boolean.FALSE.equals(options.get(CompilerConfiguration.DEFAULT_PACKAGE_FIRST))) {
             return false;
         }
         ModuleNode module = currentClass.getModule();
@@ -1050,7 +1056,17 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
                 || type instanceof ConstructedNestedClass || type instanceof LowerCaseClass) {
             return false;
         }
-        return resolveToOuter(type);
+        if (!Boolean.FALSE.equals(options.get(CompilerConfiguration.DEFAULT_PACKAGE_SOURCES))) {
+            return resolveToOuter(type);
+        }
+        if (classNodeResolver == null)
+            classNodeResolver = new ClassNodeResolver();
+        ClassNode cn = classNodeResolver.resolveClassFile(type.getName(), compilationUnit);
+        if (cn == null) {
+            return false;
+        }
+        type.setRedirect(cn);
+        return true;
     }
 
     /**

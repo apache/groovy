@@ -27,6 +27,7 @@ import org.objectweb.asm.ClassReader
 import org.objectweb.asm.util.TraceClassVisitor
 
 import static org.codehaus.groovy.control.CompilerConfiguration.DEFAULT_PACKAGE_FIRST
+import static org.codehaus.groovy.control.CompilerConfiguration.DEFAULT_PACKAGE_SOURCES
 
 final class Groovy12555 {
 
@@ -38,6 +39,11 @@ final class Groovy12555 {
     private static final Map<String, String> NESTED_SOURCES = [
         'Proxy.groovy': 'class Proxy { static class Type { } }',
         'Caller.groovy': 'class Caller { Proxy.Type type }'
+    ]
+
+    private static final Map<String, String> HELPER_SOURCES = [
+        'Helper.groovy': 'class Helper { static String hello() { "mine" } }',
+        'Caller.groovy': 'class Caller { def run() { Helper.hello() } }'
     ]
 
     private File dir
@@ -87,6 +93,12 @@ final class Groovy12555 {
         unit.addSources(sources as File[])
         unit.compile()
         unit
+    }
+
+    private static CompilerConfiguration config(Map<String, Boolean> options) {
+        def config = new CompilerConfiguration()
+        config.optimizationOptions.putAll(options)
+        config
     }
 
     private static String text(CompilationUnit unit, String className) {
@@ -159,5 +171,62 @@ final class Groovy12555 {
         def (together, separate) = compileCallerBothWays([(DEFAULT_PACKAGE_FIRST): false], true, NESTED_SOURCES)
         assert !together.contains('java/net/Proxy$Type')
         assert separate.contains('java/net/Proxy$Type')
+    }
+
+    // with the sources left out, a compiled class of the default package still comes before a default import
+    @Test
+    void testCompiledDefaultPackageClassBeforeDefaultImportsWithoutSources() {
+        def (together, separate) = compileCallerBothWays([(DEFAULT_PACKAGE_SOURCES): false], true)
+        assert together == separate
+        assert !separate.contains('groovy/util/Factory')
+    }
+
+    // with the sources left out, a source of the default package on the class path comes after a default import
+    @Test
+    void testDefaultPackageSourceAfterDefaultImportsWithoutSources() {
+        def (together, separate) = compileCallerBothWays([(DEFAULT_PACKAGE_SOURCES): false], false)
+        assert !together.contains('groovy/util/Factory')
+        assert separate.contains('groovy/util/Factory')
+    }
+
+    // the lookup of a class file does not record a miss, so a source of the default package is still found after it
+    @Test
+    void testDefaultPackageSourceFoundWithoutSources() {
+        def (together, separate) = compileCallerBothWays([(DEFAULT_PACKAGE_SOURCES): false], false, HELPER_SOURCES)
+        assert together == separate
+    }
+
+    @Test
+    void testCompiledDefaultPackageNestedClassBeforeDefaultImportsWithoutSources() {
+        def (together, separate) = compileCallerBothWays([(DEFAULT_PACKAGE_SOURCES): false], true, NESTED_SOURCES)
+        assert together == separate
+        assert !separate.contains('java/net/Proxy$Type')
+    }
+
+    // a source in a root of a GroovyScriptEngine comes before a default import, unless the sources are left out
+    @Test
+    void testScriptEngineRootSource() {
+        write(new File(dir, 'Date.groovy'), 'class Date { }')
+        write(new File(dir, 'a.groovy'), 'new Date().getClass().name')
+        URL[] roots = [dir.toURI().toURL()]
+
+        def engine = new GroovyScriptEngine(roots, Groovy12555.classLoader)
+        assert engine.run('a.groovy', new Binding()) == 'Date'
+
+        engine = new GroovyScriptEngine(roots, Groovy12555.classLoader)
+        engine.config = config([(DEFAULT_PACKAGE_SOURCES): false])
+        assert engine.run('a.groovy', new Binding()) == 'java.util.Date'
+    }
+
+    // a class that the class loader compiled earlier takes part only when the sources do
+    @Test
+    void testClassCompiledEarlierByTheClassLoader() {
+        def shell = new GroovyShell(Groovy12555.classLoader, config([:]))
+        shell.classLoader.parseClass('class Timer { }', 'Timer.groovy')
+        assert shell.evaluate('new Timer().getClass().name') == 'Timer'
+
+        shell = new GroovyShell(Groovy12555.classLoader, config([(DEFAULT_PACKAGE_SOURCES): false]))
+        shell.classLoader.parseClass('class Timer { }', 'Timer.groovy')
+        assert shell.evaluate('new Timer().getClass().name') == 'java.util.Timer'
     }
 }
