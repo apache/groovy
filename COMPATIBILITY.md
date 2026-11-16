@@ -1127,6 +1127,26 @@ wrapped, and the exception `await` rethrows. Exceptions suppressed by a
 wrapper that `await` or a scope removes now move to the exception
 rethrown. There are no API signature changes in `groovy.concurrent`.
 
+### Groovy 6.0.1 — a lambda in a statically compiled trait reads a super trait's static accessor directly (GROOVY-12608)
+
+In a lambda in a trait annotated with `@CompileStatic`, the property form of
+a static accessor of a super trait (`cnt` for `static int getCnt()`, or for a
+static property `cnt`) is now a call of that accessor. In 6.0.0 the name was
+left for the lambda to resolve at run time: for a static property of the
+super trait that failed with a `MissingMethodException`, and for a declared
+accessor a lambda passed as a closure took the name from the closure's
+delegate when the delegate had a property of that name.
+
+**Who is affected.** A statically compiled trait that passes such a lambda
+where a closure is expected and relies on the closure's delegate to supply
+the name, as in `p.with((x) -> cnt)` where `p` has a `cnt` property: the
+lambda now reads the super trait's accessor. Use a closure (`p.with { cnt }`),
+which consults its delegate, or qualify the name (`x.cnt`).
+
+**What is unchanged.** Dynamic and `@TypeChecked` trait code, where the
+delegate of such a lambda still supplies the name; closures; and the method
+form `getCnt()`.
+
 ## The binary-compatibility check
 
 The [`subprojects/binary-compatibility/`](subprojects/binary-compatibility)
