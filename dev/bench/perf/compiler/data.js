@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1794725949909,
+  "lastUpdate": 1794814711163,
   "repoUrl": "https://github.com/apache/groovy",
   "entries": {
     "Compiler Performance": [
@@ -9760,6 +9760,63 @@ window.BENCHMARK_DATA = {
             "name": "compile@groovy-6",
             "value": 473.15999999999997,
             "range": "±22.3",
+            "unit": "ms",
+            "extra": "6.0.0"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "Scott Murphy Heiberg",
+            "username": "codeconsole",
+            "email": "scott@alwaysvip.com"
+          },
+          "committer": {
+            "name": "Paul King",
+            "username": "paulk-asert",
+            "email": "paulk@asert.com.au"
+          },
+          "id": "676988f7fe63594fde73cb5c08c07e2d6892820b",
+          "message": "GROOVY-12712: number for-await source variables per source unit\n\nThe parser desugars `for await (x in source)` into a block that declares the\niterable in a variable named `$__forAwaitSource_<n>`. The number came from a\nstatic AtomicLong shared by every compilation in the JVM, so the same file\ncompiled to different class bytes (the name is in the local variable table)\ndepending on what was compiled before it, and two parses of one file in one\nJVM gave different ASTs. AstBuilder now counts the loops of its source unit\nand passes the ordinal to a new wrapForAwaitLoop(ForStatement, long); the\none-argument overload keeps the global counter for callers outside the parser.",
+          "timestamp": "2026-11-06T16:20:24Z",
+          "url": "https://github.com/apache/groovy/commit/676988f7fe63594fde73cb5c08c07e2d6892820b"
+        },
+        "date": 1794814704711,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "compile@current",
+            "value": 367.8233333333333,
+            "range": "±13.31",
+            "unit": "ms",
+            "extra": "current"
+          },
+          {
+            "name": "compile@groovy-3",
+            "value": 548.17,
+            "range": "±181.08",
+            "unit": "ms",
+            "extra": "3.0.25"
+          },
+          {
+            "name": "compile@groovy-4",
+            "value": 469.79,
+            "range": "±123.25",
+            "unit": "ms",
+            "extra": "4.0.33"
+          },
+          {
+            "name": "compile@groovy-5",
+            "value": 367.6766666666666,
+            "range": "±19.72",
+            "unit": "ms",
+            "extra": "5.1.3"
+          },
+          {
+            "name": "compile@groovy-6",
+            "value": 387.9333333333333,
+            "range": "±20.23",
             "unit": "ms",
             "extra": "6.0.0"
           }
