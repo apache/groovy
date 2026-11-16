@@ -2476,6 +2476,12 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
                         }
                         if (GenericsUtils.hasUnresolvedGenerics(actual)) actual = applyGenericsContext(spec, actual);
                     }
+                    if (functor != null && functor.typeParameters() != null && GenericsUtils.hasUnresolvedGenerics(actual)) {
+                        // a type parameter that the SAM's parameters leave open takes its type from what the SAM returns
+                        Map<GenericsTypeName, GenericsType> returned = typeArgumentsFromTarget(functor.typeParameters(), actual, expected);
+                        if (!keepsBounds(functor.typeParameters(), returned)) return false;
+                        actual = applyGenericsContext(returned, actual);
+                    }
                     if (argument instanceof MethodPointerExpression && GenericsUtils.hasUnresolvedGenerics(actual)) continue; // its parameters were checked
                     actual = wrapTypeIfNecessary(actual);
                     if (!isAssignableTo(actual, wrapTypeIfNecessary(expected)) || !isSubtypeWithoutConversion(actual, expected)
@@ -2492,7 +2498,10 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
                     || !isSubtypeWithoutConversion(argumentType, parameterType)
                     // a wildcard is not within the type argument that the target gives the parameter
                     || (!GenericsUtils.hasUnresolvedGenerics(argumentType)
-                        && (concreteArgumentContainsWildcard(parameterType, argumentType) || upperBoundEscapes(parameterType, argumentType)))) {
+                        && (concreteArgumentContainsWildcard(parameterType, argumentType) || upperBoundEscapes(parameterType, argumentType)))
+                    // a nested generic call that its own arguments leave open
+                    || (argument instanceof MethodCall && GenericsUtils.hasUnresolvedGenerics(argumentType)
+                        && hasIncompatibleGenerics(parameterType, argumentType))) {
                 // a nested generic call or spread expression is typed by the parameter in turn
                 if (!isTypedByTarget(parameterType, argumentType, argument)) return false;
             }
@@ -2505,6 +2514,33 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
             reference.putNodeMetaData(CLOSURE_ARGUMENTS, GenericsUtils.parameterizeSAM(functionalType).getV1());
         });
         return true;
+    }
+
+    /**
+     * The type arguments that {@code targetType} gives the type parameters named in {@code type},
+     * a wildcard taken as its bound. Empty if {@code type} is not a {@code targetType}.
+     */
+    private static Map<GenericsTypeName, GenericsType> typeArgumentsFromTarget(final GenericsType[] typeParameters, final ClassNode type, final ClassNode targetType) {
+        Map<GenericsTypeName, GenericsType> connections = new HashMap<>();
+        ClassNode viewed = type;
+        if (!type.isGenericsPlaceHolder() && !type.equals(targetType)) {
+            if (!implementsInterfaceOrIsSubclassOf(type, targetType)) return connections;
+            viewed = GenericsUtils.parameterizeType(type, targetType);
+        }
+        extractGenericsConnections(connections, targetType, viewed);
+        Set<String> names = new HashSet<>();
+        for (GenericsType tp : typeParameters) names.add(tp.getName());
+        connections.keySet().removeIf(name -> !names.contains(name.getName()));
+        connections.values().removeIf(GenericsType::isPlaceholder);
+        for (Map.Entry<GenericsTypeName, GenericsType> entry : connections.entrySet()) {
+            GenericsType value = entry.getValue();
+            if (value.isWildcard()) {
+                ClassNode bound = value.getLowerBound() != null ? value.getLowerBound()
+                        : value.getUpperBounds() != null ? value.getUpperBounds()[0] : OBJECT_TYPE;
+                entry.setValue(bound.asGenericsType());
+            }
+        }
+        return connections;
     }
 
     /**
