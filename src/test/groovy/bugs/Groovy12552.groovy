@@ -26,6 +26,8 @@ import org.junit.jupiter.api.Test
 import org.objectweb.asm.ClassReader
 import org.objectweb.asm.util.TraceClassVisitor
 
+import static groovy.test.GroovyAssert.assertScript
+
 final class Groovy12552 {
 
     private File dir
@@ -135,5 +137,36 @@ final class Groovy12552 {
             assert text.count('INVOKEVIRTUAL p/Impl.setName (Ljava/lang/String;)V') == 2
             assert text.contains('INVOKEVIRTUAL p/Impl.getName ()Ljava/lang/String;')
         }
+    }
+
+    // where the interface declares a wider type than the property, calling the accessor gives the
+    // property's type, as reading the property does, and the overload is chosen by that type
+    @Test
+    void testAccessorOfPropertyNarrowerThanInterfaceMethod() {
+        assertScript '''
+            interface Named { Object getName() }
+            class Base implements Named { String name }
+            class Impl extends Base {}
+            interface Holder<T> { T getValue() }
+            class HolderBase implements Holder<Number> { Integer value }
+            class HolderImpl extends HolderBase {}
+
+            String h(Object o) { 'Object' }
+            String h(String s) { 'String' }
+            String h(Number n) { 'Number' }
+            String h(Integer i) { 'Integer' }
+
+            @groovy.transform.CompileStatic
+            void test() {
+                Impl i = new Impl(name: 'n')
+                assert h(i.getName()) == 'String'
+                assert h(i.name) == 'String'
+                assert i.getName().toUpperCase() == 'N'
+                HolderImpl hi = new HolderImpl(value: 1)
+                assert h(hi.getValue()) == 'Integer'
+                assert h(hi.value) == 'Integer'
+            }
+            test()
+        '''
     }
 }
