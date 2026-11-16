@@ -2032,13 +2032,19 @@ other type.
   - **Calls that were accepted are rejected.** A method whose type parameter
     has a bound that the target does not keep compiled, and failed when
     called: `Consumer<String> c = toConsumer(C::takeNumber)` for
-    `<T extends Number> void takeNumber(T t)`. So did a method whose other
+    `<T extends Number> void takeNumber(T t)`. The bound is also checked
+    where only the result of the method names the type parameter,
+    `Supplier<List<String>> s = toSupplier(C::numbers)` for
+    `<T extends Number> List<T> numbers()`, which let a `String` be added to
+    a list of numbers, and where the reference goes through a second generic
+    call, `toConsumer(sameConsumer(C::takeNumber))`. So did a method whose other
     parameters or return type do not fit the type arguments of its receiver:
     `BiFunction<List<String>, Integer, Boolean> f = toBiFunction(List::add)`
     added an `Integer` to a `List<String>`, and
     `Function<List<Integer>, String> f = toFunction(List::first)` returned an
     `Integer` as a `String`. These are now compile errors,
-    `Incompatible generic argument types`, as the first two are in Java.
+    `Incompatible generic argument types`, as their Java equivalents are
+    (`List::first` is a Groovy method).
     Declare the functional interface with the types that the method accepts
     and returns.
 - **A constructor call with a diamond infers the type arguments of the class
