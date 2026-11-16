@@ -85,10 +85,13 @@ NOTE: As in Java, a type of the same package shadows a default import, and that 
 a default-package class on the class path, or a `.groovy` source on the source path of the class loader, with the
 simple name of a default-import type is used in place of that type by default-package code. The `groovy` command
 uses the current directory as the class path when none is given, so a `Timer.groovy` next to a script stands for
-`Timer` in that script, where `java.util.Timer` otherwise would. Use the fully qualified name where the default
-import is meant, or set the optimization option `defaultPackageFirst` to `false` (system property
-`groovy.resolve.default.package.first`), which restores the order of versions before 7.0, where a default import
-came before a class of the default package found on the class path.
+`Timer` in that script, where `java.util.Timer` otherwise would. The same holds for a source in a root of a
+`GroovyScriptEngine`, and for a class compiled earlier by the class loader of a `GroovyShell` or a
+`GroovyScriptEngine` that is reused. Use the fully qualified name where the default import is meant. Setting the
+optimization option `defaultPackageSources` to `false` (system property `groovy.resolve.default.package.sources`)
+leaves only compiled `.class` files in place of a default import, and setting `defaultPackageFirst` to `false`
+(system property `groovy.resolve.default.package.first`) restores the order of versions before 7.0, where a default
+import came before a class of the default package found on the class path.
 
 === Simple import
 

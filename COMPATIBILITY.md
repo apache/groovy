@@ -1821,32 +1821,65 @@ the other scripts, where `groovy.util.Node`, `java.util.Timer` and
 `java.lang.Math` did, and a sibling source that does not compile is now a
 compile error for a script that uses its name. The roots of a
 `GroovyScriptEngine`, and so of groovlets, are source paths of the same kind.
-Rename the file, give it a package, or use the fully qualified name of the
-default-import type; or set the optimization option `defaultPackageFirst` to
-`false` to restore the previous order, through the system property
+A script there records a dependency only on the class a name resolved to, so
+a script that resolved `Date` to `java.util.Date` is not recompiled when a
+`Date.groovy` appears in a root: the same engine then gives `java.util.Date`
+to that script and the root's `Date` to a script compiled after it, and a
+script that resolved `Date` to the root's `Date.groovy` keeps it after the
+file is deleted, until the engine is recreated. The lookup also takes in the
+classes that the class loader has already compiled or loaded, so in a
+`GroovyShell` or `GroovyScriptEngine` that is reused, and in groovysh or the
+console, a name resolves to a default-package class compiled earlier by the
+same loader, such as a `Timer` from a `Timer.groovy` parsed before, and to
+the default import while there is none.
+
+**Remedies.** Rename the file, give it a package, or use the fully qualified
+name of the default-import type. Set the optimization option
+`defaultPackageSources` to `false` to look up only the `.class` files of the
+default package before the default imports: a compiled class still shadows a
+default import, while a source of the default package, and a class compiled
+earlier by the class loader, are found only after the default imports, as
+before. Set the optimization option `defaultPackageFirst` to `false` to
+restore the previous order altogether; `defaultPackageSources` is then
+ignored. Either can be set through its system property,
+`groovy.resolve.default.package.sources=false` or
 `groovy.resolve.default.package.first=false`, a configuration script, or, in
-Gradle, `groovyOptions.optimizationOptions['defaultPackageFirst'] = false`.
-Only the last of these reaches the compiler from Gradle, which replaces the
+Gradle, `groovyOptions.optimizationOptions['defaultPackageSources'] = false`
+or `groovyOptions.optimizationOptions['defaultPackageFirst'] = false`. Only
+the last of these reaches the compiler from Gradle, which replaces the
 compiler's optimization options with that map after the configuration script
-has run. A compilation unit of the default package also pays one class-path
+has run. An incremental Gradle build gives the same result whatever
+`defaultPackageSources` is, since the classes it does not recompile are
+`.class` files in its output directory and its source directories are not on
+the compile class path.
+
+**Cost.** A compilation unit of the default package also pays one class-path
 lookup per default-import type it names, as a unit of a named package always
 has; a `GroovyShell`, `Eval` or `GroovyScriptEngine` that compiles many small
 scripts pays it for each of them, since the lookup cache is per compilation
-unit. Code in a named package, and default-package code whose class path has
-no such class or source, resolve as before. The option is the only API
+unit. A `GroovyScriptEngine` also looks each such name up in its roots, two
+more root lookups per name in each compile, unless `defaultPackageSources` is
+`false`.
+
+Code in a named package, and default-package code whose class path has no
+such class or source, resolve as before. The two options are the only API
 change.
 
 ### Groovy 6.0.1 — the default-package lookup before the default imports is an opt-in (GROOVY-12555)
 
-The change described under Groovy 7 is in 6.0.1 behind the same option, off
-by default: the resolution order of 6.0.0 is unchanged unless the
-optimization option `defaultPackageFirst` is `true`, through the system
-property `groovy.resolve.default.package.first=true`, a configuration script,
-or, in Gradle, `groovyOptions.optimizationOptions['defaultPackageFirst'] = true`,
+The change described under Groovy 7 is in 6.0.1 behind the same two
+options, both off by default: the resolution order of 6.0.0 is unchanged
+unless the optimization option `defaultPackageFirst` is `true`, and with it
+only the compiled classes of the default package come before the default
+imports unless `defaultPackageSources` is `true` as well. Set them through
+the system properties `groovy.resolve.default.package.first=true` and
+`groovy.resolve.default.package.sources=true`, a configuration script, or,
+in Gradle, `groovyOptions.optimizationOptions['defaultPackageFirst'] = true`,
 the only one of the three that Gradle passes on to the compiler. An
 incremental build that compiles a default-package class against previously
-compiled classes of the default package needs the option for the same source
-to compile to the same class as in a full build.
+compiled classes of the default package needs `defaultPackageFirst` for the
+same source to compile to the same class as in a full build, and does not
+need `defaultPackageSources`.
 
 ## The binary-compatibility check
 
