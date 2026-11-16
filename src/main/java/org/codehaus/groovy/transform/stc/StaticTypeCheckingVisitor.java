@@ -2456,14 +2456,18 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
                 }
                 if (expected == null || GenericsUtils.hasUnresolvedGenerics(expected)) continue;
                 ClassNode inferred = argument instanceof MethodPointerExpression ? getMethodPointerReturnType(argument) : getInferredReturnType(argument);
-                if (inferred == null) return false; // what the argument returns is not known
+                // a method pointer to a method that returns its type parameter has no type of its own for what
+                // it returns; the methods that fit give it
+                boolean declared = inferred == null && fitting != null && !fitting.isEmpty()
+                        && fitting.stream().allMatch(f -> f.returnType() != null);
+                if (inferred == null && !declared) return false; // what the argument returns is not known
                 // the reference was typed before the target gave the SAM's parameters, so the type
                 // that each method that fits returns is taken from them; each must fit the target
-                List<FunctorSignature> functors = fitting != null && fitting.size() > 1
+                List<FunctorSignature> functors = declared ? fitting : fitting != null && fitting.size() > 1
                         && fitting.stream().anyMatch(f -> f.returnType() != null && GenericsUtils.hasUnresolvedGenerics(f.returnType()))
                         ? fitting : fitting != null && fitting.size() == 1 ? fitting : Collections.singletonList(null);
                 for (FunctorSignature functor : functors) {
-                    ClassNode actual = inferred;
+                    ClassNode actual = declared ? functor.returnType() : inferred;
                     if (functor != null) {
                         // a type parameter of the referenced method takes its type from the SAM's parameters
                         Map<GenericsTypeName, GenericsType> spec = new HashMap<>();

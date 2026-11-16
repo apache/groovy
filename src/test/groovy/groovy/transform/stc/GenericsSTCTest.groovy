@@ -6171,11 +6171,14 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
             Consumer<Integer> instance = toConsumer(new C()::takeNumberInstance)
             Consumer<List<Integer>> numbers = toConsumer(C::takeNumbers)
             UnaryOperator<Integer> same = toUnaryOperator(C::sameNumber)
+            UnaryOperator<Integer> samePointer = toUnaryOperator(C.&sameNumber)
             BinaryOperator<String> max = toBinaryOperator(C::max)
+            BinaryOperator<String> maxPointer = toBinaryOperator(C.&max)
             number.accept(1)
             instance.accept(1)
             numbers.accept([1])
             assert same.apply(1) == 1 && max.apply('a', 'b') == 'b'
+            assert samePointer.apply(1) == 1 && maxPointer.apply('a', 'b') == 'b'
         '''
     }
 
