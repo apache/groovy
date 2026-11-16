@@ -456,4 +456,76 @@ class LoopsSTCTest extends StaticTypeCheckingTestCase {
             }
         '''
     }
+
+    // GROOVY-12767
+    @Test
+    void testForAwaitLoopElementType() {
+        assertScript '''
+            import java.util.concurrent.Flow
+
+            int fromList(List<Integer> source) {
+                int sum = 0
+                for await (Integer x in source) { sum += x }
+                for await (x in source) { sum += x.intValue() }
+                sum
+            }
+            int fromIterator(Iterator<Integer> source) {
+                int sum = 0
+                for await (x in source) { sum += x.intValue() }
+                sum
+            }
+            int fromArray(Integer[] source) {
+                int sum = 0
+                for await (int x in source) { sum += x }
+                for await (x in source) { sum += x.intValue() }
+                sum
+            }
+            int fromPublisher(Flow.Publisher<Integer> source) {
+                int sum = 0
+                for await (Integer x in source) { sum += x }
+                for await (x in source) { sum += x.intValue() }
+                sum
+            }
+            <T extends Number> int fromBounded(Iterable<T> source) {
+                int sum = 0
+                for await (x in source) { sum += x.intValue() }
+                sum
+            }
+
+            assert fromList([1, 2]) == 6
+            assert fromIterator([1, 2].iterator()) == 3
+            assert fromArray(new Integer[]{1, 2}) == 6
+            assert fromBounded([1L, 2L]) == 3
+        '''
+    }
+
+    // GROOVY-12767
+    @Test
+    void testForAwaitLoopElementTypeMismatch() {
+        shouldFailWithMessages '''
+            void test(List<Integer> source) {
+                for await (Date d in source) { }
+            }
+        ''',
+        'Cannot loop with element of type java.util.Date with collection of type java.lang.Iterable<java.lang.Integer>'
+    }
+
+    // GROOVY-12767
+    @Test
+    void testForAwaitLoopElementTypeUnknown() {
+        assertScript '''
+            def test(source) {
+                def types = []
+                for await (x in source) { types << x.class.simpleName }
+                types
+            }
+            assert test([1, 'a']) == ['Integer', 'String']
+        '''
+        shouldFailWithMessages '''
+            void test(source) {
+                for await (x in source) { x.intValue() }
+            }
+        ''',
+        'Cannot find matching method java.lang.Object#intValue()'
+    }
 }
