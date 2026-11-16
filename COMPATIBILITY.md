@@ -1206,13 +1206,15 @@ there.
 the trait's backing field; private and static fields of the trait; and
 `getName()` and `setName(v)`.
 
-### Groovy 7 — a lambda in a statically compiled trait reads a super trait's static accessor directly (GROOVY-12608)
+### Groovy 6.0.1 — a lambda in a statically compiled trait reads a super trait's static accessor directly (GROOVY-12608)
 
 In a lambda in a trait annotated with `@CompileStatic`, the property form of
-a static accessor that a super trait declares (`cnt` for `static int getCnt()`)
-is now a call of that accessor. Before, such a lambda failed at run time with
-a `MissingMethodException`, unless it was passed as a closure whose delegate
-had a property of that name.
+a static accessor of a super trait (`cnt` for `static int getCnt()`, or for a
+static property `cnt`) is now a call of that accessor. In 6.0.0 the name was
+left for the lambda to resolve at run time: for a static property of the
+super trait that failed with a `MissingMethodException`, and for a declared
+accessor a lambda passed as a closure took the name from the closure's
+delegate when the delegate had a property of that name.
 
 **Who is affected.** A statically compiled trait that passes such a lambda
 where a closure is expected and relies on the closure's delegate to supply
