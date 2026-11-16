@@ -827,11 +827,14 @@ include::../test/SyntaxTest.groovy[tags=array_3,indent=0]
 
 === Java-style array initialization
 
-Groovy has always supported literal list/array definitions using square brackets
-and has avoided Java-style curly braces so as not to conflict with closure definitions.
-In the case where the curly braces come immediately after an array type declaration however,
-there is no ambiguity with closure definitions,
-so Groovy 3 and above support that variant of the Java array initialization expression.
+Groovy has always supported array initialization using square brackets. Since
+Groovy 3, an array expression can use curly braces, like this: `new int[]{1}`.
+Groovy 6 added support for multi-dimension expressions: `new int[][]{{},{1},{2,3}}`.
+Groovy 7 extended this to short-form declarations: `int[][] two_d = {{},{1},{2,3}}`.
+
+Curly braces have traditionally been used with closure definitions. In the case
+where the curly braces come immediately after an array type declaration however,
+there is no ambiguity with closure definitions, except for auto-promotion cases.
 
 Examples:
 
@@ -839,11 +842,13 @@ Examples:
 --------------------------------------
 def primes = new int[] {2, 3, 5, 7, 11}
 assert primes.size() == 5 && primes.sum() == 28
-assert primes.class.name == '[I'
 
 def pets = new String[] {'cat', 'dog'}
 assert pets.size() == 2 && pets.sum() == 'catdog'
-assert pets.class.name == '[Ljava.lang.String;'
+
+String[] javaBooks = {'Java in Action'}
+assert javaBooks.length == 1
+assert javaBooks.every(s -> s.contains('Java'))
 
 // traditional Groovy alternative still supported
 String[] groovyBooks = [ 'Groovy in Action', 'Making Java Groovy' ]
