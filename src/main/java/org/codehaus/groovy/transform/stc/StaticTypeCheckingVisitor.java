@@ -29,6 +29,7 @@ import groovy.transform.TypeCheckingMode;
 import groovy.transform.stc.ClosureParams;
 import groovy.transform.stc.ClosureSignatureConflictResolver;
 import groovy.transform.stc.ClosureSignatureHint;
+import org.apache.groovy.runtime.async.AsyncSupport;
 import org.apache.groovy.util.SystemUtil;
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.ast.ASTNode;
@@ -149,6 +150,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.StringJoiner;
 import java.util.TreeSet;
+import java.util.concurrent.Flow;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.BiPredicate;
 import java.util.function.Consumer;
@@ -420,6 +422,8 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     protected static final ClassNode MAP_ENTRY_TYPE = ClassHelper.make(Map.Entry.class);
     /** Cached {@link Iterable} type. */
     protected static final ClassNode ITERABLE_TYPE = ClassHelper.ITERABLE_TYPE;
+    private static final ClassNode ASYNC_SUPPORT_TYPE = ClassHelper.make(AsyncSupport.class);
+    private static final ClassNode FLOW_PUBLISHER_TYPE = ClassHelper.make(Flow.Publisher.class);
 
     private static final List<ClassNode> TUPLE_TYPES = Arrays.stream(ClassHelper.TUPLE_CLASSES).map(ClassHelper::makeWithoutCaching).collect(Collectors.toList());
 
@@ -3289,6 +3293,36 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
     }
 
     /**
+     * Returns {@code Iterable<E>} for the call a {@code for await} loop makes to
+     * convert its source, {@code AsyncSupport.toIterable(source)}, where {@code E}
+     * is the element type of an array, {@code Iterable}, {@code Iterator} or
+     * {@code Flow.Publisher} source. The method declares {@code <T> Iterable<T>}
+     * and takes an {@code Object}, so nothing else gives {@code T} a type.
+     *
+     * @return the type, or {@code null} for another method or kind of source
+     */
+    private static ClassNode forAwaitIterableType(final MethodNode method, final ClassNode[] argumentTypes) {
+        if (argumentTypes.length != 1 || !"toIterable".equals(method.getName())
+                || !ASYNC_SUPPORT_TYPE.equals(method.getDeclaringClass())) {
+            return null;
+        }
+        ClassNode sourceType = argumentTypes[0];
+        ClassNode elementType;
+        if (sourceType.isArray()) {
+            elementType = sourceType.getComponentType();
+            if (isPrimitiveType(elementType)) return null; // not a source the conversion accepts
+        } else if (isOrImplements(sourceType, ITERABLE_TYPE) || isOrImplements(sourceType, Iterator_TYPE)) {
+            elementType = inferLoopElementType(sourceType);
+        } else if (isOrImplements(sourceType, FLOW_PUBLISHER_TYPE)) {
+            ClassNode publisher = GenericsUtils.parameterizeType(sourceType, FLOW_PUBLISHER_TYPE);
+            elementType = getCombinedBoundType(publisher.getGenericsTypes()[0]);
+        } else {
+            return null;
+        }
+        return GenericsUtils.makeClassSafe0(ITERABLE_TYPE, wrapTypeIfNecessary(elementType).asGenericsType());
+    }
+
+    /**
      * Indicates whether a second pass is needed after visiting a control structure.
      */
     protected boolean isSecondPassNeededForControlStructure(final Map<VariableExpression, ClassNode> startTypes, final Map<VariableExpression, List<ClassNode>> oldTracker) {
@@ -4211,6 +4245,10 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
                                 if (rt != null && implementsInterfaceOrIsSubclassOf(rt, returnType)) {
                                     returnType = rt;
                                 }
+                            }
+                            ClassNode forAwaitType = forAwaitIterableType(targetMethod, args);
+                            if (forAwaitType != null) {
+                                returnType = forAwaitType;
                             }
                             storeType(call, returnType);
                         }
