@@ -1189,6 +1189,14 @@ import groovy.transform.stc.FirstParam
             }
             // end::stc_generics_raw_element_fail[]
         ''', 'Cannot return value of type java.lang.Object for method returning java.lang.Integer'
+
+        shouldFailWithMessages '''
+            // tag::stc_generics_raw_bound_fail[]
+            List<? extends Map<String, Object>> rows(List<? extends Map> raw) {
+                raw                                     // fails
+            }
+            // end::stc_generics_raw_bound_fail[]
+        ''', 'Incompatible generic argument types. Cannot assign java.util.List<? extends java.util.Map> to: java.util.List<? extends java.util.Map<java.lang.String, java.lang.Object>>'
     }
 
     @Test
@@ -1204,6 +1212,34 @@ import groovy.transform.stc.FirstParam
             assert totals.a == 1
             assert more == [3]
         '''
+    }
+
+    @Test
+    void testDiamondTypeArgumentsFromTheArguments() {
+        assertScript '''
+            // tag::stc_generics_diamond_arguments[]
+            class Holder<T extends Number> {
+                T value
+                Holder(List<T> list) { value = list.get(0) }
+            }
+            Number first(List<? extends Integer> list) {
+                new Holder<>(list).value                // <1>
+            }
+            // end::stc_generics_diamond_arguments[]
+            assert first([4]) == 4
+        '''
+
+        shouldFailWithMessages '''
+            class Holder<T extends Number> {
+                T value
+                Holder(List<T> list) { value = list.get(0) }
+            }
+            // tag::stc_generics_diamond_arguments_fail[]
+            def first(List<String> list) {
+                new Holder<>(list).value                // fails
+            }
+            // end::stc_generics_diamond_arguments_fail[]
+        ''', 'Cannot call Holder#<init>(java.util.List<java.lang.Number>) with arguments [java.util.List<java.lang.String>]'
     }
 
     @Test
@@ -1228,6 +1264,123 @@ import groovy.transform.stc.FirstParam
             }
             // end::stc_generics_method_fail[]
         ''', '#first(java.util.List<T>) with arguments [java.util.List<java.lang.String>]'
+    }
+
+    @Test
+    void testGenericMethodCallWithWildcardArgument() {
+        assertScript '''
+            // tag::stc_generics_method_wildcard[]
+            <T extends Number> T first(List<T> list) { list.get(0) }
+
+            Number firstOf(List<? extends Integer> ints) {
+                first(ints)                             // <1>
+            }
+            // end::stc_generics_method_wildcard[]
+            assert firstOf([4, 5]) == 4
+        '''
+
+        shouldFailWithMessages '''
+            // tag::stc_generics_method_wildcard_fail[]
+            <T extends Integer> T narrow(List<T> list) { list.get(0) }
+
+            def narrowOf(List<? extends Number> numbers) {
+                narrow(numbers)                         // fails
+            }
+            // end::stc_generics_method_wildcard_fail[]
+        ''', '#narrow(java.util.List<T>) with arguments [java.util.List<? extends java.lang.Number>]'
+    }
+
+    @Test
+    void testGenericMethodCallWithTarget() {
+        assertScript '''
+            // tag::stc_generics_method_target[]
+            List<Number> numbers() {
+                Collections.singletonList(1)            // <1>
+            }
+            // end::stc_generics_method_target[]
+            assert numbers() == [1]
+        '''
+
+        assertScript '''
+            // tag::stc_generics_method_target_argument[]
+            int count(List<Number> numbers) {
+                numbers.size()
+            }
+            assert count(Collections.singletonList(1)) == 1   // <1>
+            // end::stc_generics_method_target_argument[]
+        '''
+
+        shouldFailWithMessages '''
+            // tag::stc_generics_method_target_fail[]
+            List<Number> numbers() {
+                Collections.singletonList('one')        // fails
+            }
+            // end::stc_generics_method_target_fail[]
+        ''', 'Incompatible generic argument types. Cannot assign java.util.List<java.lang.String> to: java.util.List<java.lang.Number>'
+
+        assertScript '''
+            // tag::stc_generics_spread_target[]
+            List<CharSequence> names(List<File> files) {
+                files*.name                             // <1>
+            }
+            // end::stc_generics_spread_target[]
+            assert names([new File('a.txt')]) == ['a.txt']
+        '''
+
+        shouldFailWithMessages '''
+            // tag::stc_generics_spread_target_fail[]
+            List<CharSequence> names(List<File> files) {
+                List<String> names = files*.name
+                names                                   // fails
+            }
+            // end::stc_generics_spread_target_fail[]
+        ''', 'Incompatible generic argument types. Cannot assign java.util.List<java.lang.String> to: java.util.List<java.lang.CharSequence>'
+
+        shouldFailWithMessages '''
+            // tag::stc_generics_def_argument_fail[]
+            int count(List<CharSequence> names) {
+                names.size()
+            }
+            def names = [new File('a.txt')]*.name
+            count(names)                                // fails
+            // end::stc_generics_def_argument_fail[]
+        ''', 'Declare variable names as java.util.List<java.lang.CharSequence> to pass it'
+
+        assertScript '''
+            // tag::stc_generics_def_argument[]
+            int count(List<CharSequence> names) {
+                names.size()
+            }
+            List<CharSequence> names = [new File('a.txt')]*.name
+            assert count(names) == 1
+            // end::stc_generics_def_argument[]
+        '''
+    }
+
+    @Test
+    void testFunctionalArgumentOfGenericCallWithTarget() {
+        assertScript '''
+            import java.util.function.Function
+            import java.util.function.Predicate
+
+            // tag::stc_generics_functional_target[]
+            <T, R> Function<T, R> orNull(Function<T, R> function) {
+                (T value) -> value == null ? null : function.apply(value)
+            }
+            Predicate<String> notEmpty = Predicate.not(String::isEmpty)             // <1>
+            Function<Optional<String>, String> value = orNull(Optional::get)        // <2>
+            // end::stc_generics_functional_target[]
+            assert notEmpty.test('a') && !notEmpty.test('')
+            assert value.apply(Optional.of('a')) == 'a' && value.apply(null) == null
+        '''
+
+        shouldFailWithMessages '''
+            import java.util.function.Predicate
+
+            // tag::stc_generics_functional_target_fail[]
+            Predicate<Object> notEmpty = Predicate.not(String::isEmpty)             // fails
+            // end::stc_generics_functional_target_fail[]
+        ''', 'Incompatible generic argument types. Cannot assign java.util.function.Predicate<java.lang.String> to: java.util.function.Predicate<java.lang.Object>'
     }
 
     @Test
@@ -1266,5 +1419,80 @@ import groovy.transform.stc.FirstParam
             }
             // end::stc_generics_class_fail[]
         ''', 'Incompatible generic argument types. Cannot assign java.lang.Class<java.lang.Integer> to: java.lang.Class<java.lang.Number>'
+    }
+
+    @Test
+    void testClassTypeArgumentAndConversion() {
+        assertScript '''
+            import org.codehaus.groovy.runtime.typehandling.GroovyCastException
+            import static groovy.test.GroovyAssert.shouldFail
+
+            // tag::stc_generics_class_conversion[]
+            class Plugin {
+                Class<? extends CharSequence> textType = 'java.lang.String'     // <1>
+            }
+
+            Class<? extends Number> numberType(Object value) {
+                Class<? extends Number> type = value                            // <2>
+                type
+            }
+            // end::stc_generics_class_conversion[]
+
+            assert new Plugin().textType == String
+            assert numberType('java.lang.Integer') == Integer
+            assert numberType(String) == String // a Class is kept as it is
+            def listOfString = new ArrayList<String>() {}.getClass().genericSuperclass
+            shouldFail(GroovyCastException) { numberType(listOfString) }
+        '''
+
+        shouldFailWithMessages '''
+            // tag::stc_generics_class_unknown_fail[]
+            Class<? extends CharSequence> textType(String name) {
+                Class.forName(name)                     // fails
+            }
+            // end::stc_generics_class_unknown_fail[]
+        ''', 'Incompatible generic argument types. Cannot assign java.lang.Class<?> to: java.lang.Class<? extends java.lang.CharSequence>'
+
+        assertScript '''
+            // tag::stc_generics_class_assubclass[]
+            Class<? extends CharSequence> textType(String name) {
+                Class.forName(name).asSubclass(CharSequence)
+            }
+            // end::stc_generics_class_assubclass[]
+            assert textType('java.lang.String') == String
+        '''
+    }
+
+    @Test
+    void testClassOfValue() {
+        assertScript '''
+            // tag::stc_generics_getclass[]
+            Class<? extends Number> numberType(Number number) { number.getClass() }     // <1>
+            Class<? extends List> listType(List<String> strings) { strings.class }      // <2>
+            // end::stc_generics_getclass[]
+            assert numberType(1) == Integer
+            assert listType(new ArrayList<String>()) == ArrayList
+        '''
+
+        assertScript '''
+            // tag::stc_generics_getclass_instanceof[]
+            Class<? extends CharSequence> textType(Object value) {
+                if (value instanceof CharSequence) {
+                    return value.getClass()             // <1>
+                }
+                String
+            }
+            // end::stc_generics_getclass_instanceof[]
+            assert textType(new StringBuilder()) == StringBuilder
+            assert textType(1) == String
+        '''
+
+        shouldFailWithMessages '''
+            // tag::stc_generics_getclass_fail[]
+            Class<Number> exactType(Number number) {
+                number.getClass()                       // fails
+            }
+            // end::stc_generics_getclass_fail[]
+        ''', 'Incompatible generic argument types. Cannot assign java.lang.Class<? extends java.lang.Number> to: java.lang.Class<java.lang.Number>'
     }
 }

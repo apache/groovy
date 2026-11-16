@@ -1260,6 +1260,14 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
                 ClassNode originType = getOriginalDeclarationType(leftExpression);
                 typeCheckAssignment(expression, leftExpression, originType, rightExpression, resultType);
+                // a generic call or spread expression typed by its target gives the variable that type
+                ClassNode targetTyped = rightExpression.getNodeMetaData(TARGET_TYPED);
+                if (targetTyped != null) resultType = targetTyped;
+                // a variable declared with def keeps its initializer for the hint of a failed call
+                if (expression instanceof DeclarationExpression && leftExpression instanceof VariableExpression variable
+                        && variable.isDynamicTyped() && (rightExpression instanceof MethodCall || rightExpression instanceof PropertyExpression)) {
+                    variable.putNodeMetaData(DEF_INITIALIZER, rightExpression);
+                }
                 // GROOVY-12535: a property or subscript write to a map stores the value as is, through
                 // Map.put(Object, Object). A value accepted for the map's value type but not of that type,
                 // such as a GString for String, is converted to it, as putAt(Map, Object, Object, Class) does.
@@ -2261,6 +2269,10 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
         }
     }
 
+    private static final String TARGET_TYPED = "_TARGET_TYPED";
+
+    private static final String DEF_INITIALIZER = "_DEF_INITIALIZER";
+
     private void checkTypeGenerics(final ClassNode leftExpressionType, final ClassNode rightExpressionType, final Expression rightExpression) {
         if (!leftExpressionType.isUsingGenerics()
                 || rightExpression instanceof ClosureExpression // GROOVY-10277
@@ -2269,20 +2281,83 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
             return;
         }
         ClassNode right = wrapTypeIfNecessary(rightExpressionType);
+        if (hasIncompatibleGenerics(leftExpressionType, right)) {
+            if (isTypedByTarget(leftExpressionType, right, rightExpression)) {
+                rightExpression.setNodeMetaData(TARGET_TYPED, leftExpressionType); // the expression has the type of its target
+            } else {
+                addStaticTypeError("Incompatible generic argument types. Cannot assign " + prettyPrintType(rightExpressionType) + " to: " + prettyPrintType(leftExpressionType), rightExpression);
+            }
+        } else if (GenericsUtils.hasUnresolvedGenerics(right) && !GenericsUtils.hasUnresolvedGenerics(leftExpressionType)
+                && isTypedByTarget(leftExpressionType, right, rightExpression)) {
+            // a type parameter that the arguments left open takes its type from the target
+            rightExpression.setNodeMetaData(TARGET_TYPED, leftExpressionType);
+        }
+    }
+
+    private static boolean hasIncompatibleGenerics(final ClassNode targetType, final ClassNode type) {
         // A type variable is not "missing" generics: its bound is known.
         // Raw types and uninferred diamonds still skip the check.
-        boolean unresolved = missesGenericsTypes(right);
+        boolean unresolved = missesGenericsTypes(type);
         boolean incompatible = !unresolved && (
-                !GenericsUtils.buildWildcardType(leftExpressionType).isCompatibleWith(right)
-                || concreteArgumentContainsWildcard(leftExpressionType, right)
-                || typeVariableArgumentGetsWildcard(leftExpressionType, right)
-                || upperBoundEscapes(leftExpressionType, right));
-        boolean typeVariableEscapes = unresolved && (typeVariableBoundEscapes(leftExpressionType, right)
-                || concreteArgumentContainsWildcard(leftExpressionType, right)
-                || upperBoundEscapes(leftExpressionType, right));
-        if ((incompatible || typeVariableEscapes) && !isApplicableForTargetType(leftExpressionType, rightExpression)) {
-            addStaticTypeError("Incompatible generic argument types. Cannot assign " + prettyPrintType(rightExpressionType) + " to: " + prettyPrintType(leftExpressionType), rightExpression);
+                !GenericsUtils.buildWildcardType(targetType).isCompatibleWith(type)
+                || concreteArgumentContainsWildcard(targetType, type)
+                || typeVariableArgumentGetsWildcard(targetType, type)
+                || upperBoundEscapes(targetType, type));
+        boolean typeVariableEscapes = unresolved && (typeVariableBoundEscapes(targetType, type)
+                || concreteArgumentContainsWildcard(targetType, type)
+                || upperBoundEscapes(targetType, type));
+        return incompatible || typeVariableEscapes;
+    }
+
+    /**
+     * Whether an expression whose own type does not fit the target is typed by the target:
+     * a call of a generic method or a spread expression, in an assignment or return context.
+     */
+    private boolean isTypedByTarget(final ClassNode targetType, final ClassNode type, final Expression expression) {
+        return isApplicableForTargetType(targetType, expression)
+                || isSpreadApplicableForTargetType(targetType, type, expression);
+    }
+
+    /**
+     * A spread expression such as {@code list*.getClass()} or {@code list*.name} makes a new
+     * list, so in an assignment or return context its element type is taken from the target,
+     * as it is for {@code list.collect { it.getClass() }}. The expression is accepted when the
+     * type of its elements fits the type argument of the target.
+     */
+    private boolean isSpreadApplicableForTargetType(final ClassNode targetType, final ClassNode spreadType, final Expression expression) {
+        boolean spread = expression instanceof MethodCallExpression ? ((MethodCallExpression) expression).isSpreadSafe()
+                : expression instanceof PropertyExpression && ((PropertyExpression) expression).isSpreadSafe();
+        if (!spread || !LIST_TYPE.equals(spreadType)) return false;
+        GenericsType[] elementTypes = spreadType.getGenericsTypes();
+        if (elementTypes == null || elementTypes.length != 1 || elementTypes[0].isWildcard() || elementTypes[0].isPlaceholder()) return false;
+        if (!LIST_TYPE.equals(targetType) && !implementsInterfaceOrIsSubclassOf(LIST_TYPE, targetType)) return false;
+
+        ClassNode declared = LIST_TYPE.redirect();
+        ClassNode viewed = LIST_TYPE.equals(targetType) ? declared : GenericsUtils.parameterizeType(declared, targetType);
+        Map<GenericsTypeName, GenericsType> connections = new HashMap<>();
+        extractGenericsConnections(connections, targetType, viewed);
+        GenericsType expected = connections.get(new GenericsTypeName(declared.getGenericsTypes()[0].getName()));
+        if (expected == null || expected.isWildcard() || expected.isPlaceholder()) return false;
+
+        ClassNode elementType = wrapTypeIfNecessary(elementTypes[0].getType());
+        return typeCheckMethodArgumentWithGenerics(expected.getType(), elementType, false)
+                && isSubtypeWithoutConversion(elementTypes[0].getType(), expected.getType())
+                && !hasIncompatibleGenerics(expected.getType(), elementType);
+    }
+
+    /**
+     * Whether a value of {@code type} is a {@code target} as it is. A value given a type argument
+     * from the target is stored as it is, so it is not converted as an assigned value may be, such
+     * as an {@code int} to a {@code Long} or a {@code GString} to a {@code String}.
+     */
+    private static boolean isSubtypeWithoutConversion(final ClassNode type, final ClassNode target) {
+        if (type.isArray() && target.isArray()) { // Integer[] is a Number[], but not a Long[]; int[] is only an int[]
+            ClassNode typeComponent = type.getComponentType(), targetComponent = target.getComponentType();
+            if (isPrimitiveType(typeComponent) || isPrimitiveType(targetComponent)) return typeComponent.equals(targetComponent);
+            return isSubtypeWithoutConversion(typeComponent, targetComponent);
         }
+        if (type.isArray() || target.isArray() || target.isGenericsPlaceHolder()) return true; // checked elsewhere
+        return implementsInterfaceOrIsSubclassOf(wrapTypeIfNecessary(type), wrapTypeIfNecessary(target));
     }
 
     /**
@@ -2333,18 +2408,18 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
         }
         if (connections.isEmpty()) return false;
 
-        for (GenericsType tp : typeParameters) { // the target must keep each type parameter within its bounds
-            GenericsType value = connections.get(new GenericsTypeName(tp.getName()));
-            if (value == null || tp.getUpperBounds() == null) continue;
-            for (ClassNode bound : applyGenericsContext(connections, tp.getUpperBounds())) {
-                if (GenericsUtils.hasUnresolvedGenerics(bound) ? !isAssignableTo(value.getType(), bound)
-                        : !typeCheckMethodArgumentWithGenerics(bound, value.getType(), false)) return false;
-            }
-        }
+        if (!keepsBounds(typeParameters, connections)) return false; // the target must keep each type parameter within its bounds
+        // a wildcard taken as its bound must still fit the target where the type parameter is
+        // nested in an invariant type argument, as T is in List<List<T>>
+        ClassNode instantiated = applyGenericsContext(connections, viewed);
+        if (!GenericsUtils.hasUnresolvedGenerics(instantiated) && hasIncompatibleGenerics(targetType, instantiated)) return false;
 
         Parameter[] parameters = method.getParameters();
         int n = arguments.size();
-        if (parameters.length == 0 || (n != parameters.length && !isVargs(parameters))) return false;
+        // a method with no parameters, such as Map.Entry.comparingByKey(), takes its type arguments from the target alone
+        if (n != parameters.length && !isVargs(parameters)) return false;
+        // the functional interface types that the target gives the method references of the call
+        Map<MethodReferenceExpression, ClassNode> retargeted = new HashMap<>();
         for (int i = 0; i < n; i += 1) {
             Expression argument = arguments.get(i);
             ClassNode parameterType = parameters[Math.min(i, parameters.length - 1)].getOriginType();
@@ -2358,28 +2433,119 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
             if (argument instanceof ClosureExpression || argument instanceof LambdaExpression || argument instanceof MethodPointerExpression) {
                 // a closure or lambda must return what the parameterized target expects
                 ClassNode expected = null;
+                ClassNode[] samParameterTypes = null;
+                List<FunctorSignature> fitting = null;
                 if (CLOSURE_TYPE.equals(parameterType)) {
                     GenericsType[] gts = parameterType.getGenericsTypes();
                     if (gts != null && gts.length == 1) expected = getCombinedBoundType(gts[0]);
                 } else if (isSAMType(parameterType)) {
-                    expected = GenericsUtils.parameterizeSAM(parameterType).getV2();
+                    Tuple2<ClassNode[], ClassNode> sam = GenericsUtils.parameterizeSAM(parameterType);
+                    expected = sam.getV2();
+                    samParameterTypes = sam.getV1();
+                    // the target gives the parameters of the SAM, so a closure, lambda or
+                    // method reference must accept them
+                    if (argument instanceof ClosureExpression closure && !acceptsParameters(closure, samParameterTypes)) return false;
+                    if (argument instanceof MethodPointerExpression pointer) {
+                        fitting = fittingSignatures(pointer, samParameterTypes);
+                        if (fitting != null && fitting.isEmpty()) return false;
+                        if (pointer instanceof MethodReferenceExpression reference && parameterType.isInterface()
+                                && !GenericsUtils.hasUnresolvedGenerics(parameterType)) {
+                            retargeted.put(reference, parameterType);
+                        }
+                    }
                 }
-                ClassNode actual = getInferredReturnType(argument);
-                if (expected == null || actual == null || GenericsUtils.hasUnresolvedGenerics(expected)) continue;
-                actual = wrapTypeIfNecessary(actual);
-                if (!isAssignableTo(actual, wrapTypeIfNecessary(expected))
-                        || (expected.isUsingGenerics() && !GenericsUtils.buildWildcardType(expected).isCompatibleWith(actual))) return false;
+                if (expected == null || GenericsUtils.hasUnresolvedGenerics(expected)) continue;
+                ClassNode inferred = argument instanceof MethodPointerExpression ? getMethodPointerReturnType(argument) : getInferredReturnType(argument);
+                if (inferred == null) return false; // what the argument returns is not known
+                // the reference was typed before the target gave the SAM's parameters, so the type
+                // that each method that fits returns is taken from them; each must fit the target
+                List<FunctorSignature> functors = fitting != null && fitting.size() > 1
+                        && fitting.stream().anyMatch(f -> f.returnType() != null && GenericsUtils.hasUnresolvedGenerics(f.returnType()))
+                        ? fitting : fitting != null && fitting.size() == 1 ? fitting : Collections.singletonList(null);
+                for (FunctorSignature functor : functors) {
+                    ClassNode actual = inferred;
+                    if (functor != null) {
+                        // a type parameter of the referenced method takes its type from the SAM's parameters
+                        Map<GenericsTypeName, GenericsType> spec = new HashMap<>();
+                        for (int j = 0; j < samParameterTypes.length; j += 1) {
+                            if (samParameterTypes[j] != null) extractGenericsConnections(spec, samParameterTypes[j], functor.parameterTypeFor(j, samParameterTypes));
+                        }
+                        if (functor.returnType() != null && GenericsUtils.hasUnresolvedGenerics(functor.returnType())) {
+                            ClassNode returned = applyGenericsContext(spec, functor.returnType());
+                            if (!GenericsUtils.hasUnresolvedGenerics(returned)) actual = returned;
+                        }
+                        if (GenericsUtils.hasUnresolvedGenerics(actual)) actual = applyGenericsContext(spec, actual);
+                    }
+                    if (argument instanceof MethodPointerExpression && GenericsUtils.hasUnresolvedGenerics(actual)) continue; // its parameters were checked
+                    actual = wrapTypeIfNecessary(actual);
+                    if (!isAssignableTo(actual, wrapTypeIfNecessary(expected)) || !isSubtypeWithoutConversion(actual, expected)
+                            || (expected.isUsingGenerics() && (!GenericsUtils.buildWildcardType(expected).isCompatibleWith(actual)
+                                || hasIncompatibleGenerics(expected, actual)))) return false;
+                }
                 continue;
             }
             ClassNode argumentType = wrapTypeIfNecessary(getType(argument));
             if (GenericsUtils.hasUnresolvedGenerics(parameterType)) {
                 // a type parameter that the target does not determine was inferred from the arguments
                 if (!isAssignableTo(argumentType, parameterType)) return false;
-            } else if (!typeCheckMethodArgumentWithGenerics(parameterType, argumentType, lastArg)) {
-                return false;
+            } else if (!typeCheckMethodArgumentWithGenerics(parameterType, argumentType, lastArg)
+                    || !isSubtypeWithoutConversion(argumentType, parameterType)
+                    // a wildcard is not within the type argument that the target gives the parameter
+                    || (!GenericsUtils.hasUnresolvedGenerics(argumentType)
+                        && (concreteArgumentContainsWildcard(parameterType, argumentType) || upperBoundEscapes(parameterType, argumentType)))) {
+                // a nested generic call or spread expression is typed by the parameter in turn
+                if (!isTypedByTarget(parameterType, argumentType, argument)) return false;
+            }
+        }
+        // a method reference was visited before the target gave its functional interface type;
+        // the method it calls is selected, and adapted if variadic, by the parameter types of
+        // that type, as for a method reference that is assigned to it directly
+        retargeted.forEach((reference, functionalType) -> {
+            reference.putNodeMetaData(PARAMETER_TYPE, functionalType);
+            reference.putNodeMetaData(CLOSURE_ARGUMENTS, GenericsUtils.parameterizeSAM(functionalType).getV1());
+        });
+        return true;
+    }
+
+    /**
+     * Whether each type parameter that {@code connections} gives a type argument is within its bounds.
+     */
+    private static boolean keepsBounds(final GenericsType[] typeParameters, final Map<GenericsTypeName, GenericsType> connections) {
+        for (GenericsType tp : typeParameters) {
+            GenericsType value = connections.get(new GenericsTypeName(tp.getName()));
+            if (value == null || tp.getUpperBounds() == null) continue;
+            for (ClassNode bound : applyGenericsContext(connections, tp.getUpperBounds())) {
+                if (GenericsUtils.hasUnresolvedGenerics(bound) ? !isAssignableTo(value.getType(), bound)
+                        : !typeCheckMethodArgumentWithGenerics(bound, value.getType(), false)) return false;
             }
         }
         return true;
+    }
+
+    /**
+     * Whether each explicitly typed parameter of a closure or lambda accepts the type that the
+     * SAM passes to it. A parameter whose type the target does not determine is not checked.
+     */
+    private static boolean acceptsParameters(final ClosureExpression closure, final ClassNode[] samParameterTypes) {
+        Parameter[] parameters = closure.getParameters();
+        if (parameters == null || parameters.length != samParameterTypes.length) return true;
+        for (int i = 0; i < parameters.length; i += 1) {
+            ClassNode samParameterType = samParameterTypes[i];
+            if (parameters[i].isDynamicTyped() || samParameterType == null || GenericsUtils.hasUnresolvedGenerics(samParameterType)) continue;
+            if (!isAssignableTo(wrapTypeIfNecessary(samParameterType), wrapTypeIfNecessary(parameters[i].getOriginType()))) return false;
+        }
+        return true;
+    }
+
+    /**
+     * The type that a method pointer or method reference returns, from its type {@code Closure<R>}.
+     */
+    private ClassNode getMethodPointerReturnType(final Expression pointer) {
+        ClassNode type = getType(pointer);
+        if (!CLOSURE_TYPE.equals(type)) return null;
+        GenericsType[] gts = type.getGenericsTypes();
+        if (gts == null || gts.length != 1 || gts[0].isWildcard() || gts[0].isPlaceholder()) return null;
+        return gts[0].getType();
     }
 
     private static boolean isRawType(final ClassNode type) {
@@ -3857,6 +4023,14 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
                 inferDiamondType((ConstructorCallExpression) expression, inferredReturnType != null ? inferredReturnType : /*GROOVY-10080:*/dynamicType());
             }
             if (inferredReturnType != null
+                    && inferredReturnType.equals(type)
+                    && inferredReturnType.isUsingGenerics()
+                    && !GenericsUtils.hasUnresolvedGenerics(inferredReturnType)
+                    && hasIncompatibleGenerics(inferredReturnType, wrapTypeIfNecessary(type))
+                    && isTypedByTarget(inferredReturnType, wrapTypeIfNecessary(type), expression)) {
+                type = inferredReturnType; // a generic call or spread expression typed by the declared return type
+            }
+            if (inferredReturnType != null
                     && !inferredReturnType.equals(type)
                     && !isObjectType(inferredReturnType)
                     && !isPrimitiveVoid(inferredReturnType)
@@ -4121,6 +4295,29 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
      * {@code null} if no method is known.
      */
     private IntPredicate functorArity(final MethodPointerExpression pointer) {
+        List<FunctorSignature> signatures = functorSignatures(pointer);
+        if (signatures == null) return null;
+
+        BitSet counts = new BitSet();
+        int varargsFrom = Integer.MAX_VALUE;
+        for (FunctorSignature signature : signatures) {
+            int count = signature.parameterTypes().length;
+            counts.set(count);
+            if (signature.varargs()) {
+                varargsFrom = Math.min(varargsFrom, count - 1);
+            }
+        }
+        int fromVarargs = varargsFrom;
+        return n -> n >= fromVarargs || counts.get(n);
+    }
+
+    /**
+     * Returns the parameter types of each method or constructor a method reference or pointer
+     * can call: their own parameters for a static method, a constructor or a bound receiver,
+     * preceded by the receiver for {@code Type::instanceMethod}; or {@code null} if no method
+     * is known.
+     */
+    private List<FunctorSignature> functorSignatures(final MethodPointerExpression pointer) {
         if (!(pointer.getMethodName() instanceof ConstantExpression)) return null;
         String name = pointer.getMethodName().getText();
         Expression receiver = pointer.getExpression();
@@ -4131,7 +4328,7 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
 
         List<MethodNode> methods = new ArrayList<>();
         if ("new".equals(name)) {
-            if (receiverType.isArray()) return n -> n == 1;
+            if (receiverType.isArray()) return Collections.singletonList(new FunctorSignature(new ClassNode[]{int_TYPE}, false, null, null));
             methods.addAll(receiverType.getDeclaredConstructors());
             typeReceiver = false;
         } else {
@@ -4140,18 +4337,116 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
         }
         if (methods.isEmpty()) return null;
 
-        BitSet counts = new BitSet();
-        int varargsFrom = Integer.MAX_VALUE;
-        for (MethodNode method : methods) {
-            Parameter[] parameters = method.getParameters();
-            int count = parameters.length + (typeReceiver && !method.isStatic() ? 1 : 0);
-            counts.set(count);
-            if (parameters.length > 0 && parameters[parameters.length - 1].getType().isArray()) {
-                varargsFrom = Math.min(varargsFrom, count - 1);
-            }
+        // the receiver of Type::instanceMethod with the type parameters of its class, so that
+        // they take their type arguments from the functional interface
+        ClassNode declaredReceiverType = receiverType;
+        if (receiverType.getGenericsTypes() == null && receiverType.redirect().getGenericsTypes() != null) {
+            declaredReceiverType = receiverType.getPlainNodeReference();
+            declaredReceiverType.setGenericsTypes(receiverType.redirect().getGenericsTypes());
         }
-        int fromVarargs = varargsFrom;
-        return n -> n >= fromVarargs || counts.get(n);
+
+        List<FunctorSignature> signatures = new ArrayList<>(methods.size());
+        for (MethodNode method : methods) {
+            ClassNode[] parameterTypes;
+            boolean varargs;
+            if (typeReceiver && method instanceof ExtensionMethodNode extension && !extension.isStaticExtension()) {
+                method = extension.getExtensionMethodNode(); // its first parameter is the receiver
+                parameterTypes = extractTypesFromParameters(method.getParameters());
+                varargs = parameterTypes.length > 1 && parameterTypes[parameterTypes.length - 1].isArray();
+            } else {
+                parameterTypes = extractTypesFromParameters(method.getParameters());
+                varargs = parameterTypes.length > 0 && parameterTypes[parameterTypes.length - 1].isArray();
+                if (typeReceiver && !method.isStatic()) {
+                    ClassNode[] withReceiver = new ClassNode[parameterTypes.length + 1];
+                    withReceiver[0] = declaredReceiverType;
+                    System.arraycopy(parameterTypes, 0, withReceiver, 1, parameterTypes.length);
+                    parameterTypes = withReceiver;
+                }
+            }
+            signatures.add(new FunctorSignature(parameterTypes, varargs, method.getGenericsTypes(),
+                    method instanceof ConstructorNode ? null : method.getReturnType()));
+        }
+        return signatures;
+    }
+
+    /**
+     * The parameter types a method reference or pointer can be called with, whether the
+     * last is a varargs parameter, and the type parameters and declared return type of the
+     * method, if any.
+     */
+    private record FunctorSignature(ClassNode[] parameterTypes, boolean varargs, GenericsType[] typeParameters, ClassNode returnType) {
+        /**
+         * The type of the parameter that takes argument {@code i} of {@code argumentTypes}:
+         * the component type of a varargs parameter, unless one array is given for it.
+         */
+        ClassNode parameterTypeFor(final int i, final ClassNode[] argumentTypes) {
+            int count = parameterTypes.length;
+            ClassNode parameterType = parameterTypes[Math.min(i, count - 1)];
+            if (varargs && i >= count - 1 && !(argumentTypes.length == count
+                    && argumentTypes[i] != null && argumentTypes[i].isArray())) {
+                parameterType = parameterType.getComponentType();
+            }
+            return parameterType;
+        }
+    }
+
+    /**
+     * Returns the methods a method reference or pointer names that can be called with the
+     * parameter types of a SAM: they take that many arguments, and each SAM parameter type is
+     * assignable to the method's parameter, or to the component type of its varargs parameter.
+     * A SAM parameter type that is not resolved is not checked, and a parameter type of the
+     * method that is not resolved is checked by its class only, but a type
+     * parameter of the method that the SAM parameter types determine must be within its
+     * bounds. Returns {@code null} if the functor's methods are not known.
+     */
+    private List<FunctorSignature> fittingSignatures(final MethodPointerExpression pointer, final ClassNode[] samParameterTypes) {
+        List<FunctorSignature> signatures = functorSignatures(pointer);
+        if (signatures == null) return null;
+        int n = samParameterTypes.length;
+        List<FunctorSignature> fitting = new ArrayList<>();
+        for (FunctorSignature functor : signatures) {
+            int count = functor.parameterTypes().length;
+            if (n != count && !(functor.varargs() && n >= count - 1)) continue;
+            // the type arguments of the receiver of Type::instanceMethod, from the first SAM parameter
+            Map<GenericsTypeName, GenericsType> receiverSpec = new HashMap<>();
+            if (n > 0 && count > 0 && samParameterTypes[0] != null && !GenericsUtils.hasUnresolvedGenerics(samParameterTypes[0])
+                    && !functor.parameterTypes()[0].isGenericsPlaceHolder() && !functor.parameterTypes()[0].isArray()
+                    && GenericsUtils.hasUnresolvedGenerics(functor.parameterTypes()[0])) {
+                extractGenericsConnections(receiverSpec, wrapTypeIfNecessary(samParameterTypes[0]), functor.parameterTypes()[0]);
+                receiverSpec.values().removeIf(value -> value.isWildcard() || value.isPlaceholder());
+                if (functor.typeParameters() != null) { // a type parameter of the method takes its type from every parameter
+                    for (GenericsType tp : functor.typeParameters()) receiverSpec.remove(new GenericsTypeName(tp.getName()));
+                }
+            }
+            boolean fits = true;
+            for (int i = 0; i < n && fits; i += 1) {
+                ClassNode samParameterType = samParameterTypes[i];
+                ClassNode parameterType = functor.parameterTypeFor(i, samParameterTypes);
+                if (i > 0 && !receiverSpec.isEmpty()) parameterType = applyGenericsContext(receiverSpec, parameterType);
+                if (samParameterType == null || GenericsUtils.hasUnresolvedGenerics(samParameterType)) continue;
+                if (GenericsUtils.hasUnresolvedGenerics(parameterType)) {
+                    // a parameterized type such as List<T> is checked by its class
+                    if (parameterType.isGenericsPlaceHolder() || parameterType.isArray()) continue;
+                    parameterType = parameterType.getPlainNodeReference();
+                }
+                fits = isAssignableTo(wrapTypeIfNecessary(samParameterType), wrapTypeIfNecessary(parameterType));
+            }
+            if (fits && functor.typeParameters() != null) {
+                Map<GenericsTypeName, GenericsType> spec = new HashMap<>();
+                for (int i = 0; i < n; i += 1) {
+                    ClassNode samParameterType = samParameterTypes[i];
+                    ClassNode parameterType = functor.parameterTypeFor(i, samParameterTypes);
+                    if (samParameterType != null && !GenericsUtils.hasUnresolvedGenerics(samParameterType)
+                            && GenericsUtils.hasUnresolvedGenerics(parameterType)) {
+                        extractGenericsConnections(spec, wrapTypeIfNecessary(samParameterType), parameterType);
+                    }
+                }
+                spec.values().removeIf(value -> value.isWildcard() || value.isPlaceholder());
+                fits = keepsBounds(functor.typeParameters(), spec);
+            }
+            if (fits) fitting.add(functor);
+        }
+        return fitting;
     }
 
     private Map<VariableExpression, ClassNode> scanVars(final ClosureExpression expr) {
@@ -8753,6 +9048,14 @@ trying: for (ClassNode[] signature : signatures) {
                                         if (!candidates.get(0).isStatic() && isClassClassNodeWrappingConcreteType(getType(methodPointer.getExpression()))) {
                                             extractGenericsConnections(connections, q[0], p[0].redirect());
                                         }
+                                        // a variadic parameter that is given one value, not an array, takes it as an element
+                                        ClassNode[] given = argument.getNodeMetaData(CLOSURE_ARGUMENTS);
+                                        int last = p.length - 1;
+                                        if (p.length == q.length && p[last].isArray() && given != null && given.length == q.length && given[last] != null
+                                                && !given[last].isArray() && !GenericsUtils.hasUnresolvedGenerics(given[last])) {
+                                            p = p.clone();
+                                            p[last] = p[last].getComponentType();
+                                        }
                                         for (int j = 0; j < q.length; j += 1) {
                                             // SAM parameters are like arguments in this case
                                             extractGenericsConnections(connections, q[j], p[j]);
@@ -8869,6 +9172,16 @@ trying: for (ClassNode[] signature : signatures) {
                 a.visit(this); // re-visit with target type witness
                 typeCheckingContext.popEnclosingBinaryExpression();
                 actuals[i] = getType(a);
+            }
+
+            // a generic call or spread expression takes its type from the parameter, as from an assignment target
+            if (!GenericsUtils.hasUnresolvedGenerics(pt) && !GenericsUtils.hasUnresolvedGenerics(at)) {
+                ClassNode wrapped = wrapTypeIfNecessary(at);
+                if (hasIncompatibleGenerics(pt, wrapped) && isTypedByTarget(pt, wrapped, a)) {
+                    a.setNodeMetaData(TARGET_TYPED, pt);
+                    actuals[i] = pt;
+                    continue;
+                }
             }
 
             // check for method call without type arguments, with a known target
@@ -9139,10 +9452,34 @@ out:    for (ClassNode type : todo) {
             }
 
             addStaticTypeError("Cannot call " + (gt == null ? "" : GenericsUtils.toGenericTypesString(gt)) +
-                    prettyPrintTypeName(r) + "#" + toMethodParametersString(m.getName(), paramTypes) + " with arguments " + formatArgumentList(at), location);
+                    prettyPrintTypeName(r) + "#" + toMethodParametersString(m.getName(), paramTypes) + " with arguments " + formatArgumentList(at)
+                    + declaredTypeHint(location, at.length - arguments.length, at, paramTypes), location);
             return false;
         }
         return true;
+    }
+
+    /**
+     * A hint for a failed call that passes a variable declared with {@code def} or {@code var}
+     * whose initializer would be typed by the parameter, had the variable been declared with
+     * the type of the parameter.
+     */
+    private String declaredTypeHint(final Expression call, final int offset, final ClassNode[] argumentTypes, final ClassNode[] parameterTypes) {
+        if (!(call instanceof MethodCall)) return "";
+        List<Expression> arguments = InvocationWriter.makeArgumentList(((MethodCall) call).getArguments()).getExpressions();
+        for (int i = 0, n = arguments.size(); i < n && i + offset < argumentTypes.length && i + offset < parameterTypes.length; i += 1) {
+            if (!(arguments.get(i) instanceof VariableExpression argument)
+                    || !(argument.getAccessedVariable() instanceof VariableExpression variable)) continue;
+            Expression initializer = variable.getNodeMetaData(DEF_INITIALIZER);
+            ClassNode parameterType = parameterTypes[i + offset];
+            ClassNode argumentType = wrapTypeIfNecessary(argumentTypes[i + offset]);
+            if (initializer == null || GenericsUtils.hasUnresolvedGenerics(parameterType)
+                    || !argumentType.equals(wrapTypeIfNecessary(getType(initializer)))) continue;
+            if (hasIncompatibleGenerics(parameterType, argumentType) && isTypedByTarget(parameterType, argumentType, initializer)) {
+                return ". Declare variable " + variable.getName() + " as " + prettyPrintType(parameterType) + " to pass it";
+            }
+        }
+        return "";
     }
 
     /**
