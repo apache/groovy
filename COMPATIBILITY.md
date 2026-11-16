@@ -1371,15 +1371,21 @@ method whose type parameter has no bound.
 ### Groovy 7 — type checking types `getClass()` by its receiver (GROOVY-12755)
 
 Under `@TypeChecked` and `@CompileStatic`, `e.getClass()` and `e.class` were
-typed `Class<?>`, the declared return type of `Object#getClass()`. They are
-now typed `Class<? extends |T|>`, where `|T|` is the erasure of the static
-type of `e`, as in Java: `Class<? extends String>` for a `String` and
-`Class<? extends List>` for a `List<String>`.
+typed `Class<? extends Object>`, and that type was accepted wherever a
+`Class<? extends X>` was expected, whatever `X` was. They are now typed
+`Class<? extends |T|>`, where `|T|` is the erasure of the static type of `e`,
+as in Java: `Class<? extends String>` for a `String` and
+`Class<? extends List>` for a `List<String>`. The type is checked like any
+other type.
 
-- **Uses that were rejected compile.** `Class<? extends String> c = s.getClass()`,
+- **A correct bound compiles, as before.** `Class<? extends String> c = s.getClass()`,
   and `datastore.getClass()` passed where a `Class<? extends Datastore>` is
-  expected, were compile errors ("Incompatible generic argument types") and
-  now compile.
+  expected, compile.
+- **A wrong bound is a compile error.** For a `String s`,
+  `Class<? extends Integer> c = s.getClass()`, and `s.getClass()` passed to a
+  parameter typed `Class<? extends Number>`, compiled. The variable or
+  parameter then held a class outside its bound. These are now compile errors,
+  as in Java.
 - **`@CompileStatic` may select a more specific overload.** A value made from
   `x.getClass()`, such as `x.getClass().cast(o)`,
   `x.getClass().getDeclaredConstructor().newInstance()` or the result of
@@ -1388,16 +1394,93 @@ type of `e`, as in Java: `Class<? extends String>` for a `String` and
   `StringBuilder x`, `f(x.getClass().cast(o))` calls `f(StringBuilder)` where
   it called `f(Object)`. That is the overload Java selects, and the one dynamic
   Groovy and `@TypeChecked` code select at run time. There is no compile error.
-- **A generic call takes type arguments from its target.** In an assignment or
-  a return, a call of a generic method is accepted when the target type
-  determines its type arguments, as in Java:
+  As before, the overload is selected before its generics are checked, and a
+  selected overload that fails that check is a compile error rather than a
+  reason to select a less specific one: with `f(Object)` and
+  `f(Class<String>)`, `f(new StringBuilder().getClass())` is rejected, as it
+  was before, where Java selects `f(Object)`.
+  Cast the argument to `Object` to select that overload.
+- **A generic call takes type arguments from its target.** In an assignment, a
+  return or an argument, a call of a generic method is accepted when the target
+  type determines its type arguments, as in Java. The target of an argument is
+  the parameter of the method that is called, once that method is selected:
   `List<Class<?>> l = Collections.singletonList(x.getClass())`,
-  `Arrays.asList(a.getClass(), b.getClass())`, `Optional.of(x.getClass())` and
-  `list.collect { it.getClass() }` compile, and so does
-  `List<Number> l = Collections.singletonList(1)`, which was a compile error. A
-  value that is not such a call is not converted: `list*.getClass()` is a
-  `List<Class<? extends String>>`, and assigning it or a variable of that type
-  to a `List<Class<?>>` is a compile error, as it is in Java.
+  `takes(Collections.singletonList(x.getClass()))` for a
+  `takes(List<Class<?>>)`, `Arrays.asList(a.getClass(), b.getClass())`,
+  `Optional.of(x.getClass())` and `list.collect { it.getClass() }` compile, as
+  does a generic call nested in another, such as
+  `same(Collections.singletonList(x.getClass()))`. These compiled before
+  because the type of `getClass()` was not checked; they now compile because
+  the target gives the type argument. So do
+  `List<Number> l = Collections.singletonList(1)` and
+  `count(Collections.singletonList(1))` for a `count(List<Number>)`, which were
+  compile errors. The type argument is not a conversion: an assigned value may
+  be converted, as an `int` to a `Long` or a `GString` to a `String`, but the
+  elements of a list are stored as they are. So
+  `List<Long> l = Collections.singletonList(1)` and a `List<String>` made by
+  `Collections.singletonList("a$x")` are still compile errors, as they were
+  before and are in Java, since the list would hold an `Integer` or a
+  `GString`. A spread expression makes a new list, so it takes its element
+  type from the target in the same way: `list*.getClass()` and `list*.class`
+  compile for a `List<Class<?>>`, and `people*.name` for a `List<CharSequence>`.
+  A variable declared with such a target has the declared type. A value that
+  already has a type is not converted: assigning or passing a variable of type
+  `List<Class<? extends String>>` as a `List<Class<?>>` is a compile error, as
+  it is in Java.
+- **A method reference passed to such a call is checked and compiled for the
+  functional interface type that the target gives.** For
+  `<T, R> Function<T, R> toFunction(Function<T, R> fn)` and the like:
+  - **Calls that were rejected compile.** `Type::instanceMethod` on a generic
+    class takes the type arguments of the class from the first parameter of
+    the functional interface, as in Java, so
+    `Function<Optional<String>, String> f = toFunction(Optional::get)` and
+    `BiFunction<List<String>, Integer, String> f = toBiFunction(List::get)`
+    compile. So do a reference to a supertype's method, an overloaded or
+    variadic method, and an extension method:
+    `Function<String, Integer> f = toFunction(CharSequence::length)`,
+    `Function<char[], String> f = toFunction(String::valueOf)`,
+    `Consumer<String> c = toConsumer(System.out::print)` and
+    `Function<String, Integer> f = toFunction(String::size)`. The overload is
+    the one a direct assignment of the reference selects.
+  - **A variadic method runs under `@CompileStatic`.**
+    `Function<String, List<String>> f = toFunction(Arrays::asList)` compiled,
+    and statically compiled it failed with a `ClassCastException` when called.
+    It now returns a list of the one value, as `@TypeChecked` and dynamic code
+    do.
+  - **Calls that were accepted are rejected.** A method whose type parameter
+    has a bound that the target does not keep compiled, and failed when
+    called: `Consumer<String> c = toConsumer(C::takeNumber)` for
+    `<T extends Number> void takeNumber(T t)`. So did a method whose other
+    parameters or return type do not fit the type arguments of its receiver:
+    `BiFunction<List<String>, Integer, Boolean> f = toBiFunction(List::add)`
+    added an `Integer` to a `List<String>`, and
+    `Function<List<Integer>, String> f = toFunction(List::first)` returned an
+    `Integer` as a `String`. These are now compile errors,
+    `Incompatible generic argument types`, as the first two are in Java.
+    Declare the functional interface with the types that the method accepts
+    and returns.
+- **A constructor call with a diamond infers the type arguments of the class
+  from its arguments.** With no target, `new Holder<>(list)` takes the type
+  arguments of `Holder` from the constructor arguments, as a generic method
+  call does, and they must be within the bounds of the class. For
+  `class Holder<T extends Number>` with a `Holder(List<T>)` constructor, a
+  `List<? extends Integer>` is accepted, as before, and gives a
+  `Holder<? extends Integer>`. A `List<String>` or a `List<? extends String>`
+  compiled and failed when run with a `GroovyCastException`, and a `List<?>`
+  compiled with no check of its elements. These are now compile errors,
+  `Cannot call Holder#<init>(...) with arguments [...]`, as in Java. Where the
+  elements are known to fit, declare the parameter as a
+  `List<? extends Number>`, cast the argument to one, or pass it as a raw
+  `List`; each of these also compiles with earlier versions.
+- **A variable declared with `def` or `var` has the type of its value.** So
+  `def classes = Collections.singletonList(x.getClass())` is a
+  `List<Class<? extends String>>`, and passing it to a `takes(List<Class<?>>)`,
+  which compiled before, is now a compile
+  error, as it is in Java with `var`. The error suggests the declared type:
+  `Cannot call …#takes(java.util.List<java.lang.Class<?>>) with arguments
+  [java.util.List<java.lang.Class<? extends java.lang.String>>]. Declare
+  variable classes as java.util.List<java.lang.Class<?>> to pass it`. Declare
+  the variable with that type, or pass the call directly.
 - **A raw bound is not within a parameterized one, and a type is not within a
   type variable.** For an assignment, a return and a declared parameter,
   `? extends A` is no longer accepted for `? extends B` when `B` is
@@ -1410,16 +1493,32 @@ type of `e`, as in Java: `Class<? extends String>` for a `String` and
   <T> Class<? extends T> c(T t) { t.getClass() }
   ```
 
+  This also holds within a type argument, and for a spread expression or a
+  closure typed by its target. A `List<Class<? extends List>>`, from a
+  variable, `raw*.getClass()` for a `List<List> raw`, or
+  `classes.collect { it }`, is not a `List<Class<? extends List<String>>>`.
+  `items*.getClass()` for a `List<Object> items` is not a
+  `List<Class<? extends T>>`. These compiled and are now compile errors, as in
+  Java.
+
 - **The class of a value of a type variable is not the class of the type
   variable.** For a `T t`, `t.getClass()` is a `Class<? extends Object>`.
   `<T> Class<T> typeOf(T t) { t.getClass() }` compiled and is now a compile
   error, as in Java. So is passing `t.getClass()` to a parameter typed by a
   type variable in scope, such as `accept(Class<? extends T>)` or
-  `Map<Class<? extends T>, T>.put` within `Box<T>`.
+  `Map<Class<? extends T>, T>.put` within `Box<T>`, and so is
+  `List<Class<? extends T>> l = items*.getClass()` for a `List<T> items`.
+  `T` may be a parameterized type, such as `List<String>`, and a class does
+  not have type arguments. Add the cast that Java requires.
 - **The class of a variable follows `instanceof`.** After
   `o instanceof String` for an `Object o`, `o.getClass()` and `o.class` are a
-  `Class<? extends String>`, like every other member of `o` there. Java types
-  them `Class<?>` at that point; this is Groovy's `instanceof` inference.
+  `Class<? extends String>`, like every other member of `o` there; this is
+  Groovy's `instanceof` inference. Java keeps `o` an `Object`, so it rejects
+  `Class<? extends String> c = o.getClass()`, and passing `o.getClass()` as a
+  `Class<? extends CharSequence>`; both compile in Groovy, as before. The
+  difference only accepts more code: the Java forms,
+  `o instanceof String s` followed by `s.getClass()`, and
+  `((String) o).getClass()`, also compile.
 
 - **The simple name of an inner class keeps the type arguments of the
   enclosing class.** Within `Outer<T>`, `Inner` now means `Outer<T>.Inner`
@@ -1430,13 +1529,15 @@ type of `e`, as in Java: `Class<? extends String>` for a `String` and
   either: `List<Inner> a = raw` and `List<? extends Inner> b = raw` for a
   `List<Outer.Inner> raw` compiled and are now compile errors, as in Java.
 
-**Who is affected.** Statically checked code that relied on one of the
-conversions above, and `@CompileStatic` code whose overloads differ for the
-class of a receiver. Add the cast that Java requires, such as
+**Who is affected.** Statically checked code that gives the class of a value
+a bound it does not have, code that relied on one of the conversions above,
+and `@CompileStatic` code whose overloads differ for the class of a receiver.
+Correct the bound, add the cast that Java requires, such as
 `(Class<? extends T>) t.getClass()`, or declare the raw bound, such as
 `Class<? extends List>`. The class of a value is also now checked against the
 bound of a type parameter (see GROOVY-12754 above), so
-`Enum.valueOf(e.getClass(), name)` is a compile error; use
+`Enum.valueOf(e.getClass(), name)` for an `E e` of an enum type `E` is a
+compile error; use
 `e.getDeclaringClass()`. Code that reads the generic signature of an inner
 class member by reflection sees the enclosing type.
 

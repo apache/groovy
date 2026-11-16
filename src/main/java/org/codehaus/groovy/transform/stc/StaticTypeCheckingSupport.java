@@ -1684,6 +1684,8 @@ public abstract class StaticTypeCheckingSupport {
     }
 
     private static boolean sameGenericsArgument(final GenericsType left, final GenericsType right) {
+        // "#T" is still to be inferred, as K is for Map.Entry.comparingByKey()
+        if (isInferencePlaceholder(left) || isInferencePlaceholder(right)) return true;
         if (left.isWildcard() != right.isWildcard() || left.isPlaceholder() != right.isPlaceholder()) return false;
         if (left.isPlaceholder()) return left.getName().equals(right.getName());
         if (left.isWildcard()) {
@@ -1806,6 +1808,9 @@ public abstract class StaticTypeCheckingSupport {
                 return true; // Outer.Inner is not within "? extends Outer<T>.Inner"
             } else if (withinBound && rawTypeArgument(sourceArgs[i], targetArgs[i])) {
                 return true;
+            } else if (!targetArgs[i].isWildcard() && !targetArgs[i].isPlaceholder() && !sourceArgs[i].isWildcard() && !sourceArgs[i].isPlaceholder()
+                    && upperBoundEscapes(targetArgs[i].getType(), sourceArgs[i].getType(), withinBound)) {
+                return true; // List<Class<? extends List>> is not a List<Class<? extends List<String>>>
             }
         }
         return false;

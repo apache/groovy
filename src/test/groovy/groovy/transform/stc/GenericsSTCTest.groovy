@@ -19,10 +19,13 @@
 package groovy.transform.stc
 
 import groovy.test.NotYetImplemented
+import org.codehaus.groovy.control.MultipleCompilationErrorsException
 import org.codehaus.groovy.tools.javac.JavaAwareCompilationUnit
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.ValueSource
+
+import static org.junit.jupiter.api.Assertions.assertThrows
 
 /**
  * Unit tests for static type checking : generics.
@@ -3164,12 +3167,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
     // GROOVY-12755
     @Test
     void testValueOfGenericTypeDoesNotTakeTypeArgumentsFromTargetType() {
-        // only a call of a generic method is inferred from its target
-        shouldFailWithMessages '''
-            List<Class<?>> test(List<String> strings) { strings*.getClass() }
-        ''',
-            'Incompatible generic argument types. Cannot assign java.util.List<java.lang.Class<? extends java.lang.String>> to: java.util.List<java.lang.Class<?>>'
-
+        // a value that already has a type is not inferred from its target
         shouldFailWithMessages '''
             List<Class<?>> test(List<Class<? extends String>> classes) { classes }
         ''',
@@ -5985,6 +5983,741 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-12755
+    @Test
+    void testVariableDeclaredWithTargetTypedCallHasDeclaredType() {
+        assertScript '''
+            List<Class<?>> classes(String x) {
+                List<Class<?>> list = Collections.singletonList(x.getClass())
+                list
+            }
+            List<Number> numbers() {
+                List<Number> list = Arrays.asList(1, 2)
+                list.set(0, 1.5d)
+                list
+            }
+            assert classes('x') == [String]
+            assert numbers() == [1.5d, 2]
+        '''
+    }
+
+    // GROOVY-12755
+    @Test
+    void testClosureCallHasDeclaredReturnTypeOfClosure() {
+        assertScript '''
+            List<Class<?>> call(String x) {
+                Closure<List<Class<?>>> c = { String s -> Collections.singletonList(s.getClass()) }
+                c.call(x)
+            }
+            List<Class<?>> implicitCall(String x) {
+                Closure<List<Class<?>>> c = { String s -> Collections.singletonList(s.getClass()) }
+                c(x)
+            }
+            List<Class<?>> spread(List<String> list) {
+                Closure<List<Class<?>>> c = { List<String> l -> l*.getClass() }
+                List<Class<?>> classes = c.call(list)
+                classes
+            }
+            List<Number> numbers() {
+                Closure<List<Number>> c = { -> Arrays.asList(1, 2) }
+                List<Number> list = c.call()
+                list.set(0, 1.5d)
+                list
+            }
+            assert call('x') == [String]
+            assert implicitCall('x') == [String]
+            assert spread(['x']) == [String]
+            assert numbers() == [1.5d, 2]
+        '''
+    }
+
+    // GROOVY-12755
+    @Test
+    void testGenericCallArgumentTakesTypeArgumentsFromParameter() {
+        assertScript '''
+            class Box {
+                List<Class<?>> types
+                Box(List<Class<?>> types) { this.types = types }
+            }
+            def <T> List<T> same(List<T> list) { list }
+            List<Class<?>> takes(List<Class<?>> list) { list }
+            String f(Object o) { 'Object' }
+            String f(List<Class<?>> list) { 'List' }
+            int count(List<Number> numbers) { numbers.size() }
+            List<Class<?>> nested(String x) { same(Collections.singletonList(x.getClass())) }
+
+            String x = 'x'
+            assert takes(Collections.singletonList(x.getClass())) == [String]
+            assert takes(['a']*.getClass()) == [String]
+            assert takes(['a'].collect { it.getClass() }) == [String]
+            assert new Box(Collections.singletonList(x.getClass())).types == [String]
+            assert f(Collections.singletonList(x.getClass())) == 'List'
+            assert takes(same(Collections.singletonList(x.getClass()))) == [String]
+            assert nested('x') == [String]
+            assert count(Collections.singletonList(1)) == 1
+        '''
+    }
+
+    // GROOVY-12755
+    @Test
+    void testGenericCallArgumentIsCheckedAgainstParameter() {
+        shouldFailWithMessages '''
+            void takes(List<Integer> list) { }
+            takes(Collections.singletonList('a'))
+        ''',
+            '#takes(java.util.List<java.lang.Integer>) with arguments [java.util.List<java.lang.String>]'
+
+        shouldFailWithMessages '''
+            void takes(List<Integer> list) { }
+            takes(['a']*.toUpperCase())
+        ''',
+            '#takes(java.util.List<java.lang.Integer>) with arguments [java.util.List<java.lang.String>]'
+
+        shouldFailWithMessages '''
+            def <T extends Number> List<T> same(List<T> list) { list }
+            void takes(List<Number> list) { }
+            void test(List<? extends Number> list) { takes(same(list)) }
+        ''',
+            '#takes(java.util.List<java.lang.Number>) with arguments [java.util.List<? extends java.lang.Number>]'
+
+        shouldFailWithMessages '''
+            def <T> List<T> same(List<T> list) { list }
+            List<Integer> test() { same(Collections.singletonList('a')) }
+        ''',
+            'Incompatible generic argument types. Cannot assign java.util.List<java.lang.String> to: java.util.List<java.lang.Integer>'
+    }
+
+    // GROOVY-12755
+    @Test
+    void testTargetTypeArgumentIsNotConverted() {
+        // a value given a type argument by the target is stored as it is: an Integer is not a Long
+        for (code in [
+                'List<Long> list = Collections.singletonList(1)',
+                'int i = 1; List<Long> list = Collections.singletonList(i)',
+                'List<Long> list = [1].collect { it + 1 }',
+                'List<Long> list = [1, 2]*.intValue()',
+                'Closure<List<Long>> c = { -> Collections.singletonList(1) }; List<Long> list = c.call()',
+                'List<Long> list = same(Collections.singletonList(1))'
+        ]) {
+            shouldFailWithMessages """
+                def <T> List<T> same(List<T> list) { list }
+                $code
+            """,
+                'Incompatible generic argument types. Cannot assign java.util.List<java.lang.Integer> to: java.util.List<java.lang.Long>'
+        }
+
+        shouldFailWithMessages '''
+            List<Double> doubles() { Collections.singletonList(1) }
+        ''',
+            'Incompatible generic argument types. Cannot assign java.util.List<java.lang.Integer> to: java.util.List<java.lang.Double>'
+
+        shouldFailWithMessages '''
+            Optional<Long> o = Optional.of(1)
+        ''',
+            'Incompatible generic argument types. Cannot assign java.util.Optional<java.lang.Integer> to: java.util.Optional<java.lang.Long>'
+
+        for (arg in ['Collections.singletonList(1)', '[1].collect { it + 1 }']) {
+            shouldFailWithMessages """
+                void takes(List<Long> list) { }
+                takes($arg)
+            """,
+                '#takes(java.util.List<java.lang.Long>) with arguments [java.util.List<java.lang.Integer>]'
+        }
+
+        // nor is a GString a String
+        shouldFailWithMessages '''
+            List<String> strings(int x) { Collections.singletonList("a$x") }
+        ''',
+            'Incompatible generic argument types. Cannot assign java.util.List<groovy.lang.GString> to: java.util.List<java.lang.String>'
+
+        for (code in [
+                'takes(Collections.singletonList("a$x"))',
+                'takes([1].collect { "a$it" })',
+                'Closure<List<String>> c = { -> Collections.singletonList("a$x") }; takes(c.call())'
+        ]) {
+            shouldFailWithMessages """
+                void takes(List<String> list) { }
+                int x = 1
+                $code
+            """,
+                'You are trying to use a GString in place of a String'
+        }
+
+        shouldFailWithMessages '''
+            int x = 1
+            List<String> list = Arrays.asList("a$x", 'b')
+        ''',
+            'Cannot assign java.util.List<? extends java.io.Serializable & java.lang.CharSequence & java.lang.Comparable> to: java.util.List<java.lang.String>'
+    }
+
+    // GROOVY-12755
+    @Test
+    void testTargetTypeArgumentAcceptsSubtype() {
+        assertScript '''
+            int count(List<Number> numbers) { numbers.size() }
+            int x = 1
+            List<Number> numbers = Collections.singletonList(1)
+            List<Object> objects = Collections.singletonList(1)
+            List<CharSequence> chars = Collections.singletonList("a$x")
+            List<Number> collected = [1].collect { it + 1 }
+            Closure<List<Number>> c = { -> Collections.singletonList(1) }
+            List<Number> called = c.call()
+            assert numbers.get(0) instanceof Integer
+            assert objects == [1]
+            assert chars.get(0) instanceof GString
+            assert collected == [2]
+            assert called == [1]
+            assert count(Collections.singletonList(1)) == 1
+            assert count([1, 2].collect { it * 2 }) == 2
+        '''
+    }
+
+    // GROOVY-12755
+    @Test
+    void testTargetTypeArgumentNestedInInvariantType() {
+        // T is ? super Integer only within List<? super Integer>: List<List<Integer>> is not a List<List<? super Integer>>
+        shouldFailWithMessages '''
+            def <T> List<List<T>> same(List<List<T>> x) { x }
+            void test(List<List<Integer>> ints) {
+                List<List<? super Integer>> widened = same(ints)
+            }
+        ''',
+            'Cannot assign java.util.List<java.util.List<java.lang.Integer>> to: java.util.List<java.util.List<? super java.lang.Integer>>'
+
+        assertScript '''
+            def <T> List<List<T>> same(List<List<T>> x) { x }
+            void test(List<List<Integer>> ints) {
+                List<List<Integer>> exact = same(ints)
+                List<? extends List<Integer>> covariant = same(ints)
+                List<? super Integer> lower = Collections.singletonList(1)
+                assert exact == [[42]] && covariant == [[42]] && lower == [1]
+            }
+            test([[42]])
+        '''
+    }
+
+    // GROOVY-12755
+    @Test
+    void testTargetTypeArgumentIsCheckedAgainstMethodReference() {
+        shouldFailWithMessages '''
+            List<Integer> ints = ['a'].collect(String::toUpperCase)
+        ''',
+            'Cannot assign java.util.List<java.lang.String> to: java.util.List<java.lang.Integer>'
+
+        assertScript '''
+            List<String> strings = ['a'].collect(String::toUpperCase)
+            List<Class<?>> classes = ['a'].collect(Object::getClass)
+            List<Number> lengths = ['ab'].collect(String::length)
+            assert strings == ['A'] && classes == [String] && lengths == [2]
+        '''
+    }
+
+    // GROOVY-12755
+    @Test
+    void testTargetTypeArgumentIsCheckedAgainstLambdaParameters() {
+        // a Consumer<Object> passes any object to the lambda, which accepts only a String
+        shouldFailWithMessages '''
+            import java.util.function.*
+            def <T> Consumer<T> toConsumer(Function<T, Object> fn) { (T t) -> { fn.apply(t); return } }
+            Consumer<Object> c = toConsumer((String s) -> s.length())
+        ''',
+            'Cannot assign java.util.function.Consumer<java.lang.String> to: java.util.function.Consumer<java.lang.Object>'
+
+        assertScript '''
+            import java.util.function.*
+            def <T> Consumer<T> toConsumer(Function<T, Object> fn) { (T t) -> { fn.apply(t); return } }
+            Consumer<String> same = toConsumer((String s) -> s.length())
+            Consumer<String> wider = toConsumer((Object o) -> o.hashCode())
+            Consumer<String> implicit = toConsumer(s -> s)
+            same.accept('x'); wider.accept('x'); implicit.accept('x')
+        '''
+    }
+
+    // GROOVY-12755
+    @Test
+    void testTargetTypeArgumentIsCheckedAgainstMethodReferenceParameters() {
+        // the target passes any object to a method that accepts only a String, as its receiver or argument
+        for (code in [
+                'Consumer<Object> c = toConsumer(String::length)',
+                'Consumer<Object> c = toConsumer(String.&length)',
+                'Function<Object, Integer> f = toFunction(String::length)',
+                'Predicate<Object> p = toPredicate(String::isEmpty)',
+                'Comparator<Object> c = toComparator(String::compareTo)',
+                'UnaryOperator<Object> u = toUnaryOperator(String::trim)',
+                'ToIntFunction<Object> f = toIntFunction(String::length)',
+                'Function<Object, String> f = toFunction(String::reverse)'
+        ]) {
+            shouldFailWithMessages """
+                import java.util.function.*
+                def <T> Consumer<T> toConsumer(Function<T, Object> fn) { (T t) -> { fn.apply(t); return } }
+                def <T, R> Function<T, R> toFunction(Function<T, R> fn) { fn }
+                def <T> Predicate<T> toPredicate(Predicate<T> p) { p }
+                def <T> Comparator<T> toComparator(Comparator<T> c) { c }
+                def <T> UnaryOperator<T> toUnaryOperator(UnaryOperator<T> u) { u }
+                def <T> ToIntFunction<T> toIntFunction(ToIntFunction<T> f) { f }
+                $code
+            """,
+                'Incompatible generic argument types'
+        }
+
+        assertScript '''
+            import java.util.function.*
+            def <T> Consumer<T> toConsumer(Function<T, Object> fn) { (T t) -> { fn.apply(t); return } }
+            def <T, R> Function<T, R> toFunction(Function<T, R> fn) { fn }
+            def <T> Supplier<T> toSupplier(Supplier<T> s) { s }
+            def <T> UnaryOperator<T> toUnaryOperator(UnaryOperator<T> u) { u }
+            Consumer<String> length = toConsumer(String::length)
+            Function<Object, String> valueOf = toFunction(String::valueOf)
+            Function<String, Integer> charSequenceLength = toFunction(CharSequence::length)
+            Function<String, Integer> hashCode = toFunction(Object::hashCode)
+            Function<String, StringBuilder> builder = toFunction(StringBuilder::new)
+            Function<Object[], List<Object>> asList = toFunction(Arrays::asList)
+            Supplier<List<String>> list = toSupplier(ArrayList::new)
+            UnaryOperator<String> trim = toUnaryOperator(String::trim)
+            length.accept('x')
+            assert valueOf.apply(1) == '1' && charSequenceLength.apply('abc') == 3 && hashCode.apply('a') == 'a'.hashCode()
+            assert builder.apply('x').toString() == 'x' && asList.apply([1, 2] as Object[]) == [1, 2]
+            assert list.get() == [] && trim.apply(' a ') == 'a'
+        '''
+    }
+
+    // GROOVY-12755
+    @Test
+    void testTargetTypeArgumentIsCheckedAgainstBoundsOfMethodReference() {
+        // the target passes a String to a method whose type parameter accepts only a Number
+        for (code in [
+                'Consumer<String> c = toConsumer(C::takeNumber)',
+                'Consumer<String> c = toConsumer(C.&takeNumber)',
+                'Consumer<String> c = toConsumer(new C()::takeNumberInstance)',
+                'Consumer<List<String>> c = toConsumer(C::takeNumbers)',
+                'UnaryOperator<String> u = toUnaryOperator(C::sameNumber)'
+        ]) {
+            shouldFailWithMessages """
+                import java.util.function.*
+                class C {
+                    static <T extends Number> void takeNumber(T t) { }
+                    static <T extends Number> void takeNumbers(List<T> list) { }
+                    static <T extends Number> T sameNumber(T t) { t }
+                    def <T extends Number> void takeNumberInstance(T t) { }
+                }
+                def <T> Consumer<T> toConsumer(Consumer<T> c) { c }
+                def <T> UnaryOperator<T> toUnaryOperator(UnaryOperator<T> u) { u }
+                $code
+            """,
+                'Incompatible generic argument types'
+        }
+
+        assertScript '''
+            import java.util.function.*
+            class C {
+                static <T extends Number> void takeNumber(T t) { }
+                static <T extends Number> void takeNumbers(List<T> list) { }
+                static <T extends Number> T sameNumber(T t) { t }
+                static <T extends Comparable<T>> T max(T a, T b) { a.compareTo(b) >= 0 ? a : b }
+                def <T extends Number> void takeNumberInstance(T t) { }
+            }
+            def <T> Consumer<T> toConsumer(Consumer<T> c) { c }
+            def <T> UnaryOperator<T> toUnaryOperator(UnaryOperator<T> u) { u }
+            def <T> BinaryOperator<T> toBinaryOperator(BinaryOperator<T> b) { b }
+            Consumer<Integer> number = toConsumer(C::takeNumber)
+            Consumer<Integer> instance = toConsumer(new C()::takeNumberInstance)
+            Consumer<List<Integer>> numbers = toConsumer(C::takeNumbers)
+            UnaryOperator<Integer> same = toUnaryOperator(C::sameNumber)
+            BinaryOperator<String> max = toBinaryOperator(C::max)
+            number.accept(1)
+            instance.accept(1)
+            numbers.accept([1])
+            assert same.apply(1) == 1 && max.apply('a', 'b') == 'b'
+        '''
+    }
+
+    // GROOVY-12755
+    @Test
+    void testTargetTypeSelectsMethodOfMethodReference() {
+        // the method is selected, and its variadic parameter filled, as for a direct assignment
+        assertScript '''
+            import java.util.function.*
+            class C {
+                static String pick(Object o) { 'Object' }
+                static String pick(String s) { 'String' }
+                static int count(String... strings) { strings.length }
+            }
+            def <T, R> Function<T, R> toFunction(Function<T, R> fn) { fn }
+            String call(Function<String, String> fn) { fn.apply('x') }
+            Function<String, String> pick = toFunction(C::pick)
+            Function<char[], String> valueOf = toFunction(String::valueOf)
+            Function<String, List<String>> asList = toFunction(Arrays::asList)
+            Function<String, Integer> count = toFunction(C::count)
+            Function<String[], Integer> countAll = toFunction(C::count)
+            assert pick.apply('x') == 'String' && call(toFunction(C::pick)) == 'String'
+            assert valueOf.apply(['a', 'b'] as char[]) == 'ab'
+            assert asList.apply('x') == ['x']
+            assert count.apply('x') == 1 && countAll.apply(['x', 'y'] as String[]) == 2
+        '''
+    }
+
+    // GROOVY-12755
+    @Test
+    void testTargetTypeGivesReceiverOfMethodReferenceItsTypeArguments() {
+        // Optional::get is a method of Optional<String> when the target passes an Optional<String>
+        assertScript '''
+            import java.util.function.*
+            def <T, R> Function<T, R> toFunction(Function<T, R> fn) { fn }
+            def <T, U, R> BiFunction<T, U, R> toBiFunction(BiFunction<T, U, R> fn) { fn }
+            Function<Optional<String>, String> get = toFunction(Optional::get)
+            BiFunction<List<String>, Integer, String> getAt = toBiFunction(List::get)
+            BiFunction<List<String>, String, Boolean> add = toBiFunction(List::add)
+            Function<Map.Entry<String, Integer>, String> key = toFunction(Map.Entry::getKey)
+            assert get.apply(Optional.of('a')) == 'a' && getAt.apply(['a', 'b'], 1) == 'b'
+            assert add.apply([], 'a') && key.apply(Map.entry('a', 1)) == 'a'
+            // extension methods
+            Function<List<String>, String> first = toFunction(List::first)
+            Function<ArrayList<String>, String> firstOfArrayList = toFunction(List::first)
+            Function<List<String>, List<String>> reverse = toFunction(List::reverse)
+            Function<String, Integer> size = toFunction(String::size)
+            assert first.apply(['a', 'b']) == 'a' && firstOfArrayList.apply(new ArrayList<String>(['a'])) == 'a'
+            assert reverse.apply(['a', 'b']) == ['b', 'a'] && size.apply('ab') == 2
+        '''
+
+        for (code in [
+                'Function<Optional<Integer>, String> f = toFunction(Optional::get)',
+                'Function<List<Integer>, String> f = toFunction(List::first)',
+                'BiFunction<List<String>, Integer, Boolean> f = toBiFunction(List::add)'
+        ]) {
+            shouldFailWithMessages """
+                import java.util.function.*
+                def <T, R> Function<T, R> toFunction(Function<T, R> fn) { fn }
+                def <T, U, R> BiFunction<T, U, R> toBiFunction(BiFunction<T, U, R> fn) { fn }
+                $code
+            """,
+                'Incompatible generic argument types'
+        }
+    }
+
+    // GROOVY-12755
+    @Test
+    void testTypeParameterOfCallWithNoArgumentsIsTakenFromTarget() {
+        // K and V of Map.Entry.comparingByKey() are known only from the target
+        assertScript '''
+            Comparator<Map.Entry<String, Integer>> byKey = Map.Entry.comparingByKey()
+            Comparator<Map.Entry<String, Integer>> byValue = Map.Entry.comparingByValue()
+            def entries = new ArrayList<Map.Entry<String, Integer>>([b: 1, a: 2].entrySet())
+            assert entries.sort(false, byKey)*.key == ['a', 'b']
+            assert entries.sort(false, byValue)*.key == ['b', 'a']
+        '''
+
+        // the variable has the declared type
+        shouldFailWithMessages '''
+            Comparator<Map.Entry<Integer, Integer>> byKey = Map.Entry.comparingByKey()
+            Comparator<Map.Entry<String, Integer>> other = byKey
+        ''',
+            'Cannot assign java.util.Comparator<java.util.Map$Entry<java.lang.Integer, java.lang.Integer>> to: java.util.Comparator<java.util.Map$Entry<java.lang.String, java.lang.Integer>>'
+    }
+
+    // GROOVY-12755
+    @Test
+    void testVariadicMethodReferenceTakesElementTypeFromFunctionalInterface() {
+        assertScript '''
+            List<List<String>> lists = ['x', 'y'].stream().map(Arrays::asList).toList()
+            assert lists == [['x'], ['y']]
+        '''
+    }
+
+    // GROOVY-12755
+    @Test
+    void testTargetTypeArgumentOfArrayType() {
+        for (code in [
+                'List<Long[]> list = Collections.singletonList(new Integer[]{1, 2})',
+                'Optional<Long[]> o = Optional.of(new Integer[]{1})',
+                'List<long[]> list = Collections.singletonList(new int[]{1})'
+        ]) {
+            shouldFailWithMessages code, 'Incompatible generic argument types'
+        }
+
+        assertScript '''
+            List<Number[]> numbers = Collections.singletonList(new Integer[]{1})
+            List<int[]> ints = Collections.singletonList(new int[]{1})
+            List<Object> objects = Collections.singletonList(new Integer[]{1})
+            assert numbers[0][0] == 1 && ints[0][0] == 1 && objects.size() == 1
+        '''
+    }
+
+    // GROOVY-12755
+    @Test
+    void testSpreadAndCollectAreCheckedAgainstBoundsOfTarget() {
+        for (items in ['List<Object>', 'List<T>']) { // getClass() is typed by the erasure of T
+            shouldFailWithMessages """
+                def <T> void classes($items items) {
+                    List<Class<? extends T>> list = items*.getClass()
+                }
+            """,
+                'Cannot assign java.util.List<java.lang.Class<?>> to: java.util.List<java.lang.Class<? extends T>>'
+        }
+
+        for (code in [
+                'void test(List<List> raw) { List<Class<? extends List<String>>> list = raw*.getClass() }',
+                'void test(List<Class<? extends List>> raw) { List<Class<? extends List<String>>> list = raw.collect { it } }',
+                'List<Class<? extends List<String>>> test(ArrayList<Class<? extends List>> raw) { raw }'
+        ]) {
+            shouldFailWithMessages code,
+                'Class<? extends java.util.List>> to: java.util.List<java.lang.Class<? extends java.util.List<java.lang.String>>>'
+        }
+
+        assertScript '''
+            void test(List<String> strings, List<Object> objects, List<Class<? extends List>> lists) {
+                List<Class<? extends CharSequence>> a = strings*.getClass()
+                List<Class<?>> b = objects*.getClass()
+                List<Class<? extends List>> c = lists.collect { it }
+                assert a == [String] && b == [String] && c == [ArrayList]
+            }
+            test(['a'], ['b'], [ArrayList])
+        '''
+    }
+
+    // GROOVY-12775: compiles with 5.1.3 and 6.0.0; javac rejects
+    @NotYetImplemented
+    @Test
+    void testCollectOfClassIsCheckedAgainstEnclosingTypeParameter() {
+        shouldFailWithMessages '''
+            def <T> void classes(List<Object> items) {
+                List<Class<? extends T>> list = items.collect { it.getClass() }
+            }
+        ''',
+            'Cannot assign'
+    }
+
+    // GROOVY-12772: compiles with 5.1.3 and 6.0.0; javac rejects
+    @NotYetImplemented
+    @Test
+    void testClosureResultIsCheckedAgainstEnclosingTypeParameter() {
+        shouldFailWithMessages '''
+            def <T> List<T> cast(List<String> strings) {
+                List<T> list = strings.collect { String s -> s }
+                list
+            }
+        ''',
+            'Cannot assign'
+    }
+
+    // GROOVY-12773: compiles with 5.1.3 and 6.0.0; javac rejects
+    @NotYetImplemented
+    @Test
+    void testArgumentIsCheckedAgainstBoundOfEnclosingTypeParameter() {
+        shouldFailWithMessages '''
+            def <U extends Number> List<Class<? extends U>> classes(Class<? extends Number> c) {
+                List<Class<? extends U>> list = Collections.singletonList(c)
+                list
+            }
+        ''',
+            'Cannot assign'
+    }
+
+    // GROOVY-12769: compiles with 5.1.3 and 6.0.0; javac rejects
+    @NotYetImplemented
+    @Test
+    void testClassOfTypeVariableIsNotTypeArgumentOfGenericCall() {
+        shouldFailWithMessages '''
+            def <U> Class<? extends U> classOf(U u) {
+                List<Class<? extends U>> list = Collections.singletonList(u.getClass())
+                list[0]
+            }
+        ''',
+            'Cannot assign'
+    }
+
+    // GROOVY-12774: compiles with 5.1.3 and 6.0.0; javac rejects
+    @NotYetImplemented
+    @Test
+    void testRawBoundArgumentOfParameterizedReceiver() {
+        shouldFailWithMessages '''
+            void test(Map<String, Class<? extends List<String>>> map, Class<? extends List> raw) {
+                map.put('k', raw)
+            }
+        ''',
+            'Cannot call'
+    }
+
+    // GROOVY-12775: compiles with 5.1.3 and 6.0.0; javac rejects
+    @NotYetImplemented
+    @Test
+    void testClassArgumentOfCollectIsCheckedAgainstTarget() {
+        shouldFailWithMessages '''
+            class IntList extends ArrayList<Integer> { }
+            List<Class<? extends List<String>>> list = [IntList].collect { it }
+        ''',
+            'Cannot assign'
+    }
+
+    // GROOVY-12770: compiles with 5.1.3 and 6.0.0, and fails at run time
+    @NotYetImplemented
+    @Test
+    void testClassAfterInstanceofIsCheckedAsClass() {
+        shouldFailWithMessages '''
+            void test(Serializable s) {
+                if (s instanceof Class) {
+                    Class<? extends Number> c = s
+                }
+            }
+        ''',
+            'Cannot assign'
+    }
+
+    // GROOVY-12776: compiles with 5.1.3 and 6.0.0, and fails at run time
+    @NotYetImplemented
+    @Test
+    void testConstructorReferenceIsCheckedAgainstParametersOfGenericCall() {
+        shouldFailWithMessages '''
+            import java.util.function.Function
+            def <T, R> Function<T, R> toFunction(Function<T, R> fn) { fn }
+            Function<Object, Object> f = toFunction(StringBuilder::new)
+        ''',
+            'Cannot assign'
+    }
+
+    // GROOVY-12777: compiles with 5.1.3 and 6.0.0, and fails at run time
+    @NotYetImplemented
+    @Test
+    void testMethodReferenceIsCheckedAgainstBoundsForGenericCallAsArgument() {
+        shouldFailWithMessages '''
+            import java.util.function.Consumer
+            class C {
+                static <T extends Number> void takeNumber(T t) { }
+            }
+            def <T> Consumer<T> toConsumer(Consumer<T> c) { c }
+            void use(Consumer<String> c) { c.accept('x') }
+            use(toConsumer(C::takeNumber))
+        ''',
+            'Cannot call'
+    }
+
+    // GROOVY-12778: compiles with 5.1.3 and 6.0.0, and fails at run time
+    @NotYetImplemented
+    @Test
+    void testMethodReferenceIsCheckedAgainstBoundNamingItsTypeParameter() {
+        shouldFailWithMessages '''
+            import java.util.function.BinaryOperator
+            class C {
+                static <T extends Comparable<T>> T max(T a, T b) { a.compareTo(b) >= 0 ? a : b }
+            }
+            def <T> BinaryOperator<T> toBinaryOperator(BinaryOperator<T> b) { b }
+            BinaryOperator<Object> max = toBinaryOperator(C::max)
+        ''',
+            'Cannot assign'
+    }
+
+    // GROOVY-12779: rejected by 5.1.3 and 6.0.0; the direct assignment compiles
+    @NotYetImplemented
+    @Test
+    void testExtensionMethodReferenceWithParametersForGenericCall() {
+        assertScript '''
+            import java.util.function.BiFunction
+            def <T, U, R> BiFunction<T, U, R> toBiFunction(BiFunction<T, U, R> fn) { fn }
+            BiFunction<List<String>, String, String> join = toBiFunction(List::join)
+            assert join.apply(['a', 'b'], '-') == 'a-b'
+        '''
+    }
+
+    // GROOVY-12780: rejected by 5.1.3 and 6.0.0; javac accepts
+    @NotYetImplemented
+    @Test
+    void testMethodReferenceReturningTypeParameterOfReceiverForBoundedTypeParameter() {
+        assertScript '''
+            Comparator<Map.Entry<String, Integer>> byKey = Comparator.comparing(Map.Entry::getKey)
+            def entries = new ArrayList<Map.Entry<String, Integer>>([b: 1, a: 2].entrySet())
+            assert entries.sort(false, byKey)*.key == ['a', 'b']
+        '''
+    }
+
+    // GROOVY-12755
+    @Test
+    void testVariableWithTypeOfItsValueIsNotTypedByParameter() {
+        shouldFailWithMessages '''
+            void takes(List<Class<?>> list) { }
+            def classes = Collections.singletonList('x'.getClass())
+            takes(classes)
+        ''',
+            '#takes(java.util.List<java.lang.Class<?>>) with arguments [java.util.List<java.lang.Class<? extends java.lang.String>>]. Declare variable classes as java.util.List<java.lang.Class<?>> to pass it'
+
+        shouldFailWithMessages '''
+            void takes(List<Class<?>> list) { }
+            var classes = ['x']*.getClass()
+            takes(classes)
+        ''',
+            '. Declare variable classes as java.util.List<java.lang.Class<?>> to pass it'
+
+        // no hint where declaring the variable with the parameter type would not compile
+        def err = assertThrows(MultipleCompilationErrorsException) {
+            shell.evaluate '''
+                void takes(List<Class<?>> list) { }
+                List<Class<? extends String>> typed = Collections.singletonList('x'.getClass())
+                def classes = typed
+                takes(classes)
+            '''
+        }
+        assert err.message.contains('with arguments [java.util.List<java.lang.Class<? extends java.lang.String>>]')
+        assert !err.message.contains('Declare variable')
+
+        // nor where the declaration would need a conversion of the elements
+        err = assertThrows(MultipleCompilationErrorsException) {
+            shell.evaluate '''
+                void takes(List<Long> list) { }
+                def numbers = Collections.singletonList(1)
+                takes(numbers)
+            '''
+        }
+        assert err.message.contains('with arguments [java.util.List<java.lang.Integer>]')
+        assert !err.message.contains('Declare variable')
+
+        assertScript '''
+            void takes(List<Class<?>> list) { assert list == [String] }
+            List<Class<?>> classes = Collections.singletonList('x'.getClass())
+            takes(classes)
+        '''
+    }
+
+    // GROOVY-12755
+    @Test
+    void testTargetTypeDoesNotAdmitWildcardArgumentForItsTypeArgument() {
+        shouldFailWithMessages '''
+            public <T extends Number> List<T> same(List<T> list) { list }
+            List<Number> test(List<? extends Number> list) { same(list) }
+        ''',
+            'Incompatible generic argument types. Cannot assign java.util.List<? extends java.lang.Number> to: java.util.List<java.lang.Number>'
+    }
+
+    // GROOVY-12755
+    @Test
+    void testSpreadTakesElementTypeFromTarget() {
+        assertScript '''
+            class Person { String name; Integer age }
+            List<Class<?>> classes(List<String> list) { list*.getClass() }
+            Collection<Class<?>> types(List<String> list) { list*.class }
+            List<CharSequence> names(List<Person> people) { people*.name }
+            Iterable<Number> ages(List<Person> people) {
+                List<Number> ages = people*.age
+                ages.add(1.5d)
+                ages
+            }
+            assert classes(['x']) == [String]
+            assert types(['x']) == [String]
+            assert names([new Person(name: 'n')]) == ['n']
+            assert ages([new Person(age: 3)]) == [3, 1.5d]
+        '''
+
+        shouldFailWithMessages '''
+            List<Class<? extends Number>> classes(List<String> list) { list*.getClass() }
+        ''',
+            'Incompatible generic argument types. Cannot assign java.util.List<java.lang.Class<? extends java.lang.String>> to: java.util.List<java.lang.Class<? extends java.lang.Number>>'
+
+        shouldFailWithMessages '''
+            List<Class<?>> classes(List<String> list) {
+                def classes = list*.getClass()
+                classes
+            }
+        ''',
+            'Incompatible generic argument types. Cannot assign java.util.List<java.lang.Class<? extends java.lang.String>> to: java.util.List<java.lang.Class<?>>'
+    }
+
     // GROOVY-12754
     @Test
     void testWildcardNestedInCaptureBoundForTypeParameterOfBound() {
@@ -6029,6 +6762,118 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
             }
         ''',
             'Holder#<init>(java.util.List<'
+    }
+
+    // GROOVY-12754
+    @Test
+    void testWildcardArgumentWithoutUpperBoundForJdkMethods() {
+        shouldFailWithMessages '''
+            import java.lang.reflect.Method
+            def test(Method method, Class<?> type) {
+                method.getAnnotation(type)
+            }
+        ''',
+            '#getAnnotation(java.lang.Class<T>) with arguments [java.lang.Class<?>]'
+
+        for (type in ['List<?>', 'List<? super Integer>']) {
+            shouldFailWithMessages """
+                void test($type list) {
+                    Collections.sort(list)
+                }
+            """,
+                '#sort(java.util.List<T>) with arguments [java.util.List<?'
+        }
+
+        assertScript '''
+            import java.lang.annotation.Annotation
+            import java.lang.reflect.Method
+            Annotation annotationOf(Method method, Class<? extends Annotation> type) {
+                method.getAnnotation(type)
+            }
+            def sorted(List<?> list) {
+                Collections.sort((List) list)
+                list
+            }
+            assert annotationOf(Object.getMethod('toString'), Deprecated) == null
+            assert sorted([3, 1, 2]) == [1, 2, 3]
+        '''
+    }
+
+    // GROOVY-12765
+    @NotYetImplemented
+    @Test
+    void testDiamondTypeArgumentsAreCheckedAgainstTarget() {
+        shouldFailWithMessages '''
+            class Holder<T> {
+                List<T> items
+                Holder(List<T> items) { this.items = items }
+            }
+            void test(List<Integer> integers, List<? extends Integer> wildcard) {
+                Holder<Number> one = new Holder<>(integers)
+                Holder<Number> two = new Holder<>(wildcard)
+            }
+        ''',
+            'java.util.List<java.lang.Integer>',
+            'java.util.List<? extends java.lang.Integer>'
+    }
+
+    // GROOVY-12754
+    @Test
+    void testExplicitTypeArgumentForWildcardArgument() {
+        // current behaviour: javac rejects the explicit Integer, but every value of a
+        // List<? extends Integer> is an Integer, since Integer is final
+        assertScript '''
+            def <E> E first(List<E> list) { list.get(0) }
+            void test(List<? extends Integer> list) {
+                Integer i = this.<Integer>first(list)
+                assert i == 4
+                Double d = first(list)                  // numeric conversion of the Integer
+                assert d == 4.0d
+            }
+            test([4])
+        '''
+
+        shouldFailWithMessages '''
+            def <T> void add(List<T> list, T value) { list.add(value) }
+            void test(List<? extends CharSequence> list) {
+                this.<CharSequence>add(list, 'hello')
+            }
+        ''',
+            '#add(java.util.List<T>, T) with arguments [java.util.List<? extends java.lang.CharSequence>, java.lang.String]'
+    }
+
+    // GROOVY-12766
+    @NotYetImplemented
+    @Test
+    void testExplicitTypeArgumentIsCheckedAgainstArguments() {
+        shouldFailWithMessages '''
+            def <E> E first(List<E> list) { list.get(0) }
+            def <T> void add(List<T> list, T value) { list.add(value) }
+            void test(List<? extends CharSequence> chars, List<StringBuilder> builders) {
+                String s = this.<String>first(chars)
+                this.<CharSequence>add(builders, 'hello')
+                List<? extends CharSequence> local = new ArrayList<StringBuilder>()
+                this.<CharSequence>add(local, 'hello')
+            }
+        ''',
+            '#first(java.util.List<E>) with arguments [java.util.List<? extends java.lang.CharSequence>]',
+            '#add(java.util.List<T>, T) with arguments [java.util.List<java.lang.StringBuilder>, java.lang.String]',
+            '#add(java.util.List<T>, T) with arguments [java.util.ArrayList<java.lang.StringBuilder>, java.lang.String]'
+    }
+
+    // GROOVY-12766
+    @NotYetImplemented
+    @Test
+    void testInferredTypeArgumentIsCheckedAgainstArguments() {
+        shouldFailWithMessages '''
+            def <T> void add(List<T> list, T value) { list.add(value) }
+            void test(List<StringBuilder> builders, List<CharSequence> chars) {
+                add(builders, 'hello')
+                add(chars, 42)
+            }
+        ''',
+            '#add(java.util.List<T>, T) with arguments [java.util.List<java.lang.StringBuilder>, java.lang.String]',
+            '#add(java.util.List<T>, T) with arguments [java.util.List<java.lang.CharSequence>, int]'
     }
 
     // GROOVY-5885
