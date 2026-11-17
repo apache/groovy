@@ -18,10 +18,13 @@
  */
 package org.codehaus.groovy.tools.shell;
 
-import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.tools.shell.util.Preferences;
+import org.jline.jansi.AnsiConsole;
+import org.jline.jansi.AnsiMode;
+import org.jline.jansi.AnsiPrintStream;
 
 import java.io.Closeable;
+import java.io.IOError;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -33,7 +36,9 @@ import java.io.Reader;
  * Container for input/output handles.
  */
 public class IO implements Closeable {
-    private static final String ANSI_RENDER_WRITER = "org.fusesource.jansi.AnsiRenderWriter";
+    private static final String ANSI_CONSOLE = "org.jline.jansi.AnsiConsole";
+
+    private static final boolean JANSI_AVAILABLE = isJansiAvailable();
 
     /**
      * Raw input stream.
@@ -66,7 +71,9 @@ public class IO implements Closeable {
     public final PrintWriter err;
 
     /**
-     * Whether ansi support is available
+     * Whether {@link #out} renders ANSI escape sequences: the output stream is the JVM's standard
+     * output, JLine's Jansi is on the class path, and the output goes to a terminal (or the
+     * {@code jansi.mode} system property is {@code force}).
      */
     public final boolean ansiSupported;
 
@@ -83,19 +90,9 @@ public class IO implements Closeable {
         this.errorStream = errorStream;
 
         this.in = new InputStreamReader(inputStream);
-        boolean ansiSupported = false;
-        try {
-            Class.forName(ANSI_RENDER_WRITER, false, IO.class.getClassLoader());
-            ansiSupported = true;
-        } catch (ClassNotFoundException ignore) {
-        }
-        this.ansiSupported = ansiSupported;
-        PrintWriter out = null;
-        PrintWriter err = null;
-        if (ansiSupported) {
-            out = tryConstructRenderWriter(outputStream);
-            err = tryConstructRenderWriter(errorStream);
-        }
+        PrintWriter out = tryConstructRenderWriter(outputStream);
+        PrintWriter err = tryConstructRenderWriter(errorStream);
+        this.ansiSupported = out != null;
         if (out == null) {
             out = new PrintWriter(outputStream, true);
         }
@@ -109,16 +106,50 @@ public class IO implements Closeable {
     /**
      * Attempts to create an ANSI-aware writer for the supplied stream.
      *
+     * <p>Only the JVM's own standard output and error streams can render ANSI, through JLine's Jansi
+     * {@code AnsiConsole}, which also enables virtual terminal processing on Windows. A stream that is
+     * redirected to a file or a pipe gets no ANSI writer, so no escape sequences reach it.</p>
+     *
      * @param stream the output stream to wrap
      * @return an ANSI render writer, or {@code null} if ANSI support is
      * unavailable
      */
     protected PrintWriter tryConstructRenderWriter(OutputStream stream) {
-        // load via reflection to avoid hard-coded dependency on jansi jar
-        try {
-            return (PrintWriter) InvokerHelper.invokeConstructorOf(ANSI_RENDER_WRITER, new Object[]{stream, true});
-        } catch (ClassNotFoundException ignore) {
+        if (!JANSI_AVAILABLE) {
             return null;
+        }
+        try {
+            return JansiConsole.writerFor(stream);
+        } catch (IOError | RuntimeException | LinkageError e) {
+            return null;
+        }
+    }
+
+    private static boolean isJansiAvailable() {
+        // JLine's Jansi is optional for groovy, so look it up before JansiConsole links against it
+        try {
+            Class.forName(ANSI_CONSOLE, false, IO.class.getClassLoader());
+            return true;
+        } catch (ClassNotFoundException | LinkageError e) {
+            return false;
+        }
+    }
+
+    /**
+     * Refers to JLine's Jansi, and is loaded only once {@link #isJansiAvailable()} found it.
+     */
+    private static final class JansiConsole {
+        static PrintWriter writerFor(OutputStream stream) {
+            AnsiPrintStream console;
+            // AnsiConsole writes to the streams the JVM started with, so a replaced System.out keeps its own
+            if (stream == System.out && System.out == AnsiConsole.sysOut()) {
+                console = AnsiConsole.out();
+            } else if (stream == System.err && System.err == AnsiConsole.sysErr()) {
+                console = AnsiConsole.err();
+            } else {
+                return null;
+            }
+            return console.getMode() == AnsiMode.Strip ? null : new PrintWriter(console, true);
         }
     }
 
