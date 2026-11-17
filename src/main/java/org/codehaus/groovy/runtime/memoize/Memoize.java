@@ -208,6 +208,14 @@ public abstract class Memoize {
             return result == MEMOIZE_NULL ? null : (V) result;
         }
 
+        /**
+         * Closure entry point. Delegates to {@link #call(Object[])}, which returns
+         * a cached result or computes one and stores it. A cached null is returned
+         * as {@code null}.
+         *
+         * @param args the arguments, also used to build the cache key
+         * @return the cached or newly computed result
+         */
         public V doCall(final Object... args) {
             return call(args);
         }
@@ -381,6 +389,7 @@ public abstract class Memoize {
 
         /**
          * After the garbage collector has done its job, we need to clean the cache from references to all the evicted memoized values.
+         *
          * @param cache The cache to prune
          * @param queue A reference queue holding references to gc-evicted memoized values
          */

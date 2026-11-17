@@ -33,6 +33,9 @@ import java.util.concurrent.atomic.AtomicReference;
  */
 public final class CompilationSnapshot {
 
+    /**
+     * Snapshot with no documents and an empty Java symbol index.
+     */
     public static final CompilationSnapshot EMPTY = new CompilationSnapshot(Map.of(), JavaSymbolIndex.EMPTY);
 
     private final Map<URI, CompiledDocument> documents;

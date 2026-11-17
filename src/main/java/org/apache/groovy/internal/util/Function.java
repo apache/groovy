@@ -24,8 +24,17 @@ import org.apache.groovy.lang.annotation.Incubating;
 /**
  * Backport of Java8 Function.
  * INTERNAL USE ONLY.
+ *
+ * @param <T> the input type
+ * @param <R> the result type
  */
 @Incubating
 public interface Function<T, R> {
+    /**
+     * Applies this function to {@code t}.
+     *
+     * @param t the input
+     * @return the result
+     */
     R apply(T t);
 }

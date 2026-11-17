@@ -127,7 +127,7 @@ include::../test/DifferencesFromJavaTest.groovy[tags=packageprivate_field,indent
 
 == ARM blocks
 
-Java 7 introduced ARM (Automatic Resource Management) blocks (also know as try-with-resources) blocks like this:
+Java 7 introduced ARM (Automatic Resource Management) blocks (also known as try-with-resources) like this:
 
 [source,java]
 ----
@@ -300,10 +300,14 @@ include::../test/DifferencesFromJavaTest.groovy[tags=chars_c_vs_groovy_cast,inde
 == Behaviour of `==`
 
 In Java, `==` means equality of primitive types or identity for objects.
-In Groovy, `==` means equality in all places.
-For non-primitives, it translates to `a.compareTo(b) == 0`,
-when evaluating equality for `Comparable` objects,
-and `a.equals(b)` otherwise.
+In Groovy, `==` means equality in all places. For objects it is the semantic
+equality implemented by `DefaultTypeTransformation.compareEqual`, not Java's
+`==`. Identical references are equal. Two lists are compared as lists, including
+a list that is also `Comparable`, such as a tuple. A `Comparable`, or a pair of
+numbers, is compared with Groovy's comparison and is equal when that comparison
+is zero. Arrays are compared element by element, as are a list and an array.
+Two map entries are equal when their keys are equal and their values compare
+equal. Anything else is compared with `equals`.
 
 To check for identity (reference equality), use the `is` method: `a.is(b)`.
 From Groovy 3, you can also use the `===` operator (or negated version): `a === b` (or `c !== d`).
@@ -526,6 +530,12 @@ from a number to a character casts the `Number.intvalue()` to `char`. Groovy con
 using `Number.doubleValue()` when converting from a `Float` or `Double`, otherwise it constructs using `toString()`.
 Other conversions have their behavior defined by `java.lang.Number`.
 
+== Static type checking
+
+Groovy checks types at compile time only in code marked with `@TypeChecked` or `@CompileStatic`. That checking differs
+from Java's in a number of deliberate ways, such as flow typing, assignment conversions and unchecked exceptions.
+They are listed under <<{core-semantics}#stc-java-differences,Differences from Java>> in the semantics guide.
+
 == Extra keywords
 
 Groovy has many of the same keywords as Java and Groovy 3 and above also has the same `var` reserved type as Java.
@@ -535,7 +545,10 @@ In addition, Groovy has the following keywords:
 * `def`
 * `in`
 * `trait`
-* `it` // within closures
+
+`it` is not one of those keywords. It is the name of the implicit parameter of a
+closure that does not declare its parameters, and it can be used as an ordinary
+identifier elsewhere.
 
 Groovy is less stringent than Java in that it allows some keywords to appear in places that would be illegal in Java,
 e.g. the following is valid: `var var = [def: 1, as: 2, in: 3, trait: 4]`.

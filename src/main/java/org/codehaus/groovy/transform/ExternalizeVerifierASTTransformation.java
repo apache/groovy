@@ -39,6 +39,14 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.getInstancePropertyFiel
 import static org.objectweb.asm.Opcodes.ACC_FINAL;
 import static org.objectweb.asm.Opcodes.ACC_TRANSIENT;
 
+/**
+ * Checks a class annotated with {@link ExternalizeVerifier} during class generation.
+ * The class must have a no-arg constructor and implement {@link Externalizable}.
+ * A non-transient property that is not named in {@code excludes} cannot be final.
+ * When {@code includeFields} is true, instance fields that are not properties are
+ * checked the same way. When {@code checkPropertyTypes} is true, a non-primitive
+ * type must implement {@link Externalizable} or {@link Serializable}.
+ */
 @GroovyASTTransformation(phase = CompilePhase.CLASS_GENERATION)
 public class ExternalizeVerifierASTTransformation extends AbstractASTTransformation {
 

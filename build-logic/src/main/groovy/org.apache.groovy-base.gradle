@@ -434,6 +434,7 @@ tasks.register('checkstyleGate', Checkstyle) {
     configFile = rootProject.file('config/checkstyle/gate.xml')
     ignoreFailures = false
     showViolations = true
+    maxHeapSize = '2g' // the core main and test trees exceed the default worker heap
 }
 
 tasks.register('codenarcGate', CodeNarc) {
