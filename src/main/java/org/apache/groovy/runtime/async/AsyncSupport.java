@@ -266,14 +266,30 @@ public class AsyncSupport {
                 if (firstError == null) {
                     firstError = t;
                 } else {
-                    firstError.addSuppressed(t);
+                    addSuppressedOnce(firstError, t);
                 }
             }
         }
         if (firstError != null) {
-            if (firstError instanceof RuntimeException re) throw re;
-            if (firstError instanceof Error err) throw err;
-            throw new RuntimeException(firstError);
+            throw rethrow(firstError);
+        }
+    }
+
+    /**
+     * Adds {@code secondary} to the exceptions suppressed by {@code primary},
+     * unless it is already recorded there or is, once JDK wrapper layers are
+     * removed, {@code primary} itself or its cause. Several child tasks or
+     * deferred actions may rethrow one shared exception instance, for example
+     * by awaiting the same failed task.
+     */
+    static void addSuppressedOnce(Throwable primary, Throwable secondary) {
+        Throwable failure = innermost(secondary);
+        if (failure == primary || failure == primary.getCause()) return;
+        synchronized (primary) {
+            for (Throwable recorded : primary.getSuppressed()) {
+                if (recorded == secondary) return;
+            }
+            primary.addSuppressed(secondary);
         }
     }
 
@@ -520,6 +536,13 @@ public class AsyncSupport {
 
     // ---- exception utilities --------------------------------------------
 
+    /**
+     * Returns {@code t} when it is already a {@link CompletionException}.
+     * Otherwise returns a new {@link CompletionException} caused by {@code t}.
+     *
+     * @param t the failure to complete a future with; may be {@code null}
+     * @return {@code t} if it is a {@link CompletionException}, otherwise a wrapper around it
+     */
     public static CompletionException wrapForFuture(Throwable t) {
         if (t instanceof CompletionException ce) return ce;
         return new CompletionException(t);
@@ -535,23 +558,76 @@ public class AsyncSupport {
      * Strips JDK wrapper layers ({@link CompletionException},
      * {@link ExecutionException}, {@link InvocationTargetException},
      * {@link UndeclaredThrowableException}) to expose the original cause.
+     * Exceptions suppressed by a removed layer move to the cause.
      */
     public static Throwable unwrap(Throwable t) {
-        while ((t instanceof CompletionException || t instanceof ExecutionException
-                || t instanceof InvocationTargetException
-                || t instanceof UndeclaredThrowableException)
-                && t.getCause() != null) {
+        while (isJdkWrapper(t)) {
+            t = transferSuppressed(t, t.getCause());
+        }
+        return t;
+    }
+
+    /** The exception inside any JDK wrapper layers, found without moving suppressed exceptions. */
+    private static Throwable innermost(Throwable t) {
+        while (isJdkWrapper(t)) {
             t = t.getCause();
         }
         return t;
     }
 
+    private static boolean isJdkWrapper(Throwable t) {
+        return (t instanceof CompletionException || t instanceof ExecutionException
+                || t instanceof InvocationTargetException
+                || t instanceof UndeclaredThrowableException)
+                && t.getCause() != null;
+    }
+
     /**
-     * Rethrows {@code failure} as itself, including a checked exception.
-     * Kept in this package so the pure-Java concurrent jar stays self-contained.
+     * Removes the {@link UndeclaredThrowableException} that converting a closure
+     * to a functional interface such as {@code Function} or {@code Consumer} puts
+     * around a checked exception. Only that layer is removed: any other wrapper,
+     * including one the code threw itself, is returned unchanged. Exceptions
+     * suppressed by the removed layer move to the checked exception.
+     * <p>
+     * Internal runtime support, public only for use by {@code groovy.concurrent}.
+     *
+     * @param t the exception thrown through the converted closure
+     * @return the checked exception it carries, or {@code t} itself
      */
-    static void rethrow(Throwable failure) {
+    public static Throwable unwrapUndeclared(Throwable t) {
+        if (t instanceof UndeclaredThrowableException) {
+            Throwable cause = t.getCause();
+            if (cause != null && !(cause instanceof RuntimeException) && !(cause instanceof Error)) {
+                return transferSuppressed(t, cause);
+            }
+        }
+        return t;
+    }
+
+    /**
+     * Moves the exceptions suppressed by a wrapper being removed to its cause,
+     * so that cleanup failures recorded on the wrapper are not lost.
+     */
+    private static Throwable transferSuppressed(Throwable wrapper, Throwable cause) {
+        for (Throwable suppressed : wrapper.getSuppressed()) {
+            addSuppressedOnce(cause, suppressed);
+        }
+        return cause;
+    }
+
+    /**
+     * Rethrows {@code failure} as itself, including a checked exception, so
+     * that async constructs surface the same exception synchronous code would.
+     * Kept in this package so the pure-Java concurrent jar stays self-contained.
+     * <p>
+     * Internal runtime support, public only for use by {@code groovy.concurrent}.
+     *
+     * @param failure the exception to rethrow
+     * @return never returns normally; declared so callers can write {@code throw rethrow(t)}
+     */
+    public static RuntimeException rethrow(Throwable failure) {
         sneakyThrow(failure);
+        return null; // unreachable
     }
 
     @SuppressWarnings("unchecked")

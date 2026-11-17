@@ -20,6 +20,7 @@ package org.codehaus.groovy.classgen;
 
 import groovy.lang.GroovyClassLoader;
 import groovy.lang.GroovyRuntimeException;
+import org.apache.groovy.ast.pattern.PatternLowering;
 import org.apache.groovy.ast.tools.ExpressionUtils;
 import org.apache.groovy.io.StringBuilderWriter;
 import org.codehaus.groovy.GroovyBugError;
@@ -42,6 +43,7 @@ import org.codehaus.groovy.ast.PackageNode;
 import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.PropertyNode;
 import org.codehaus.groovy.ast.RecordComponentNode;
+import org.codehaus.groovy.ast.decompiled.DecompiledClassNode;
 import org.codehaus.groovy.ast.expr.AnnotationConstantExpression;
 import org.codehaus.groovy.ast.expr.ArgumentListExpression;
 import org.codehaus.groovy.ast.expr.ArrayExpression;
@@ -68,6 +70,7 @@ import org.codehaus.groovy.ast.expr.MethodCallExpression;
 import org.codehaus.groovy.ast.expr.MethodPointerExpression;
 import org.codehaus.groovy.ast.expr.MethodReferenceExpression;
 import org.codehaus.groovy.ast.expr.NotExpression;
+import org.codehaus.groovy.ast.expr.PatternExpression;
 import org.codehaus.groovy.ast.expr.PostfixExpression;
 import org.codehaus.groovy.ast.expr.PrefixExpression;
 import org.codehaus.groovy.ast.expr.PropertyExpression;
@@ -111,6 +114,7 @@ import org.codehaus.groovy.classgen.asm.OptimizingStatementWriter;
 import org.codehaus.groovy.classgen.asm.PeepholeOptimizingMethodVisitor;
 import org.codehaus.groovy.classgen.asm.WriterController;
 import org.codehaus.groovy.classgen.asm.WriterControllerFactory;
+import org.codehaus.groovy.classgen.asm.sc.RuntimePackageCheck;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.runtime.IntersectionCastSupport;
 import org.codehaus.groovy.runtime.ScriptBytecodeAdapter;
@@ -358,6 +362,7 @@ public class AsmClassGenerator extends ClassGenerator {
      */
     @Override
     public void visitClass(final ClassNode classNode) {
+        if (classNode.isEnum()) EnumConstantInit.substitute(classNode); // before any visitor reads the static initializer
         referencedClasses.clear();
 
         WriterControllerFactory factory = classNode.getNodeMetaData(WriterControllerFactory.class);
@@ -489,7 +494,21 @@ public class AsmClassGenerator extends ClassGenerator {
     }
 
     private void maybeInnerClassEntry(final ClassNode classNode) {
-        if (classNode.getOuterClass() != null) makeInnerClassEntry(classNode);
+        if (classNode.getOuterClass() != null) {
+            makeInnerClassEntry(classNode);
+        } else if (classNode.redirect() instanceof DecompiledClassNode decompiled) { // GROOVY-12544
+            decompiled.visitInnerClassEntries(classVisitor);
+        } else if (!classNode.isPrimaryClassNode() && !classNode.isArray() && classNode.isResolved()) {
+            makeInnerClassEntry(classNode.getTypeClass());
+        }
+    }
+
+    private void makeInnerClassEntry(final Class<?> innerClass) {
+        Class<?> outerClass = innerClass.getDeclaringClass();
+        if (outerClass == null) return; // top-level, local or anonymous
+        makeInnerClassEntry(outerClass);
+        classVisitor.visitInnerClass(BytecodeHelper.getClassInternalName(innerClass),
+                BytecodeHelper.getClassInternalName(outerClass), innerClass.getSimpleName(), innerClass.getModifiers());
     }
 
     private void makeInnerClassEntry(final ClassNode innerClass) {
@@ -671,10 +690,10 @@ public class AsmClassGenerator extends ClassGenerator {
             if (code != null && cn.getOuterClass() != null) {
                 // GROOVY-4471: if the class is an inner class node, there are chances that
                 // the call to super is already added so we must ensure not to add it twice
-                if (code instanceof BlockStatement) {
-                    hasCallToSuper = ((BlockStatement) code).getStatements().stream()
-                        .map(statement -> statement instanceof ExpressionStatement ? ((ExpressionStatement) statement).getExpression() : null)
-                        .anyMatch(expression -> expression instanceof ConstructorCallExpression && ((ConstructorCallExpression) expression).isSuperCall());
+                if (code instanceof BlockStatement block) {
+                    hasCallToSuper = block.getStatements().stream()
+                        .map(statement -> statement instanceof ExpressionStatement es ? es.getExpression() : null)
+                        .anyMatch(expression -> expression instanceof ConstructorCallExpression cce && cce.isSuperCall());
                 }
             }
             if (!hasCallToSuper) {
@@ -692,6 +711,8 @@ public class AsmClassGenerator extends ClassGenerator {
                 }
                 // add call to "super()"
                 mv.visitVarInsn(ALOAD, 0);
+                ConstructorNode superCtor = controller.getClassNode().getSuperClass().getDeclaredConstructor(Parameter.EMPTY_ARRAY);
+                if (superCtor != null) RuntimePackageCheck.checkConstructor(controller, superCtor, true, node.getLineNumber() > 0 ? node : cn);
                 mv.visitMethodInsn(INVOKESPECIAL, controller.getInternalBaseClassName(), "<init>", "()V", false);
             }
         }
@@ -701,8 +722,12 @@ public class AsmClassGenerator extends ClassGenerator {
         }
 
         if (code == null || maybeFallsThrough(code)) {
-            if (code != null) { // GROOVY-7647, GROOVY-9373
-                controller.visitLineNumber(code.getLastLineNumber());
+            if (code != null) {
+                int line = code.getLastLineNumber(); // GROOVY-7647, GROOVY-9373
+                if (line < 1 && code instanceof BlockStatement block && !block.isEmpty()) { // GROOVY-12752
+                    line = block.getStatements().get(block.getStatements().size() - 1).getLastLineNumber();
+                }
+                controller.visitLineNumber(line);
             }
             if (node.isVoidMethod()) {
                 mv.visitInsn(RETURN);
@@ -1001,6 +1026,19 @@ public class AsmClassGenerator extends ClassGenerator {
     }
 
     /**
+     * Generates bytecode for a pattern match (GEP-19) from the code that
+     * {@link PatternLowering} derived for it.
+     */
+    @Override
+    public void visitPatternExpression(final PatternExpression expression) {
+        if (expression.getLowered() == null) {
+            throw new GroovyBugError("The pattern `" + expression.getText() + "` was not lowered before class generation;"
+                    + " a transform that creates a pattern from instruction selection on lowers it with PatternLowering.lower(ClassNode, SourceUnit)");
+        }
+        expression.getLowered().visit(this);
+    }
+
+    /**
      * {@inheritDoc}
      */
     @Override
@@ -1065,7 +1103,7 @@ public class AsmClassGenerator extends ClassGenerator {
     /**
      * Generates byte code for constants.
      *
-     * @see <a href="http://java.sun.com/docs/books/vmspec/2nd-edition/html/ClassFile.doc.html#14152">Class field types</a>
+     * @see <a href="https://docs.oracle.com/javase/specs/jvms/se17/html/jvms-4.html#jvms-4.4">The Constant Pool</a>
      */
     @Override
     public void visitConstantExpression(final ConstantExpression expression) {
@@ -1641,6 +1679,7 @@ public class AsmClassGenerator extends ClassGenerator {
      */
     @Override
     public void visitFieldExpression(final FieldExpression expression) {
+        RuntimePackageCheck.checkField(controller, expression.getField(), null, expression);
         if (expression.getField().isStatic()) {
             if (controller.getCompileStack().isLHS()) {
                 storeStaticField(expression);
@@ -1792,21 +1831,16 @@ public class AsmClassGenerator extends ClassGenerator {
         // present on the stack for short-circuit RHS of || (where the pattern is
         // not definitely bound) or briefly on a non-live arm before hide. Treat
         // DynamicVariable as property access even when a same-named slot exists.
-        if (expression.getAccessedVariable() instanceof DynamicVariable) {
+        BytecodeVariable variable =
+            (expression.getAccessedVariable() instanceof DynamicVariable) ? null :
+            compileStack.getVariable(expression.getName(), /*throwIfMissing*/false);
+        if (variable != null) {
+            controller.getOperandStack().loadOrStoreVariable(variable, expression.isUseReferenceDirectly());
+        } else {
             PropertyExpression pexp = thisPropX(/*implicit-this*/true, expression.getName());
             pexp.getProperty().setSourcePosition(expression);
             pexp.copyNodeMetaData(expression);
             pexp.visit(this);
-        } else {
-            BytecodeVariable variable = compileStack.getVariable(expression.getName(), /*throwIfMissing*/false);
-            if (variable != null) {
-                controller.getOperandStack().loadOrStoreVariable(variable, expression.isUseReferenceDirectly());
-            } else {
-                PropertyExpression pexp = thisPropX(/*implicit-this*/true, expression.getName());
-                pexp.getProperty().setSourcePosition(expression);
-                pexp.copyNodeMetaData(expression);
-                pexp.visit(this);
-            }
         }
 
         if (!compileStack.isLHS()) {

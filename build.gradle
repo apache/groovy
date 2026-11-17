@@ -17,9 +17,9 @@
  *  under the License.
  */
 plugins {
-    id 'io.github.ben-manes.versions' version '0.66.0'
+    id 'io.github.ben-manes.versions' version '0.67.0'
     id 'io.github.goooler.osgi' version '0.8.6'
-    id 'com.github.jk1.dependency-license-report' version '3.1.4'
+    id 'com.github.jk1.dependency-license-report' version '3.1.5'
     id 'org.sonarqube' version '7.5.0.8588'
     id 'org.apache.groovy-core'
     id 'java-test-fixtures'
@@ -159,8 +159,7 @@ dependencies {
     testImplementation projects.groovyTestJunit6 // for groovy.junit6.plugin.ForkedJvm
     testImplementation "net.jcip:jcip-annotations:${versions.jcipAnnotations}"
     testImplementation "com.github.javaparser:javaparser-core:${versions.javaParser}"
-    testImplementation "com.fasterxml.jackson.core:jackson-databind:${versions.jackson}"
-    testImplementation "com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:${versions.jackson}"
+    testImplementation "tools.jackson.core:jackson-databind:${versions.jackson3}"
 
     testFixturesImplementation projects.groovyXml
     testFixturesImplementation projects.groovyTest

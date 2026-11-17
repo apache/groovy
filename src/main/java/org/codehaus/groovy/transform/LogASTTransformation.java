@@ -31,6 +31,7 @@ import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.DynamicVariable;
 import org.codehaus.groovy.ast.FieldNode;
 import org.codehaus.groovy.ast.MethodNode;
+import org.codehaus.groovy.ast.Variable;
 import org.codehaus.groovy.ast.expr.ClosureExpression;
 import org.codehaus.groovy.ast.expr.ConstantExpression;
 import org.codehaus.groovy.ast.expr.Expression;
@@ -225,7 +226,7 @@ public class LogASTTransformation extends AbstractASTTransformation implements C
                     return null;
                 }
                 if (!variableExpression.getName().equals(logFieldName)
-                        || !(variableExpression.getAccessedVariable() instanceof DynamicVariable)) {
+                        || !refersToLogField(variableExpression.getAccessedVariable())) {
                     return null;
                 }
                 String methodName = mce.getMethodAsString();
@@ -256,6 +257,18 @@ public class LogASTTransformation extends AbstractASTTransformation implements C
                 if (simpleArguments) return null;
 
                 return loggingStrategy.wrapLoggingMethodCall(receiver, methodName, mce);
+            }
+
+            /**
+             * The log field is added by this transformation, so a reference to it is still unbound, unless a superclass
+             * has a private field of the same name, declared or the backing field of a property, which the reference was
+             * bound to instead. That field is not accessible from this class, so the reference is to this class's log
+             * field all the same.
+             */
+            private boolean refersToLogField(final Variable variable) {
+                if (variable instanceof DynamicVariable) return true;
+                return variable instanceof FieldNode && ((FieldNode) variable).isPrivate()
+                        && !((FieldNode) variable).getOwner().equals(classNode);
             }
 
             private boolean usesSimpleMethodArgumentsOnly(final MethodCallExpression mce) {
@@ -384,12 +397,34 @@ public class LogASTTransformation extends AbstractASTTransformation implements C
          */
         FieldNode addLoggerFieldToClass(ClassNode classNode, String fieldName, String categoryName);
 
+        /**
+         * Reports whether {@code methodName} is a logging call this strategy rewrites.
+         *
+         * @param methodName the method name on the logger, such as {@code info}
+         * @return {@code true} when a call of that name should be wrapped
+         */
         boolean isLoggingMethod(String methodName);
 
+        /**
+         * Chooses the category stored on the logger field. {@code DEFAULT_CATEGORY_NAME}
+         * is replaced by the name of {@code classNode}.
+         *
+         * @param classNode the class that was annotated
+         * @param categoryName the category requested by the annotation
+         * @return the category to pass to the logging framework
+         */
         default String getCategoryName(final ClassNode classNode, final String categoryName) {
             return categoryName.equals(DEFAULT_CATEGORY_NAME) ? classNode.getName() : categoryName;
         }
 
+        /**
+         * Wraps a logging call in the guard this strategy uses.
+         *
+         * @param logVariable the logger expression
+         * @param methodName the logging method that was called
+         * @param originalExpression the call as written
+         * @return the replacement expression
+         */
         Expression wrapLoggingMethodCall(Expression logVariable, String methodName, Expression originalExpression);
 
         /**

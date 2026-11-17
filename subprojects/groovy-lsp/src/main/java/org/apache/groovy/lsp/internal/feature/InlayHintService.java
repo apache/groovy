@@ -46,11 +46,31 @@ import java.util.List;
  */
 public final class InlayHintService {
 
+    /**
+     * Collects inlay hints for {@code document}, resolving calls without a compilation snapshot.
+     *
+     * @param document the compiled source, possibly {@code null}
+     * @param range viewport in lines, or {@code null} for the whole document
+     * @param encoding negotiated position encoding
+     * @return the hints, empty when {@code document} or its module is missing
+     */
     public List<InlayHint> inlayHints(final CompiledDocument document, final Range range,
                                       final PositionEncoding encoding) {
         return inlayHints(document, range, encoding, null);
     }
 
+    /**
+     * Collects type hints for dynamic fields, parameters, and local variables,
+     * and parameter-name hints for calls resolved through {@code snapshot}.
+     * A {@code null} range keeps hints for the whole document; otherwise only
+     * hints on overlapping lines are included.
+     *
+     * @param document the compiled source, possibly {@code null}
+     * @param range viewport in lines, or {@code null} for the whole document
+     * @param encoding negotiated position encoding
+     * @param snapshot latest compile used to resolve calls, possibly {@code null}
+     * @return the hints, empty when {@code document} or its module is missing
+     */
     public List<InlayHint> inlayHints(final CompiledDocument document, final Range range,
                                       final PositionEncoding encoding, final CompilationSnapshot snapshot) {
         List<InlayHint> hints = new ArrayList<>();

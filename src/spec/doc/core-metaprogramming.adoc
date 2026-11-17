@@ -85,6 +85,10 @@ else (no)
 endif
 ....
 
+A method call or property access without an explicit receiver inside a closure first selects its receiver from the
+closure's owner and delegate, as described in the
+link:core-closures.html#closure-resolution-rules[closure resolution rules]. The steps above then apply to that receiver.
+
 === GroovyObject interface
 
 gapi:groovy.lang.GroovyObject[] is the main interface in Groovy as the `Object` class is in Java. `GroovyObject` has a default implementation in the gapi:groovy.lang.GroovyObjectSupport[] class and it is responsible to transfer invocation to the gapi:groovy.lang.MetaClass[] object. The `GroovyObject` source looks like this:
@@ -769,6 +773,31 @@ globally using the `ExpandoMetaClass.enableGlobally()` method before application
 include::../test/metaprogramming/ExpandoMetaClassTest.groovy[tags=emc_interface,indent=0]
 ----
 
+==== Metaclass shared with another class
+
+A class can override `getMetaClass()` to return the metaclass of another class. Generated proxies and mocks do this:
+a subclass that stands in for a type returns the metaclass of that type, so that methods added to the type at runtime
+are found on the stand-in too.
+
+[source,groovy]
+----
+include::../test/metaprogramming/ExpandoMetaClassTest.groovy[tags=emc_shared_with_another_class,indent=0]
+----
+<1> `GreeterProxy` stands in for `Greeter` and returns the metaclass of `Greeter`
+<2> a single call site, used before and after the metaclass changes
+<3> a method added to the metaclass of `Greeter` is found on the proxy
+<4> the metaclass selects `Greeter.greet()`, and the call runs the override in `GreeterProxy`
+<5> a later change to the metaclass applies to the next call through the same call site
+
+This is supported when the receiver is an instance of the class the metaclass belongs to, usually a subclass that
+stands in for it. Method calls and property access on the receiver select the methods and properties of that class,
+including those added to its metaclass at runtime, and an override in the receiver's class runs when such a method is
+selected. A change to the metaclass applies to later calls on the receiver.
+
+How the metaclass resolves members that only the receiver's class has is not specified. This includes methods and
+properties that only the subclass declares, `super` calls in the subclass, private members and fields, and the members
+that closures and trait methods resolve.
+
 [[extension-modules]]
 === Extension modules
 ==== Extending existing classes
@@ -882,6 +911,17 @@ separated.
 * _staticExtensionClasses_: the list of extension helper classes for
 static methods. You can provide several classes, given that they are
 comma separated.
+
+An optional fifth key, _requiredClasses_, lists classes (comma separated)
+that must be loadable before the extension helper classes are loaded,
+typically a class from an optional dependency that the extension methods'
+signatures mention. While one of them is missing, Groovy defers the module
+instead of failing to load it, and registers the module as soon as a later
+`@Grab` adds the missing dependency to the class loader that holds the
+module (for a module in the distribution's `lib` directory, that is the
+launcher's root loader, so the grab needs
+`@GrabConfig(systemClassLoader=true)`). The runtime and the static type
+checker both honour the key.
 
 Note that it is not required for a module to define both static helpers
 and instance helpers, and that you may add several classes to a single
@@ -1254,6 +1294,63 @@ The generated constructor will be roughly like this:
 ----
 include::../test/CodeGenerationASTTransformsTest.groovy[tags=mapconstructor_equiv,indent=0]
 ----
+
+[[xform-NamedVariant]]
+===== `@groovy.transform.NamedVariant`
+
+`@NamedVariant`, added in Groovy 2.5.0, generates an overload whose first parameter is a `Map`,
+so the method or constructor can be called with named arguments. The annotated method is kept
+and is what the generated method calls. The generated method has the same visibility and return
+type as the original; `@VisibilityOptions` can change the visibility of the generated one.
+
+With no `@NamedParam` or `@NamedDelegate` on any parameter, every parameter is a named argument.
+`autoDelegate` (since Groovy 2.5.3) set to `true` treats the first parameter as a delegate instead.
+`@NamedParam` and `@NamedDelegate` select parameters explicitly and may be mixed. A delegate type
+must be one Groovy can produce from a `Map` with `as`. Duplicate names, whether from named
+parameters or from properties of a delegate, are a compile error.
+
+[source,groovy]
+----
+import groovy.transform.NamedVariant
+
+@NamedVariant
+int makeSense(int dollars, int cents) {
+    100 * dollars + cents
+}
+
+assert makeSense(dollars: 2, cents: 50) == 250
+----
+
+A default is used only when the map has no entry for that name. A value that is present is
+passed through, including values that are false under <<{core-semantics}#the-groovy-truth,Groovy truth>>,
+such as `0`, `false` or `''`.
+
+[source,groovy]
+----
+import groovy.transform.NamedParam
+import groovy.transform.NamedVariant
+
+@NamedVariant
+String greet(@NamedParam String name, String suffix = '!') {
+    name + suffix
+}
+
+assert greet(name: 'Ada') == 'Ada!'
+assert greet(name: 'Ada', '') == 'Ada'
+----
+
+A trailing positional parameter with a default also produces the usual default-argument
+overloads of the named-argument method. A positional argument supplied beside the named
+arguments, including `0` or `null`, is that positional parameter and does not fall back
+to the default.
+
+`coerce` (since Groovy 3.0.6), when `true`, converts each map value with `as`. Otherwise the
+value is passed on for ordinary assignment.
+
+Joint compilation exposes the all-`Map` form to Java callers in the same compilation unit
+(`returnType methodName(Map namedArgs)`, or `ClassName(Map)` for a constructor). A method that
+mixes named and positional parameters has a richer signature at run time. Java code that needs
+the richer form should call it from Groovy, or through a hand-written method that delegates.
 
 [[xform-Canonical]]
 ===== `@groovy.transform.Canonical`

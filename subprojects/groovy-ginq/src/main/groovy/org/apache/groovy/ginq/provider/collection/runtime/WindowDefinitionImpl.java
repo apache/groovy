@@ -131,11 +131,23 @@ class WindowDefinitionImpl<T, U extends Comparable<? super U>> implements Window
         this((T t) -> Queryable.NULL, orderBy, RowBound.DEFAULT, range);
     }
 
+    /**
+     * Returns the partition function supplied to the constructor.
+     * Shorter constructors store a function that yields {@code Queryable.NULL}.
+     *
+     * @return the partition function
+     */
     @Override
     public Function<? super T, ?> partitionBy() {
         return partitionBy;
     }
 
+    /**
+     * Returns the order list supplied to the constructor.
+     * Shorter constructors store an empty list.
+     *
+     * @return the order list
+     */
     @Override
     public List<Queryable.Order<? super T, ? extends U>> orderBy() {
         return orderBy;

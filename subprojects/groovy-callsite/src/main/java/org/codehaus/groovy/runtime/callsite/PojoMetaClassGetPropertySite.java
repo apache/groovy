@@ -22,16 +22,41 @@ import groovy.lang.GroovyRuntimeException;
 import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.runtime.ScriptBytecodeAdapter;
 
+/**
+ * Property-read call site for a plain receiver. {@link #getProperty(Object)}
+ * and {@link #callGetProperty(Object)} both read {@code name} through
+ * {@link InvokerHelper}. {@link #acceptGetProperty(Object)} keeps this site.
+ */
 public class PojoMetaClassGetPropertySite extends AbstractCallSite {
+    /**
+     * Copies the call metadata from {@code parent}.
+     *
+     * @param parent the site whose name and index are reused
+     */
     public PojoMetaClassGetPropertySite(CallSite parent) {
         super(parent);
     }
 
+    /**
+     * Accepts any receiver and keeps this site as the property reader.
+     *
+     * @param receiver the property owner, unused
+     * @return this site
+     */
     @Override
     public final CallSite acceptGetProperty(Object receiver) {
           return this;
     }
 
+    /**
+     * Reads {@code name} from {@code receiver} through
+     * {@link InvokerHelper#getProperty(Object, String)}.
+     * A {@link GroovyRuntimeException} is rethrown via
+     * {@link ScriptBytecodeAdapter#unwrap(GroovyRuntimeException)}.
+     *
+     * @param receiver the property owner
+     * @return the property value
+     */
     @Override
     public final Object getProperty(Object receiver) throws Throwable {
         try {
@@ -41,6 +66,16 @@ public class PojoMetaClassGetPropertySite extends AbstractCallSite {
         }
     }
 
+    /**
+     * Reads {@code name} from {@code receiver} through
+     * {@link InvokerHelper#getProperty(Object, String)}, the same path as
+     * {@link #getProperty(Object)}.
+     * A {@link GroovyRuntimeException} is rethrown via
+     * {@link ScriptBytecodeAdapter#unwrap(GroovyRuntimeException)}.
+     *
+     * @param receiver the property owner
+     * @return the property value
+     */
     @Override
     public Object callGetProperty(Object receiver) throws Throwable {
         try {

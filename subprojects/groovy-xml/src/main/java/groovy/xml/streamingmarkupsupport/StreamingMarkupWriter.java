@@ -68,25 +68,26 @@ public class StreamingMarkupWriter extends Writer {
     private final Function<Character, Optional<String>> attrFilter = new StandardXmlAttributeFilter();
     private final Function<Character, Optional<String>> quoteFilter;
     private final Writer escapedWriter = new Writer() {
-        /* (non-Javadoc)
-        * @see java.io.Writer#close()
-        */
+        /**
+         * Closes the outer writer, including its dangling-surrogate check.
+         */
         @Override
         public void close() throws IOException {
             StreamingMarkupWriter.this.close();
         }
 
-        /* (non-Javadoc)
-        * @see java.io.Writer#flush()
-        */
+        /**
+         * Flushes the outer writer, including its dangling-surrogate check.
+         */
         @Override
         public void flush() throws IOException {
             StreamingMarkupWriter.this.flush();
         }
 
-        /* (non-Javadoc)
-        * @see java.io.Writer#write(int)
-        */
+        /**
+         * Writes the standard XML replacement for {@code c} when one exists;
+         * otherwise writes {@code c} through the outer writer.
+         */
         @Override
         public void write(final int c) throws IOException {
             Optional<String> transformed = stdFilter.apply((char) c);
@@ -97,9 +98,9 @@ public class StreamingMarkupWriter extends Writer {
             StreamingMarkupWriter.this.write(c);
         }
 
-        /* (non-Javadoc)
-        * @see java.io.Writer#write(char[], int, int)
-        */
+        /**
+         * Writes {@code len} characters from {@code cbuf} one code unit at a time.
+         */
         @Override
         public void write(final char[] cbuf, int off, int len) throws IOException {
             while (len-- > 0) {
@@ -107,14 +108,23 @@ public class StreamingMarkupWriter extends Writer {
             }
         }
 
+        /**
+         * Sets whether subsequent characters are escaped as an attribute value.
+         */
         public void setWritingAttribute(final boolean writingAttribute) {
             StreamingMarkupWriter.this.writingAttribute = writingAttribute;
         }
 
+        /**
+         * Returns this escaping view.
+         */
         public Writer escaped() {
             return escapedWriter;
         }
 
+        /**
+         * Returns the outer writer, which does not apply this view's text escaping.
+         */
         public Writer unescaped() {
             return StreamingMarkupWriter.this;
         }

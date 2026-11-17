@@ -19,6 +19,9 @@
 package groovy.lang
 
 import groovy.transform.PackedClosures
+import org.apache.groovy.runtime.async.AsyncClosureUtils
+import org.apache.groovy.runtime.async.AsyncSupport
+import org.apache.groovy.runtime.async.GeneratorBridge
 import org.apache.groovy.util.Closures
 import org.codehaus.groovy.runtime.CurriedClosure
 import org.junit.jupiter.api.Test
@@ -193,10 +196,35 @@ final class ClosureSerializationCycleTest {
         }
     }
 
+    // GROOVY-12679
+    @Test
+    void testAsyncClosureCyclesRejected() {
+        // the async wrappers call and forward to a 'closure' field outside the default walk
+        ['serializeCyclicAsyncClosure', 'serializeCyclicAsyncGeneratorClosure'].each { name ->
+            byte[] bytes = Holder."$name"()
+            def err = shouldFail(InvalidObjectException) { deserialize(bytes) }
+            assert err.message.contains('cycle'), name
+        }
+    }
+
+    // GROOVY-12679
+    @Test
+    void testLegitimateAsyncClosuresRoundTrip() {
+        assert AsyncSupport.await(deserialize(Holder.serializeAsyncClosure()).call(4)) == 8
+        assert deserialize(Holder.serializeAsyncGeneratorClosure()).call(2).toList() == [0, 1]
+    }
+
     // GROOVY-12339
     @Test
     void testLegitimateMemoizedClosureRoundTrips() {
         byte[] bytes = Holder.serializeMemoized()
+        assert deserialize(bytes).call(4) == 8
+    }
+
+    // GROOVY-12674
+    @Test
+    void testLegitimateSoftReferenceMemoizedClosureRoundTrips() {
+        byte[] bytes = Holder.serializeSoftMemoized()
         assert deserialize(bytes).call(4) == 8
     }
 
@@ -307,13 +335,34 @@ final class ClosureSerializationCycleTest {
             serialize(memoized)
         }
 
-        static byte[] serializeCyclicSoftMemoized() {
-            // A real instance cannot be serialized: it holds a non-transient ReferenceQueue. A forged
-            // gadget stream is hand-written and under no such constraint, so the unserializable fields
-            // are cleared here to produce the stream an attacker would simply author.
+        static byte[] serializeSoftMemoized() {
             def memoized = { x -> x * 2 }.memoizeAtLeast(4)
-            setDeclaredField(memoized, 'queue', null)
-            setDeclaredField(memoized, 'lruProtectionStorage', null)
+            memoized(3)
+            serialize(memoized)
+        }
+
+        static byte[] serializeAsyncClosure() {
+            serialize(AsyncClosureUtils.wrapAsync { x -> x * 2 })
+        }
+
+        static byte[] serializeAsyncGeneratorClosure() {
+            serialize(AsyncClosureUtils.wrapAsyncGenerator { GeneratorBridge bridge, n -> n.times { bridge.yield(it) } })
+        }
+
+        static byte[] serializeCyclicAsyncClosure() {
+            def wrapped = AsyncClosureUtils.wrapAsync { x -> x }
+            setDeclaredField(wrapped, 'closure', wrapped)
+            serialize(wrapped)
+        }
+
+        static byte[] serializeCyclicAsyncGeneratorClosure() {
+            def wrapped = AsyncClosureUtils.wrapAsyncGenerator { GeneratorBridge bridge -> }
+            setDeclaredField(wrapped, 'closure', wrapped)
+            serialize(wrapped)
+        }
+
+        static byte[] serializeCyclicSoftMemoized() {
+            def memoized = { x -> x * 2 }.memoizeAtLeast(4)
             setDeclaredField(memoized, 'closure', memoized)
             serialize(memoized)
         }

@@ -27,16 +27,41 @@ import org.codehaus.groovy.ast.stmt.Statement;
  * Represents a constructor declaration
  */
 public class ConstructorNode extends MethodNode {
+    /**
+     * Leaves the constructor unset so a subclass can fill the declaration
+     * in later. The name stays null and no exceptions are recorded.
+     */
     protected ConstructorNode() {}
 
+    /**
+     * Creates a constructor with no parameters and no checked exceptions.
+     *
+     * @param modifiers JVM access flags for the constructor
+     * @param code constructor body
+     */
     public ConstructorNode(int modifiers, Statement code) {
         this(modifiers, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, code);
     }
 
+    /**
+     * Creates a constructor named {@literal <init>} whose return type is
+     * {@code void}.
+     *
+     * @param modifiers JVM access flags for the constructor
+     * @param parameters constructor parameters
+     * @param exceptions checked exceptions declared on the constructor
+     * @param code constructor body
+     */
     public ConstructorNode(int modifiers, Parameter[] parameters, ClassNode[] exceptions, Statement code) {
         super("<init>", modifiers, ClassHelper.VOID_TYPE, parameters, exceptions, code);
     }
 
+    /**
+     * Reports whether the first statement is a {@code this(...)} or
+     * {@code super(...)} call.
+     *
+     * @return {@code true} when that statement is a special constructor call
+     */
     public boolean firstStatementIsSpecialConstructorCall() {
         Statement code = getFirstStatement();
         if (!(code instanceof ExpressionStatement)) return false;

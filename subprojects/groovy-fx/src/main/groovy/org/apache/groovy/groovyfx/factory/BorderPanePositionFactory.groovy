@@ -40,14 +40,24 @@ class BorderPanePositionFactory extends AbstractFactory {
      * Placeholder node produced for a position; it is replaced by the nested node.
      */
     static class Position {
+        /** Border pane the nested node is placed on. */
         BorderPane pane
+        /** Position property name, such as {@code top} or {@code center}. */
         String name
+        /** Alignment attribute, or null when the caller did not set one. */
         Object alignment
+        /** Margin attribute, or null when the caller did not set one. */
         Object margin
     }
 
+    /** Position property name passed to the constructor. */
     final String position
 
+    /**
+     * Creates a factory for the border-pane position {@code position}.
+     *
+     * @param position the position name, such as {@code top}
+     */
     BorderPanePositionFactory(String position) {
         this.position = position
     }
