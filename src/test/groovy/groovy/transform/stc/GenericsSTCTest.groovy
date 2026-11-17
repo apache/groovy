@@ -3229,6 +3229,46 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         ''',
             'Incompatible generic argument types. Cannot assign java.util.List<Outer<T>.Inner> to: java.util.List<Outer.Inner>'
 
+        // a simple name may contain a '$', and an annotation is not a record for its name
+        shouldFailWithMessages '''
+            class Outer<T> {
+                class In$ner {
+                }
+                void test(List<In$ner> inner) {
+                    List<Outer.In$ner> raw = inner
+                }
+            }
+        ''',
+            'Incompatible generic argument types. Cannot assign java.util.List<Outer<T>.In$ner> to: java.util.List<Outer.In$ner>'
+
+        shouldFailWithMessages '''
+            @interface NotARecordType {
+            }
+            class Outer<T> {
+                @NotARecordType class Inner {
+                }
+                void test(List<Inner> inner) {
+                    List<Outer.Inner> raw = inner
+                }
+            }
+        ''',
+            'Incompatible generic argument types. Cannot assign java.util.List<Outer<T>.Inner> to: java.util.List<Outer.Inner>'
+
+        // Outer$Inner names the raw type, as Outer.Inner does, and a record is static
+        assertScript '''
+            class Outer<T> {
+                class Inner {
+                }
+                record Point(int x) {
+                }
+                void test(List<Outer$Inner> inner, List<Point> points) {
+                    List<Outer.Inner> raw = inner
+                    List<Outer.Point> rawPoints = points
+                }
+            }
+            new Outer<String>().test([], [])
+        '''
+
         assertScript '''
             class Outer<T> {
                 class Inner {
