@@ -19,6 +19,7 @@
 package org.codehaus.groovy.ast;
 
 import groovy.lang.GroovyClassLoader;
+import org.apache.groovy.ast.ModuleInfoNode;
 import org.codehaus.groovy.control.CompilationUnit;
 import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.control.SourceUnit;
@@ -30,9 +31,7 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.LinkedHashSet;
 import java.util.Map;
-import java.util.Set;
 
 /**
  * Represents a complete compilation step involving one or more {@link ModuleNode} instances.
@@ -61,11 +60,11 @@ public class CompileUnit implements NodeMetaDataHandler {
     private final Map<String, ClassNode> classesToCompile = new LinkedHashMap<>();
     private final Map<String, SourceUnit> classNameToSource = new LinkedHashMap<>();
     private final Map<String, InnerClassNode> generatedInnerClasses = new LinkedHashMap<>();
-    // Binary names and packages of .class files compiled into the target
-    // directory during joint compilation (sibling .java sources and stubs).
-    private final Set<String> compiledClassNames = new LinkedHashSet<>();
-    private final Set<String> compiledPackages = new LinkedHashSet<>();
-    private boolean unnamedCompiledClass;
+    /**
+     * The JPMS module declaration for this compilation, or {@code null}.
+     * At most one is expected. This is not a {@link ModuleNode}.
+     */
+    private ModuleInfoNode moduleInfo;
 
     /**
      * Creates a compile unit with the given classloader and compiler configuration.
@@ -251,6 +250,7 @@ public class CompileUnit implements NodeMetaDataHandler {
             modules.add(node);
             node.setUnit(this);
             addClasses(node.getClasses());
+            adoptModuleInfo(node.getModuleDeclaration());
         }
     }
 
@@ -327,43 +327,41 @@ public class CompileUnit implements NodeMetaDataHandler {
     }
 
     /**
-     * Records a class file written to the target directory, typically by {@code javac}
-     * during joint compilation. {@code module-info} is ignored. A class in the
-     * unnamed package is remembered so a named module can reject it (JLS §7.4.2).
+     * The JPMS module declaration for this compilation, or {@code null}.
+     * At most one declaration is expected. This is not a {@link ModuleNode}.
      *
-     * @param binaryName the binary name, using {@code $} to separate nested types
+     * @return the module declaration, or {@code null} when this compilation has none
+     * @since 7.0.0
      */
-    public void addCompiledClassName(final String binaryName) {
-        if (binaryName == null || binaryName.isEmpty() || "module-info".equals(binaryName)) {
+    public ModuleInfoNode getModuleInfo() {
+        return moduleInfo;
+    }
+
+    /**
+     * Records the module declaration for this compilation.
+     * A second, different declaration is rejected and the first is kept.
+     *
+     * @param moduleInfo the declaration parsed from a modular compilation unit
+     * @since 7.0.0
+     */
+    public void setModuleInfo(final ModuleInfoNode moduleInfo) {
+        adoptModuleInfo(moduleInfo);
+    }
+
+    private void adoptModuleInfo(final ModuleInfoNode declaration) {
+        if (declaration == null || declaration == moduleInfo) {
             return;
         }
-        compiledClassNames.add(binaryName);
-        int dot = binaryName.lastIndexOf('.');
-        if (dot < 0) {
-            unnamedCompiledClass = true;
-        } else {
-            compiledPackages.add(binaryName.substring(0, dot));
+        if (moduleInfo != null) {
+            ClassNode carrier = declaration.getClassNode();
+            ModuleNode module = carrier != null ? carrier.getModule() : null;
+            SourceUnit source = module != null ? module.getContext() : null;
+            if (source != null) {
+                source.addErrorAndContinue(new SyntaxException(
+                        "a compilation unit may contain only one module declaration", declaration));
+            }
+            return;
         }
-    }
-
-    /**
-     * Whether a class of this binary name was recorded from the target directory.
-     */
-    public boolean containsCompiledClassName(final String binaryName) {
-        return compiledClassNames.contains(binaryName);
-    }
-
-    /**
-     * Packages of class files recorded from the target directory.
-     */
-    public Set<String> getCompiledPackages() {
-        return Collections.unmodifiableSet(compiledPackages);
-    }
-
-    /**
-     * Whether a recorded class file lives in the unnamed package.
-     */
-    public boolean hasUnnamedCompiledClass() {
-        return unnamedCompiledClass;
+        this.moduleInfo = declaration;
     }
 }

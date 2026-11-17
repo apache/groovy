@@ -30,6 +30,7 @@ import org.codehaus.groovy.ast.AnnotationNode;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.CompileUnit;
+import org.codehaus.groovy.control.CompiledClassIndex;
 import org.codehaus.groovy.ast.ConstructorNode;
 import org.codehaus.groovy.ast.DynamicVariable;
 import org.codehaus.groovy.ast.FieldNode;
@@ -403,7 +404,7 @@ public class AsmClassGenerator extends ClassGenerator {
                     bytecodeVersion = minVersion;
                 }
             }
-            ModuleInfoNode moduleInfo = ModuleInfoNode.of(classNode);
+            ModuleInfoNode moduleInfo = moduleDeclaration(classNode);
             if (moduleInfo != null) {
                 emitModuleInfo(classNode, moduleInfo, bytecodeVersion);
                 return;
@@ -500,6 +501,25 @@ public class AsmClassGenerator extends ClassGenerator {
     }
 
     /**
+     * The module declaration for which {@code classNode} is the emission carrier.
+     * The generator context's compile unit is consulted first, so clearing class
+     * metadata (including the module link) cannot drop the declaration.
+     */
+    private ModuleInfoNode moduleDeclaration(final ClassNode classNode) {
+        CompileUnit unit = context != null ? context.getCompileUnit() : null;
+        if (unit == null) {
+            unit = classNode.getCompileUnit();
+        }
+        if (unit != null) {
+            ModuleInfoNode declaration = unit.getModuleInfo();
+            if (declaration != null) {
+                return declaration.isEmittedAs(classNode) ? declaration : null;
+            }
+        }
+        return ModuleInfoNode.of(classNode);
+    }
+
+    /**
      * Writes a JVM module descriptor ({@code module-info.class}, JVMS §4.7.25).
      * Directive order follows {@link ModuleVisitor}: packages, requires, exports, opens, uses, provides.
      * An absent {@code requires java.base} is emitted first, as {@code ACC_MANDATED}, matching javac.
@@ -528,9 +548,13 @@ public class AsmClassGenerator extends ClassGenerator {
                 packages.add(opens.getPackageName());
             }
         }
-        if (classNode.getCompileUnit() != null) {
-            for (ClassNode cn : classNode.getCompileUnit().getClasses()) {
-                if (ModuleInfoNode.of(cn) != null) {
+        CompileUnit compileUnit = classNode.getCompileUnit();
+        if (compileUnit == null && context != null) {
+            compileUnit = context.getCompileUnit();
+        }
+        if (compileUnit != null) {
+            for (ClassNode cn : compileUnit.getClasses()) {
+                if (declaration.isEmittedAs(cn)) {
                     continue;
                 }
                 String pkg = cn.getPackageName();
@@ -538,7 +562,10 @@ public class AsmClassGenerator extends ClassGenerator {
                     packages.add(pkg);
                 }
             }
-            packages.addAll(classNode.getCompileUnit().getCompiledPackages());
+        }
+        CompiledClassIndex javaClasses = context.getCompiledClasses();
+        if (javaClasses != null) {
+            packages.addAll(javaClasses.getPackages());
         }
         for (Provides provides : declaration.getProvides()) {
             for (ClassNode provider : provides.getResolvedProviders()) {

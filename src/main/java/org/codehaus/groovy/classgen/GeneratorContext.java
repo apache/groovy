@@ -23,6 +23,7 @@ import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.CompileUnit;
 import org.codehaus.groovy.ast.MethodNode;
+import org.codehaus.groovy.control.CompiledClassIndex;
 
 /**
  * A context shared across generations of a class and its inner classes.
@@ -33,6 +34,7 @@ public class GeneratorContext {
     private int closureClassIdx = 1;
     private int syntheticMethodIdx = 0;
     private final CompileUnit compileUnit;
+    private CompiledClassIndex compiledClasses;
 
     /**
      * Creates a new generator context for the given compile unit.
@@ -79,6 +81,27 @@ public class GeneratorContext {
      */
     public CompileUnit getCompileUnit() {
         return compileUnit;
+    }
+
+    /**
+     * Class files produced by javac for this compilation, or {@code null}
+     * when the generator was not given that index.
+     *
+     * @return the joint-compilation class index, or {@code null}
+     * @since 7.0.0
+     */
+    public CompiledClassIndex getCompiledClasses() {
+        return compiledClasses;
+    }
+
+    /**
+     * Supplies the javac class index used while emitting a module descriptor.
+     *
+     * @param compiledClasses the index, or {@code null} when there is none
+     * @since 7.0.0
+     */
+    public void setCompiledClasses(final CompiledClassIndex compiledClasses) {
+        this.compiledClasses = compiledClasses;
     }
 
     /**

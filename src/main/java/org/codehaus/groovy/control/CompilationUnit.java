@@ -143,6 +143,12 @@ public class CompilationUnit extends ProcessingUnit {
     private Set<JavaFileObject> javaCompilationUnitSet = new HashSet<>();
 
     /**
+     * Class files produced by an external Java compiler during this compilation.
+     * Empty unless joint compilation records them.
+     */
+    private final CompiledClassIndex compiledClasses = new CompiledClassIndex();
+
+    /**
      * Initializes the CompilationUnit with defaults.
      */
     public CompilationUnit() {
@@ -325,7 +331,7 @@ public class CompilationUnit extends ProcessingUnit {
         // CANONICALIZATION has applied record / @Singleton / @Delegate, and
         // before AsmClassGenerator emits bytecode (JLS §7.7.4).
         addPhaseOperation((final SourceUnit source, final GeneratorContext context, final ClassNode classNode) -> {
-            ModuleInfoVerifier.check(source, classNode);
+            ModuleInfoVerifier.check(source, classNode, this);
             getErrorCollector().failIfErrors();
         }, Phases.CLASS_GENERATION);
 
@@ -563,6 +569,18 @@ public class CompilationUnit extends ProcessingUnit {
      */
     public void addJavaCompilationUnits(final Set<JavaFileObject> javaCompilationUnitSet) {
         this.javaCompilationUnitSet.addAll(javaCompilationUnitSet);
+    }
+
+    /**
+     * Class files produced by an external Java compiler during this compilation.
+     * A compilation that does not run javac leaves the index empty.
+     * Joint compilation fills it after javac.
+     *
+     * @return the index of classes compiled by javac, never {@code null}
+     * @since 7.0.0
+     */
+    public CompiledClassIndex getCompiledClasses() {
+        return compiledClasses;
     }
 
     /**
@@ -1161,7 +1179,9 @@ public class CompilationUnit extends ProcessingUnit {
                             it.next();
                             offset += 1;
                         }
-                        this.call(context, new GeneratorContext(unit.getAST(), offset), classNode);
+                        GeneratorContext generatorContext = new GeneratorContext(unit.getAST(), offset);
+                        generatorContext.setCompiledClasses(unit.getCompiledClasses());
+                        this.call(context, generatorContext, classNode);
                     }
                 } catch (CompilationFailedException e) {
                     // fall through

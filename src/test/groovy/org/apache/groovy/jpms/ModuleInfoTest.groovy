@@ -21,9 +21,13 @@ package org.apache.groovy.jpms
 import groovy.test.GroovyAssert
 import groovy.transform.CompileStatic
 import org.apache.groovy.ast.ModuleInfoNode
+import org.codehaus.groovy.ast.ClassNode
+import org.codehaus.groovy.classgen.GeneratorContext
 import org.codehaus.groovy.control.CompilationFailedException
 import org.codehaus.groovy.control.CompilationUnit
 import org.codehaus.groovy.control.CompilerConfiguration
+import org.codehaus.groovy.control.Phases
+import org.codehaus.groovy.control.SourceUnit
 import org.codehaus.groovy.control.customizers.ASTTransformationCustomizer
 import org.codehaus.groovy.tools.javac.JavaAwareCompilationUnit
 import org.junit.jupiter.api.Test
@@ -94,7 +98,11 @@ final class ModuleInfoTest {
             '''
         ])
         def cn = unit.ast.classes.find { it.name == 'module-info' }
-        def decl = ModuleInfoNode.of(cn)
+        def decl = unit.ast.moduleInfo
+        assert decl != null
+        assert decl.is(ModuleInfoNode.of(cn))
+        assert decl.classNode.is(cn)
+        assert cn.getNodeMetaData(ModuleInfoNode) == null
         assert decl.name == 'demo.ast'
         assert decl.open
         assert decl.directives.size() == decl.requires.size() + decl.exports.size() + decl.uses.size() + decl.provides.size()
@@ -1451,6 +1459,10 @@ final class ModuleInfoTest {
             }
             unit.addSources(files as File[])
             unit.compile()
+            assert unit.compiledClasses.contains('com.hooked.Hooked')
+            assert unit.compiledClasses.packages.contains('com.hooked')
+            assert !unit.compiledClasses.contains('module-info')
+            assert !unit.compiledClasses.hasUnnamedClass()
             def md = descriptor(unit)
             assert md.name() == 'demo.hooked'
             assert md.exports()*.source() == ['com.hooked']
@@ -1458,6 +1470,51 @@ final class ModuleInfoTest {
             assert !md.packages().contains('demo.fresh')
         } finally {
             hookLoader.close()
+        }
+    }
+
+    @Test
+    void testDeclarationSurvivesStrippedClassMetadata() {
+        def root = dir('strip-meta')
+        def config = new CompilerConfiguration(targetDirectory: root)
+        def loader = new GroovyClassLoader(GroovyAssert.class.classLoader)
+        try {
+            def unit = new CompilationUnit(config, null, loader)
+            unit.addPhaseOperation({ SourceUnit source, GeneratorContext context, ClassNode classNode ->
+                if (classNode.name == 'module-info') {
+                    // Drop auxiliary metadata, including a ModuleInfoNode key, but keep the
+                    // module link the rest of the pipeline uses to find the compile unit.
+                    def module = classNode.module
+                    classNode.metaDataMap = null
+                    classNode.module = module
+                    assert classNode.getNodeMetaData(ModuleInfoNode) == null
+                }
+            }, Phases.SEMANTIC_ANALYSIS)
+            unit.addSource('module-info.groovy', '''
+                module demo.strip {
+                    exports demo.strip;
+                }
+            ''')
+            unit.addSource('demo/strip/A.groovy', '''
+                package demo.strip
+                class A {}
+            ''')
+            unit.compile()
+            def declaration = unit.ast.moduleInfo
+            assert declaration != null
+            assert declaration.name == 'demo.strip'
+            def carrier = declaration.classNode
+            assert carrier != null
+            assert carrier.name == 'module-info'
+            assert carrier.getNodeMetaData(ModuleInfoNode) == null
+            assert ModuleInfoNode.of(carrier).is(declaration)
+            assert unit.compiledClasses.packages.empty
+            assert !unit.compiledClasses.hasUnnamedClass()
+            def md = descriptor(unit)
+            assert md.name() == 'demo.strip'
+            assert md.exports()*.source() == ['demo.strip']
+        } finally {
+            loader.close()
         }
     }
 

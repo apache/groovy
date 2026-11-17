@@ -32,6 +32,7 @@ import org.codehaus.groovy.ast.ImportNode
 import org.codehaus.groovy.ast.ModuleNode
 import org.codehaus.groovy.classgen.AsmClassGenerator
 import org.codehaus.groovy.classgen.GeneratorContext
+import org.codehaus.groovy.control.CompilationUnit
 import org.codehaus.groovy.control.CompilerConfiguration
 import org.codehaus.groovy.control.ErrorCollector
 import org.codehaus.groovy.control.ProcessingUnit
@@ -69,9 +70,25 @@ final class ModuleInfoVerifierEdgeCasesTest {
         def loader = new GroovyClassLoader()
         def source = new SourceUnit('Foo.groovy', 'class Foo {}', config, loader, new ErrorCollector(config))
         def guarded = new ClassNode('module-info', 0, ClassHelper.OBJECT_TYPE)
+        // Class metadata is not the declaration. Without a compile unit, of() is null.
         guarded.putNodeMetaData(ModuleInfoNode.class, new ModuleInfoNode('demo.guard', false, []))
+        assert ModuleInfoNode.of(guarded) == null
         ModuleInfoVerifier.check(null, guarded)
         ModuleInfoVerifier.check(source, new ClassNode('Foo', 0, ClassHelper.OBJECT_TYPE))
+
+        def compileUnit = new CompileUnit(loader, null, config)
+        def module = new ModuleNode(compileUnit)
+        def declaration = new ModuleInfoNode('demo.guard', false, [])
+        declaration.classNode = guarded
+        module.addClass(guarded)
+        module.moduleDeclaration = declaration
+        compileUnit.addModule(module)
+        assert compileUnit.moduleInfo.is(declaration)
+        assert declaration.classNode.is(guarded)
+        assert ModuleInfoNode.of(guarded).is(declaration)
+        guarded.metaDataMap = null
+        assert guarded.getNodeMetaData(ModuleInfoNode) == null
+        assert compileUnit.moduleInfo.is(declaration)
     }
 
     @Test
@@ -161,7 +178,9 @@ final class ModuleInfoVerifierEdgeCasesTest {
         ])
         declaration.addAnnotation(new AnnotationNode(ClassHelper.DEPRECATED_TYPE))
         classNode.addAnnotation(declaration.annotations[0])
-        classNode.putNodeMetaData(ModuleInfoNode.class, declaration)
+        declaration.classNode = classNode
+        module.moduleDeclaration = declaration
+        compileUnit.moduleInfo = declaration
 
         def writer = new ClassWriter(0)
         def generator = new AsmClassGenerator(null, new GeneratorContext(compileUnit), writer, 'module-info.groovy')
@@ -207,8 +226,10 @@ final class ModuleInfoVerifierEdgeCasesTest {
     void testNullModuleAndUnparsedSource() {
         def parsed = parsed('module demo.nullmod { uses Runnable; }')
         def classNode = parsed.AST.classes.find { it.name == 'module-info' }
+        def holding = new CompilationUnit(parsed.configuration, null, new GroovyClassLoader())
+        holding.AST.moduleInfo = parsed.AST.moduleDeclaration
         classNode.setModule(null)
-        ModuleInfoVerifier.check(parsed, classNode)
+        ModuleInfoVerifier.check(parsed, classNode, holding)
         assert messages(parsed).contains('unable to resolve class Runnable')
 
         def config = new CompilerConfiguration()
@@ -220,12 +241,14 @@ final class ModuleInfoVerifierEdgeCasesTest {
         def declaration = new ModuleInfoNode('demo.x', false, [
             new ModuleInfoNode.Requires('java.base', false, false)
         ])
+        declaration.classNode = info
+        module.moduleDeclaration = declaration
+        assert ModuleInfoNode.of(info).is(declaration)
         def hosted = ClassHelper.makeWithoutCaching('not.yet.Resolved')
         hosted.putNodeMetaData(ModuleNode, new ModuleNode(new CompileUnit(loader, null, config)))
         def annotation = new AnnotationNode(hosted)
         declaration.addAnnotation(annotation)
         info.addAnnotation(annotation)
-        info.putNodeMetaData(ModuleInfoNode.class, declaration)
         assert unparsed.AST == null
         ModuleInfoVerifier.check(unparsed, info)
         assert messages(unparsed).contains('annotation @not.yet.Resolved is not accessible')
