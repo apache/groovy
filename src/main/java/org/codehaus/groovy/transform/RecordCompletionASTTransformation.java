@@ -51,6 +51,10 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.params;
 @GroovyASTTransformation(phase = CompilePhase.INSTRUCTION_SELECTION)
 public class RecordCompletionASTTransformation extends AbstractASTTransformation {
 
+    /**
+     * {@link ClassNode} for {@link RecordBase}, not stored in the class-node cache.
+     * {@link #visit} returns immediately when the annotation is not this type.
+     */
     public static final ClassNode MY_TYPE = makeWithoutCaching(RecordBase.class, false);
     private static final String MY_TYPE_NAME = MY_TYPE.getNameWithoutPackage();
 

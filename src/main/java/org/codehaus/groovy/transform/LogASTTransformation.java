@@ -397,12 +397,34 @@ public class LogASTTransformation extends AbstractASTTransformation implements C
          */
         FieldNode addLoggerFieldToClass(ClassNode classNode, String fieldName, String categoryName);
 
+        /**
+         * Reports whether {@code methodName} is a logging call this strategy rewrites.
+         *
+         * @param methodName the method name on the logger, such as {@code info}
+         * @return {@code true} when a call of that name should be wrapped
+         */
         boolean isLoggingMethod(String methodName);
 
+        /**
+         * Chooses the category stored on the logger field. {@code DEFAULT_CATEGORY_NAME}
+         * is replaced by the name of {@code classNode}.
+         *
+         * @param classNode the class that was annotated
+         * @param categoryName the category requested by the annotation
+         * @return the category to pass to the logging framework
+         */
         default String getCategoryName(final ClassNode classNode, final String categoryName) {
             return categoryName.equals(DEFAULT_CATEGORY_NAME) ? classNode.getName() : categoryName;
         }
 
+        /**
+         * Wraps a logging call in the guard this strategy uses.
+         *
+         * @param logVariable the logger expression
+         * @param methodName the logging method that was called
+         * @param originalExpression the call as written
+         * @return the replacement expression
+         */
         Expression wrapLoggingMethodCall(Expression logVariable, String methodName, Expression originalExpression);
 
         /**

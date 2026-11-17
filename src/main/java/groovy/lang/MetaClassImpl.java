@@ -503,15 +503,14 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
 
     private void removeMultimethodsOverloadedWithPrivateMethods() {
         var mia = new MethodIndexAction() {
-            /** {@inheritDoc} */
-            @Override
             /**
-         * Determines whether a class should be skipped while iterating method indexes.
-         *
-         * @param clazz the class being considered
-         * @return {@code true} to skip the class
-         */
-        public boolean skipClass(final Class<?> clazz) {
+             * Determines whether a class should be skipped while iterating method indexes.
+             *
+             * @param clazz the class being considered
+             * @return {@code true} to skip the class
+             */
+            @Override
+            public boolean skipClass(final Class<?> clazz) {
                 return clazz == theClass;
             }
 
@@ -1246,7 +1245,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
                     break;
 
                 case Closure.OWNER_ONLY:
-                    if (method == null && owner != closure) {
+                    if (method == null && owner != closure && owner != null) {
                         MetaClass ownerMetaClass = lookupObjectMetaClass(owner);
                         return ownerMetaClass.invokeMethod(owner, methodName, originalArguments);
                     }
@@ -1351,7 +1350,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
     }
 
     private Object invokeOuterMethod(final Class<?> sender, final Object object, final String methodName, final Object[] arguments, final MissingMethodException mme) {
-        if (sender == theClass ? isGroovyObject() : GroovyObject.class.isAssignableFrom(sender)) {
+        if ((sender == theClass || sender.isInterface()) ? isGroovyObject() : GroovyObject.class.isAssignableFrom(sender)) {
             var outerClass = getNonClosureOuter(sender); // check outer class nesting of call site
             if (outerClass != null && (sender == theClass || sender.isAssignableFrom(theClass))) {
                 MetaClass omc = registry.getMetaClass(outerClass);
@@ -1646,6 +1645,9 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         }
 
         Class<?>[] types = MetaClassHelper.convertToTypeArray(arguments);
+        if (MetaClassHelper.dependsOnMethodClosureArity(e.methods, types, arguments)) {
+            return (MetaMethod) chooseMethod(e.name, e.methods, types, arguments); // not cached: depends on the arguments
+        }
         MetaMethod method = (MetaMethod) chooseMethod(e.name, e.methods, types);
         cacheEntry = e.cachedMethod = new MetaMethodIndex.MetaMethodCache(types, method);
 
@@ -1701,6 +1703,11 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
             }
 
             Class<?>[] classes = MetaClassHelper.convertToTypeArray(arguments);
+            Object statics = getStaticMethods(theClass, methodName);
+            if (MetaClassHelper.dependsOnMethodClosureArity(statics, classes, arguments)) {
+                MetaMethod method = (MetaMethod) chooseMethod(methodName, statics, classes, arguments); // not cached
+                return method != null ? method : pickStaticMethod(methodName, classes);
+            }
             cacheEntry = new MetaMethodIndex.MetaMethodCache(classes, pickStaticMethod(methodName, classes));
 
             e.cachedStaticMethod = cacheEntry;
@@ -2213,7 +2220,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
     }
 
     private Object getOuterProperty(final Class<?> sender, final Object object, final String name, final MissingPropertyException mpe) {
-        if (sender == theClass ? isGroovyObject() : GroovyObject.class.isAssignableFrom(sender)) {
+        if ((sender == theClass || sender.isInterface()) ? isGroovyObject() : GroovyObject.class.isAssignableFrom(sender)) {
             var outerClass = getNonClosureOuter(sender); // check outer class nesting of call site
             if (outerClass != null && (sender == theClass || sender.isAssignableFrom(theClass))) {
                 MetaClass omc = registry.getMetaClass(outerClass);
@@ -3185,7 +3192,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
 
     private void setOuterProperty(Class<?> sender, final Object object, final String name, final Object newValue, final MissingPropertyException mpe) {
         if (sender == null) sender = theClass; // GROOVY-11745
-        if (sender == theClass ? isGroovyObject() : GroovyObject.class.isAssignableFrom(sender)) {
+        if ((sender == theClass || sender.isInterface()) ? isGroovyObject() : GroovyObject.class.isAssignableFrom(sender)) {
             var outerClass = getNonClosureOuter(sender); // check outer class nesting of call site
             if (outerClass != null && (sender == theClass || sender.isAssignableFrom(theClass))) {
                 MetaClass omc = registry.getMetaClass(outerClass);
@@ -3585,13 +3592,22 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
      * @param arguments    the arguments
      */
     protected Object chooseMethod(String methodName, Object methodOrList, Class[] arguments) throws MethodSelectionException {
-        Object method = chooseMethodInternal(methodName, methodOrList, arguments);
+        return chooseMethod(methodName, methodOrList, arguments, null);
+    }
+
+    /**
+     * Chooses as {@link #chooseMethod(String, Object, Class[])} does and, given the argument
+     * values, prefers the candidates whose functional interfaces the method closures among
+     * them can implement; a choice that is not cacheable by argument classes.
+     */
+    private Object chooseMethod(String methodName, Object methodOrList, Class[] arguments, Object[] values) throws MethodSelectionException {
+        Object method = chooseMethodInternal(methodName, methodOrList, arguments, values);
         if (method instanceof GeneratedMetaMethod.Proxy)
             return ((GeneratedMetaMethod.Proxy) method).proxy();
         return method;
     }
 
-    private Object chooseMethodInternal(String methodName, Object methodOrList, Class[] arguments) throws MethodSelectionException {
+    private Object chooseMethodInternal(String methodName, Object methodOrList, Class[] arguments, Object[] values) throws MethodSelectionException {
         if (methodOrList instanceof ParameterTypes) {
             if (((ParameterTypes) methodOrList).isValidMethod(arguments)) {
                 return methodOrList;
@@ -3631,6 +3647,13 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         if (methodCount == 0) {
             return null;
         } else if (methodCount == 1) {
+            return matchingMethods.get(0);
+        }
+        matchingMethods = MetaClassHelper.filterByClosureArity(matchingMethods, arguments);
+        if (values != null) {
+            matchingMethods = MetaClassHelper.filterByMethodClosureArity(matchingMethods, values);
+        }
+        if (matchingMethods.size() == 1) {
             return matchingMethods.get(0);
         }
         return doChooseMostSpecificParams(theClass.getName(), methodName, matchingMethods, arguments, false);
@@ -3767,6 +3790,12 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         try {
             if (isBeanDerivative(theClass)) {
                 info = Introspector.getBeanInfo(theClass, Introspector.IGNORE_ALL_BEANINFO);
+            } else if (GroovyClassLoader.isGeneratedClassName(theClass)) {
+                // Skip this class's BeanInfo. Superclass BeanInfo is still
+                // read. The JDK still probes <name>Customizer; the defining
+                // loader answers that probe for a generated name without
+                // delegating it.
+                info = Introspector.getBeanInfo(theClass, Introspector.IGNORE_IMMEDIATE_BEANINFO);
             } else {
                 info = Introspector.getBeanInfo(theClass);
             }
@@ -4291,7 +4320,7 @@ out:    if (metaClass instanceof MetaClassImpl metaClassImpl) {
             if (method != null)
                 return tuple(delegateMetaClass.invokeMethod(delegate, methodName, originalArguments), method);
         }
-        if (method == null && owner != closure) {
+        if (method == null && owner != closure && owner != null) {
             MetaClass ownerMetaClass = lookupObjectMetaClass(owner);
             method = ownerMetaClass.pickMethod(methodName, argClasses);
             if (method != null)

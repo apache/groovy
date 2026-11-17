@@ -117,9 +117,8 @@ public final class GeneratorBridge<T> implements Iterator<T>, Closeable {
             done = true;
             Throwable error = (Throwable) pending[1];
             pending = null;
-            if (error instanceof RuntimeException re) throw re;
-            if (error instanceof Error err) throw err;
-            throw new RuntimeException(error);
+            // A checked exception from the generator body arrives wrapped by its SAM coercion
+            throw AsyncSupport.rethrow(AsyncSupport.unwrapUndeclared(error));
         }
         return true;
     }

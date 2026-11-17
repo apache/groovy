@@ -24,6 +24,7 @@ import org.codehaus.groovy.reflection.ReflectionCache;
 import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 import org.codehaus.groovy.runtime.typehandling.ShortTypeHandling;
 
+/** {@code putAt} for an {@code int[]}. */
 public class IntegerArrayPutAtMetaMethod extends ArrayPutAtMetaMethod {
     private static final CachedClass ARRAY_CLASS = ReflectionCache.getCachedClass(int[].class);
 

@@ -38,8 +38,7 @@ primitive types like `Integer`, `Double`, `Boolean` and `String`.
 
 The class comes with a bunch of overloaded `parse` methods plus some special methods such as `parseText`,
 `parseFile` and others. For the next example we will use the `parseText` method. It parses a JSON `String` and recursively converts it to a
-list or map of objects. The other `parse*` methods are similar in that they return a JSON `String` but for different parameter
-types.
+list or map of objects. The other `parse` methods take a different source, such as a reader, a stream or a file, and return that same kind of structure.
 
 [source,groovy]
 ----

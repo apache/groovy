@@ -1169,6 +1169,10 @@ public class GroovyPosixCommands {
         private final String name;
         private final boolean close;
 
+        /**
+         * Wraps {@code inputStream} under {@code name}. {@link #close()} closes
+         * the stream only when {@code close} is {@code true}.
+         */
         public NamedInputStream(InputStream inputStream, String name, boolean close) {
             this.inputStream = inputStream;
             this.path = null;
@@ -1176,9 +1180,17 @@ public class GroovyPosixCommands {
             this.close = close;
         }
 
+        /**
+         * Wraps {@code inputStream} under {@code name} and closes it from
+         * {@link #close()}.
+         */
         public NamedInputStream(InputStream inputStream, String name) {
             this(inputStream, name, true);
         }
+        /**
+         * Names {@code path} without opening it. The stream is opened on the
+         * first {@link #getInputStream()} call, and {@link #close()} leaves it open.
+         */
         public NamedInputStream(Path path, String name) {
             this.inputStream = null;
             this.path = path;
@@ -1186,6 +1198,10 @@ public class GroovyPosixCommands {
             this.close = false;
         }
 
+        /**
+         * Returns the wrapped stream, opening {@code path} when this holder was
+         * created from a path and has not been opened yet.
+         */
         public InputStream getInputStream() throws IOException {
             if (inputStream == null) {
                 inputStream = path.toUri().toURL().openStream();
@@ -1193,10 +1209,17 @@ public class GroovyPosixCommands {
             return inputStream;
         }
 
+        /**
+         * Returns the display name supplied when this holder was created.
+         */
         public String getName() {
             return name;
         }
 
+        /**
+         * Closes the stream when this holder was created with closing enabled
+         * and the stream has been opened.
+         */
         @Override
         public void close() throws IOException {
             if (inputStream != null && close) {

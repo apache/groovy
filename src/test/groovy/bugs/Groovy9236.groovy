@@ -66,11 +66,15 @@ final class Groovy9236 {
     void testAvoidUnnecessaryResolving() {
         def guessedClassNameList = []
 
+        // Record the name as loadClass is entered. findClass runs only after a
+        // parent loader has been asked, so a known miss rejected before that
+        // delegation never reaches it. The names below must not be requested
+        // at all; a non-empty list shows the hook observed real resolution.
         def loader = new GroovyClassLoader() {
             @Override
-            protected Class<?> findClass(String name) throws ClassNotFoundException {
+            Class loadClass(String name, boolean lookupScriptFiles, boolean preferClassOverScript, boolean resolve) {
                 guessedClassNameList.add(name)
-                return super.findClass(name)
+                return super.loadClass(name, lookupScriptFiles, preferClassOverScript, resolve)
             }
         }
 
@@ -119,7 +123,7 @@ final class Groovy9236 {
             'groovy.lang.GroovyObject$java$util$stream$Stream'
         ]
 
-        assert !guessedClassNameList.isEmpty()
+        assert guessedClassNameList.contains('java.util.stream.Collectors')
         assert guessedClassNameList.every(n -> !classNamesShouldAvoidToGuess.contains(n))
     }
 }

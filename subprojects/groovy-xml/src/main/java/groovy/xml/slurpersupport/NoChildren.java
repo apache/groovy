@@ -87,16 +87,29 @@ public class NoChildren extends GPathResult {
     @Override
     public Iterator iterator() {
         return new Iterator() {
+            /**
+             * Returns {@code false}. This iterator has no elements.
+             *
+             * @return {@code false}
+             */
             @Override
             public boolean hasNext() {
                 return false;
             }
 
+            /**
+             * Returns {@code null}. This iterator has no elements to return.
+             *
+             * @return {@code null}
+             */
             @Override
             public Object next() {
                 return null;
             }
 
+            /**
+             * Refuses removal. There is no current element.
+             */
             @Override
             public void remove() {
                 throw new UnsupportedOperationException();

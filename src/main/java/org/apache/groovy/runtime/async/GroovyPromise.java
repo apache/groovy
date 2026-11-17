@@ -95,6 +95,9 @@ public class GroovyPromise<T> implements Awaitable<T> {
         }
         try {
             return future.get();
+        } catch (ExecutionException e) {
+            // CompletableFuture.get() drops the suppressed exceptions of a CompletionException; join() keeps them
+            return getCompleted();
         } catch (CancellationException e) {
             throw unwrapCancellation(e);
         }
@@ -115,6 +118,9 @@ public class GroovyPromise<T> implements Awaitable<T> {
         }
         try {
             return future.get(timeout, unit);
+        } catch (ExecutionException e) {
+            // CompletableFuture.get() drops the suppressed exceptions of a CompletionException; join() keeps them
+            return getCompleted();
         } catch (CancellationException e) {
             throw unwrapCancellation(e);
         }
