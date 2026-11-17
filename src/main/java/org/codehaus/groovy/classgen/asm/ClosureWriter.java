@@ -171,8 +171,10 @@ public class ClosureWriter {
     // constructed, so a by-value capture would see the stale (null) value.
     private final Map<MethodNode, Set<String>> writtenNamesByMethod = new HashMap<>();
 
-    /** Name prefix of the synthetic methods holding hoisted closure bodies. */
-    /** Name prefix of hoisted packed-closure bodies (also consulted by the static call-site writer). */
+    /**
+     * Name prefix of the synthetic methods that hold hoisted packed-closure bodies.
+     * Also consulted by the static call-site writer.
+     */
     public static final String PACKED_METHOD_PREFIX = "$packed$closure$";
 
     // The class's registered dispatch targets (hoisted closure bodies), in id order. Kept as node
@@ -1453,17 +1455,6 @@ public class ClosureWriter {
     }
 
     /**
-     * An array-free dispatch table for the targets whose captured-plus-argument count is exactly
-     * {@code paramCount}: each case loads the receiver and arguments from parameter slots — no
-     * packed array — and invokes the target directly. Membership is sparse over the id space, so
-     * cases switch with {@code lookupswitch}; ids of other arities land on the default (routing is
-     * the adapter's responsibility, so reaching it is a compiler bug). Past {@link #DISPATCH_CHUNK}
-     * members the table goes two-level under the same inline-budget discipline as the array table:
-     * the entry method shifts the id down to a chunk index and forwards, and each chunk method
-     * switches over its id-range's members (at most {@code DISPATCH_CHUNK}, since a range spans
-     * {@code DISPATCH_CHUNK} consecutive ids).
-     */
-    /**
      * Emits the hosting class's dispatcher factory: three <em>bytecode-level</em>
      * {@code LambdaMetafactory} sites adapting its private static tables to their functional
      * interfaces, wrapped in one {@code Bundle}.
@@ -1505,6 +1496,17 @@ public class ClosureWriter {
                 Type.getMethodType(tableDesc));
     }
 
+    /**
+     * An array-free dispatch table for the targets whose captured-plus-argument count is exactly
+     * {@code paramCount}: each case loads the receiver and arguments from parameter slots — no
+     * packed array — and invokes the target directly. Membership is sparse over the id space, so
+     * cases switch with {@code lookupswitch}; ids of other arities land on the default (routing is
+     * the adapter's responsibility, so reaching it is a compiler bug). Past {@link #DISPATCH_CHUNK}
+     * members the table goes two-level under the same inline-budget discipline as the array table:
+     * the entry method shifts the id down to a chunk index and forwards, and each chunk method
+     * switches over its id-range's members (at most {@code DISPATCH_CHUNK}, since a range spans
+     * {@code DISPATCH_CHUNK} consecutive ids).
+     */
     private static void writeArityTable(final ClassVisitor cv, final String internal,
             final ClassNode enclosing, final List<MethodNode> targets, final int paramCount,
             final String tableMethod, final String tableDesc) {

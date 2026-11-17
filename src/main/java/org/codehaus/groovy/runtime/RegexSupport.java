@@ -27,10 +27,22 @@ public class RegexSupport {
 
     private static final ThreadLocal CURRENT_MATCHER = new ThreadLocal();
 
+    /**
+     * Returns the matcher saved for the current thread.
+     *
+     * @return that matcher, or null when this thread has not saved one
+     */
     public static Matcher getLastMatcher() {
         return (Matcher) CURRENT_MATCHER.get();
     }
 
+    /**
+     * Saves {@code matcher} as the last match on the current thread.
+     * Another thread keeps its own matcher. Passing null makes
+     * {@link #getLastMatcher} return null.
+     *
+     * @param matcher matcher to store, or null to clear this thread's match
+     */
     public static void setLastMatcher(Matcher matcher) {
         CURRENT_MATCHER.set(matcher);
     }

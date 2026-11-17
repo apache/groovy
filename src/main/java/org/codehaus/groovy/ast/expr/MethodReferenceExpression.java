@@ -25,6 +25,15 @@ import org.codehaus.groovy.ast.GroovyCodeVisitor;
  * e.g. System.out::println OR Objects::requireNonNull OR Integer::new OR int[]::new
  */
 public class MethodReferenceExpression extends MethodPointerExpression {
+    /**
+     * Creates a method or constructor reference.
+     * A null {@code expression} is stored as null and read back as {@code this}
+     * by {@link MethodPointerExpression#getExpression()}. The expression type is
+     * a plain closure reference.
+     *
+     * @param expression the receiver, or {@code null} for an implicit {@code this}
+     * @param methodName the referenced method name, including {@code new} for a constructor
+     */
     public MethodReferenceExpression(Expression expression, Expression methodName) {
         super(expression, methodName);
     }

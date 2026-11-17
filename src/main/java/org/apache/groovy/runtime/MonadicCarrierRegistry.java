@@ -62,8 +62,25 @@ public final class MonadicCarrierRegistry {
             this.map = map;
         }
 
+        /**
+         * Returns the carrier type matched with {@link Class#isInstance(Object)}.
+         *
+         * @return the carrier class for this allow-list row
+         */
         public Class<?> carrier() { return carrier; }
+
+        /**
+         * Returns the bind-method name stored for this carrier.
+         *
+         * @return the bind method name, such as {@code flatMap} or {@code thenCompose}
+         */
         public String bind() { return bind; }
+
+        /**
+         * Returns the map-method name stored for this carrier.
+         *
+         * @return the map method name, such as {@code map}, {@code thenApply}, or {@code then}
+         */
         public String map() { return map; }
 
         @Override
@@ -84,8 +101,25 @@ public final class MonadicCarrierRegistry {
             this.map = map;
         }
 
+        /**
+         * Returns the fully-qualified name matched against the value's type hierarchy.
+         *
+         * @return the carrier class name for this allow-list row
+         */
         public String carrierName() { return carrierName; }
+
+        /**
+         * Returns the bind-method name stored for this carrier.
+         *
+         * @return the bind method name, such as {@code bind} or {@code flatMap}
+         */
         public String bind() { return bind; }
+
+        /**
+         * Returns the map-method name stored for this carrier.
+         *
+         * @return the map method name stored on this row
+         */
         public String map() { return map; }
 
         @Override

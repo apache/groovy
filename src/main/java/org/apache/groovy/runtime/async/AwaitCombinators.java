@@ -118,7 +118,7 @@ final class AwaitCombinators {
                     result.complete(value);
                     return;
                 }
-                errors.add(error);
+                errors.add(AsyncSupport.unwrap(error));
                 if (remainingFailures.decrementAndGet() == 0) {
                     result.completeExceptionally(aggregateFirstFailures(futures.length, errors));
                 }
@@ -186,7 +186,7 @@ final class AwaitCombinators {
         CompletionException aggregate = new CompletionException(
                 "All " + sourceCount + " tasks failed", errors.get(0));
         for (int i = 1; i < errors.size(); i++) {
-            aggregate.addSuppressed(errors.get(i));
+            AsyncSupport.addSuppressedOnce(aggregate, errors.get(i));
         }
         return aggregate;
     }

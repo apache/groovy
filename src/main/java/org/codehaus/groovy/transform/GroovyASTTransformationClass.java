@@ -39,6 +39,19 @@ import java.lang.annotation.Target;
 // in the future the target will be wider than annotations, but for now it is just on annotations
 @Target(ElementType.ANNOTATION_TYPE)
 public @interface GroovyASTTransformationClass {
+    /**
+     * Names of the transform classes to run. Each class must be annotated
+     * with {@link GroovyASTTransformation}.
+     *
+     * @return the transform class names; empty when {@link #classes()} is used
+     */
     String[] value() default {};
+
+    /**
+     * Transform classes to run. Each class must be annotated with
+     * {@link GroovyASTTransformation}.
+     *
+     * @return the transform classes; empty when {@link #value()} is used
+     */
     Class[] classes() default {};
 }

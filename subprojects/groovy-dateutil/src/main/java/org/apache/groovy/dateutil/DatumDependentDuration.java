@@ -26,10 +26,28 @@ package org.apache.groovy.dateutil;
  * longer zero the time-of-day.
  */
 public class DatumDependentDuration extends BaseDuration {
+    /**
+     * Stores years, months, and the day and time components.
+     *
+     * @param years whole years
+     * @param months whole months
+     * @param days whole days
+     * @param hours hours
+     * @param minutes minutes
+     * @param seconds seconds
+     * @param millis milliseconds
+     */
     public DatumDependentDuration(final int years, final int months, final int days, final int hours, final int minutes, final int seconds, final int millis) {
         super(years, months, days, hours, minutes, seconds, millis);
     }
 
+    /**
+     * Adds every component of {@code rhs}, including years and months.
+     * The components are not normalized.
+     *
+     * @param rhs duration to add
+     * @return the component-wise sum
+     */
     public DatumDependentDuration plus(final DatumDependentDuration rhs) {
         return new DatumDependentDuration(getYears() + rhs.getYears(), getMonths() + rhs.getMonths(),
                 getDays() + rhs.getDays(), getHours() + rhs.getHours(),
@@ -37,10 +55,24 @@ public class DatumDependentDuration extends BaseDuration {
                 getMillis() + rhs.getMillis());
     }
 
+    /**
+     * Adds this duration to {@code rhs} by calling {@code rhs.plus(this)},
+     * so the result is a {@code TimeDatumDependentDuration}.
+     *
+     * @param rhs duration to add
+     * @return the sum, typed as {@code rhs} computes it
+     */
     public DatumDependentDuration plus(final TimeDatumDependentDuration rhs) {
         return rhs.plus(this);
     }
 
+    /**
+     * Adds the day and time components of {@code rhs}. Years and months stay
+     * those of this duration. The components are not normalized.
+     *
+     * @param rhs duration to add
+     * @return the component-wise sum
+     */
     public DatumDependentDuration plus(final Duration rhs) {
         return new DatumDependentDuration(getYears(), getMonths(),
                 getDays() + rhs.getDays(), getHours() + rhs.getHours(),
@@ -48,10 +80,24 @@ public class DatumDependentDuration extends BaseDuration {
                 getMillis() + rhs.getMillis());
     }
 
+    /**
+     * Adds this duration to {@code rhs} by calling {@code rhs.plus(this)}.
+     * {@code TimeDuration.plus} returns a {@code TimeDatumDependentDuration}.
+     *
+     * @param rhs duration to add
+     * @return the sum, typed as {@code rhs} computes it
+     */
     public DatumDependentDuration plus(final TimeDuration rhs) {
         return rhs.plus(this);
     }
 
+    /**
+     * Subtracts every component of {@code rhs}, including years and months.
+     * The components are not normalized.
+     *
+     * @param rhs duration to subtract
+     * @return the component-wise difference
+     */
     public DatumDependentDuration minus(final DatumDependentDuration rhs) {
         return new DatumDependentDuration(getYears() - rhs.getYears(), getMonths() - rhs.getMonths(),
                 getDays() - rhs.getDays(), getHours() - rhs.getHours(),
@@ -59,6 +105,13 @@ public class DatumDependentDuration extends BaseDuration {
                 getMillis() - rhs.getMillis());
     }
 
+    /**
+     * Subtracts the day and time components of {@code rhs}. Years and months
+     * stay those of this duration. The components are not normalized.
+     *
+     * @param rhs duration to subtract
+     * @return the component-wise difference
+     */
     public DatumDependentDuration minus(final Duration rhs) {
         return new DatumDependentDuration(getYears(), getMonths(),
                 getDays() - rhs.getDays(), getHours() - rhs.getHours(),

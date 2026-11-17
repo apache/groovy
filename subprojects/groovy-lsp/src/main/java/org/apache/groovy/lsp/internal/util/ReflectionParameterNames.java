@@ -139,6 +139,10 @@ public final class ReflectionParameterNames {
             this.table = table;
         }
 
+        /**
+         * Returns a visitor that copies this method's local-variable names into
+         * the parameter slots of the shared table.
+         */
         @Override
         public MethodVisitor visitMethod(final int access, final String name, final String descriptor,
                                           final String signature, final String[] exceptions) {
@@ -165,6 +169,11 @@ public final class ReflectionParameterNames {
             this.slots = new String[arguments.length];
         }
 
+        /**
+         * Stores {@code variable} on the first parameter slot that matches
+         * {@code index} and does not yet have a name. A null name and {@code this}
+         * are ignored.
+         */
         @Override
         public void visitLocalVariable(final String variable, final String desc, final String sig,
                                         final Label start, final Label end, final int index) {
@@ -181,6 +190,10 @@ public final class ReflectionParameterNames {
             }
         }
 
+        /**
+         * Records the collected parameter names when at least one was found and
+         * the table does not already hold a named entry for this method.
+         */
         @Override
         public void visitEnd() {
             if (!anyName(slots)) {

@@ -46,6 +46,13 @@ public class FilteredAttributes extends Attributes
     public Iterator nodeIterator() {
         return new NodeIterator(this.parent.iterator())
         {
+            /**
+             * Returns the next attribute the filter closure accepts as true,
+             * or {@code null} when none remain.
+             *
+             * @param iter source iterator of candidate attributes
+             * @return the next accepted attribute, or {@code null}
+             */
             @Override
             protected Object getNextNode(final Iterator iter) {
                 while (iter.hasNext()) {
