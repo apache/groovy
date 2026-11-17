@@ -34,14 +34,32 @@ import org.junit.jupiter.params.provider.MethodSource
  * <li>a <em>context</em>: where the target comes from, see {@link #script};</li>
  * <li>whether the type that the target gives is within the bound of the type parameter.</li>
  * </ul>
- * A cell is <em>legal</em> if the program runs as dynamic Groovy and <em>illegal</em> if it then
- * fails; {@link #testCellAsDynamicCode} checks that, so that a conversion Groovy makes on assignment,
- * such as any value to a {@code String}, is not taken for an error. A legal program should compile
- * and run, and an illegal one should be a compile error.
+ * A cell is <em>legal</em> if that type is within the bound, and <em>illegal</em> if it is not:
+ * accepting an illegal program gives an expression a static type that its value does not have.
+ * A legal program should compile and run, and an illegal one should be a compile error.
  * <p>
- * The cells that do not yet behave so are listed in {@link #ILLEGAL_ACCEPTED} and
- * {@link #LEGAL_REJECTED}. A listed cell is checked to behave as listed, so the lists show what
- * is known not to work, and a change that moves a cell either way fails here.
+ * Running a program does not decide which it is, but it is the evidence for each. An illegal
+ * program goes on to use the value at the type it was given, and so fails: with a cast error, with
+ * no method found, or on reading back a list that now holds a value of the wrong type.
+ * {@link #testCellAsDynamicCode} checks that every legal program runs as dynamic code, so none
+ * is working code that the grid would have rejected, and that every illegal one fails, so none is
+ * only a rule of Java that Groovy does not share. An illegal program that compiles is run as
+ * compiled as well, to show the failure where the types were checked.
+ * <p>
+ * A third kind of cell is <em>coerced</em>. Groovy converts a value where it moves into a declared
+ * type: where it is assigned or returned, and where a lambda, closure, method reference or method
+ * pointer returns it to a functional interface. Any value is converted to a {@code String}. Such a
+ * program is to be read as if the conversion were written out, as a call of {@code toString()}
+ * would be, so the type parameter is not given the type of the target: for
+ * {@code String s = C.zero()} it is a {@code Number} and the result is then converted. A coerced
+ * program should compile and run, and the value must then have the type it was converted to, so
+ * each one reads the value back with no static type for it. A type argument is not such a place:
+ * a value that is already in a list is not converted.
+ * <p>
+ * The cells that do not yet behave as they should are listed in {@link #ILLEGAL_ACCEPTED},
+ * {@link #LEGAL_REJECTED}, {@link #COERCION_NOT_PERFORMED} and {@link #COERCION_REJECTED}. A listed
+ * cell is checked to behave as listed, so the lists show what is known not to work, and a change
+ * that moves a cell either way fails here.
  */
 class FunctionalTargetTypingSTCTest extends StaticTypeCheckingTestCase {
 
@@ -57,6 +75,8 @@ class FunctionalTargetTypingSTCTest extends StaticTypeCheckingTestCase {
         static <T> Supplier<T> toSupplier(Supplier<T> s) { s }
         static <T, R> Function<T, R> toFunction(Function<T, R> f) { f }
         static <T> BinaryOperator<T> toBinary(BinaryOperator<T> b) { b }
+        // the class of what a supplier gives, read with no static type for it
+        static String given(Supplier s) { Object o = s.get(); o.getClass().simpleName }
     '''
 
     /**
@@ -82,7 +102,10 @@ class FunctionalTargetTypingSTCTest extends StaticTypeCheckingTestCase {
             type: 'Supplier<X>', wrap: 'toSupplier', use: ['X r = v.get()'],
             call: ['X d = C.zero()'],
             reference: 'C::zero', pointer: 'C.&zero', lambda: '() -> C.zero()', closure: '{ -> C.zero() }',
-            legal: [X: 'Integer'], illegal: [X: 'UUID']
+            legal: [X: 'Integer'], illegal: [X: 'UUID'],
+            // a Number is converted to a String where it is assigned or returned
+            coerced: [X: 'String'], coercedUse: ["assert given(v) == 'String'"],
+            coercedCall: ['String d = C.zero()', 'Object o = d', 'assert o instanceof String']
         ],
         // both: <T extends Number> T same(T)
         parameterAndResult: [
@@ -163,10 +186,53 @@ class FunctionalTargetTypingSTCTest extends StaticTypeCheckingTestCase {
         'reference wrappedArgument': ['result', 'parameterAndResult']
     ]
 
+    /**
+     * Coerced programs that compile but do not convert the value, as "functor context" to the
+     * kinds: the functional interface declares a {@code String} and gives a {@code Number}.
+     * Whether a method reference or pointer is to convert or to be a compile error is not decided.
+     */
+    // GROOVY-12783
+    private static final Map<String, List<String>> COERCION_NOT_PERFORMED = [
+        'reference assign'  : ['bareResult'],
+        'reference argument': ['bareResult'],
+        'pointer assign'    : ['bareResult'],
+        'pointer argument'  : ['bareResult']
+    ]
+
+    /**
+     * Coerced programs that do not convert the value with static compilation only: with type
+     * checking, the lambda is a closure, which converts what it returns.
+     */
+    // GROOVY-12783
+    private static final Map<String, List<String>> COERCION_NOT_PERFORMED_STATIC_COMPILE_ONLY = [
+        'lambda assign'  : ['bareResult'],
+        'lambda argument': ['bareResult']
+    ]
+
+    /**
+     * Coerced programs that are compile errors, as "functor context" to the kinds: through a
+     * generic call, the target gives the type parameter of the call a {@code String}, and what
+     * the functor returns is then checked against it as a type argument.
+     */
+    // GROOVY-12783
+    private static final Map<String, List<String>> COERCION_REJECTED = [
+        'reference wrapped'        : ['bareResult'],
+        'reference nested'         : ['bareResult'],
+        'reference wrappedArgument': ['bareResult'],
+        'reference wrappedReturn'  : ['bareResult'],
+        'pointer wrapped'          : ['bareResult'],
+        'lambda wrapped'           : ['bareResult'],
+        'lambda nested'            : ['bareResult'],
+        'lambda wrappedArgument'   : ['bareResult'],
+        'lambda wrappedReturn'     : ['bareResult'],
+        'closure wrapped'          : ['bareResult']
+    ]
+
     static List<String> cells() {
         List<String> cells = []
         KINDS.each { kind, spec ->
-            for (legality in ['legal', 'illegal']) {
+            for (legality in ['legal', 'illegal', 'coerced']) {
+                if (!spec[legality]) continue
                 if (spec.call) cells << "$kind call assign $legality".toString()
                 for (functor in FUNCTORS) {
                     if (!spec[functor]) continue
@@ -186,19 +252,20 @@ class FunctionalTargetTypingSTCTest extends StaticTypeCheckingTestCase {
      * assigned to the target; {@code nested}, to two such calls; {@code wrappedArgument},
      * the generic call is passed to a parameter; {@code wrappedReturn}, it is returned.
      */
-    private static String script(String kind, String functor, String context, boolean legal) {
+    private static String script(String kind, String functor, String context, String legality) {
         Map<String, Object> spec = KINDS[kind]
-        Map<String, String> values = (Map<String, String>) spec[legal ? 'legal' : 'illegal']
+        Map<String, String> values = (Map<String, String>) spec[legality]
         Closure<String> fill = { String text ->
             values.inject(text) { String result, String name, String value -> result.replaceAll("\\b$name\\b", value) }
         }
         String type = fill((String) spec.type), wrap = spec.wrap, f = spec[functor]
-        List<String> use = ((List<String>) spec.use).collect(fill)
+        boolean coerced = legality == 'coerced'
+        List<String> use = ((List<String>) spec[coerced ? 'coercedUse' : 'use']).collect(fill)
         List<String> main
         String member = ''
         switch (context) {
             case 'assign':
-                main = functor == 'call' ? ((List<String>) spec.call).collect(fill) : ["$type v = $f".toString()] + use
+                main = functor == 'call' ? ((List<String>) spec[coerced ? 'coercedCall' : 'call']).collect(fill) : ["$type v = $f".toString()] + use
                 break
             case 'wrapped':
                 main = ["$type v = $wrap($f)".toString()] + use
@@ -241,11 +308,28 @@ class FunctionalTargetTypingSTCTest extends StaticTypeCheckingTestCase {
     @MethodSource('cells')
     void testCell(String cell) {
         def (String kind, String functor, String context, String legality) = cell.tokenize(' ')
-        boolean legal = legality == 'legal'
-        String script = script(kind, functor, context, legal)
+        String script = script(kind, functor, context, legality)
         String key = "$functor $context"
 
-        if (legal) {
+        if (legality == 'coerced') {
+            boolean notPerformed = kind in COERCION_NOT_PERFORMED[key]
+                    || (staticCompile && kind in COERCION_NOT_PERFORMED_STATIC_COMPILE_ONLY[key])
+            if (kind in COERCION_REJECTED[key]) {
+                assert !compiles(script) : "$cell now compiles: remove it from COERCION_REJECTED\n$script"
+            } else if (notPerformed) {
+                assert compiles(script) : "$cell is now a compile error: move it to COERCION_REJECTED\n$script"
+                // the value does not have the type that the functional interface declares
+                Throwable failure = null
+                try {
+                    shell.evaluate(script)
+                } catch (Exception | AssertionError e) {
+                    failure = e
+                }
+                assert failure != null : "$cell now converts the value: remove it from COERCION_NOT_PERFORMED\n$script"
+            } else {
+                assertScript script
+            }
+        } else if (legality == 'legal') {
             if (kind in LEGAL_REJECTED[key]) {
                 assert !compiles(script) : "$cell now compiles: remove it from LEGAL_REJECTED\n$script"
             } else {
@@ -256,20 +340,29 @@ class FunctionalTargetTypingSTCTest extends StaticTypeCheckingTestCase {
                     || (!staticCompile && kind in ILLEGAL_ACCEPTED_TYPE_CHECKED_ONLY[key])
             if (accepted) {
                 assert compiles(script) : "$cell is now a compile error: remove it from ILLEGAL_ACCEPTED\n$script"
+                // it uses a value at a type that the value does not have
+                Throwable failure = null
+                try {
+                    shell.evaluate(script)
+                } catch (Exception | AssertionError e) {
+                    failure = e
+                }
+                assert failure != null : "$cell is illegal, compiles and runs\n$script"
             } else {
                 assert !compiles(script) : "$cell is illegal and compiles\n$script"
             }
         }
     }
 
-    // the legal programs run and the illegal ones fail, so the grid expects what Groovy does
+    // the legal programs run and the illegal ones fail; a coerced program is not run, as
+    // dynamic code does not convert a value to a type argument of a functional interface
     @ParameterizedTest(name = '{0}')
     @MethodSource('cells')
     void testCellAsDynamicCode(String cell) {
         Assumptions.assumeFalse(staticCompile)
         def (String kind, String functor, String context, String legality) = cell.tokenize(' ')
-        boolean legal = legality == 'legal'
-        String script = script(kind, functor, context, legal)
+        Assumptions.assumeFalse(legality == 'coerced')
+        String script = script(kind, functor, context, legality)
 
         Throwable failure = null
         try {
@@ -277,7 +370,7 @@ class FunctionalTargetTypingSTCTest extends StaticTypeCheckingTestCase {
         } catch (Exception | AssertionError e) {
             failure = e
         }
-        if (legal) {
+        if (legality == 'legal') {
             assert failure == null : "$cell fails as dynamic code\n$script"
         } else {
             assert failure != null && !(failure instanceof MultipleCompilationErrorsException) : "$cell runs as dynamic code\n$script"
