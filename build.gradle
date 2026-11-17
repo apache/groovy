@@ -185,6 +185,12 @@ dependencies {
             requireCapability 'org.apache.groovy:groovy-grapes'
         }
     }
+    testRuntimeOnly(project(':')) {
+        because 'Tests are using JLine Jansi to render ANSI log output'
+        capabilities {
+            requireCapability 'org.apache.groovy:groovy-logging'
+        }
+    }
     testRuntimeOnly projects.groovyGrapeIvy
 }
 
