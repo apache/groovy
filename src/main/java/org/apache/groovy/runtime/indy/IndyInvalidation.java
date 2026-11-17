@@ -50,7 +50,9 @@ import java.util.logging.Logger;
  * <em>object</em>, so exact-class invalidation still reaches installed guards
  * after a soft/weak MetaClass has been collected. Monomorphic indy sites
  * install a single {@code guardWithTest} on the class-level domain observed
- * at link time.
+ * at link time. A site whose receiver uses the MetaClass of another class (a
+ * proxy or mock subclass standing in for a type) installs a second one, on
+ * that class's domain: see {@link #foreignMetaClassSwitchPointFor}.
  *
  * <h2>Width policy (two axes only)</h2>
  * <ul>
