@@ -37,10 +37,17 @@ import org.codehaus.groovy.ast.Variable;
  */
 public class VariableExpression extends Expression implements Cloneable, Variable {
 
-    // The following fields are only used internally; every occurrence of a user-defined expression of the same kind
-    // has its own instance so as to preserve line information. Consequently, to test for such an expression, don't
-    // compare against the field but call isXXXExpression() instead.
+    /**
+     * Shared {@code this} variable. A {@code this} expression from source has its
+     * own instance, so identity comparison with this field is not a this-test;
+     * use {@link #isThisExpression()}.
+     */
     public static final VariableExpression THIS_EXPRESSION = new VariableExpression("this");
+    /**
+     * Shared {@code super} variable. A {@code super} expression from source has its
+     * own instance, so identity comparison with this field is not a super-test;
+     * use {@link #isSuperExpression()}.
+     */
     public static final VariableExpression SUPER_EXPRESSION = new VariableExpression("super");
 
     private int modifiers;

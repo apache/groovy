@@ -139,37 +139,197 @@ public class ToStringASTTransformation extends AbstractASTTransformation {
         }
     }
 
+    /**
+     * Adds {@code toString}, printing null values. Delegates with
+     * {@code ignoreNulls} false.
+     *
+     * @param cNode class that receives {@code toString}
+     * @param includeSuper append {@code super.toString()}
+     * @param includeFields include fields as well as properties
+     * @param excludes names to omit, or null
+     * @param includes names to print, in this order, or null
+     * @param includeNames print each name before its value
+     */
     public static void createToString(ClassNode cNode, boolean includeSuper, boolean includeFields, List<String> excludes, List<String> includes, boolean includeNames) {
         createToString(cNode, includeSuper, includeFields, excludes, includes, includeNames, false);
     }
 
+    /**
+     * Adds {@code toString} with the class name qualified by its package.
+     * Delegates with {@code includePackage} true.
+     *
+     * @param cNode class that receives {@code toString}
+     * @param includeSuper append {@code super.toString()}
+     * @param includeFields include fields as well as properties
+     * @param excludes names to omit, or null
+     * @param includes names to print, in this order, or null
+     * @param includeNames print each name before its value
+     * @param ignoreNulls skip a null value
+     */
     public static void createToString(ClassNode cNode, boolean includeSuper, boolean includeFields, List<String> excludes, List<String> includes, boolean includeNames, boolean ignoreNulls) {
         createToString(cNode, includeSuper, includeFields, excludes, includes, includeNames, ignoreNulls, true);
     }
 
+    /**
+     * Adds {@code toString} that is computed on every call. Delegates with
+     * {@code cache} false.
+     *
+     * @param cNode class that receives {@code toString}
+     * @param includeSuper append {@code super.toString()}
+     * @param includeFields include fields as well as properties
+     * @param excludes names to omit, or null
+     * @param includes names to print, in this order, or null
+     * @param includeNames print each name before its value
+     * @param ignoreNulls skip a null value
+     * @param includePackage qualify the class name with its package
+     */
     public static void createToString(ClassNode cNode, boolean includeSuper, boolean includeFields, List<String> excludes, List<String> includes, boolean includeNames, boolean ignoreNulls, boolean includePackage) {
         createToString(cNode, includeSuper, includeFields, excludes, includes, includeNames, ignoreNulls, includePackage, false);
     }
 
+    /**
+     * Adds {@code toString} without superclass properties. Delegates with
+     * {@code includeSuperProperties} false.
+     *
+     * @param cNode class that receives {@code toString}
+     * @param includeSuper append {@code super.toString()}
+     * @param includeFields include fields as well as properties
+     * @param excludes names to omit, or null
+     * @param includes names to print, in this order, or null
+     * @param includeNames print each name before its value
+     * @param ignoreNulls skip a null value
+     * @param includePackage qualify the class name with its package
+     * @param cache store the text in a {@code $to$string} field
+     */
     public static void createToString(ClassNode cNode, boolean includeSuper, boolean includeFields, List<String> excludes, List<String> includes, boolean includeNames, boolean ignoreNulls, boolean includePackage, boolean cache) {
         createToString(cNode, includeSuper, includeFields, excludes, includes, includeNames, ignoreNulls, includePackage, cache, false);
     }
 
+    /**
+     * Adds {@code toString} including JavaBean getters that have no field.
+     * Delegates with {@code allProperties} true.
+     *
+     * @param cNode class that receives {@code toString}
+     * @param includeSuper append {@code super.toString()}
+     * @param includeFields include fields as well as properties
+     * @param excludes names to omit, or null
+     * @param includes names to print, in this order, or null
+     * @param includeNames print each name before its value
+     * @param ignoreNulls skip a null value
+     * @param includePackage qualify the class name with its package
+     * @param cache store the text in a {@code $to$string} field
+     * @param includeSuperProperties include properties declared on superclasses
+     */
     public static void createToString(ClassNode cNode, boolean includeSuper, boolean includeFields, List<String> excludes, List<String> includes, boolean includeNames, boolean ignoreNulls, boolean includePackage, boolean cache, boolean includeSuperProperties) {
         createToString(cNode, includeSuper, includeFields, excludes, includes, includeNames, ignoreNulls, includePackage, cache, includeSuperProperties, true);
     }
 
+    /**
+     * Adds {@code toString} that skips internal names and superclass fields.
+     * Delegates with {@code allNames} and {@code includeSuperFields} false.
+     *
+     * @param cNode class that receives {@code toString}
+     * @param includeSuper append {@code super.toString()}
+     * @param includeFields include fields as well as properties
+     * @param excludes names to omit, or null
+     * @param includes names to print, in this order, or null
+     * @param includeNames print each name before its value
+     * @param ignoreNulls skip a null value
+     * @param includePackage qualify the class name with its package
+     * @param cache store the text in a {@code $to$string} field
+     * @param includeSuperProperties include properties declared on superclasses
+     * @param allProperties include JavaBean getters that have no field
+     */
     public static void createToString(ClassNode cNode, boolean includeSuper, boolean includeFields, List<String> excludes, List<String> includes, boolean includeNames, boolean ignoreNulls, boolean includePackage, boolean cache, boolean includeSuperProperties, boolean allProperties) {
         createToString(cNode, includeSuper, includeFields, excludes, includes, includeNames, ignoreNulls, includePackage, cache, includeSuperProperties, allProperties, false, false);
     }
 
+    /**
+     * Adds {@code toString} using {@link FormatHelper#toString(Object)} and
+     * the default delimiters. Delegates with {@code pojo} false and
+     * {@code delims} null.
+     *
+     * @param cNode class that receives {@code toString}
+     * @param includeSuper append {@code super.toString()}
+     * @param includeFields include fields as well as properties
+     * @param excludes names to omit, or null
+     * @param includes names to print, in this order, or null
+     * @param includeNames print each name before its value
+     * @param ignoreNulls skip a null value
+     * @param includePackage qualify the class name with its package
+     * @param cache store the text in a {@code $to$string} field
+     * @param includeSuperProperties include properties declared on superclasses
+     * @param allProperties include JavaBean getters that have no field
+     * @param allNames keep names that contain {@code $}
+     * @param includeSuperFields include fields declared on superclasses
+     */
     public static void createToString(ClassNode cNode, boolean includeSuper, boolean includeFields, List<String> excludes, List<String> includes, boolean includeNames, boolean ignoreNulls, boolean includePackage, boolean cache, boolean includeSuperProperties, boolean allProperties, boolean allNames, boolean includeSuperFields) {
         createToString(cNode, includeSuper, includeFields, excludes, includes, includeNames, ignoreNulls, includePackage, cache, includeSuperProperties, allProperties, allNames, includeSuperFields, false, null);
     }
 
+    /**
+     * Adds {@code toString}, reading properties from {@code this} rather
+     * than through getters. Delegates with {@code useGetter} false.
+     *
+     * @param cNode class that receives {@code toString}
+     * @param includeSuper append {@code super.toString()}
+     * @param includeFields include fields as well as properties
+     * @param excludes names to omit, or null
+     * @param includes names to print, in this order, or null
+     * @param includeNames print each name before its value
+     * @param ignoreNulls skip a null value
+     * @param includePackage qualify the class name with its package
+     * @param cache store the text in a {@code $to$string} field
+     * @param includeSuperProperties include properties declared on superclasses
+     * @param allProperties include JavaBean getters that have no field
+     * @param allNames keep names that contain {@code $}
+     * @param includeSuperFields include fields declared on superclasses
+     * @param pojo render each value with {@code toString}, printing null as
+     *        the text {@code null}, instead of {@link FormatHelper}
+     * @param delims left delimiter, right delimiter, name/value separator,
+     *        and field separator; null or any other length uses
+     *        {@code (}, {@code )}, {@code :}, and {@code , }
+     */
     public static void createToString(ClassNode cNode, boolean includeSuper, boolean includeFields, List<String> excludes, List<String> includes, boolean includeNames, boolean ignoreNulls, boolean includePackage, boolean cache, boolean includeSuperProperties, boolean allProperties, boolean allNames, boolean includeSuperFields, boolean pojo, String[] delims) {
         createToString(cNode, includeSuper, includeFields, excludes, includes, includeNames, ignoreNulls, includePackage, cache, includeSuperProperties, allProperties, allNames, includeSuperFields, pojo, delims, false);
     }
+
+    /**
+     * Adds {@code toString} to {@code cNode}, or a private {@code _toString}
+     * when a hand-written {@code toString} is already declared. A stub
+     * placeholder receives this body. An existing generated
+     * {@code toString}, or a class that already declares both names, is
+     * left unchanged. The text starts with the class name, or the enum
+     * constant name, then the left delimiter, the selected values, and the
+     * right delimiter. When {@code includes} is set, values follow that
+     * order. A value whose static type is this class and that is this
+     * instance is rendered as {@code (this)}. When {@code cache} is true
+     * the text is stored in a private synthetic {@code $to$string} field
+     * and computed only while that field is null.
+     *
+     * @param cNode class that receives {@code toString}
+     * @param includeSuper append {@code super.toString()}
+     * @param includeFields include fields as well as properties
+     * @param excludes names to omit, or null
+     * @param includes names to print, in this order, or null
+     * @param includeNames print each name before its value
+     * @param ignoreNulls skip a null value
+     * @param includePackage qualify the class name with its package; ignored
+     *        for an enum, which prints {@code name()}
+     * @param cache store the text in a {@code $to$string} field
+     * @param includeSuperProperties include properties declared on superclasses
+     * @param allProperties include JavaBean getters that have no field
+     * @param allNames keep names that contain {@code $}
+     * @param includeSuperFields include fields declared on superclasses
+     * @param pojo render each value with {@code toString}, printing null as
+     *        the text {@code null}, instead of {@link FormatHelper}
+     * @param delims left delimiter, right delimiter, name/value separator,
+     *        and field separator; null or any other length uses
+     *        {@code (}, {@code )}, {@code :}, and {@code , }
+     * @param useGetter read each property with its getter; otherwise read
+     *        the property on {@code this}. A bare field is read directly
+     *        either way
+     */
     public static void createToString(ClassNode cNode, boolean includeSuper, boolean includeFields, List<String> excludes, List<String> includes, boolean includeNames, boolean ignoreNulls, boolean includePackage, boolean cache, boolean includeSuperProperties, boolean allProperties, boolean allNames, boolean includeSuperFields, boolean pojo, String[] delims, boolean useGetter) {
         if (delims == null || delims.length != 4) {
             delims = new String[]{"(", ")", ":", ", "};

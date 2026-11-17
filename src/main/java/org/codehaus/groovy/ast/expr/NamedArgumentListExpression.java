@@ -25,9 +25,17 @@ import java.util.List;
  */
 public class NamedArgumentListExpression extends MapExpression {
 
+    /**
+     * Creates a named-argument list with no entries.
+     */
     public NamedArgumentListExpression() {
     }
 
+    /**
+     * Creates a named-argument list from the supplied map entries, in order.
+     *
+     * @param mapEntryExpressions the {@code name: value} entries
+     */
     public NamedArgumentListExpression(List<MapEntryExpression> mapEntryExpressions) {
         super(mapEntryExpressions);
     }

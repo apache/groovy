@@ -27,6 +27,13 @@ class GetEffectivePojoFieldSite extends AbstractCallSite {
     private final CachedField effective;
     private final int metaClassVersion;
 
+    /**
+     * Captures the meta class, the field to read, and the meta class version.
+     *
+     * @param site the site whose name and index are copied
+     * @param metaClass the meta class this site was built from
+     * @param effective the field read when the receiver still matches
+     */
     public GetEffectivePojoFieldSite(final CallSite site, final MetaClassImpl metaClass, final CachedField effective) {
         super(site);
         this.metaClass = metaClass;
@@ -34,6 +41,11 @@ class GetEffectivePojoFieldSite extends AbstractCallSite {
         this.metaClassVersion = metaClass.getVersion();
     }
 
+    /**
+     * Returns a newly created get-property site when a category is active on
+     * the current thread, the receiver's class is not the meta class's class,
+     * or the meta class version has changed. Otherwise returns this site.
+     */
     @Override
     public final CallSite acceptGetProperty(final Object receiver) {
         if (GroovyCategorySupport.hasCategoryInCurrentThread()
@@ -45,6 +57,9 @@ class GetEffectivePojoFieldSite extends AbstractCallSite {
         return this;
     }
 
+    /**
+     * Returns the cached field's value for {@code receiver}.
+     */
     @Override
     public final Object getProperty(final Object receiver) {
         return effective.getProperty(receiver);

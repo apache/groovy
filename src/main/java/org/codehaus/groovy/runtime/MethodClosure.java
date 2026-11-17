@@ -128,6 +128,11 @@ public class MethodClosure extends Closure {
 
     //--------------------------------------------------------------------------
 
+    /**
+     * The method name this closure invokes, or {@code "new"} when it invokes a constructor.
+     *
+     * @return the name passed to the constructor
+     */
     public String getMethod() {
         return method;
     }
@@ -221,6 +226,13 @@ public class MethodClosure extends Closure {
     }
 
     // TODO: This method seems to be never called..., because MetaClassImpl.invokeMethod will intercept calls and return the result.
+    /**
+     * Invokes {@link #getMethod()} on {@link #getOwner()} with {@code arguments}.
+     *
+     * @param arguments the argument object passed to
+     *        {@link InvokerHelper#invokeMethod(Object, String, Object)}
+     * @return the object produced by invoking that method
+     */
     protected Object doCall(final Object arguments) {
         return InvokerHelper.invokeMethod(getOwner(), getMethod(), arguments);
     }

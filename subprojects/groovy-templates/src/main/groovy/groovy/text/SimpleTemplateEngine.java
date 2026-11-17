@@ -19,6 +19,7 @@
 package groovy.text;
 
 import groovy.lang.Binding;
+import groovy.lang.GroovyCodeSource;
 import groovy.lang.GroovyRuntimeException;
 import groovy.lang.GroovyShell;
 import groovy.lang.Script;
@@ -149,7 +150,9 @@ public class SimpleTemplateEngine extends TemplateEngine {
             System.out.println("\n-- script end --\n");
         }
         try {
-            template.script = groovyShell.parse(script, "SimpleTemplateScript" + counter.incrementAndGet() + ".groovy");
+            GroovyCodeSource codeSource = new GroovyCodeSource(script, "SimpleTemplateScript" + counter.incrementAndGet() + ".groovy", GroovyShell.DEFAULT_CODE_BASE);
+            codeSource.setNameGenerated(true);
+            template.script = groovyShell.parse(codeSource);
         } catch (Exception e) {
             throw new GroovyRuntimeException("Failed to parse template script (your template may contain an error or be trying to use expressions not currently supported): " + e.getMessage());
         }

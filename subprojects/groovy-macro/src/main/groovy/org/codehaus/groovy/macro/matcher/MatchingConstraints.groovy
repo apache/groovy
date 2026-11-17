@@ -37,9 +37,20 @@ class MatchingConstraints {
      */
     public final static ConstraintPredicate<Token> ANY_TOKEN = AnyTokenMatch.INSTANCE
 
+    /**
+     * Names that match a variable of that name, or a constant whose value is that name.
+     */
     final Set<String> placeholders
     /** @since 5.0.0 */
     final Set<String> varargPlaceholders
+    /**
+     * Predicate applied to a binary operator token when the pattern and the
+     * candidate use different operator types. Absent means that difference fails the match.
+     */
     final ConstraintPredicate<Token> tokenPredicate
+    /**
+     * Predicate applied to the enclosing tree context after a binary expression matches.
+     * Absent means that check succeeds.
+     */
     final ConstraintPredicate<TreeContext> eventually
 }
