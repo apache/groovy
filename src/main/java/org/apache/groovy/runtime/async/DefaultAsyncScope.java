@@ -68,6 +68,17 @@ public final class DefaultAsyncScope implements AsyncScope {
     private final boolean failFast;
     private final AsyncScope parent;
 
+    /**
+     * Creates a scope that runs children on {@code executor}.
+     * {@code executor} must be non-null. When {@code failFast} is true, a child that
+     * completes with an error cancels the other registered children with interrupt,
+     * unless the scope is already closed. The parent is {@link #current()}. When that
+     * parent is a {@code DefaultAsyncScope} and is not closed, this scope is registered
+     * as its child. No task is started here.
+     *
+     * @param executor the executor used for child tasks
+     * @param failFast whether a failed child cancels the other registered children
+     */
     public DefaultAsyncScope(Executor executor, boolean failFast) {
         Objects.requireNonNull(executor, "executor must not be null");
         this.executor = executor;
@@ -78,10 +89,22 @@ public final class DefaultAsyncScope implements AsyncScope {
         }
     }
 
+    /**
+     * Creates a scope on {@code executor} with fail-fast cancellation enabled.
+     * Equivalent to {@link #DefaultAsyncScope(Executor, boolean) DefaultAsyncScope(executor, true)}.
+     * <p>A null {@code executor} fails immediately.
+     *
+     * @param executor the executor used for child tasks
+     */
     public DefaultAsyncScope(Executor executor) {
         this(executor, true);
     }
 
+    /**
+     * Creates a fail-fast scope on {@link AsyncSupport#getExecutor()}.
+     * Equivalent to {@link #DefaultAsyncScope(Executor, boolean)
+     * DefaultAsyncScope(AsyncSupport.getExecutor(), true)}.
+     */
     public DefaultAsyncScope() {
         this(AsyncSupport.getExecutor(), true);
     }

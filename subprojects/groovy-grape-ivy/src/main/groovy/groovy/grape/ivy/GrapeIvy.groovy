@@ -66,6 +66,9 @@ import java.util.regex.Pattern
 
 /**
  * Implementation supporting {@code @Grape} and {@code @Grab} annotations based on Ivy.
+ * The shipped Ivy settings give the Maven Central resolver a connection timeout of
+ * 30 seconds and a read timeout of 60 seconds. {@code -Dgrape.config} selects
+ * {@code default}, {@code relaxed}, a {@code classpath:} resource, or a file.
  */
 @AutoFinal @CompileStatic
 class GrapeIvy implements GrapeEngine {
@@ -316,6 +319,14 @@ class GrapeIvy implements GrapeEngine {
         }
     }
 
+    /**
+     * Returns {@code url} as a file when it is a {@code file:} URL of a regular
+     * file. A null URL, any other protocol, a directory, or a URL that is not
+     * a URI yields null.
+     *
+     * @param url the settings location
+     * @return the file, or null
+     */
     @PackageScope static File urlAsLocalFile(URL url) {
         if (url == null || url.protocol != 'file') return null
         try {

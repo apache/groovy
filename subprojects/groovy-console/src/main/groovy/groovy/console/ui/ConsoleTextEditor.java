@@ -90,12 +90,21 @@ public class ConsoleTextEditor extends JScrollPane {
 
     private class LineNumbersPanel extends JPanel {
 
+        /**
+         * Sizes the gutter to three times the font size stored in the console preferences.
+         */
         LineNumbersPanel() {
             int initialSize = 3 * PREFERENCES.getInt(PREFERENCE_FONT_SIZE, DEFAULT_FONT_SIZE);
             setMinimumSize(new Dimension(initialSize, initialSize));
             setPreferredSize(new Dimension(initialSize, initialSize));
         }
 
+        /**
+         * Draws the visible line numbers in the gutter, left-padded to four characters,
+         * using the editor font. A failure to map the first visible offset is logged.
+         *
+         * @param g the gutter graphics
+         */
         @Override
         @SuppressWarnings("deprecation") // TODO switch viewToModel/modelToView once minimum JDK version for Groovy >= 9
         public void paintComponent(Graphics g) {
@@ -140,6 +149,12 @@ public class ConsoleTextEditor extends JScrollPane {
 
     private TextEditor textEditor = new TextEditor(true, true, true) {
 
+        /**
+         * After painting the text, repaints the line-number gutter when the document
+         * has changed since the last paint, then clears that flag.
+         *
+         * @param g the editor graphics
+         */
         @Override
         public void paintComponent(Graphics g) {
             super.paintComponent(g);
@@ -237,16 +252,31 @@ public class ConsoleTextEditor extends JScrollPane {
         // add a document listener, to hint whether the line number gutter has to be repainted
         // when the number of lines changes
         doc.addDocumentListener(new DocumentListener() {
+            /**
+             * Marks the line-number gutter for repaint after an insertion.
+             *
+             * @param documentEvent the insertion
+             */
             @Override
             public void insertUpdate(DocumentEvent documentEvent) {
                 documentChangedSinceLastRepaint = true;
             }
 
+            /**
+             * Marks the line-number gutter for repaint after a deletion.
+             *
+             * @param documentEvent the deletion
+             */
             @Override
             public void removeUpdate(DocumentEvent documentEvent) {
                 documentChangedSinceLastRepaint = true;
             }
 
+            /**
+             * Marks the line-number gutter for repaint after an attribute change.
+             *
+             * @param documentEvent the attribute change
+             */
             @Override
             public void changedUpdate(DocumentEvent documentEvent) {
                 documentChangedSinceLastRepaint = true;
@@ -347,10 +377,19 @@ public class ConsoleTextEditor extends JScrollPane {
 
     private class PrintAction extends AbstractAction {
 
+        /**
+         * Creates the action already enabled.
+         */
         PrintAction() {
             setEnabled(true);
         }
 
+        /**
+         * Shows the print dialog for the editor and prints when the user confirms.
+         * A failure from the print job is written to the stack trace.
+         *
+         * @param ae the action event
+         */
         @Override
         public void actionPerformed(ActionEvent ae) {
             PRINTER_JOB.setPageable(textEditor);
@@ -368,10 +407,19 @@ public class ConsoleTextEditor extends JScrollPane {
 
     private class RedoAction extends UpdateCaretListener implements PropertyChangeListener {
 
+        /**
+         * Creates the action disabled until a redo is available.
+         */
         RedoAction() {
             setEnabled(false);
         }
 
+        /**
+         * Redoes one edit, updates whether undo and redo are enabled, reapplies
+         * highlighting, and moves the caret to the last document update.
+         *
+         * @param ae the action event
+         */
         @Override
         public void actionPerformed(ActionEvent ae) {
             undoManager.redo();
@@ -381,6 +429,11 @@ public class ConsoleTextEditor extends JScrollPane {
             super.actionPerformed(ae);
         }
 
+        /**
+         * Enables this action when the undo manager can redo.
+         *
+         * @param pce the undo-manager property change
+         */
         @Override
         public void propertyChange(PropertyChangeEvent pce) {
             setEnabled(undoManager.canRedo());
@@ -389,22 +442,45 @@ public class ConsoleTextEditor extends JScrollPane {
 
     private abstract class UpdateCaretListener extends AbstractAction implements DocumentListener {
 
+        /**
+         * Document offset where the caret is placed after an undo or redo.
+         */
         protected int lastUpdate;
 
+        /**
+         * Ignores attribute changes, leaving {@link #lastUpdate} unchanged.
+         *
+         * @param de the attribute change
+         */
         @Override
         public void changedUpdate(DocumentEvent de) {
         }
 
+        /**
+         * Records the offset just past the inserted text.
+         *
+         * @param de the insertion
+         */
         @Override
         public void insertUpdate(DocumentEvent de) {
             lastUpdate = de.getOffset() + de.getLength();
         }
 
+        /**
+         * Records the offset where text was removed.
+         *
+         * @param de the deletion
+         */
         @Override
         public void removeUpdate(DocumentEvent de) {
             lastUpdate = de.getOffset();
         }
 
+        /**
+         * Moves the editor caret to {@link #lastUpdate}.
+         *
+         * @param ae the action event
+         */
         @Override
         public void actionPerformed(ActionEvent ae) {
             textEditor.setCaretPosition(lastUpdate);
@@ -413,10 +489,19 @@ public class ConsoleTextEditor extends JScrollPane {
 
     private class UndoAction extends UpdateCaretListener implements PropertyChangeListener {
 
+        /**
+         * Creates the action disabled until an undo is available.
+         */
         UndoAction() {
             setEnabled(false);
         }
 
+        /**
+         * Undoes one edit, updates whether undo and redo are enabled, reapplies
+         * highlighting, and moves the caret to the last document update.
+         *
+         * @param ae the action event
+         */
         @Override
         public void actionPerformed(ActionEvent ae) {
             undoManager.undo();
@@ -426,6 +511,11 @@ public class ConsoleTextEditor extends JScrollPane {
             super.actionPerformed(ae);
         }
 
+        /**
+         * Enables this action when the undo manager can undo.
+         *
+         * @param pce the undo-manager property change
+         */
         @Override
         public void propertyChange(PropertyChangeEvent pce) {
             setEnabled(undoManager.canUndo());

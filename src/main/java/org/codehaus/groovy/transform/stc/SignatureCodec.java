@@ -18,6 +18,8 @@
  */
 package org.codehaus.groovy.transform.stc;
 
+import groovy.transform.TypeChecked;
+
 import org.codehaus.groovy.ast.ClassNode;
 
 /**
@@ -26,7 +28,20 @@ import org.codehaus.groovy.ast.ClassNode;
  * that future versions of Groovy remain capable of decoding previous versions.
  */
 public interface SignatureCodec {
+    /**
+     * Encodes {@code node} as the inferred-signature string stored on
+     * {@link TypeChecked.TypeCheckingInfo}.
+     *
+     * @param node the inferred return type
+     * @return the encoded signature
+     */
     String encode(ClassNode node);
 
+    /**
+     * Decodes a signature produced by {@link #encode(ClassNode)}.
+     *
+     * @param signature the encoded return type
+     * @return the decoded class node
+     */
     ClassNode decode(String signature);
 }

@@ -503,15 +503,14 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
 
     private void removeMultimethodsOverloadedWithPrivateMethods() {
         var mia = new MethodIndexAction() {
-            /** {@inheritDoc} */
-            @Override
             /**
-         * Determines whether a class should be skipped while iterating method indexes.
-         *
-         * @param clazz the class being considered
-         * @return {@code true} to skip the class
-         */
-        public boolean skipClass(final Class<?> clazz) {
+             * Determines whether a class should be skipped while iterating method indexes.
+             *
+             * @param clazz the class being considered
+             * @return {@code true} to skip the class
+             */
+            @Override
+            public boolean skipClass(final Class<?> clazz) {
                 return clazz == theClass;
             }
 

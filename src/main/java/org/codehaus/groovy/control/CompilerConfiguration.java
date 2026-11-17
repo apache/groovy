@@ -134,31 +134,31 @@ public class CompilerConfiguration {
     @Incubating
     public static final String LAMBDA_HOISTING = "groovy.target.lambda.hoist";
 
-    /** This (<code>"1.4"</code>) is the value for targetBytecode to compile for a JDK 1.4. */
+    /** Historical bytecode level {@code "1.4"}. Not an accepted compilation target; accepted levels are 17 through 28. */
     @Deprecated public static final String JDK4 = "1.4";
-    /** This (<code>"1.5"</code>) is the value for targetBytecode to compile for a JDK 1.5. */
+    /** Historical bytecode level {@code "1.5"}. Not an accepted compilation target; accepted levels are 17 through 28. */
     @Deprecated public static final String JDK5 = "1.5";
-    /** This (<code>"1.6"</code>) is the value for targetBytecode to compile for a JDK 1.6. */
+    /** Historical bytecode level {@code "1.6"}. Not an accepted compilation target; accepted levels are 17 through 28. */
     @Deprecated public static final String JDK6 = "1.6";
-    /** This (<code>"1.7"</code>) is the value for targetBytecode to compile for a JDK 1.7. */
+    /** Historical bytecode level {@code "1.7"}. Not an accepted compilation target; accepted levels are 17 through 28. */
     @Deprecated public static final String JDK7 = "1.7";
-    /** This (<code>"1.8"</code>) is the value for targetBytecode to compile for a JDK 1.8. */
+    /** Historical bytecode level {@code "1.8"}. Not an accepted compilation target; accepted levels are 17 through 28. */
     @Deprecated public static final String JDK8 = "1.8";
-    /** This (<code>"9"</code>) is the value for targetBytecode to compile for a JDK 9. */
+    /** Historical bytecode level {@code "9"}. Not an accepted compilation target; accepted levels are 17 through 28. */
     @Deprecated public static final String JDK9 =   "9";
-    /** This (<code>"10"</code>) is the value for targetBytecode to compile for a JDK 10. */
+    /** Historical bytecode level {@code "10"}. Not an accepted compilation target; accepted levels are 17 through 28. */
     @Deprecated public static final String JDK10 = "10";
-    /** This (<code>"11"</code>) is the value for targetBytecode to compile for a JDK 11. */
+    /** Historical bytecode level {@code "11"}. Not an accepted compilation target; accepted levels are 17 through 28. */
     @Deprecated public static final String JDK11 = "11";
-    /** This (<code>"12"</code>) is the value for targetBytecode to compile for a JDK 12. */
+    /** Historical bytecode level {@code "12"}. Not an accepted compilation target; accepted levels are 17 through 28. */
     @Deprecated public static final String JDK12 = "12";
-    /** This (<code>"13"</code>) is the value for targetBytecode to compile for a JDK 13. */
+    /** Historical bytecode level {@code "13"}. Not an accepted compilation target; accepted levels are 17 through 28. */
     @Deprecated public static final String JDK13 = "13";
-    /** This (<code>"14"</code>) is the value for targetBytecode to compile for a JDK 14. */
+    /** Historical bytecode level {@code "14"}. Not an accepted compilation target; accepted levels are 17 through 28. */
     @Deprecated public static final String JDK14 = "14";
-    /** This (<code>"15"</code>) is the value for targetBytecode to compile for a JDK 15. */
+    /** Historical bytecode level {@code "15"}. Not an accepted compilation target; accepted levels are 17 through 28. */
     @Deprecated public static final String JDK15 = "15";
-    /** This (<code>"16"</code>) is the value for targetBytecode to compile for a JDK 16. */
+    /** Historical bytecode level {@code "16"}. Not an accepted compilation target; accepted levels are 17 through 28. */
     @Deprecated public static final String JDK16 = "16";
     /** This (<code>"17"</code>) is the value for targetBytecode to compile for a JDK 17. */
     public static final String JDK17 = "17";
@@ -203,6 +203,11 @@ public class CompilerConfiguration {
             JDK28, Opcodes.V28
     );
 
+    /**
+     * Target bytecode selected when none is configured.
+     * This is the running JVM's feature version when that version is a key of
+     * {@link #JDK_TO_BYTECODE_VERSION_MAP}, and {@link #JDK17} otherwise.
+     */
     public static final String DEFAULT_TARGET_BYTECODE = defaultTargetBytecode();
 
     /**
@@ -815,6 +820,7 @@ public class CompilerConfiguration {
     /**
      * Checks if the specified bytecode version string represents a JDK 1.5+ compatible
      * bytecode version.
+     *
      * @param bytecodeVersion The parameter can take one of the values in {@link #ALLOWED_JDKS}.
      * @return true if the bytecode version is JDK 1.5+
      */
@@ -826,6 +832,7 @@ public class CompilerConfiguration {
     /**
      * Checks if the specified bytecode version string represents a JDK 1.7+ compatible
      * bytecode version.
+     *
      * @param bytecodeVersion The parameter can take one of the values in {@link #ALLOWED_JDKS}.
      * @return true if the bytecode version is JDK 1.7+
      */
@@ -837,6 +844,7 @@ public class CompilerConfiguration {
     /**
      * Checks if the specified bytecode version string represents a JDK 1.8+ compatible
      * bytecode version.
+     *
      * @param bytecodeVersion The parameter can take one of the values in {@link #ALLOWED_JDKS}.
      * @return true if the bytecode version is JDK 1.8+
      */
@@ -848,6 +856,7 @@ public class CompilerConfiguration {
     /**
      * Checks if the specified bytecode version string represents a JDK 9+ compatible
      * bytecode version.
+     *
      * @param bytecodeVersion The parameter can take one of the values in {@link #ALLOWED_JDKS}.
      * @return true if the bytecode version is JDK 9+
      */
@@ -956,6 +965,7 @@ public class CompilerConfiguration {
     /**
      * Method to configure a CompilerConfiguration by using Properties.
      * For a list of available properties look at {@link #CompilerConfiguration(Properties)}.
+     *
      * @param configuration The properties to get flag values from.
      */
     public void configure(final Properties configuration) throws ConfigurationException {
@@ -1108,6 +1118,7 @@ public class CompilerConfiguration {
 
     /**
      * Gets the currently configured output writer.
+     *
      * @deprecated not used anymore
      */
     @Deprecated
@@ -1117,6 +1128,7 @@ public class CompilerConfiguration {
 
     /**
      * Sets the output writer.
+     *
      * @deprecated not used anymore, has no effect
      */
     @Deprecated
@@ -1173,6 +1185,7 @@ public class CompilerConfiguration {
 
     /**
      * sets the classpath using a list of Strings
+     *
      * @param parts list of strings containing the classpath parts
      */
     public void setClasspathList(final List<String> parts) {
@@ -1564,6 +1577,7 @@ public class CompilerConfiguration {
 
     /**
      * Gets the joint compilation options for this configuration.
+     *
      * @return the options
      */
     public Map<String, Object> getJointCompilationOptions() {
@@ -1573,6 +1587,7 @@ public class CompilerConfiguration {
     /**
      * Sets the joint compilation options for this configuration.
      * Using null will disable joint compilation.
+     *
      * @param options the options
      */
     public void setJointCompilationOptions(final Map<String, Object> options) {
@@ -1581,6 +1596,7 @@ public class CompilerConfiguration {
 
     /**
      * Gets the optimization options for this configuration.
+     *
      * @return the options (always not null)
      */
     public Map<String, Boolean> getOptimizationOptions() {
@@ -1595,6 +1611,7 @@ public class CompilerConfiguration {
      * {@link #PARALLEL_PARSE}, {@link #GROOVYDOC}, and {@link #RUNTIME_GROOVYDOC}.
      * For-in per-iteration capture (GROOVY-11792) is not an optimization option; use
      * {@link #setForInPerIterationCaptureEnabled(boolean)} instead.
+     *
      * @param options the options.
      * @throws IllegalArgumentException if the options are null
      */
@@ -1606,6 +1623,7 @@ public class CompilerConfiguration {
     /**
      * Adds compilation customizers to the compilation process. A compilation customizer is a class node
      * operation which performs various operations going from adding imports to access control.
+     *
      * @param customizers the list of customizers to be added
      * @return this configuration instance
      */
@@ -1617,6 +1635,7 @@ public class CompilerConfiguration {
 
     /**
      * Returns the list of compilation customizers.
+     *
      * @return the customizers (always not null)
      */
     public List<CompilationCustomizer> getCompilationCustomizers() {
@@ -1625,6 +1644,7 @@ public class CompilerConfiguration {
 
     /**
      * Returns the list of disabled global AST transformation class names.
+     *
      * @return a list of global AST transformation fully qualified class names
      */
     public Set<String> getDisabledGlobalASTTransformations() {

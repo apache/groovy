@@ -416,6 +416,21 @@ public class TupleConstructorASTTransformation extends AbstractASTTransformation
         return param;
     }
 
+    /**
+     * Adds a generated constructor that takes a {@link LinkedHashMap}
+     * named {@code __namedArgs}. A null map throws
+     * {@link IllegalArgumentException} with {@code message} from that
+     * constructor. Otherwise each instance property whose name is a key of
+     * the map is assigned from that entry, and the keys are checked
+     * against the property names. When {@code addNoArg} is true, a no-arg
+     * constructor that calls {@code this(new LinkedHashMap())} is added
+     * as well.
+     *
+     * @param modifiers access flags of the generated constructors
+     * @param cNode class that receives the constructors
+     * @param message exception text used when the map is null
+     * @param addNoArg whether to also add the no-arg constructor
+     */
     public static void addSpecialMapConstructors(final int modifiers, final ClassNode cNode, final String message, final boolean addNoArg) {
         Parameter[] parameters = params(new Parameter(LHMAP_TYPE, NAMED_ARGS));
         BlockStatement code = new BlockStatement();

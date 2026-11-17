@@ -623,6 +623,15 @@ public class StructuredSyntaxDocumentFilter extends DocumentFilter {
         @Serial
         private static final long serialVersionUID = -4210196728719411217L;
 
+        /**
+         * Orders two keys by document offset. An {@code Integer} is used as
+         * its own offset, a {@code MultiLineRun} by its start, and any other
+         * value as a {@code Position}.
+         *
+         * @param obj the first key
+         * @param obj1 the second key
+         * @return the difference of their offsets
+         */
         @Override
         public int compare(Object obj, Object obj1) {
             return valueOf(obj) - valueOf(obj1);

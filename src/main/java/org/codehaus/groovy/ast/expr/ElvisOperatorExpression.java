@@ -43,6 +43,12 @@ import org.codehaus.groovy.ast.GroovyCodeVisitor;
  */
 public class ElvisOperatorExpression extends TernaryExpression {
 
+    /**
+     * Creates the Groovy-truth form {@code base ?: falseValue}.
+     *
+     * @param base the expression evaluated once and returned when it passes the Groovy Truth test
+     * @param falseValue the expression evaluated and returned when {@code base} fails that test
+     */
     public ElvisOperatorExpression(final Expression base, final Expression falseValue) {
         super(asBooleanExpression(base), base, falseValue);
     }

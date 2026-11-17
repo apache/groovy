@@ -21,17 +21,39 @@ package org.codehaus.groovy.reflection;
 /** Abstraction for Java version dependent ClassValue implementations.
  * @see java.lang.ClassValue
  *
- * @param <T>
+ * @param <T> the value stored for each class
  */
 public interface GroovyClassValue<T> {
-	
-	interface ComputeValue<T>{
-		T computeValue(Class<?> type);
-	}
-	
-	T get(Class<?> type);
 
-	void remove(Class<?> type);
+    /**
+     * Computes the value stored for a class that has none yet.
+     *
+     * @param <T> the value type
+     */
+    interface ComputeValue<T> {
+        /**
+         * Computes the value for {@code type}.
+         *
+         * @param type the key class
+         * @return the value to associate with {@code type}
+         */
+        T computeValue(Class<?> type);
+    }
+
+    /**
+     * Returns the value associated with {@code type}, computing it when absent.
+     *
+     * @param type the key class
+     * @return the associated value
+     */
+    T get(Class<?> type);
+
+    /**
+     * Drops the association for {@code type}, including a pinned value.
+     *
+     * @param type the key class
+     */
+    void remove(Class<?> type);
 
 	/**
 	 * Whether an association's value can be collected while its key class is

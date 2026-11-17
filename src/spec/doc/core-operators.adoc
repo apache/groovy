@@ -351,7 +351,7 @@ by removing the need to duplicate the expression which is tested in both the con
 
 === Elvis assignment operator
 
-Groovy 3.0.0 introduces the Elvis operator, for example:
+Groovy 3.0.0 introduces the Elvis assignment operator, for example:
 
 [source,groovy]
 --------------------------------------

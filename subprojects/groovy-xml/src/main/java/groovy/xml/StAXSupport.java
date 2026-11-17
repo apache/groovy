@@ -115,11 +115,22 @@ final class StAXSupport {
             this.reader = reader;
         }
 
+        /**
+         * Reports whether the StAX reader has another event.
+         *
+         * @return {@code true} when another event is available
+         */
         @Override
         public boolean hasNext() {
             return reader.hasNext();
         }
 
+        /**
+         * Returns the next StAX event. An {@link XMLStreamException} is
+         * wrapped in a {@link GroovyRuntimeException}.
+         *
+         * @return the next event
+         */
         @Override
         public XMLEvent next() {
             try {
@@ -144,6 +155,17 @@ final class StAXSupport {
             this.targetLocalName = targetLocalName;
         }
 
+        /**
+         * Scans for the next start element whose local name matches and whose
+         * namespace matches when one was requested, builds a DOM subtree from
+         * that element through its matching end tag, and passes the root
+         * element to {@code action}. Returns {@code false} when no such
+         * element remains. An {@link XMLStreamException} is wrapped in a
+         * {@link GroovyRuntimeException}.
+         *
+         * @param action receives the matching element
+         * @return {@code true} when an element was delivered
+         */
         @Override
         public boolean tryAdvance(Consumer<? super Node> action) {
             try {
@@ -246,16 +268,32 @@ final class StAXSupport {
             }
         }
 
+        /**
+         * Refuses to split, so the element stream stays sequential.
+         *
+         * @return {@code null}
+         */
         @Override
         public Spliterator<Node> trySplit() {
             return null;
         }
 
+        /**
+         * Reports an unknown size. The remaining event count is not known
+         * until the reader is exhausted.
+         *
+         * @return {@link Long#MAX_VALUE}
+         */
         @Override
         public long estimateSize() {
             return Long.MAX_VALUE;
         }
 
+        /**
+         * Reports {@link Spliterator#ORDERED} and {@link Spliterator#NONNULL}.
+         *
+         * @return those characteristic bits
+         */
         @Override
         public int characteristics() {
             return ORDERED | NONNULL;

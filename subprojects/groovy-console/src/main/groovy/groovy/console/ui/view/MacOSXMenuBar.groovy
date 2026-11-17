@@ -21,6 +21,13 @@ package groovy.console.ui.view
 import groovy.transform.Field
 import org.codehaus.groovy.vmplugin.VMPluginFactory
 
+/**
+ * macOS console menu bar. Installs about, quit, and preferences handlers
+ * through the JDK 9 desktop API, or through the older MRJ or EAWT classes
+ * when those are present, then builds the File, Edit, View, History, and
+ * Script menus. Falls back to {@code BasicMenuBar} when no handler API
+ * can be installed.
+ */
 // install handlers for JDK9+
 final String JDK9PLUS_SCRIPT = """
 import java.awt.Desktop

@@ -204,15 +204,15 @@ delegation strategy_ of closures make it possible to design beautiful domain spe
 To understand the concept of delegate, we must first explain the meaning of `this` inside a closure. A closure actually
 defines 3 distinct things:
 
-- `this` corresponds to the _enclosing class_ where the closure is defined
-- `owner` corresponds to the _enclosing object_ where the closure is defined, which may be either a class or a closure
+- `this` corresponds to the enclosing *instance* where the closure is defined. `getThisObject()` returns that same instance. In an inner class it is the inner instance, not the outer one
+- `owner` corresponds to the enclosing *object* where the closure is defined. For a closure written directly in a class, that is the same instance as `this`. For a closure written inside another closure, `owner` is the outer closure
 - `delegate` corresponds to a third party object where methods calls or properties are resolved whenever the receiver of
 the message is not defined
 
 [[closure-this]]
 ==== The meaning of this
 
-In a closure, calling `getThisObject` will return the enclosing class where the closure is defined. It is equivalent to
+In a closure, calling `getThisObject` returns the enclosing instance where the closure is defined. It is equivalent to
 using an explicit `this`:
 
 [source,groovy]
@@ -224,9 +224,9 @@ include::../test/ClosuresSpecTest.groovy[tags=closure_this,indent=0]
 <3> in general, you will just want to use the shortcut `this` notation
 <4> and it returns *exactly* the same object
 <5> if the closure is defined in an inner class
-<6> `this` in the closure *will* return the inner class, not the top-level one
+<6> `this` in the closure returns the inner instance, not the top-level enclosing instance
 <7> in case of nested closures, like here `cl` being defined inside the scope of `nestedClosures`
-<8> then `this` corresponds to the closest outer class, not the enclosing closure!
+<8> then `this` corresponds to the closest enclosing instance, not the enclosing closure!
 
 It is of course possible to call methods from the enclosing class this way:
 
@@ -240,7 +240,7 @@ that is to say the `Person` instance
 ==== Owner of a closure
 
 The owner of a closure is very similar to the definition of <<closure-this,this in a closure>> with a subtle difference:
-it will return the direct enclosing object, be it a closure or a class:
+it returns the direct enclosing object, whether that is a closure or the enclosing instance:
 
 [source,groovy]
 ----
@@ -251,7 +251,7 @@ include::../test/ClosuresSpecTest.groovy[tags=closure_owner,indent=0]
 <3> in general, you will just want to use the shortcut `owner` notation
 <4> and it returns *exactly* the same object
 <5> if the closure is defined in an inner class
-<6> `owner` in the closure *will* return the inner class, not the top-level one
+<6> `owner` in the closure returns the inner instance, not the top-level enclosing instance
 <7> but in case of nested closures, like here `cl` being defined inside the scope of `nestedClosures`
 <8> then `owner` corresponds to the enclosing closure, hence a different object from `this`!
 

@@ -409,8 +409,8 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     protected static final ClassNode NAMED_PARAMS_CLASSNODE = ClassHelper.make(NamedParams.class);
     /** Cached {@link NamedParam} annotation type. */
     protected static final ClassNode NAMED_PARAM_CLASSNODE = ClassHelper.make(NamedParam.class);
+    /** Deprecated alias for {@link StaticTypeCheckingSupport#LinkedHashMap_TYPE}. */
     @Deprecated(forRemoval = true, since = "4.0.0")
-    /** Deprecated alias for {@link #LinkedHashMap_TYPE}. */
     protected static final ClassNode LINKEDHASHMAP_CLASSNODE = LinkedHashMap_TYPE;
     /** Cached {@link Enumeration} type. */
     protected static final ClassNode ENUMERATION_TYPE = ClassHelper.make(Enumeration.class);
@@ -433,6 +433,12 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     /** Empty statement reused for synthetic AST nodes. */
     public static final Statement GENERATED_EMPTY_STATEMENT = EmptyStatement.INSTANCE;
 
+    /**
+     * Records each return {@link ReturnAdder} inserts or visits.
+     * A return inside a closure is added to that closure's inferred return types.
+     * A return in a method is recorded against that method. A return that is in
+     * neither throws {@link GroovyBugError}.
+     */
     protected final ReturnAdder.ReturnStatementListener returnListener = (returnStatement) -> {
         ClassNode returnType = checkReturnType(returnStatement);
         if (this.typeCheckingContext.getEnclosingClosure() != null) {
