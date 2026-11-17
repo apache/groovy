@@ -903,6 +903,17 @@ abstract class AbstractFriendlyErrorStrategy extends DefaultErrorStrategy {
         return exact;
     }
 
+    /**
+     * Builds the no-viable-alternative diagnostic. The input text is {@code <EOF>}
+     * when the start token is end of file, {@code <unknown input>} when
+     * {@code recognizer} has no token stream, and otherwise the characters from
+     * the start token through the offending token. That text is passed to
+     * {@code escapeWSAndQuote} and prefixed with {@code "Unexpected input: "}.
+     *
+     * @param recognizer the parser that failed
+     * @param e the failure
+     * @return the diagnostic message
+     */
     protected String createNoViableAlternativeErrorMessage(final Parser recognizer, final NoViableAltException e) {
         TokenStream tokens = recognizer.getInputStream();
         String input;
@@ -924,6 +935,14 @@ abstract class AbstractFriendlyErrorStrategy extends DefaultErrorStrategy {
         reportFriendlyError(recognizer, e, createNoViableAlternativeErrorMessage(recognizer, e));
     }
 
+    /**
+     * Builds the input-mismatch diagnostic: {@code "Unexpected input: "} followed
+     * by the display of the offending token.
+     *
+     * @param recognizer the parser that failed
+     * @param e the mismatch
+     * @return the diagnostic message
+     */
     protected String createInputMismatchErrorMessage(final Parser recognizer, final InputMismatchException e) {
         return "Unexpected input: " + getTokenErrorDisplay(e.getOffendingToken(recognizer));
     }

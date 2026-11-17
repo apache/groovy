@@ -109,21 +109,42 @@ public final class ScriptNames {
             return;
         }
         run.getCode().visit(new CodeVisitorSupport() {
+            /**
+             * Does not enter the closure, so names assigned inside it are not collected.
+             *
+             * @param expression the closure whose body is skipped
+             */
             @Override
             public void visitClosureExpression(final ClosureExpression expression) {
                 // Names assigned inside a closure are not script-level bindings.
             }
 
+            /**
+             * Does not enter the lambda, so names assigned inside it are not collected.
+             *
+             * @param expression the lambda whose body is skipped
+             */
             @Override
             public void visitLambdaExpression(final LambdaExpression expression) {
                 // Names assigned inside a lambda are not script-level bindings.
             }
 
+            /**
+             * Records the names declared on the left of {@code expression}.
+             *
+             * @param expression a variable or tuple declaration
+             */
             @Override
             public void visitDeclarationExpression(final DeclarationExpression expression) {
                 addLeftNames(expression.getLeftExpression(), names);
             }
 
+            /**
+             * Records names on the left of an assignment, then walks the
+             * expression so nested assignments are seen too.
+             *
+             * @param expression a binary expression in the script body
+             */
             @Override
             public void visitBinaryExpression(final BinaryExpression expression) {
                 if (expression.getOperation() != null && expression.getOperation().getType() == Types.ASSIGN) {

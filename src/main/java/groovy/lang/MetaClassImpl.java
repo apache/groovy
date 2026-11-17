@@ -503,15 +503,14 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
 
     private void removeMultimethodsOverloadedWithPrivateMethods() {
         var mia = new MethodIndexAction() {
-            /** {@inheritDoc} */
-            @Override
             /**
-         * Determines whether a class should be skipped while iterating method indexes.
-         *
-         * @param clazz the class being considered
-         * @return {@code true} to skip the class
-         */
-        public boolean skipClass(final Class<?> clazz) {
+             * Determines whether a class should be skipped while iterating method indexes.
+             *
+             * @param clazz the class being considered
+             * @return {@code true} to skip the class
+             */
+            @Override
+            public boolean skipClass(final Class<?> clazz) {
                 return clazz == theClass;
             }
 
@@ -1351,7 +1350,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
     }
 
     private Object invokeOuterMethod(final Class<?> sender, final Object object, final String methodName, final Object[] arguments, final MissingMethodException mme) {
-        if (sender == theClass ? isGroovyObject() : GroovyObject.class.isAssignableFrom(sender)) {
+        if ((sender == theClass || sender.isInterface()) ? isGroovyObject() : GroovyObject.class.isAssignableFrom(sender)) {
             var outerClass = getNonClosureOuter(sender); // check outer class nesting of call site
             if (outerClass != null && (sender == theClass || sender.isAssignableFrom(theClass))) {
                 MetaClass omc = registry.getMetaClass(outerClass);
@@ -2221,7 +2220,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
     }
 
     private Object getOuterProperty(final Class<?> sender, final Object object, final String name, final MissingPropertyException mpe) {
-        if (sender == theClass ? isGroovyObject() : GroovyObject.class.isAssignableFrom(sender)) {
+        if ((sender == theClass || sender.isInterface()) ? isGroovyObject() : GroovyObject.class.isAssignableFrom(sender)) {
             var outerClass = getNonClosureOuter(sender); // check outer class nesting of call site
             if (outerClass != null && (sender == theClass || sender.isAssignableFrom(theClass))) {
                 MetaClass omc = registry.getMetaClass(outerClass);
@@ -3193,7 +3192,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
 
     private void setOuterProperty(Class<?> sender, final Object object, final String name, final Object newValue, final MissingPropertyException mpe) {
         if (sender == null) sender = theClass; // GROOVY-11745
-        if (sender == theClass ? isGroovyObject() : GroovyObject.class.isAssignableFrom(sender)) {
+        if ((sender == theClass || sender.isInterface()) ? isGroovyObject() : GroovyObject.class.isAssignableFrom(sender)) {
             var outerClass = getNonClosureOuter(sender); // check outer class nesting of call site
             if (outerClass != null && (sender == theClass || sender.isAssignableFrom(theClass))) {
                 MetaClass omc = registry.getMetaClass(outerClass);
@@ -3791,6 +3790,12 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         try {
             if (isBeanDerivative(theClass)) {
                 info = Introspector.getBeanInfo(theClass, Introspector.IGNORE_ALL_BEANINFO);
+            } else if (GroovyClassLoader.isGeneratedClassName(theClass)) {
+                // Skip this class's BeanInfo. Superclass BeanInfo is still
+                // read. The JDK still probes <name>Customizer; the defining
+                // loader answers that probe for a generated name without
+                // delegating it.
+                info = Introspector.getBeanInfo(theClass, Introspector.IGNORE_IMMEDIATE_BEANINFO);
             } else {
                 info = Introspector.getBeanInfo(theClass);
             }

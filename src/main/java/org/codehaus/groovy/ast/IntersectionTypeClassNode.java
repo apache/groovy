@@ -56,6 +56,17 @@ public final class IntersectionTypeClassNode extends ClassNode {
 
     private final ClassNode[] components;
 
+    /**
+     * Creates an intersection type from the given components.
+     * Both the superclass call and this node keep their own clone of
+     * {@code components}, so later changes to the caller's array are ignored.
+     * Every component starts in the interfaces array and the superclass is
+     * {@code Object}; {@link #reclassifyComponents()} moves a class component
+     * into the superclass after resolution. Fewer than two components is rejected.
+     * <p>A null {@code components} array fails immediately.
+     *
+     * @param components the intersection members, in user-written order; at least two
+     */
     public IntersectionTypeClassNode(final ClassNode[] components) {
         super("IntersectionType", ACC_PUBLIC | ACC_FINAL, ClassHelper.OBJECT_TYPE, components.clone(), MixinNode.EMPTY_ARRAY);
         if (components.length < 2) {

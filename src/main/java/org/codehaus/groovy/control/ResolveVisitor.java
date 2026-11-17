@@ -151,6 +151,13 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
     private static class ConstructedNestedClass extends ClassNode {
         final ClassNode knownEnclosingType;
 
+        /**
+         * Names the nested class {@code outer.getName() + "$" + inner}, with each
+         * {@code '.'} in {@code inner} replaced by {@code '$'}. The node is not primary.
+         *
+         * @param outer the enclosing class, already resolved
+         * @param inner the nested name, with {@code '.'} between further levels
+         */
         public ConstructedNestedClass(final ClassNode outer, final String inner) {
             super(outer.getName() + "$" + inner.replace('.', '$'), Opcodes.ACC_PUBLIC, ClassHelper.OBJECT_TYPE);
             this.knownEnclosingType = outer;
@@ -191,6 +198,14 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
         final String prefix;
         String className;
 
+        /**
+         * Names the class {@code pkg + name}, adding no separator of its own. The node is
+         * not primary, and {@code pkg} is kept apart so a later inner-class search does
+         * not rewrite the package portion.
+         *
+         * @param pkg prefix concatenated in front of {@code name}
+         * @param name the class name appended to {@code pkg}
+         */
         public ConstructedClassWithPackage(final String pkg, final String name) {
             super(pkg + name, Opcodes.ACC_PUBLIC, ClassHelper.OBJECT_TYPE);
             isPrimaryNode = false;
@@ -235,6 +250,12 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
     private static class LowerCaseClass extends ClassNode {
         final String className;
 
+        /**
+         * Stores {@code name} on a node that is not a primary class node.
+         *
+         * @param name the lower-case identifier stored as this node's class name.
+         *             The node is not a primary class node.
+         */
         public LowerCaseClass(final String name) {
             super(name, Opcodes.ACC_PUBLIC, ClassHelper.OBJECT_TYPE);
             isPrimaryNode = false;
@@ -647,12 +668,38 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
 
         if (!typeName.equals(maybeOuter.getName())) {
             ClassNode maybeNested = new ConstructedNestedClass(maybeOuter, typeName);
-            if (resolveFromCompileUnit(maybeNested) || resolveToOuter(maybeNested)) {
+            if (resolveFromCompileUnit(maybeNested) || resolveNestedFromPrecompiledOuter(maybeOuter, maybeNested)) {
                 type.setRedirect(maybeNested);
                 return true;
             }
         }
         return false;
+    }
+
+    /**
+     * Member types of a source class in this compile unit are declared in its
+     * body (JLS 8.5) and are registered before resolution, so a miss in the
+     * compile unit is final for that outer type. A precompiled outer type keeps
+     * the loader lookup: its member types are not part of this unit, and the
+     * absence of a class resource is not evidence that a parent cannot define them.
+     */
+    private boolean resolveNestedFromPrecompiledOuter(final ClassNode maybeOuter, final ClassNode maybeNested) {
+        if (memberTypesAreDeclaredInThisUnit(maybeOuter)) {
+            return false;
+        }
+        return resolveToOuter(maybeNested);
+    }
+
+    private boolean memberTypesAreDeclaredInThisUnit(final ClassNode maybeOuter) {
+        if (currentClass == null || !maybeOuter.isPrimaryClassNode()) {
+            return false;
+        }
+        CompileUnit unit = currentClass.getCompileUnit();
+        ClassNode outer = maybeOuter.redirect();
+        if (unit == null || outer.getCompileUnit() != unit) {
+            return false;
+        }
+        return unit.getClass(outer.getName()) == outer;
     }
 
     private static String replaceLastPointWithDollar(final String name) {
