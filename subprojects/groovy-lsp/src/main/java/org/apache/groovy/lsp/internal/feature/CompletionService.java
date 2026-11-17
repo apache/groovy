@@ -637,6 +637,69 @@ public final class CompletionService {
             addMembers(items, classNode, prefix);
         }
         addWorkspaceTypes(items, compiled, snapshot, prefix, encoding);
+        addImplicitReceiverMembers(items, module, groovy[0], groovy[1], prefix);
+    }
+
+    /**
+     * Adds what an unqualified name can call on the implicit receiver: the members the enclosing
+     * class inherits, such as {@code println} on a script, and the extension methods for it, such
+     * as {@code sleep}. Inside a static method the class's instance members do not apply, but the
+     * extension methods still do. Names already offered are skipped, and the extension catalog of
+     * an unloaded class waits for two characters, as it does after a dot.
+     */
+    private static void addImplicitReceiverMembers(final List<CompletionItem> items, final ModuleNode module,
+                                                   final int line, final int column, final String prefix) {
+        if (prefix.isEmpty()) {
+            return;
+        }
+        MethodNode enclosing = AstQuery.enclosingMethod(module, line, column);
+        // a script's top-level statements are not inside a method of the source, but run on the script
+        ClassNode receiver = enclosing != null ? enclosing.getDeclaringClass() : scriptClass(module);
+        if (receiver == null) {
+            return;
+        }
+        boolean staticContext = enclosing != null && enclosing.isStatic();
+        List<CompletionItem> found = new ArrayList<>();
+        if (staticContext) {
+            addStaticMembers(found, receiver, prefix);
+        } else {
+            ReceiverInference.addVisibleMembers(found, receiver, prefix, false);
+        }
+        if (ExtensionCatalog.typeClass(receiver) != null || prefix.length() >= 2) {
+            // A static method calls them on the Class object, which is an Object too
+            ExtensionCatalog.addExtensionMethods(found, prefix, receiver, false);
+            ExtensionCatalog.addExtensionMethods(found, prefix, receiver, true);
+        }
+        Set<String> offered = new LinkedHashSet<>();
+        for (CompletionItem item : items) {
+            offered.add(item.getLabel());
+        }
+        for (CompletionItem item : found) {
+            if (!offered.contains(item.getLabel())) {
+                items.add(item);
+            }
+        }
+    }
+
+    private static ClassNode scriptClass(final ModuleNode module) {
+        for (ClassNode classNode : module.getClasses()) {
+            if (classNode.isScript()) {
+                return classNode;
+            }
+        }
+        return null;
+    }
+
+    private static void addStaticMembers(final List<CompletionItem> items, final ClassNode receiver,
+                                         final String prefix) {
+        Set<String> seen = new LinkedHashSet<>();
+        for (ClassNode current = receiver; current != null; current = current.getSuperClass()) {
+            for (MethodNode method : current.getMethods()) {
+                if (method.isStatic() && (method.isPublic() || method.isProtected())) {
+                    addMethod(items, seen, method, prefix);
+                }
+            }
+        }
     }
 
 
