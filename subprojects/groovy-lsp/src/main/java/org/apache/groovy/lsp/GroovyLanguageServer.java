@@ -84,6 +84,14 @@ public final class GroovyLanguageServer implements LanguageServer, LanguageClien
         return context;
     }
 
+    /**
+     * Negotiates the position encoding from the client's general capabilities,
+     * or {@link PositionEncoding#UTF16} when those capabilities are absent.
+     * Stores the client capabilities and registers each workspace folder, falling
+     * back to the root URI when no folders are sent. The result carries the
+     * capabilities for that encoding and names the server {@code groovy-lsp}
+     * with {@link #implementationVersion()}.
+     */
     @Override
     public CompletableFuture<InitializeResult> initialize(final InitializeParams params) {
         if (params.getCapabilities() != null && params.getCapabilities().getGeneral() != null) {
@@ -142,6 +150,10 @@ public final class GroovyLanguageServer implements LanguageServer, LanguageClien
         return exited;
     }
 
+    /**
+     * Marks the session initialized, pulls {@code groovy} configuration from
+     * the client, and schedules a recompile with no delay.
+     */
     @Override
     public void initialized(final InitializedParams params) {
         context.setInitialized(true);
@@ -149,6 +161,9 @@ public final class GroovyLanguageServer implements LanguageServer, LanguageClien
         context.scheduleRecompile(0);
     }
 
+    /**
+     * Marks the session shut down, closes it, and completes with {@code null}.
+     */
     @Override
     public CompletableFuture<Object> shutdown() {
         context.setShutdown(true);
@@ -156,6 +171,10 @@ public final class GroovyLanguageServer implements LanguageServer, LanguageClien
         return CompletableFuture.completedFuture(null);
     }
 
+    /**
+     * Completes {@link #exited()} with {@code 0} after {@link #shutdown()},
+     * otherwise with {@code 1}, and records that code on the session.
+     */
     @Override
     public void exit() {
         int code = context.isShutdown() ? 0 : 1;
@@ -163,16 +182,25 @@ public final class GroovyLanguageServer implements LanguageServer, LanguageClien
         exited.complete(code);
     }
 
+    /**
+     * Returns the text-document service created for this session.
+     */
     @Override
     public TextDocumentService getTextDocumentService() {
         return textDocuments;
     }
 
+    /**
+     * Returns the workspace service created for this session.
+     */
     @Override
     public WorkspaceService getWorkspaceService() {
         return workspace;
     }
 
+    /**
+     * Records {@code client} as the session's language client.
+     */
     @Override
     public void connect(final LanguageClient client) {
         context.setClient(client);

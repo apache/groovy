@@ -24,11 +24,22 @@ import groovy.lang.MetaProperty;
 import org.codehaus.groovy.runtime.GroovyCategorySupport;
 import org.codehaus.groovy.runtime.ScriptBytecodeAdapter;
 
+/**
+ * Call site that reads a POJO property through a cached {@link MetaProperty}
+ * while the {@link MetaClassImpl} version is unchanged and no category is active.
+ */
 public class GetEffectivePojoPropertySite extends AbstractCallSite {
     private final MetaClassImpl metaClass;
     private final MetaProperty effective;
     private final int version;
 
+    /**
+     * Captures the meta class, the property to read, and the meta class version.
+     *
+     * @param site the site whose name and index are copied
+     * @param metaClass the meta class this site was built from
+     * @param effective the property read when the receiver still matches
+     */
     public GetEffectivePojoPropertySite(final CallSite site, final MetaClassImpl metaClass, final MetaProperty effective) {
         super(site);
         this.metaClass = metaClass;
@@ -36,6 +47,12 @@ public class GetEffectivePojoPropertySite extends AbstractCallSite {
         version = metaClass.getVersion();
     }
 
+    /**
+     * Returns a newly created get-property site when {@code receiver} is null,
+     * its class is not the meta class's class, the meta class version has
+     * changed, or a category is active on the current thread. Otherwise
+     * returns this site.
+     */
     @Override
     public final CallSite acceptGetProperty(final Object receiver) {
         if (receiver == null || receiver.getClass() != metaClass.getTheClass()
@@ -47,6 +64,10 @@ public class GetEffectivePojoPropertySite extends AbstractCallSite {
         }
     }
 
+    /**
+     * Reads the property through the cached {@link MetaProperty}.
+     * A {@link GroovyRuntimeException} is unwrapped.
+     */
     @Override
     public final Object getProperty(Object receiver) throws Throwable {
         try {

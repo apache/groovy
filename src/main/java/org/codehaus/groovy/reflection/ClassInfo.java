@@ -29,6 +29,9 @@ import groovy.transform.Internal;
 import org.apache.groovy.lang.annotation.GroovyABI;
 import org.apache.groovy.runtime.indy.IndyInvalidation;
 import org.apache.groovy.runtime.indy.SwitchPointInvalidator;
+import org.apache.groovy.util.concurrent.ConcurrentReferenceHashMap;
+import org.apache.groovy.util.concurrent.ConcurrentReferenceHashMap.Option;
+import org.apache.groovy.util.concurrent.ConcurrentReferenceHashMap.ReferenceType;
 import org.apache.groovy.util.concurrent.ManagedIdentityConcurrentMap;
 import org.codehaus.groovy.reflection.GroovyClassValue.ComputeValue;
 import org.codehaus.groovy.reflection.stdclasses.ArrayCachedClass;
@@ -61,6 +64,7 @@ import java.lang.ref.WeakReference;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.Collection;
+import java.util.EnumSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -80,6 +84,9 @@ public class ClassInfo implements Finalizable {
     private final LazyCachedClassRef cachedClassRef;
     private final LazyClassLoaderRef artifactClassLoader;
     private final LockableObject lock = new LockableObject();
+    /**
+     * Unused. Always {@code -1}.
+     */
     public final int hash = -1;
     private final WeakReference<Class<?>> classRef;
     private final AtomicInteger version = new AtomicInteger();
@@ -114,17 +121,17 @@ public class ClassInfo implements Finalizable {
 
     private static final GroovyClassValue<ClassInfo> globalClassValue = GroovyClassValueFactory.createGroovyClassValue(new ComputeValue<ClassInfo>(){
         /**
-         * Creates a new {@code ClassInfo} for the given class type.
-         * Initializes cache and registers the class information in the global set.
+         * Returns the {@code ClassInfo} for the given class type from the global set,
+         * creating and registering one if the class has none that is still reachable.
+         * An instance that {@link #remove(Class)} detached stays reachable as long as
+         * default Groovy methods or extension methods refer to it.
          *
          * @param type the class to create information for
-         * @return the newly created {@code ClassInfo}
+         * @return the {@code ClassInfo} for the class
          */
         @Override
         public ClassInfo computeValue(Class<?> type) {
-            ClassInfo ret = new ClassInfo(type);
-            globalClassSet.add(ret);
-            return ret;
+            return globalClassSet.getOrCreate(type);
         }
     });
 
@@ -373,11 +380,27 @@ public class ClassInfo implements Finalizable {
      * is not retained or cached.  Removing the {@code ClassInfo} associated with the Class
      * will make the Class and its ClassLoader eligible for garbage collection sooner that
      * it would otherwise.
+     * <p>
+     * The MetaClasses set for the class and for its instances are dropped. If the
+     * {@code ClassInfo} is still reachable when the class is used again, as it is for a
+     * class that has default Groovy methods or extension methods, the class gets it back
+     * with those methods; otherwise a new one is created. A class that has no
+     * {@code ClassInfo} is left without one.
      *
      * @param cls the Class associated with the ClassInfo to remove
      *            from cache
      */
     public static void remove(Class<?> cls) {
+        ClassInfo info = globalClassSet.get(cls);
+        if (info != null) {
+            info.lock();
+            try {
+                info.perInstanceMetaClassMap = null;
+                info.setStrongMetaClass(null); // also drops the weak MetaClass and retires the SwitchPoint generation
+            } finally {
+                info.unlock();
+            }
+        }
         // A hard detach drops the whole association — including any pin the
         // detached instance held there — so undeploy semantics need no
         // store-specific handling.
@@ -829,24 +852,77 @@ public class ClassInfo implements Finalizable {
         artifactClassLoader.clear();
     }
 
+    /**
+     * Every {@code ClassInfo} still reachable, by class, both held weakly. An instance stays
+     * here after {@link #remove(Class)} detaches it, so its class gets that same instance back
+     * when it is used again while it is still reachable. The default Groovy methods and
+     * extension methods keep it reachable: they hold the {@code CachedClass} of their declaring
+     * and parameter types, and so its {@code ClassInfo}. A new instance would lack the methods
+     * the registry wrote into the detached one, and its {@code CachedClass} would not be the
+     * one those methods compare parameter types with by identity.
+     */
     private static class GlobalClassSet {
 
+        // Gradle's ClassInfoCleaningGroovySystemLoader reads this field and calls its iterator() reflectively
         private final ManagedConcurrentLinkedQueue<ClassInfo> items = new ManagedConcurrentLinkedQueue<ClassInfo>(weakBundle);
 
+        private final ConcurrentReferenceHashMap<Class<?>, ClassInfo> byClass =
+                new ConcurrentReferenceHashMap<>(ReferenceType.WEAK, ReferenceType.WEAK, EnumSet.of(Option.IDENTITY_COMPARISONS));
+
+        /**
+         * The number of {@link ClassInfo} instances still queued.
+         *
+         * @return the size of {@link #values()}
+         */
         public int size(){
             return values().size();
         }
 
+        /**
+         * The number of {@link ClassInfo} instances still queued.
+         * This is the same count {@link #size()} returns.
+         *
+         * @return the size of {@link #values()}
+         */
         public int fullSize(){
             return values().size();
         }
 
+        /**
+         * The {@link ClassInfo} instances still queued, including ones kept after
+         * their class was detached from the lookup map.
+         *
+         * @return the queued instances
+         */
         public Collection<ClassInfo> values(){
             return items.values();
         }
 
-        public void add(ClassInfo value){
-            items.add(value);
+        /**
+         * The {@link ClassInfo} already associated with {@code type}.
+         *
+         * @param type the class to look up
+         * @return the associated instance, or {@code null} when the map has none
+         */
+        public ClassInfo get(Class<?> type){
+            return byClass.get(type);
+        }
+
+        /**
+         * Returns the {@link ClassInfo} for {@code type}, creating one when the map
+         * does not already hold it. Only the instance that is actually stored is
+         * added to the queue.
+         *
+         * @param type the class whose {@link ClassInfo} is required
+         * @return the instance already stored, or the one this call stored
+         */
+        public ClassInfo getOrCreate(Class<?> type){
+            ClassInfo info = byClass.get(type);
+            if (info != null) return info;
+            ClassInfo created = new ClassInfo(type);
+            info = byClass.apply(type, (t, existing) -> existing != null ? existing : created);
+            if (info == created) items.add(created); // outside the map's lock: adding may finalize stale references
+            return info;
         }
 
     }

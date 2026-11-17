@@ -872,6 +872,28 @@ which follows `Double.compare` for primitives and objects alike. Classes
 compiled by an earlier release keep the old comparison until they are
 recompiled.
 
+### Groovy 6.0.1 — instance initializer blocks of `@CompileStatic` classes are statically compiled (GROOVY-12761)
+
+Since Groovy 5.0, method calls in an instance initializer block of a
+`@CompileStatic` class were type checked but then dispatched dynamically,
+unlike the same calls in a constructor or a field initializer. In 6.0.0 an
+anonymous inner class created in such a block was also compiled dynamically
+as a whole. Both are statically compiled again, as in Groovy 4. A closure in
+the block that calls a method of a delegate that is not a Groovy object, such
+as `new StringBuilder('a').with { append('b') }`, no longer throws
+`IncompatibleClassChangeError` (GROOVY-12581).
+
+**Who is affected.** Code in an instance initializer block of a
+`@CompileStatic` class, or in an anonymous inner class created there, that
+calls an overloaded method with an argument whose static type is wider than
+its value. The overload is now chosen from the static type, as in a
+constructor, rather than from the run-time type. Meta-class and category
+changes no longer apply to those calls.
+
+**What is unchanged.** Constructor calls written directly in the block,
+static initializer blocks, field initializers, constructors, and classes that
+are not statically compiled. There are no API changes.
+
 ### Groovy 7 — Groovy Console smart highlighter and the language host
 
 `SmartDocumentFilter.getLatestTokenList()` now returns delimiter spans
@@ -1122,6 +1144,87 @@ To keep a narrowing, convert explicitly, as in
 **What is unchanged.** A functional interface whose method returns a reference
 type, such as `Supplier<Long>`, still requires the returned value's type to be
 compatible, so `Supplier<Long> s = () -> 1` remains an error (GROOVY-11414).
+
+### Groovy 7 — a trait's static accessor read as a property is a call of the accessor (GROOVY-12614)
+
+In the body of a trait method, the property form of a static accessor that
+the trait declares (`label` or `this.label` for `static String getLabel()`)
+is now a call of that accessor, exactly as the method form `getLabel()` is.
+A static method of a trait is not overridden by a static method of the
+implementing class unless the trait marks it `@Virtual`, so the property form
+no longer uses an accessor that the implementing class declares. Before,
+dynamic and `@TypeChecked` code used the implementing class's accessor for the
+property form and the trait's own for the method form, and `@CompileStatic`
+code used the trait's own for both. Assignments (`label = v`) and compound
+assignments (`label += v`) call the trait's setter and getter in the same way.
+
+**Who is affected.** Dynamic or `@TypeChecked` trait code that reads or
+assigns a static accessor of the trait in the property form and relies on an
+implementing class supplying its own static accessor of the same name. Mark
+the trait's accessor `@Virtual` to keep that behaviour:
+
+```groovy
+trait Described {
+    @Virtual static String getLabel() { 'default' }   // was: static String getLabel()
+    static String describe() { "label is $label" }
+}
+class Special implements Described {
+    static String getLabel() { 'special' }
+}
+assert Special.describe() == 'label is special'
+```
+
+A `@Virtual` static is not available through the trait itself, so
+`Described.label` and `Described.getLabel()` must be written with an
+implementing class instead.
+
+**What is unchanged.** The method form, a `@Virtual` accessor, a declared
+static property (`static String label = 'x'`, which trait code always reads
+from the trait's own field), instance accessors and properties, names in a
+closure or lambda (which the closure resolves), `++` and `--`, and access from
+outside the trait (`Special.label`).
+
+### Groovy 7 — a declared trait property in a closure is read and written through its accessor (GROOVY-12598)
+
+In a closure in a trait method, the name of an instance property that the
+trait declares is resolved by the closure, through its delegate and owner,
+and `this.name` is a call of the accessor on the implementing instance.
+Before, both went straight to the trait's backing field. This is what the
+same names mean in a closure in a class that declares the property.
+
+**Who is affected.** A trait that declares a property and uses it in a
+closure, when an implementing class declares its own accessor for that
+property, or when the closure's delegate has a property of the same name and
+the closure's resolve strategy consults the delegate first. In a closure
+within a lambda the name is the accessor of the implementing instance, and the
+delegate is not consulted. A getter or
+setter that the trait itself declares for the property and that uses the
+property in a closure now calls itself; use the property outside the closure
+there.
+
+**What is unchanged.** The property in a method body or a lambda, which is
+the trait's backing field; private and static fields of the trait; and
+`getName()` and `setName(v)`.
+
+### Groovy 6.0.1 — a lambda in a statically compiled trait reads a super trait's static accessor directly (GROOVY-12608)
+
+In a lambda in a trait annotated with `@CompileStatic`, the property form of
+a static accessor of a super trait (`cnt` for `static int getCnt()`, or for a
+static property `cnt`) is now a call of that accessor. In 6.0.0 the name was
+left for the lambda to resolve at run time: for a static property of the
+super trait that failed with a `MissingMethodException`, and for a declared
+accessor a lambda passed as a closure took the name from the closure's
+delegate when the delegate had a property of that name.
+
+**Who is affected.** A statically compiled trait that passes such a lambda
+where a closure is expected and relies on the closure's delegate to supply
+the name, as in `p.with((x) -> cnt)` where `p` has a `cnt` property: the
+lambda now reads the super trait's accessor. Use a closure (`p.with { cnt }`),
+which consults its delegate, or qualify the name (`x.cnt`).
+
+**What is unchanged.** Dynamic and `@TypeChecked` trait code, where the
+delegate of such a lambda still supplies the name; closures; and the method
+form `getCnt()`.
 
 ### Groovy 6.0.1 — statically compiled constructor references call the constructor directly (GROOVY-12488)
 
@@ -1660,6 +1763,33 @@ time, is unaffected.
 
 **Who is not affected (binary).** Existing call sites are compiled against
 the unchanged existing overloads.
+
+### Groovy 6.0.1 — async constructs rethrow a checked exception as itself (GROOVY-12763)
+
+In 6.0.0, `await` rethrew a checked exception from an async task unchanged,
+but other async constructs wrapped it: a scope's child task failure and a
+`defer` action in `RuntimeException`, a `withScope` body and a generator body
+in `UndeclaredThrowableException`, and a `Flow.Publisher` error consumed with
+`for await` in `RuntimeException`. All of them now rethrow the original
+exception, as `await` does, and a timed `withScope` uses it as the cause of
+its `TimeoutException`. Async/await is incubating.
+
+**Who is affected.** Code that catches `RuntimeException` or
+`UndeclaredThrowableException` around these constructs and reads
+`getCause()` to find a checked exception. Catch the checked exception
+directly instead. Java callers of `AsyncScope.close()` and `withScope`,
+which declare no checked exceptions, catch `Exception` and test its type.
+
+An `UndeclaredThrowableException` around a checked exception that a
+`withScope` or generator body throws is removed too, because it cannot be
+told apart from the layer closure conversion adds. Such a wrapper most
+often comes from a `java.lang.reflect.Proxy`, such as a Spring AOP proxy or
+an RPC stub, called in the body.
+
+**What is unchanged.** Unchecked exceptions and errors, which were never
+wrapped, and the exception `await` rethrows. Exceptions suppressed by a
+wrapper that `await` or a scope removes now move to the exception
+rethrown. There are no API signature changes in `groovy.concurrent`.
 
 ### Groovy 7 — type checking compares a wildcard argument with every bound of a type parameter (GROOVY-12754)
 

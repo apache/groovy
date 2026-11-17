@@ -21,14 +21,28 @@ package org.codehaus.groovy.ast.expr;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.GroovyCodeVisitor;
 
+/**
+ * A unary plus expression, rendered as {@code +(operand)}. The type of
+ * this node is the type of the operand.
+ */
 public class UnaryPlusExpression extends Expression {
 
     private final Expression expression;
 
+    /**
+     * Creates a unary plus over {@code expression}.
+     *
+     * @param expression operand of the plus
+     */
     public UnaryPlusExpression(final Expression expression) {
         this.expression = expression;
     }
 
+    /**
+     * Returns the operand of this plus.
+     *
+     * @return the operand
+     */
     public Expression getExpression() {
         return expression;
     }
@@ -43,6 +57,12 @@ public class UnaryPlusExpression extends Expression {
         return getExpression().getType(); // TODO: promote byte, char and short to int
     }
 
+    /**
+     * Reports that the operand is not a dynamic expression. This
+     * implementation always returns false.
+     *
+     * @return {@code false}
+     */
     @Deprecated
     public boolean isDynamic() {
         return false;

@@ -119,42 +119,102 @@ public class ImportCustomizerFactory extends AbstractFactory {
             this.customizer = customizer;
         }
 
+        /**
+         * Adds a regular import for each fully qualified class name.
+         *
+         * @param names fully qualified class names
+         */
         protected void normal(String... names) {
             customizer.addImports(names);
         }
+
+        /**
+         * Adds a regular import for each class, using {@link Class#getName()}.
+         *
+         * @param classes classes to import
+         */
         protected void normal(Class... classes) {
             for (Class aClass : classes) {
                 customizer.addImports(aClass.getName());
             }
         }
 
+        /**
+         * Adds a regular import of {@code name} under {@code alias}.
+         *
+         * @param alias the name used in this compilation unit
+         * @param name the fully qualified class name
+         */
         protected void alias(String alias, String name) {
             customizer.addImport(alias, name);
         }
+
+        /**
+         * Adds a regular import of {@code clazz} under {@code alias}, using {@link Class#getName()}.
+         *
+         * @param alias the name used in this compilation unit
+         * @param clazz the class to import
+         */
         protected void alias(String alias, Class clazz) {
             customizer.addImport(alias, clazz.getName());
         }
 
+        /**
+         * Adds a star import for each package name.
+         *
+         * @param packages package names, without a trailing {@code .*}
+         */
         protected void star(String... packages) {
             customizer.addStarImports(packages);
         }
 
+        /**
+         * Adds a static star import for each fully qualified class name.
+         *
+         * @param classNames classes whose static members are imported
+         */
         protected void staticStar(String... classNames) {
             customizer.addStaticStars(classNames);
         }
+
+        /**
+         * Adds a static star import for each class, using {@link Class#getName()}.
+         *
+         * @param classes classes whose static members are imported
+         */
         protected void staticStar(Class... classes) {
             for (Class aClass : classes) {
                 customizer.addStaticStars(aClass.getName());
             }
         }
 
+        /**
+         * Adds a static import of one member, exposed under its own name.
+         *
+         * @param name the fully qualified class that declares the member
+         * @param field the static field or method name
+         */
         protected void staticMember(String name, String field) {
             customizer.addStaticImport(name, field);
         }
+
+        /**
+         * Adds a static import of one member, exposed as {@code alias}.
+         *
+         * @param alias the name used in this compilation unit
+         * @param name the fully qualified class that declares the member
+         * @param field the static field or method name
+         */
         protected void staticMember(String alias, String name, String field) {
             customizer.addStaticImport(alias, name, field);
         }
 
+        /**
+         * Adds a module import for each JPMS module name.
+         * The names are expanded into package star imports when the compilation unit is built.
+         *
+         * @param moduleNames module names such as {@code java.sql}
+         */
         protected void module(String... moduleNames) {
             customizer.addModuleImports(moduleNames);
         }
