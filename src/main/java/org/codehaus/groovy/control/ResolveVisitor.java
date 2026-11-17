@@ -495,9 +495,10 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
         while (type.isArray()) type = type.getComponentType();
         if (!type.isRedirectNode() || type.isGenericsPlaceHolder() || type.getOuterClassType() != null) return;
         String name = type.getUnresolvedName();
-        if (name.indexOf('.') != -1 || name.indexOf('$') != -1) return; // Outer.Inner is the raw type
         ClassNode inner = type.redirect(), outer = inner.getOuterClass();
         if (outer == null || isStaticMember(inner)) return;
+        // Outer.Inner and Outer$Inner are the raw type; a simple name may itself contain a '$'
+        if (name.indexOf('.') != -1 || (name.indexOf('$') != -1 && !inner.getName().equals(outer.getName() + '$' + name))) return;
         if (type.getGenericsTypes() == null && inner.getGenericsTypes() != null) return; // raw type
 
         for (ClassNode cn = currentClass; cn != null; cn = cn.getOuterClass()) {
@@ -527,8 +528,10 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
      */
     private static boolean isRecord(final ClassNode cn) {
         for (AnnotationNode annotation : cn.getAnnotations()) {
+            // the annotation may not be resolved yet, so it may have its simple name
             String name = annotation.getClassNode().getName();
-            if (name.endsWith("RecordType") || name.endsWith("RecordBase")) return true;
+            if (name.startsWith("groovy.transform.")) name = name.substring("groovy.transform.".length());
+            if (name.equals("RecordType") || name.equals("RecordBase")) return true;
         }
         return false;
     }
