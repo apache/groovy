@@ -416,7 +416,8 @@ public interface Awaitable<T> {
      * def results = await task1, task2, task3
      * </pre>
      *
-     * @param sources the awaitables, futures, or adapted objects to wait for
+     * @param sources the awaitables, futures, or adapted objects to wait for; one
+     *                {@code Collection} argument supplies them
      * @return an awaitable that resolves to a list of results
      */
     static Awaitable<List<Object>> all(Object... sources) {
@@ -430,7 +431,7 @@ public interface Awaitable<T> {
      * def winner = await Awaitable.any(task1, task2)
      * </pre>
      *
-     * @param sources the awaitables to race
+     * @param sources the awaitables to race; one {@code Collection} argument supplies them
      * @return an awaitable that resolves to the first completed result
      */
     @SuppressWarnings("unchecked")
@@ -470,7 +471,8 @@ public interface Awaitable<T> {
      * </pre>
      *
      * @param sources the awaitables to race for first success; must not be
-     *                {@code null}, empty, or contain {@code null} elements
+     *                {@code null}, empty, or contain {@code null} elements; one
+     *                {@code Collection} argument supplies them
      * @param <T>     the result type
      * @return an awaitable that resolves with the first successful result
      * @throws IllegalArgumentException if {@code sources} is {@code null},
@@ -494,7 +496,7 @@ public interface Awaitable<T> {
      * results.each { println it.success ? it.value : it.error }
      * </pre>
      *
-     * @param sources the awaitables to settle
+     * @param sources the awaitables to settle; one {@code Collection} argument supplies them
      * @return an awaitable that resolves to a list of settled results
      */
     static Awaitable<List<AwaitResult<Object>>> allSettled(Object... sources) {

@@ -297,6 +297,14 @@ public class StatementWriter {
         storeForLoopVariable(indexVariable);
     }
 
+    /**
+     * Defines the for-in index variable and initializes it from a {@code -1}
+     * pushed on the operand stack, so the first increment lands on {@code 0}
+     * when it is paired with {@code next()}.
+     *
+     * @param statement the for-in statement
+     * @return the index variable, or {@code null} when {@code statement} declares none
+     */
     protected final BytecodeVariable defineLoopIndexVariable(final ForStatement statement) {
         Parameter indexVariable = statement.getIndexVariable();
         if (indexVariable == null) return null;
@@ -304,6 +312,13 @@ public class StatementWriter {
         return controller.getCompileStack().defineVariable(indexVariable, true);
     }
 
+    /**
+     * Emits {@code GOTO} to {@code continueLabel} when the loop body can reach
+     * a continue. A body that cannot reach the continue leaves no back edge.
+     *
+     * @param continueLabel the continue target
+     * @param bodyMayReachContinue whether the body can fall through or continue to that label
+     */
     protected final void writeLoopBackEdge(final Label continueLabel, final boolean bodyMayReachContinue) {
         if (bodyMayReachContinue) {
             controller.getMethodVisitor().visitJumpInsn(GOTO, continueLabel);

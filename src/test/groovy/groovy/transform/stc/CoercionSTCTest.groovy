@@ -820,6 +820,40 @@ import static groovy.test.GroovyAssert.shouldFail
         }
     }
 
+    // GROOVY-12747: an untyped parameter is declared with the type the functional interface gives it,
+    // so a value of another type would be converted to that type, not kept
+    @Test
+    void testCoerceToFunctionalInterfaceParameterReassignment1() {
+        shouldFailWithMessages '''
+            List<Integer> numbers = [1, 2]
+            numbers.stream().map { n -> n = n.toString(); n }.toList()
+        ''',
+        'Cannot assign value of type java.lang.String to variable of type java.lang.Integer'
+
+        shouldFailWithMessages '''
+            List<Integer> numbers = [1, 2]
+            numbers.stream().map(n -> { n = 'x'; n }).toList()
+        ''',
+        'Cannot assign value of type java.lang.String to variable of type java.lang.Integer'
+
+        shouldFailWithMessages '''
+            Function<Integer, Object> f = { n -> n = n + 0.5; n }
+        ''',
+        'Cannot assign value of type java.math.BigDecimal to variable of type java.lang.Integer'
+    }
+
+    @Test
+    void testCoerceToFunctionalInterfaceParameterReassignment2() {
+        // a value of the parameter's type can still be assigned, and an implicit "it" is declared Object
+        assertScript '''
+            List<Integer> numbers = [1, 2]
+            assert numbers.stream().map { n -> n = n * 2; n }.toList() == [2, 4]
+            assert numbers.stream().map { n -> n += 1; n }.toList() == [2, 3]
+            assert numbers.stream().map { n -> n = null; n }.toList() == [null, null]
+            assert numbers.stream().map { it = 'x'; it }.toList() == ['x', 'x']
+        '''
+    }
+
     // GROOVY-11092
     @Test
     void testCoerceToFunctionalInterface20() {

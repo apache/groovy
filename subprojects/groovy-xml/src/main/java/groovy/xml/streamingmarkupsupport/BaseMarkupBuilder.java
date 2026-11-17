@@ -58,30 +58,60 @@ public class BaseMarkupBuilder extends Builder {
             namespaces.put("mkp", "http://www.codehaus.org/Groovy/markup/keywords");   // pseudo namespace for markup keywords
 
             specialProperties.put("out", new OutputSink("out") {
+                /**
+                 * Passes {@code value} to the {@code yield} markup command.
+                 *
+                 * @param value the content to yield
+                 * @return this sink
+                 */
                 @Override
                 public Object leftShift(final Object value) {
                     return leftShift("yield", value);
                 }
             });
             specialProperties.put("unescaped", new OutputSink("unescaped") {
+                /**
+                 * Passes {@code value} to the {@code yieldUnescaped} markup command.
+                 *
+                 * @param value the content to yield without escaping
+                 * @return this sink
+                 */
                 @Override
                 public Object leftShift(final Object value) {
                     return leftShift("yieldUnescaped", value);
                 }
             });
             specialProperties.put("namespaces", new OutputSink("namespaces") {
+                /**
+                 * Passes {@code value} to the {@code declareNamespace} markup command.
+                 *
+                 * @param value the namespace declaration
+                 * @return this sink
+                 */
                 @Override
                 public Object leftShift(final Object value) {
                     return leftShift("declareNamespace", value);
                 }
             });
             specialProperties.put("pi", new OutputSink("pi") {
+                /**
+                 * Passes {@code value} to the {@code pi} markup command.
+                 *
+                 * @param value the processing-instruction content
+                 * @return this sink
+                 */
                 @Override
                 public Object leftShift(final Object value) {
                     return leftShift("pi", value);
                 }
             });
             specialProperties.put("comment", new OutputSink("comment") {
+                /**
+                 * Passes {@code value} to the {@code comment} markup command.
+                 *
+                 * @param value the comment content
+                 * @return this sink
+                 */
                 @Override
                 public Object leftShift(final Object value) {
                     return leftShift("comment", value);
@@ -96,14 +126,36 @@ public class BaseMarkupBuilder extends Builder {
                 this.name = name;
             }
 
+            /**
+             * Sets the document's namespace prefix to this sink's name, then
+             * forwards the call to the document.
+             *
+             * @param name the method name to forward
+             * @param args the arguments to forward
+             * @return the document's result
+             */
             @Override
             public Object invokeMethod(final String name, final Object args) {
                 Document.this.prefix = this.name;
                 return Document.this.invokeMethod(name, args);
             }
 
+            /**
+             * Shifts {@code item} into this sink. Each sink maps it onto one markup command.
+             *
+             * @param item the value being shifted
+             * @return this sink
+             */
             public abstract Object leftShift(Object item);
 
+            /**
+             * Resolves the {@code mkp} pseudo-namespace and invokes {@code command}
+             * with {@code value}.
+             *
+             * @param command the markup command name
+             * @param value the command argument
+             * @return this sink
+             */
             protected Object leftShift(final String command, final Object value) {
                 Document.this.getProperty("mkp");
                 Document.this.invokeMethod(command, new Object[]{value});
@@ -115,9 +167,19 @@ public class BaseMarkupBuilder extends Builder {
             super(root, namespaceMethodMap);
         }
 
-        /* (non-Javadoc)
-           * @see groovy.lang.GroovyObject#invokeMethod(java.lang.String, java.lang.Object)
-           */
+        /**
+         * Dispatches a tag call. A {@link Map} argument becomes the attributes,
+         * a {@link Closure} is set as this document's delegate and used as a
+         * writable body, and any other argument becomes the body. The current
+         * prefix selects the namespace: a pending declaration, otherwise a
+         * declared namespace, otherwise {@code ":"}. A named tag closure is
+         * called when the namespace has one; otherwise the namespace default
+         * is called. The prefix is cleared before that call.
+         *
+         * @param name the tag name
+         * @param args the tag arguments
+         * @return the tag closure's result
+         */
         @Override
         public Object invokeMethod(final String name, final Object args) {
             final Object[] arguments = (Object[]) args;
@@ -168,8 +230,14 @@ public class BaseMarkupBuilder extends Builder {
             }
         }
 
-        /* (non-Javadoc)
-         * @see groovy.lang.GroovyObject#getProperty(java.lang.String)
+        /**
+         * Returns the special sink registered for {@code property}
+         * ({@code out}, {@code unescaped}, {@code namespaces}, {@code pi},
+         * or {@code comment}). Any other name is stored as the current
+         * namespace prefix and this document is returned.
+         *
+         * @param property the property name
+         * @return the sink, or this document when the name is a prefix
          */
         @Override
         public Object getProperty(final String property) {
@@ -183,8 +251,13 @@ public class BaseMarkupBuilder extends Builder {
             }
         }
 
-        /* (non-Javadoc)
-         * @see groovy.lang.GroovyObject#setProperty(java.lang.String, java.lang.Object)
+        /**
+         * When {@code property} is {@code trigger}, stores {@code newValue} as
+         * the output destination and calls the root closure with this document.
+         * Any other property is passed to the superclass.
+         *
+         * @param property the property name
+         * @param newValue the value to assign
          */
         @Override
         public void setProperty(String property, Object newValue) {

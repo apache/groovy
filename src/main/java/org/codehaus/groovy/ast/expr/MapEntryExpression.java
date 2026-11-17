@@ -27,6 +27,12 @@ public class MapEntryExpression extends Expression {
     private Expression keyExpression;
     private Expression valueExpression;
 
+    /**
+     * Builds a map entry from the key and value expressions.
+     *
+     * @param keyExpression expression on the left of the colon
+     * @param valueExpression expression on the right of the colon
+     */
     public MapEntryExpression(Expression keyExpression, Expression valueExpression) {
         this.keyExpression = keyExpression;
         this.valueExpression = valueExpression;
@@ -50,18 +56,38 @@ public class MapEntryExpression extends Expression {
         return super.toString() + "(key: " + keyExpression + ", value: " + valueExpression + ")";
     }
 
+    /**
+     * Returns the key expression, the left side of the colon.
+     *
+     * @return the key expression
+     */
     public Expression getKeyExpression() {
         return keyExpression;
     }
 
+    /**
+     * Returns the value expression, the right side of the colon.
+     *
+     * @return the mapped expression
+     */
     public Expression getValueExpression() {
         return valueExpression;
     }
 
+    /**
+     * Replaces the key expression.
+     *
+     * @param keyExpression the expression to store on the left of the colon
+     */
     public void setKeyExpression(Expression keyExpression) {
         this.keyExpression = keyExpression;
     }
 
+    /**
+     * Replaces the value expression.
+     *
+     * @param valueExpression the expression to store on the right of the colon
+     */
     public void setValueExpression(Expression valueExpression) {
         this.valueExpression = valueExpression;
     }

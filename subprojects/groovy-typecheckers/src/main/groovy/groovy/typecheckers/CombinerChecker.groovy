@@ -22,6 +22,7 @@ import groovy.transform.Associative
 import groovy.transform.Reducer
 import org.apache.groovy.lang.annotation.Incubating
 import org.apache.groovy.typecheckers.CheckingVisitor
+import org.codehaus.groovy.ast.ClassHelper
 import org.codehaus.groovy.ast.ClassNode
 import org.codehaus.groovy.ast.MethodNode
 import org.codehaus.groovy.ast.expr.ArgumentListExpression
@@ -39,7 +40,10 @@ import org.codehaus.groovy.ast.stmt.ExpressionStatement
 import org.codehaus.groovy.ast.stmt.ReturnStatement
 import org.codehaus.groovy.ast.stmt.Statement
 import org.codehaus.groovy.transform.stc.GroovyTypeCheckingExtensionSupport
+import org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport
 import org.codehaus.groovy.transform.stc.StaticTypesMarker
+
+import java.util.function.Function
 
 /**
  * A compile-time checker that verifies the combiner passed to an
@@ -90,6 +94,8 @@ class CombinerChecker extends GroovyTypeCheckingExtensionSupport.TypeCheckingDSL
     private static final Set<String> UNSEEDED_REDUCTIONS = Set.of('sumParallel')
 
     private static final Set<String> COMBINER_ANNOS = Set.of('Associative', 'Reducer')
+
+    private static final ClassNode FUNCTION_TYPE = ClassHelper.make(Function)
 
     /**
      * Non-associative binary operators (also non-commutative). Matched purely
@@ -157,6 +163,27 @@ class CombinerChecker extends GroovyTypeCheckingExtensionSupport.TypeCheckingDSL
                 os ? (os.find { CombinerChecker.hasCombinerAnno(it) } ?: os[0]) : null
             }
 
+            /**
+             * Whether the argument selects {@code sumParallel(Collection, Function)}: a closure or
+             * lambda that does not take two parameters, a method reference whose method takes one
+             * argument (counting the receiver of {@code Type::instanceMethod}), or a {@code Function}.
+             */
+            private boolean isTransform(Expression argument) {
+                if (argument instanceof ClosureExpression) {
+                    return (((ClosureExpression) argument).parameters?.length ?: 0) != 2
+                }
+                if (argument instanceof MethodPointerExpression) {
+                    MethodPointerExpression ref = (MethodPointerExpression) argument
+                    MethodNode method = resolveRefMethod(ref)
+                    if (method == null) return false
+                    int arity = method.parameters.length
+                    if (!method.isStatic() && ref.expression instanceof ClassExpression) arity += 1
+                    return arity == 1
+                }
+                ClassNode type = safeType(argument)
+                return type != null && StaticTypeCheckingSupport.implementsInterfaceOrIsSubclassOf(type, FUNCTION_TYPE)
+            }
+
             private ClassNode safeType(Expression e) {
                 try { getType(e) } catch (ignored) { null }
             }
@@ -200,6 +227,9 @@ class CombinerChecker extends GroovyTypeCheckingExtensionSupport.TypeCheckingDSL
 
                 Expression combiner = args[-1]
                 Expression seed = seeded ? args[0] : null
+
+                // sumParallel(transform) adds the transformed values with plus: no combiner to check
+                if (isGdk && !seeded && isTransform(combiner)) return
 
                 MethodNode refMethod = (combiner instanceof MethodPointerExpression) ?
                         resolveRefMethod((MethodPointerExpression) combiner) : null

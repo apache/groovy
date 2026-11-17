@@ -55,6 +55,10 @@ public class MethodCallExpression extends Expression implements MethodCall {
 
     private MethodNode target;
 
+    /**
+     * Empty argument list that rejects {@link TupleExpression#addExpression(Expression)}.
+     * Call builders use it when a call has no arguments.
+     */
     public static final Expression NO_ARGUMENTS = new TupleExpression() {
         @Override
         public List<Expression> getExpressions() {
