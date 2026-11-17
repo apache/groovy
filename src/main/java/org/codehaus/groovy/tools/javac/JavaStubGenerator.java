@@ -29,6 +29,7 @@ import org.apache.groovy.io.StringBuilderWriter;
 import org.codehaus.groovy.ast.AnnotatedNode;
 import org.codehaus.groovy.ast.AnnotationNode;
 import org.codehaus.groovy.ast.ClassNode;
+import org.codehaus.groovy.ast.CompileUnit;
 import org.codehaus.groovy.ast.ConstructorNode;
 import org.codehaus.groovy.ast.DynamicVariable;
 import org.codehaus.groovy.ast.FieldNode;
@@ -183,12 +184,13 @@ public class JavaStubGenerator {
      * @throws FileNotFoundException if a file-based stub cannot be created
      */
     public void generateClass(final ClassNode classNode) throws FileNotFoundException {
-        // GROOVY-9273: the module-info carrier is not a type (JLS §7.7). Joint
-        // compilation puts stubs on javac's source path, and a type declaration
-        // in module-info.java is not a modular compilation unit. Sibling .java
-        // files are compiled from the classpath, so they do not need a stub.
-        // Class generation still writes module-info.class.
-        if (ModuleInfoNode.of(classNode) != null) {
+        // GROOVY-9273: the module declaration is not a type (JLS §7.7). It lives
+        // on the compile unit; this carrier is only what the pipeline visits.
+        // Joint compilation puts stubs on javac's source path, and a type
+        // declaration in module-info.java is not a modular compilation unit.
+        // Sibling .java files are compiled from the classpath, so they do not
+        // need a stub. Class generation still writes module-info.class.
+        if (moduleDeclaration(classNode) != null) {
             return;
         }
         // only attempt to render if super-class is resolved; else wait for it
@@ -207,6 +209,21 @@ public class JavaStubGenerator {
         } else {
             generateFileStub(classNode);
         }
+    }
+
+    /**
+     * The module declaration for which {@code classNode} is the emission carrier.
+     * Read from the compile unit, not from class metadata.
+     */
+    private static ModuleInfoNode moduleDeclaration(final ClassNode classNode) {
+        CompileUnit unit = classNode.getCompileUnit();
+        if (unit != null) {
+            ModuleInfoNode declaration = unit.getModuleInfo();
+            if (declaration != null) {
+                return declaration.isEmittedAs(classNode) ? declaration : null;
+            }
+        }
+        return ModuleInfoNode.of(classNode);
     }
 
     private void generateMemStub(ClassNode classNode) {

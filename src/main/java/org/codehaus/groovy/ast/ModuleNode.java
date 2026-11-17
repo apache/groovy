@@ -19,6 +19,7 @@
 package org.codehaus.groovy.ast;
 
 import groovy.transform.NoScript;
+import org.apache.groovy.ast.ModuleInfoNode;
 import org.apache.groovy.ast.tools.ClassNodeUtils;
 import org.codehaus.groovy.ast.expr.BinaryExpression;
 import org.codehaus.groovy.ast.expr.ConstructorCallExpression;
@@ -81,6 +82,11 @@ public class ModuleNode extends ASTNode {
     private final Map<String, ImportNode> staticImports = new LinkedHashMap<>();
     private final Map<String, ImportNode> staticStarImports = new LinkedHashMap<>();
     private CompileUnit unit;
+    /**
+     * JPMS module declaration parsed from this source, adopted by {@link CompileUnit}
+     * when the module is added. Not the source unit itself.
+     */
+    private ModuleInfoNode moduleDeclaration;
     private PackageNode packageNode;
     private String description;
     private boolean createClassForStatements = true;
@@ -535,6 +541,28 @@ public class ModuleNode extends ASTNode {
 
     void setUnit(final CompileUnit unit) {
         this.unit = unit;
+    }
+
+    /**
+     * The JPMS module declaration parsed from this source, or {@code null}.
+     * {@link CompileUnit} adopts this when the module is added. A compilation
+     * looks the declaration up on the compile unit, not on this source unit.
+     *
+     * @return the declaration parsed from this source, or {@code null}
+     * @since 7.0.0
+     */
+    public ModuleInfoNode getModuleDeclaration() {
+        return moduleDeclaration;
+    }
+
+    /**
+     * Records the JPMS module declaration parsed from this source.
+     *
+     * @param moduleDeclaration the declaration, or {@code null}
+     * @since 7.0.0
+     */
+    public void setModuleDeclaration(final ModuleInfoNode moduleDeclaration) {
+        this.moduleDeclaration = moduleDeclaration;
     }
 
     /**

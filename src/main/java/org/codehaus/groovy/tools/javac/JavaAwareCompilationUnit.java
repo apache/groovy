@@ -29,6 +29,7 @@ import org.codehaus.groovy.control.AnnotationConstantsVisitor;
 import org.codehaus.groovy.control.ClassNodeResolver;
 import org.codehaus.groovy.control.CompilationFailedException;
 import org.codehaus.groovy.control.CompilationUnit;
+import org.codehaus.groovy.control.CompiledClassIndex;
 import org.codehaus.groovy.control.CompilePhase;
 import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.control.Phases;
@@ -179,7 +180,9 @@ public class JavaAwareCompilationUnit extends CompilationUnit {
 
         addPhaseOperation((final SourceUnit source, final GeneratorContext context, final ClassNode classNode) -> {
             try {
-                if (!javaSources.isEmpty()) stubGenerator.generateClass(classNode);
+                if (!javaSources.isEmpty() && !isModuleDeclaration(source, classNode)) {
+                    stubGenerator.generateClass(classNode);
+                }
             } catch (FileNotFoundException fnfe) {
                 source.addException(fnfe);
             }
@@ -212,8 +215,9 @@ public class JavaAwareCompilationUnit extends CompilationUnit {
                 compiler.compile(new ArrayList<>(javaSources), this);
                 Set<String> compiledNames = collectCompiledClassNames(snapshot);
                 if (compiledNames != null) {
+                    CompiledClassIndex index = getCompiledClasses();
                     for (String name : compiledNames) {
-                        getAST().addCompiledClassName(name);
+                        index.add(name);
                     }
                 }
                 warnIfShadowed();
@@ -399,6 +403,23 @@ public class JavaAwareCompilationUnit extends CompilationUnit {
         super.writeClassFile(groovyClass);
     }
 
+    /**
+     * Whether {@code classNode} is the emission carrier of this compilation's
+     * module declaration. The compile unit is taken from the source when the
+     * class no longer points at its module.
+     */
+    private static boolean isModuleDeclaration(final SourceUnit source, final ClassNode classNode) {
+        CompileUnit unit = classNode.getCompileUnit();
+        if (unit == null && source != null && source.getAST() != null) {
+            unit = source.getAST().getUnit();
+        }
+        if (unit == null) {
+            return ModuleInfoNode.of(classNode) != null;
+        }
+        ModuleInfoNode declaration = unit.getModuleInfo();
+        return declaration != null && declaration.isEmittedAs(classNode);
+    }
+
     private void addJavaOrGroovySource(final File file) {
         // module-info.java is a modular compilation unit (JLS §7.3). Routing it
         // to javac would put the joint compilation in single-module mode, where
@@ -439,7 +460,7 @@ public class JavaAwareCompilationUnit extends CompilationUnit {
 
     /**
      * Returns the binary names of classes produced by this javac invocation.
-     * Each returned name is recorded with {@link CompileUnit#addCompiledClassName(String)}.
+     * Each returned name is recorded on this unit's {@link CompiledClassIndex}.
      * <p>
      * The default implementation compares the target directory against
      * {@code snapshot} and also includes inner classes of just-compiled Java

@@ -21,6 +21,8 @@ package org.apache.groovy.ast;
 import org.codehaus.groovy.ast.AnnotatedNode;
 import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.ClassNode;
+import org.codehaus.groovy.ast.CompileUnit;
+import org.codehaus.groovy.ast.ModuleNode;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -29,13 +31,16 @@ import java.util.List;
 /**
  * AST for a JPMS module declaration (JLS §7.7), produced from
  * {@code module-info.groovy} (or {@code module-info.java} fed to the Groovy parser).
- * Attached to the synthetic {@code module-info} class via node metadata.
+ * The declaration is a member of the {@link CompileUnit}, not a class.
+ * {@link #getClassNode()} is the carrier the existing pipeline visits for
+ * resolution, annotation checking, and class writing.
  */
 public final class ModuleInfoNode extends AnnotatedNode {
 
     private final String name;
     private final boolean open;
     private final List<Directive> directives;
+    private ClassNode classNode;
 
     public ModuleInfoNode(final String name, final boolean open, final List<Directive> directives) {
         this.name = name;
@@ -57,14 +62,71 @@ public final class ModuleInfoNode extends AnnotatedNode {
     }
 
     /**
-     * Returns the module declaration stored on {@code classNode}, or {@code null}.
+     * The class node the pipeline visits for this declaration, or {@code null}
+     * when the declaration has not been given one. The class does not own the
+     * declaration.
+     *
+     * @return the emission carrier, or {@code null}
+     * @since 7.0.0
+     */
+    public ClassNode getClassNode() {
+        return classNode;
+    }
+
+    /**
+     * Records the class node the pipeline visits for this declaration.
+     *
+     * @param classNode the emission carrier, or {@code null}
+     * @since 7.0.0
+     */
+    public void setClassNode(final ClassNode classNode) {
+        this.classNode = classNode;
+    }
+
+    /**
+     * Whether {@code candidate} is the class the pipeline should treat as this
+     * declaration. A class of the same name matches as well, so replacing the
+     * carrier does not drop the declaration.
+     *
+     * @param candidate the class being visited
+     * @return {@code true} when the visitor should treat {@code candidate} as this declaration
+     * @since 7.0.0
+     */
+    public boolean isEmittedAs(final ClassNode candidate) {
+        if (candidate == null) {
+            return false;
+        }
+        if (classNode != null && classNode.redirect() == candidate.redirect()) {
+            return true;
+        }
+        return "module-info".equals(candidate.getName())
+                && (classNode == null || "module-info".equals(classNode.getName()));
+    }
+
+    /**
+     * The module declaration for which {@code classNode} is the emission carrier,
+     * or {@code null}. Reads {@link CompileUnit#getModuleInfo()} when the class
+     * belongs to a compile unit, and otherwise the declaration parsed from the
+     * class's source. Node metadata is not consulted.
+     *
+     * @param classNode the class being visited
+     * @return the declaration, or {@code null} when {@code classNode} is not the carrier
      */
     public static ModuleInfoNode of(final ClassNode classNode) {
         if (classNode == null) {
             return null;
         }
-        Object metadata = classNode.getNodeMetaData(ModuleInfoNode.class);
-        return metadata instanceof ModuleInfoNode ? (ModuleInfoNode) metadata : null;
+        CompileUnit unit = classNode.getCompileUnit();
+        if (unit != null) {
+            ModuleInfoNode declaration = unit.getModuleInfo();
+            return declaration != null && declaration.isEmittedAs(classNode) ? declaration : null;
+        }
+        ModuleNode module = classNode.getModule();
+        if (module == null) {
+            return null;
+        }
+        ModuleInfoNode declaration = module.getModuleDeclaration();
+        return declaration != null && declaration.isEmittedAs(classNode) ? declaration : null;
     }
 
     public String getName() {

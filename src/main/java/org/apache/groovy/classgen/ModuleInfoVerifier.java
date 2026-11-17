@@ -36,6 +36,8 @@ import org.codehaus.groovy.ast.ImportNode;
 import org.codehaus.groovy.ast.InnerClassNode;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.ModuleNode;
+import org.codehaus.groovy.control.CompilationUnit;
+import org.codehaus.groovy.control.CompiledClassIndex;
 import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.control.ModuleImportHelper;
 import org.codehaus.groovy.control.SourceUnit;
@@ -78,6 +80,7 @@ public final class ModuleInfoVerifier {
     private final SourceUnit source;
     private final ClassNode classNode;
     private final CompileUnit compileUnit;
+    private final CompiledClassIndex compiledClasses;
     private final ModuleNode moduleNode;
     private final ModuleInfoNode declaration;
     private final ModuleFinder classpathFinder;
@@ -87,12 +90,13 @@ public final class ModuleInfoVerifier {
     private Set<String> reads = Set.of(JAVA_BASE);
 
     private ModuleInfoVerifier(final SourceUnit source, final ClassNode classNode, final ModuleInfoNode declaration,
-            final ModuleFinder classpathFinder, final ModuleFinder accessibilityFinder) {
+            final CompilationUnit compilationUnit, final ModuleFinder classpathFinder, final ModuleFinder accessibilityFinder) {
         this.source = source;
         this.classNode = classNode;
         this.declaration = declaration;
         this.classpathFinder = classpathFinder;
         this.accessibilityFinder = accessibilityFinder;
+        this.compiledClasses = compilationUnit != null ? compilationUnit.getCompiledClasses() : null;
         this.moduleNode = classNode.getModule();
         CompileUnit unit = moduleNode != null ? moduleNode.getUnit() : null;
         if (unit == null && source.getAST() != null) {
@@ -117,11 +121,25 @@ public final class ModuleInfoVerifier {
     }
 
     /**
-     * Checks {@code classNode} when it carries a module declaration.
-     * No-op for every other class.
+     * Checks {@code classNode} when it is the emission carrier of the compilation's
+     * module declaration. No-op for every other class.
      */
     public static void check(final SourceUnit source, final ClassNode classNode) {
-        check(source, classNode, null, null);
+        check(source, classNode, null, null, null);
+    }
+
+    /**
+     * Like {@link #check(SourceUnit, ClassNode)} for a known compilation unit.
+     * The declaration is read from that unit. Java class names recorded by joint
+     * compilation are read from its {@link CompiledClassIndex}.
+     *
+     * @param source the source under compilation
+     * @param classNode the class the pipeline is visiting
+     * @param compilationUnit the compilation, or {@code null} to use the class's compile unit
+     * @since 7.0.0
+     */
+    public static void check(final SourceUnit source, final ClassNode classNode, final CompilationUnit compilationUnit) {
+        check(source, classNode, compilationUnit, null, null);
     }
 
     /**
@@ -130,11 +148,31 @@ public final class ModuleInfoVerifier {
      */
     static void check(final SourceUnit source, final ClassNode classNode,
             final ModuleFinder classpathFinder, final ModuleFinder accessibilityFinder) {
-        ModuleInfoNode declaration = ModuleInfoNode.of(classNode);
+        check(source, classNode, null, classpathFinder, accessibilityFinder);
+    }
+
+    static void check(final SourceUnit source, final ClassNode classNode, final CompilationUnit compilationUnit,
+            final ModuleFinder classpathFinder, final ModuleFinder accessibilityFinder) {
+        ModuleInfoNode declaration = declarationFor(compilationUnit, classNode);
         if (declaration == null || source == null) {
             return;
         }
-        new ModuleInfoVerifier(source, classNode, declaration, classpathFinder, accessibilityFinder).verify();
+        new ModuleInfoVerifier(source, classNode, declaration, compilationUnit, classpathFinder, accessibilityFinder).verify();
+    }
+
+    /**
+     * The compilation's module declaration when {@code classNode} is its carrier.
+     * A compilation unit is consulted first. Otherwise {@link ModuleInfoNode#of(ClassNode)}
+     * reads the class's compile unit.
+     */
+    private static ModuleInfoNode declarationFor(final CompilationUnit compilationUnit, final ClassNode classNode) {
+        if (compilationUnit != null && compilationUnit.getAST() != null) {
+            ModuleInfoNode declaration = compilationUnit.getAST().getModuleInfo();
+            if (declaration != null) {
+                return declaration.isEmittedAs(classNode) ? declaration : null;
+            }
+        }
+        return ModuleInfoNode.of(classNode);
     }
 
     private void verify() {
@@ -151,25 +189,26 @@ public final class ModuleInfoVerifier {
     }
 
     private void collectPackages() {
-        if (compileUnit == null) {
-            return;
-        }
         boolean unnamedReported = false;
-        for (ClassNode cn : compileUnit.getClasses()) {
-            if (ModuleInfoNode.of(cn) != null) {
-                continue;
-            }
-            String pkg = cn.getPackageName();
-            if (pkg == null || pkg.isEmpty()) {
-                error("unnamed package is not allowed in named modules", cn);
-                unnamedReported = true;
-            } else {
-                modulePackages.add(pkg);
+        if (compileUnit != null) {
+            for (ClassNode cn : compileUnit.getClasses()) {
+                if (declaration.isEmittedAs(cn)) {
+                    continue;
+                }
+                String pkg = cn.getPackageName();
+                if (pkg == null || pkg.isEmpty()) {
+                    error("unnamed package is not allowed in named modules", cn);
+                    unnamedReported = true;
+                } else {
+                    modulePackages.add(pkg);
+                }
             }
         }
-        modulePackages.addAll(compileUnit.getCompiledPackages());
-        if (compileUnit.hasUnnamedCompiledClass() && !unnamedReported) {
-            error("unnamed package is not allowed in named modules", declaration);
+        if (compiledClasses != null) {
+            modulePackages.addAll(compiledClasses.getPackages());
+            if (compiledClasses.hasUnnamedClass() && !unnamedReported) {
+                error("unnamed package is not allowed in named modules", declaration);
+            }
         }
     }
 
@@ -650,11 +689,10 @@ public final class ModuleInfoVerifier {
     }
 
     private boolean inThisModule(final ClassNode type) {
-        if (compileUnit == null) {
-            return false;
+        if (compileUnit != null && compileUnit.getClass(type.getName()) != null) {
+            return true;
         }
-        return compileUnit.getClass(type.getName()) != null
-                || compileUnit.containsCompiledClassName(type.getName());
+        return compiledClasses != null && compiledClasses.contains(type.getName());
     }
 
     /**
@@ -858,7 +896,7 @@ public final class ModuleInfoVerifier {
                 : (source.getClassLoader() != null ? source.getClassLoader() : ClassLoader.getSystemClassLoader());
         try {
             Class<?> loaded = Class.forName(binary, false, loader);
-            boolean inModule = compileUnit != null && compileUnit.containsCompiledClassName(binary);
+            boolean inModule = compiledClasses != null && compiledClasses.contains(binary);
             return new ResolvedType(ClassHelper.make(loaded), inModule);
         } catch (ClassNotFoundException | LinkageError ignored) {
             return null;
