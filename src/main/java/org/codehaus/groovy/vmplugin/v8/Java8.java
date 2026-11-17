@@ -583,9 +583,31 @@ public class Java8 implements VMPlugin {
         if (!(t instanceof Class)) {
             ClassNode front = configureType(t);
             front.setRedirect(back);
+            if (front.isArray() && back.isArray()) {
+                redirectTypeVariableArrayComponents(front, back);
+            }
             return front;
         }
         return back.getPlainNodeReference();
+    }
+
+    /**
+     * Redirects the component types of an array of a type variable, of any number of dimensions, to
+     * the matching level of its erasure, so that the innermost component, the type variable, erases
+     * to the variable's bound rather than {@code Object}. The JVM descriptor of the array is built
+     * from that component. An array of any other type is left alone.
+     */
+    private static void redirectTypeVariableArrayComponents(final ClassNode genericType, final ClassNode erasure) {
+        ClassNode component = genericType;
+        while (component.isArray()) {
+            component = component.getComponentType();
+        }
+        if (!component.isGenericsPlaceHolder()) return;
+
+        for (ClassNode type = genericType.getComponentType(), erased = erasure.getComponentType(); type != null && erased != null;
+                type = type.getComponentType(), erased = erased.getComponentType()) {
+            type.setRedirect(erased);
+        }
     }
 
     /**
