@@ -350,26 +350,70 @@ public class SwitchExpressionWriter {
         return type;
     }
 
+    /**
+     * Whether {@code type} is {@code int}, {@code byte}, {@code short} or {@code char}.
+     * A {@code null} type is not integral.
+     *
+     * @param type the type to test
+     * @return {@code true} for those four primitives
+     */
     protected static boolean isIntegralType(final ClassNode type) {
         return SwitchExpressionUtils.isIntegralType(type);
     }
 
+    /**
+     * Whether {@code type} is {@code Integer}, {@code Byte}, {@code Short} or
+     * {@code Character}. A {@code null} type is not a wrapper.
+     *
+     * @param type the type to test
+     * @return {@code true} for those four wrappers
+     */
     protected static boolean isIntegralWrapper(final ClassNode type) {
         return SwitchExpressionUtils.isIntegralWrapper(type);
     }
 
+    /**
+     * The int value of a case label that is an {@code int}, {@code byte},
+     * {@code short} or {@code char} constant.
+     *
+     * @param expression the case label
+     * @return that int, or {@code null} when the label is not such a constant
+     */
     protected static Integer intConstant(final Expression expression) {
         return SwitchExpressionUtils.intConstant(expression);
     }
 
+    /**
+     * The string value of a case label that is a string constant.
+     *
+     * @param expression the case label
+     * @return that string, or {@code null} when the label is not a string constant
+     */
     protected static String stringConstant(final Expression expression) {
         return SwitchExpressionUtils.stringConstant(expression);
     }
 
+    /**
+     * The enum type behind {@code type}. A {@code null} type yields {@code null}.
+     * An enum is returned as itself; otherwise the redirect is returned when that
+     * redirect is an enum.
+     *
+     * @param type the selector type
+     * @return the enum {@link ClassNode}, or {@code null} when {@code type} is not an enum
+     */
     protected static ClassNode unwrapEnumType(final ClassNode type) {
         return SwitchExpressionUtils.unwrapEnumType(type);
     }
 
+    /**
+     * Counts the enum constants of {@code enumType}. Fields of the redirect that
+     * are enum constants are counted first. When that count is zero and the type
+     * is resolved, {@link Class#getEnumConstants()} is used, and a {@code null}
+     * return from that call counts as zero.
+     *
+     * @param enumType the enum whose constants are counted
+     * @return the number of enum constants found
+     */
     protected static int enumConstantCount(final ClassNode enumType) {
         int count = 0;
         for (FieldNode field : enumType.redirect().getFields()) {
@@ -382,6 +426,15 @@ public class SwitchExpressionWriter {
         return count;
     }
 
+    /**
+     * The enum-constant name of {@code expression} when it denotes a constant of
+     * {@code enumType}. Accepts {@code EnumType.NAME}, an unqualified name of
+     * that constant, or a constant expression holding the enum value.
+     *
+     * @param expression the case label
+     * @param enumType the selector enum type
+     * @return the constant name, or {@code null} when the label is not a constant of {@code enumType}
+     */
     protected static String enumConstantName(final Expression expression, final ClassNode enumType) {
         return SwitchExpressionUtils.enumConstantName(expression, enumType);
     }

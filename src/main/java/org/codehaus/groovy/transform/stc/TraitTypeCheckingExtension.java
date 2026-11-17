@@ -24,10 +24,12 @@ import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.expr.ArgumentListExpression;
+import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.MethodCall;
 import org.codehaus.groovy.ast.expr.MethodCallExpression;
 import org.codehaus.groovy.ast.expr.PropertyExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
+import org.codehaus.groovy.ast.tools.GenericsUtils;
 import org.codehaus.groovy.transform.trait.TraitASTTransformation;
 import org.codehaus.groovy.transform.trait.Traits;
 
@@ -35,6 +37,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import static org.apache.groovy.util.BeanUtils.capitalize;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.chooseBestMethod;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.isClassClassNodeWrappingConcreteType;
 
@@ -166,7 +169,7 @@ public class TraitTypeCheckingExtension extends AbstractTypeCheckingExtension {
     }
 
     /**
-     * Resolves synthetic trait static-field accessor properties.
+     * Resolves synthetic trait field accessor properties.
      */
     @Override
     public boolean handleUnresolvedProperty(final PropertyExpression pexp) {
@@ -176,25 +179,105 @@ public class TraitTypeCheckingExtension extends AbstractTypeCheckingExtension {
             String propertyName = pexp.getPropertyAsString();
             if (propertyName != null) {
                 ClassNode objectExpressionType = getType(objectExpression);
-                if (isClassClassNodeWrappingConcreteType(objectExpressionType)) {
+                boolean staticContext = isClassClassNodeWrappingConcreteType(objectExpressionType);
+                if (staticContext) {
                     objectExpressionType = objectExpressionType.getGenericsTypes()[0].getType();
                 }
                 for (ClassNode trait : Traits.findTraits(objectExpressionType)) {
                     if (propertyName.startsWith(trait.getName().replace('.', '_') + "__")) {
+                        MethodNode getter = null;
                         ClassNode staticFieldHelper = Traits.findStaticFieldHelper(trait);
-                        if (staticFieldHelper != null) {
-                            MethodNode getter = staticFieldHelper.getDeclaredMethod(propertyName + "$get", Parameter.EMPTY_ARRAY);
-                            if (getter != null) { // GROOVY-11663: resolve "$self.pack_Type__name" to a static field access method
-                                ClassNode returnType = typeCheckingVisitor.inferReturnTypeGenerics(objectExpressionType, getter, ArgumentListExpression.EMPTY_ARGUMENTS);
-                                pexp.putNodeMetaData(StaticTypesMarker.DYNAMIC_RESOLUTION, returnType);
-                                storeType(pexp, returnType);
-                                return true;
+                        if (staticFieldHelper != null) { // GROOVY-11663: resolve "$self.pack_Type__name" to a static field access method
+                            getter = staticFieldHelper.getDeclaredMethod(propertyName + "$get", Parameter.EMPTY_ARRAY);
+                        }
+                        if (getter == null && !staticContext) { // GROOVY-12609: or to an instance field access method
+                            ClassNode fieldHelper = Traits.findFieldHelper(trait);
+                            if (fieldHelper != null) {
+                                getter = fieldHelper.getDeclaredMethod(propertyName + "$get", Parameter.EMPTY_ARRAY);
                             }
                         }
+                        if (getter != null) {
+                            ClassNode returnType = typeCheckingVisitor.inferReturnTypeGenerics(objectExpressionType, getter, ArgumentListExpression.EMPTY_ARGUMENTS);
+                            returnType = GenericsUtils.correctToGenericsSpecRecurse(GenericsUtils.createGenericsSpec(trait), returnType); // field of A<T> in B extends A<Integer>
+                            pexp.putNodeMetaData(StaticTypesMarker.DYNAMIC_RESOLUTION, returnType);
+                            storeType(pexp, returnType);
+                            return true;
+                        }
                     }
+                }
+                // GROOVY-12594: "$self.name" or "$static$self.name" for a @Virtual static accessor, which
+                // is not on the trait interface; resolve it at runtime through the implementing class
+                ClassNode propertyType = findVirtualStaticAccessorType(objectExpressionType, propertyName, !context.isTargetOfEnclosingAssignment(pexp));
+                if (propertyType != null) {
+                    pexp.putNodeMetaData(StaticTypesMarker.DYNAMIC_RESOLUTION, propertyType);
+                    storeType(pexp, propertyType);
+                    return true;
                 }
             }
         }
         return false;
+    }
+
+    /**
+     * Keeps a call that the trait transformation marked for dynamic dispatch dynamic
+     * when the receiver type declares a method that matches it, and likewise keeps a
+     * {@code @Virtual} static accessor read as a property dynamic when the receiver
+     * class has a getter of the same name, such as {@code Class.getName()}.
+     */
+    @Override
+    public void onMethodSelection(final Expression expression, final MethodNode target) {
+        // GROOVY-12601: $static$self.getName() for a @Virtual static getName() must not bind to Class#getName()
+        if (expression instanceof MethodCallExpression mce && mce.getNodeMetaData(StaticTypesMarker.DYNAMIC_RESOLUTION) == null) {
+            ClassNode returnType = mce.getNodeMetaData(TraitASTTransformation.DO_DYNAMIC);
+            if (returnType != null) {
+                mce.putNodeMetaData(StaticTypesMarker.DIRECT_METHOD_CALL_TARGET, makeDynamic(mce, returnType));
+                storeType(mce, returnType);
+            }
+        } else if (expression instanceof PropertyExpression pexp
+                && pexp.getObjectExpression() instanceof VariableExpression objectExpression
+                && objectExpression.getText().endsWith(Traits.THIS_OBJECT)) {
+            String propertyName = pexp.getPropertyAsString();
+            if (propertyName != null) {
+                ClassNode objectExpressionType = getType(objectExpression);
+                if (isClassClassNodeWrappingConcreteType(objectExpressionType)) {
+                    objectExpressionType = objectExpressionType.getGenericsTypes()[0].getType();
+                }
+                // GROOVY-12594: "$static$self.name" for a @Virtual static getName() must not bind to Class#getName()
+                ClassNode propertyType = findVirtualStaticAccessorType(objectExpressionType, propertyName, true);
+                if (propertyType != null) {
+                    pexp.removeNodeMetaData(StaticTypesMarker.DIRECT_METHOD_CALL_TARGET);
+                    pexp.putNodeMetaData(StaticTypesMarker.DYNAMIC_RESOLUTION, propertyType);
+                    storeType(pexp, propertyType);
+                }
+            }
+        }
+    }
+
+    /**
+     * Returns the property type of a {@code @Virtual} static getter (or setter, when
+     * {@code readOnly} is {@code false}) of the given trait or one of its super traits,
+     * or {@code null} if there is none. The helper copy of a static method takes the
+     * receiver class as its first parameter.
+     */
+    private static ClassNode findVirtualStaticAccessorType(final ClassNode traitType, final String propertyName, final boolean readOnly) {
+        String suffix = capitalize(propertyName);
+        for (ClassNode trait : Traits.findTraits(traitType)) {
+            ClassNode helper = Traits.findHelper(trait);
+            if (helper == null) continue;
+            for (MethodNode m : helper.getMethods()) {
+                if (!m.isStatic() || m.getAnnotations(VIRTUAL_TYPE).isEmpty()) continue;
+                Parameter[] params = m.getParameters();
+                if (readOnly) {
+                    if (params.length == 1 && !ClassHelper.isPrimitiveVoid(m.getReturnType())
+                            && (m.getName().equals("get" + suffix) || (m.getName().equals("is" + suffix)
+                                && ClassHelper.isPrimitiveBoolean(m.getReturnType())))) {
+                        return m.getReturnType();
+                    }
+                } else if (params.length == 2 && m.getName().equals("set" + suffix)) {
+                    return params[1].getType();
+                }
+            }
+        }
+        return null;
     }
 }

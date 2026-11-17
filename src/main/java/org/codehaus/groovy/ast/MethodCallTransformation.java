@@ -23,6 +23,14 @@ import org.codehaus.groovy.ast.stmt.Statement;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.transform.ASTTransformation;
 
+/**
+ * Walks a source unit with the visitor from {@link #getTransformer}. Annotation and class
+ * nodes in the transform input are skipped. The walk then covers the module AST, its
+ * statement block, each class's method and constructor bodies, field initializers, and
+ * object initializers, and each script method's parameter initializers and body. A
+ * {@link MissingPropertyException} from an inner class that has no constructor or
+ * object-initializer list is ignored.
+ */
 public abstract class MethodCallTransformation implements ASTTransformation {
 
     @Override
@@ -105,5 +113,12 @@ public abstract class MethodCallTransformation implements ASTTransformation {
         }
     }
 
+    /**
+     * Supplies the visitor {@link #visit} runs over the source unit.
+     *
+     * @param nodes the nodes passed to {@link #visit}
+     * @param sourceUnit the source unit being compiled
+     * @return the visitor that rewrites calls in that source unit
+     */
     protected abstract GroovyCodeVisitor getTransformer(ASTNode[] nodes, SourceUnit sourceUnit);
 }

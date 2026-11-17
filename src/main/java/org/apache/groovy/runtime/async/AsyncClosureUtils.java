@@ -165,6 +165,13 @@ public final class AsyncClosureUtils {
             maximumNumberOfParameters = closure.getMaximumNumberOfParameters();
         }
 
+        /**
+         * Schedules {@code closure.call(args)} and returns the awaitable for that call.
+         * The wrapped closure is not invoked on this thread. Its result is cast to {@code T}.
+         *
+         * @param args arguments forwarded to the wrapped closure
+         * @return the awaitable for the scheduled call
+         */
         @SuppressWarnings({"unchecked", "unused"})
         public Awaitable<T> doCall(Object... args) {
             return AsyncSupport.async(() -> (T) closure.call(args));
@@ -188,6 +195,13 @@ public final class AsyncClosureUtils {
             }
         }
 
+        /**
+         * Returns an async generator that calls the wrapped closure with a generator
+         * bridge prepended to {@code args}. The closure is not invoked on this thread.
+         *
+         * @param args arguments placed after the generator bridge
+         * @return the iterable produced for the generator
+         */
         @SuppressWarnings("unused")
         public Iterable<T> doCall(Object... args) {
             return AsyncSupport.asyncGenerator(bridge -> closure.call(prependArgument(bridge, args)));

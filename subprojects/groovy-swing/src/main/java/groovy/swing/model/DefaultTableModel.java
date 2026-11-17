@@ -262,12 +262,12 @@ public class DefaultTableModel extends AbstractTableModel {
         return column.getValueModel();
     }
 
-    @SuppressWarnings("rawtypes")
     /**
      * Returns the current rows as a list.
      *
      * @return the current row collection as a list, never {@code null}
      */
+    @SuppressWarnings("rawtypes")
     protected List getRows() {
         Object value = rowsModel.getValue();
         if (value == null) {

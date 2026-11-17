@@ -169,6 +169,8 @@ public class GroovyShell extends GroovyObjectSupport {
           this.loader = (GroovyClassLoader) parentLoader;
         } else {
           this.loader = new GroovyClassLoader(parentLoader, config);
+          // each script is defined by a class loader of its own, and what the JVM refuses across them is known here
+          this.loader.enableRuntimePackageCheck();
         }
         this.context = binding;
         this.config = config;
@@ -558,7 +560,9 @@ public class GroovyShell extends GroovyObjectSupport {
      * @param scriptText the text of the script
      */
     public Object evaluate(final String scriptText) throws CompilationFailedException {
-        return evaluate(scriptText, generateScriptName(), DEFAULT_CODE_BASE);
+        GroovyCodeSource gcs = new GroovyCodeSource(scriptText, generateScriptName(), DEFAULT_CODE_BASE);
+        gcs.setNameGenerated(true);
+        return evaluate(gcs);
     }
 
     /**
@@ -583,7 +587,6 @@ public class GroovyShell extends GroovyObjectSupport {
         }
 
         GroovyCodeSource gcs = new GroovyCodeSource(scriptText, fileName, codeBase);
-
         return evaluate(gcs);
     }
 
@@ -611,7 +614,17 @@ public class GroovyShell extends GroovyObjectSupport {
      * @param in the stream reading the script
      */
     public Object evaluate(Reader in) throws CompilationFailedException {
-        return evaluate(in, generateScriptName());
+        GroovyCodeSource gcs = new GroovyCodeSource(in, generateScriptName(), DEFAULT_CODE_BASE);
+        gcs.setNameGenerated(true);
+        Script script = null;
+        try {
+            script = parse(gcs);
+            return script.run();
+        } finally {
+            if (script != null) {
+                InvokerHelper.removeClass(script.getClass());
+            }
+        }
     }
 
     /**
@@ -714,7 +727,9 @@ public class GroovyShell extends GroovyObjectSupport {
      * @param binding the context eval the script
      */
     public Script parse(String scriptText, Binding binding) throws CompilationFailedException {
-        return parse(scriptText, generateScriptName(), binding);
+        GroovyCodeSource gcs = new GroovyCodeSource(scriptText, generateScriptName(), DEFAULT_CODE_BASE);
+        gcs.setNameGenerated(true);
+        return parse(gcs, binding);
     }
 
     /**
@@ -736,8 +751,7 @@ public class GroovyShell extends GroovyObjectSupport {
      * @throws CompilationFailedException if compilation fails
      */
     public Script parse(final String scriptText, final String fileName, Binding binding) throws CompilationFailedException {
-        GroovyCodeSource gcs = new GroovyCodeSource(scriptText, fileName, DEFAULT_CODE_BASE);
-        return parse(gcs, binding);
+        return parse(new GroovyCodeSource(scriptText, fileName, DEFAULT_CODE_BASE), binding);
     }
 
     /**
@@ -758,7 +772,9 @@ public class GroovyShell extends GroovyObjectSupport {
      * @param in the stream reading the script
      */
     public Script parse(Reader in) throws CompilationFailedException {
-        return parse(in, generateScriptName(), context);
+        GroovyCodeSource gcs = new GroovyCodeSource(in, generateScriptName(), DEFAULT_CODE_BASE);
+        gcs.setNameGenerated(true);
+        return parse(gcs, context);
     }
 
     /**
@@ -768,11 +784,17 @@ public class GroovyShell extends GroovyObjectSupport {
      * @param binding the context eval the script
      */
     public Script parse(Reader in, Binding binding) throws CompilationFailedException {
-        return parse(in, generateScriptName(), binding);
+        GroovyCodeSource gcs = new GroovyCodeSource(in, generateScriptName(), DEFAULT_CODE_BASE);
+        gcs.setNameGenerated(true);
+        return parse(gcs, binding);
     }
 
     /**
      * Generates a unique logical script name for anonymous shell evaluations.
+     * <p>
+     * The no-argument evaluate and parse methods put this name on a
+     * {@link GroovyCodeSource} and record that source as generated. A caller
+     * that passes its own file name does not.
      *
      * @return a unique script name ending in {@code .groovy}
      */
