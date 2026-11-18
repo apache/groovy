@@ -4051,6 +4051,33 @@ class GinqTest {
     }
 
     @Test
+    void "testGinq - stream source is consumed once"() {
+        assertGinqScript '''
+            import static groovy.test.GroovyAssert.shouldFail
+
+            def source = [1, 2, 3].stream()
+            def query = GQ { from n in source select n }
+            assert [1, 2, 3] == query.stream().toList()
+            def consumed = shouldFail(IllegalStateException) { query.stream().toList() }
+            assert consumed.message.contains('stream has already been operated upon')
+            def sourceAgain = shouldFail(IllegalStateException) { source.toList() }
+            assert sourceAgain.message.contains('stream has already been operated upon')
+
+            def held = [4, 5].stream()
+            def materialized = GQ { from n in held select n }
+            assert [4, 5] == materialized.toList()
+            assert [4, 5] == materialized.toList()
+            shouldFail(IllegalStateException) { held.toList() }
+
+            def reusable = GQ { from n in [1, 2, 3] select n }
+            assert [1, 2, 3] == reusable.toList()
+            assert [1, 2, 3] == reusable.toList()
+            assert [1, 2, 3] == reusable.stream().toList()
+            assert [1, 2, 3] == reusable.stream().toList()
+        '''
+    }
+
+    @Test
     void "testGinq - from stream - 1"() {
         assertGinqScript '''
             assert [1, 2, 3] == GQ {

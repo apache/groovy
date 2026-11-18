@@ -57,6 +57,13 @@ class SqlFunctionRegistryTest {
         assert registry.find('padLeft', SqlFunctionMapping.Kind.RECEIVER) == null
         assert registry.find('signum', SqlFunctionMapping.Kind.RECEIVER) == null
         assert registry.find('max', SqlFunctionMapping.Kind.RECEIVER) == null
+        assert 'ROW_NUMBER' == registry.find('rowNumber', SqlFunctionMapping.Kind.WINDOW).sqlName
+        assert 'MIN' == registry.find('min', SqlFunctionMapping.Kind.WINDOW).sqlName
+        assert 'LEAST' == registry.find('min', SqlFunctionMapping.Kind.MATH).sqlName
+        assert registry.find('rowNumber', SqlFunctionMapping.Kind.FREE) == null
+        assert registry.find('median', SqlFunctionMapping.Kind.WINDOW) == null
+        assert registry.find('stdev', SqlFunctionMapping.Kind.WINDOW) == null
+        assert registry.find('agg', SqlFunctionMapping.Kind.WINDOW) == null
     }
 
     @Test
@@ -79,6 +86,48 @@ class SqlFunctionRegistryTest {
 
         def injected = shouldFail(IllegalArgumentException) {
             extra.register(SqlFunctionMapping.receiver('evil', 'UPPER; DROP'))
+        }
+        assert injected.message.contains('uppercase identifier')
+    }
+
+    @Test
+    void testWindowKindStaysSeparateFromScalars() {
+        def standard = SqlFunctionRegistry.standard()
+        assert 'ROW_NUMBER' == standard.find('rowNumber', SqlFunctionMapping.Kind.WINDOW).sqlName
+        assert 'LEAD' == standard.find('lead', SqlFunctionMapping.Kind.WINDOW).sqlName
+        assert 'NTILE' == standard.find('ntile', SqlFunctionMapping.Kind.WINDOW).sqlName
+        assert 'COUNT' == standard.find('count', SqlFunctionMapping.Kind.WINDOW).sqlName
+        assert standard.find('rowNumber', SqlFunctionMapping.Kind.FREE) == null
+        assert standard.find('lead', SqlFunctionMapping.Kind.RECEIVER) == null
+        assert 'LEAST' == standard.find('min', SqlFunctionMapping.Kind.MATH).sqlName
+        assert 'MIN' == standard.find('min', SqlFunctionMapping.Kind.WINDOW).sqlName
+        assert SqlFunctionMapping.WindowForm.ZERO_BASED == standard.find('rowNumber', SqlFunctionMapping.Kind.WINDOW).windowForm()
+        assert SqlFunctionMapping.WindowForm.PLAIN == SqlFunctionMapping.window('myNumber', 'ROW_NUMBER').windowForm()
+
+        def call = callX(varX('this'), 'rowNumber')
+        def expr = standard.find('rowNumber', SqlFunctionMapping.Kind.WINDOW).translate(call, [], recordingSite())
+        assert expr instanceof SqlFunction
+        assert 'ROW_NUMBER' == expr.name
+        assert expr.args.empty
+
+        def extra = standard.copy()
+        extra.register(SqlFunctionMapping.window('myNumber', 'ROW_NUMBER'))
+        assert 'ROW_NUMBER' == extra.find('myNumber', SqlFunctionMapping.Kind.WINDOW).sqlName
+        assert standard.find('myNumber', SqlFunctionMapping.Kind.WINDOW) == null
+
+        def duplicate = shouldFail(IllegalArgumentException) {
+            extra.register(SqlFunctionMapping.window('rowNumber', 'RANK'))
+        }
+        assert duplicate.message.contains('already registered')
+        assert duplicate.message.contains('WINDOW')
+
+        def sealed = shouldFail(IllegalStateException) {
+            standard.register(SqlFunctionMapping.window('myRank', 'RANK'))
+        }
+        assert sealed.message.contains('sealed')
+
+        def injected = shouldFail(IllegalArgumentException) {
+            extra.register(SqlFunctionMapping.window('customTile', 'NTILE; DROP'))
         }
         assert injected.message.contains('uppercase identifier')
     }
