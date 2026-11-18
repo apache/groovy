@@ -311,6 +311,64 @@ final class ModuleInfoVerifierEdgeCasesTest {
         assert ModuleInfoVerifier.readModuleVersion(failing, 'java.base') == null
     }
 
+    // GROOVY-9273
+    @Test
+    void testModuleInfoIdentityAndRepeatedDeclaration() {
+        def carrier = new ClassNode('module-info', Opcodes.ACC_ABSTRACT | Opcodes.ACC_INTERFACE, ClassHelper.OBJECT_TYPE)
+        def declaration = new ModuleInfoNode('demo.one', false, [])
+        declaration.classNode = carrier
+        def stranger = new ClassNode('module-info', Opcodes.ACC_ABSTRACT | Opcodes.ACC_INTERFACE, ClassHelper.OBJECT_TYPE)
+        assert declaration.isEmittedAs(carrier)
+        assert !declaration.isEmittedAs(stranger)
+        assert !declaration.isEmittedAs(new ClassNode('demo.One', 0, ClassHelper.OBJECT_TYPE))
+        assert !declaration.isEmittedAs(null)
+
+        def config = new CompilerConfiguration()
+        def loader = new GroovyClassLoader()
+        def compileUnit = new CompileUnit(loader, null, config)
+        def module = new ModuleNode(compileUnit)
+        module.addClass(carrier)
+        module.moduleDeclaration = declaration
+        assert compileUnit.moduleInfo.is(declaration)
+        assert ModuleInfoNode.of(carrier).is(declaration)
+
+        // A replacement carrier in the same source still belongs to this declaration.
+        def replaced = new ClassNode('module-info', Opcodes.ACC_ABSTRACT | Opcodes.ACC_INTERFACE, ClassHelper.OBJECT_TYPE)
+        replaced.setModule(module)
+        assert declaration.isEmittedAs(replaced)
+        assert ModuleInfoNode.of(replaced).is(declaration)
+
+        // A different source's module-info is not this declaration, name notwithstanding.
+        def other = new ClassNode('module-info', Opcodes.ACC_ABSTRACT | Opcodes.ACC_INTERFACE, ClassHelper.OBJECT_TYPE)
+        def otherDeclaration = new ModuleInfoNode('demo.two', false, [])
+        otherDeclaration.classNode = other
+        def otherModule = new ModuleNode(new CompileUnit(loader, null, config))
+        otherModule.addClass(other)
+        otherModule.moduleDeclaration = otherDeclaration
+        assert !declaration.isEmittedAs(other)
+        assert otherDeclaration.isEmittedAs(other)
+        assert ModuleInfoNode.of(other).is(otherDeclaration)
+        assert ModuleInfoNode.of(stranger) == null
+
+        // The caller's compile unit is used when the class no longer points at its module.
+        carrier.setModule(null)
+        assert carrier.compileUnit == null
+        assert ModuleInfoNode.of(carrier, compileUnit).is(declaration)
+        assert ModuleInfoNode.of(stranger, compileUnit) == null
+
+        // Setting another declaration on the same module, with no SourceUnit, is rejected
+        // and does not leave the rejected declaration in place.
+        def second = new ModuleInfoNode('demo.second', false, [])
+        module.moduleDeclaration = second
+        assert compileUnit.moduleInfo.is(declaration)
+        assert module.moduleDeclaration.is(declaration)
+        assert compileUnit.consumeModuleInfoConflict().contains('only one module declaration')
+        module.moduleDeclaration = second
+        assert compileUnit.moduleInfo.is(declaration)
+        assert module.moduleDeclaration.is(declaration)
+        assert compileUnit.consumeModuleInfoConflict() != null
+    }
+
     private static void assertResolutionFailure(String failureMessage, String moduleName, String missing) {
         def failing = new ModuleFinder() {
             @Override

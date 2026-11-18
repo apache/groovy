@@ -162,17 +162,12 @@ public final class ModuleInfoVerifier {
 
     /**
      * The compilation's module declaration when {@code classNode} is its carrier.
-     * A compilation unit is consulted first. Otherwise {@link ModuleInfoNode#of(ClassNode)}
-     * reads the class's compile unit.
+     * {@link ModuleInfoNode#of(ClassNode, CompileUnit)} reads the class's compile
+     * unit, then this compilation's unit when the class no longer points at one.
      */
     private static ModuleInfoNode declarationFor(final CompilationUnit compilationUnit, final ClassNode classNode) {
-        if (compilationUnit != null && compilationUnit.getAST() != null) {
-            ModuleInfoNode declaration = compilationUnit.getAST().getModuleInfo();
-            if (declaration != null) {
-                return declaration.isEmittedAs(classNode) ? declaration : null;
-            }
-        }
-        return ModuleInfoNode.of(classNode);
+        CompileUnit fallback = compilationUnit != null ? compilationUnit.getAST() : null;
+        return ModuleInfoNode.of(classNode, fallback);
     }
 
     private void verify() {

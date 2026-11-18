@@ -19,6 +19,7 @@
 package org.codehaus.groovy.ast;
 
 import groovy.lang.GroovyClassLoader;
+import groovy.transform.Internal;
 import org.apache.groovy.ast.ModuleInfoNode;
 import org.codehaus.groovy.control.CompilationUnit;
 import org.codehaus.groovy.control.CompilerConfiguration;
@@ -65,6 +66,14 @@ public class CompileUnit implements NodeMetaDataHandler {
      * At most one is expected. This is not a {@link ModuleNode}.
      */
     private ModuleInfoNode moduleInfo;
+    /**
+     * Conflict from {@link #setModuleInfo} that no source unit could report.
+     * Cleared when {@link #consumeModuleInfoConflict()} is called.
+     */
+    private String moduleInfoConflict;
+
+    private static final String MODULE_INFO_CONFLICT =
+            "a compilation unit may contain only one module declaration";
 
     /**
      * Creates a compile unit with the given classloader and compiler configuration.
@@ -277,6 +286,11 @@ public class CompileUnit implements NodeMetaDataHandler {
         String name = node.getName();
         ClassNode stored = classes.get(name);
         if (stored != null && stored != node) {
+            if ("module-info".equals(name) && (moduleInfoCarrier(stored) || moduleInfoCarrier(node))) {
+                // The second modular compilation unit is rejected by adoptModuleInfo.
+                // Keep the carrier that was accepted first.
+                return;
+            }
             // we have a duplicate class!
             // One possibility for this is, that we declared a script and a
             // class in the same file and named the class like the file
@@ -340,6 +354,10 @@ public class CompileUnit implements NodeMetaDataHandler {
     /**
      * Records the module declaration for this compilation.
      * A second, different declaration is rejected and the first is kept.
+     * The rejection is reported on a source unit when one can be found.
+     * Otherwise it is retained for {@link #consumeModuleInfoConflict()} so a
+     * declaration with no source is not dropped silently. {@code null} does
+     * not clear an accepted declaration.
      *
      * @param moduleInfo the declaration parsed from a modular compilation unit
      * @since 7.0.0
@@ -348,20 +366,93 @@ public class CompileUnit implements NodeMetaDataHandler {
         adoptModuleInfo(moduleInfo);
     }
 
+    /**
+     * A module-declaration conflict that no source unit could report, or
+     * {@code null}. The message is returned at most once.
+     *
+     * @return the conflict message, or {@code null}
+     * @since 7.0.0
+     */
+    @Internal
+    public String consumeModuleInfoConflict() {
+        String conflict = moduleInfoConflict;
+        moduleInfoConflict = null;
+        return conflict;
+    }
+
     private void adoptModuleInfo(final ModuleInfoNode declaration) {
         if (declaration == null || declaration == moduleInfo) {
             return;
         }
         if (moduleInfo != null) {
-            ClassNode carrier = declaration.getClassNode();
-            ModuleNode module = carrier != null ? carrier.getModule() : null;
-            SourceUnit source = module != null ? module.getContext() : null;
-            if (source != null) {
-                source.addErrorAndContinue(new SyntaxException(
-                        "a compilation unit may contain only one module declaration", declaration));
-            }
+            rejectModuleInfo(declaration);
             return;
         }
         this.moduleInfo = declaration;
+    }
+
+    private void rejectModuleInfo(final ModuleInfoNode declaration) {
+        reportModuleInfoConflict(declaration);
+        ModuleNode owner = moduleOwning(declaration);
+        if (owner != null && owner.getModuleDeclaration() == declaration) {
+            ModuleInfoNode restored = moduleOwning(moduleInfo) == owner ? moduleInfo : null;
+            owner.replaceModuleDeclaration(restored);
+        }
+        ClassNode carrier = declaration.getClassNode();
+        ClassNode accepted = moduleInfo == null ? null : moduleInfo.getClassNode();
+        if (owner != null && carrier != null && carrier != accepted) {
+            owner.removeClass(carrier);
+        }
+    }
+
+    private void reportModuleInfoConflict(final ModuleInfoNode declaration) {
+        SourceUnit source = sourceOf(declaration);
+        if (source == null) {
+            source = sourceOf(moduleInfo);
+        }
+        if (source == null) {
+            for (ModuleNode module : modules) {
+                if (module.getContext() != null) {
+                    source = module.getContext();
+                    break;
+                }
+            }
+        }
+        if (source != null) {
+            source.addErrorAndContinue(new SyntaxException(MODULE_INFO_CONFLICT, declaration));
+            return;
+        }
+        if (moduleInfoConflict == null) {
+            moduleInfoConflict = MODULE_INFO_CONFLICT;
+        }
+    }
+
+    private SourceUnit sourceOf(final ModuleInfoNode declaration) {
+        ModuleNode module = moduleOwning(declaration);
+        return module == null ? null : module.getContext();
+    }
+
+    private ModuleNode moduleOwning(final ModuleInfoNode declaration) {
+        if (declaration == null) {
+            return null;
+        }
+        ClassNode carrier = declaration.getClassNode();
+        if (carrier != null && carrier.getModule() != null) {
+            return carrier.getModule();
+        }
+        for (ModuleNode module : modules) {
+            if (module.getModuleDeclaration() == declaration) {
+                return module;
+            }
+        }
+        return null;
+    }
+
+    private static boolean moduleInfoCarrier(final ClassNode node) {
+        if (node == null || !"module-info".equals(node.getName())) {
+            return false;
+        }
+        ModuleNode module = node.getModule();
+        return module != null && module.getModuleDeclaration() != null;
     }
 }

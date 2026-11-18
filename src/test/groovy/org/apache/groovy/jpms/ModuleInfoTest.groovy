@@ -1301,6 +1301,10 @@ final class ModuleInfoTest {
         def md = descriptor(unit)
         assert md.exports()*.source() == ['demo.javaonly']
         assert md.packages().containsAll(['demo.javaonly', 'demo.internal', 'demo.impl'])
+        assert unit.compiledClasses.contains('demo.javaonly.Api')
+        assert unit.compiledClasses.contains('demo.internal.JavaSpi')
+        assert unit.compiledClasses.contains('demo.impl.JavaProvider')
+        assert unit.compiledClasses.packages.containsAll(['demo.javaonly', 'demo.internal', 'demo.impl'])
         assert md.uses() == ['demo.internal.JavaSpi'] as Set
         assert md.provides().find { it.service() == 'demo.internal.JavaSpi' }.providers() as List ==
             ['demo.impl.JavaProvider']
@@ -1470,6 +1474,222 @@ final class ModuleInfoTest {
             assert !md.packages().contains('demo.fresh')
         } finally {
             hookLoader.close()
+        }
+    }
+
+    // GROOVY-9273
+    @Test
+    void testInMemoryJavacOutputIsIndexed() {
+        def src = new File(dir('mem-index'), 'src')
+        def files = []
+        [
+            'module-info.groovy': '''
+                module demo.mem {
+                    exports demo.mem;
+                }
+            ''',
+            'demo/mem/A.java': '''
+                package demo.mem;
+                public class A {
+                    public static class Inner {}
+                }
+            '''
+        ].each { name, text ->
+            def file = new File(src, name)
+            file.parentFile.mkdirs()
+            file.text = text
+            files << file
+        }
+        def config = new CompilerConfiguration()
+        config.setTargetDirectory((File) null)
+        config.jointCompilationOptions = [memStub: true, memClassOutput: true]
+        def loader = new GroovyClassLoader(GroovyAssert.class.classLoader)
+        try {
+            def unit = new JavaAwareCompilationUnit(config, loader)
+            unit.addSources(files as File[])
+            unit.compile()
+            assert unit.compiledClasses.contains('demo.mem.A')
+            assert unit.compiledClasses.contains('demo.mem.A$Inner')
+            assert unit.compiledClasses.packages.contains('demo.mem')
+            assert !unit.compiledClasses.contains('module-info')
+            assert !unit.compiledClasses.hasUnnamedClass()
+            def md = descriptor(unit)
+            assert md.name() == 'demo.mem'
+            assert md.exports()*.source() == ['demo.mem']
+            assert md.packages().contains('demo.mem')
+            assert loader.getResource('demo/mem/A.class') != null
+            assert loader.getResource('demo/mem/A$Inner.class') != null
+        } finally {
+            loader.close()
+        }
+    }
+
+    // GROOVY-9273
+    @Test
+    void testInMemoryOutputDoesNotIndexStaleClassFiles() {
+        def root = dir('mem-stale')
+        def src = new File(root, 'src')
+        def out = new File(root, 'out')
+        def files = []
+        [
+            'module-info.groovy': '''
+                module demo.memstale {
+                    exports demo.mem;
+                }
+            ''',
+            'demo/mem/A.java': '''
+                package demo.mem;
+                public class A {}
+            '''
+        ].each { name, text ->
+            def file = new File(src, name)
+            file.parentFile.mkdirs()
+            file.text = text
+            files << file
+        }
+        new File(out, 'com/stale').mkdirs()
+        new File(out, 'com/stale/Old.class').bytes = [1, 2, 3] as byte[]
+        new File(out, 'demo/mem').mkdirs()
+        new File(out, 'demo/mem/A$Gone.class').bytes = [1, 2, 3] as byte[]
+
+        def config = new CompilerConfiguration(targetDirectory: out)
+        config.jointCompilationOptions = [memStub: true, memClassOutput: true]
+        def loader = new GroovyClassLoader(GroovyAssert.class.classLoader)
+        try {
+            def unit = new JavaAwareCompilationUnit(config, loader)
+            unit.addSources(files as File[])
+            unit.compile()
+            assert unit.compiledClasses.contains('demo.mem.A')
+            assert !unit.compiledClasses.contains('com.stale.Old')
+            assert !unit.compiledClasses.contains('demo.mem.A$Gone')
+            assert !unit.compiledClasses.packages.contains('com.stale')
+            assert descriptor(unit).packages().contains('demo.mem')
+            assert !descriptor(unit).packages().contains('com.stale')
+        } finally {
+            loader.close()
+        }
+    }
+
+    // GROOVY-9273
+    @Test
+    void testInMemoryUnnamedJavaClassIsRejected() {
+        def src = new File(dir('mem-unnamed'), 'src')
+        def files = []
+        [
+            'module-info.groovy': 'module demo.memunnamed { }',
+            'Loose.java': 'public class Loose {}'
+        ].each { name, text ->
+            def file = new File(src, name)
+            file.parentFile.mkdirs()
+            file.text = text
+            files << file
+        }
+        def config = new CompilerConfiguration()
+        config.setTargetDirectory((File) null)
+        config.jointCompilationOptions = [memStub: true, memClassOutput: true]
+        def loader = new GroovyClassLoader(GroovyAssert.class.classLoader)
+        try {
+            def unit = new JavaAwareCompilationUnit(config, loader)
+            unit.addSources(files as File[])
+            def thrown = GroovyAssert.shouldFail(CompilationFailedException) {
+                unit.compile()
+            }
+            assert thrown.message.contains('unnamed package is not allowed in named modules')
+            assert unit.compiledClasses.contains('Loose')
+            assert unit.compiledClasses.hasUnnamedClass()
+        } finally {
+            loader.close()
+        }
+    }
+
+    // GROOVY-9273
+    @Test
+    void testCompiledClassIndexDoesNotKeepNamesFromAPreviousCompile() {
+        def root = dir('index-reuse')
+        def src = new File(root, 'src')
+        def out = new File(root, 'out')
+        def stubs = new File(root, 'stubs')
+        src.mkdirs()
+        out.mkdirs()
+        stubs.mkdirs()
+        def anchor = new File(src, 'Anchor.groovy')
+        anchor.text = 'class Anchor {}'
+        def a = new File(src, 'demo/a/A.java')
+        a.parentFile.mkdirs()
+        a.text = 'package demo.a; public class A {}'
+        def b = new File(src, 'demo/b/B.java')
+        b.parentFile.mkdirs()
+        b.text = 'package demo.b; public class B { public static class Inner {} }'
+
+        def config = new CompilerConfiguration(targetDirectory: out)
+        config.jointCompilationOptions = [stubDir: stubs]
+        def loader = new GroovyClassLoader(GroovyAssert.class.classLoader)
+        try {
+            def unit = new JavaAwareCompilationUnit(config, loader)
+            unit.addSources(anchor, a)
+            unit.compile()
+            assert unit.compiledClasses.contains('demo.a.A')
+            assert !unit.compiledClasses.contains('demo.b.B')
+
+            unit.addSources(b)
+            unit.compile()
+            assert unit.compiledClasses.contains('demo.b.B')
+            assert unit.compiledClasses.contains('demo.b.B$Inner')
+            assert !unit.compiledClasses.contains('demo.a.A')
+            assert !unit.compiledClasses.packages.contains('demo.a')
+            assert !unit.compiledClasses.hasUnnamedClass()
+        } finally {
+            loader.close()
+        }
+    }
+
+    // GROOVY-9273
+    @Test
+    void testTwoModuleInfoSourcesAreRejected() {
+        def config = new CompilerConfiguration(targetDirectory: dir('two-modules'))
+        def loader = new GroovyClassLoader(GroovyAssert.class.classLoader)
+        try {
+            def unit = new CompilationUnit(config, null, loader)
+            unit.addSource('src/demo/a/module-info.groovy', 'module demo.first { }')
+            unit.addSource('src/demo/b/module-info.groovy', 'module demo.second { }')
+            def thrown = GroovyAssert.shouldFail(CompilationFailedException) {
+                unit.compile()
+            }
+            assert thrown.message.contains('only one module declaration')
+            assert unit.ast.moduleInfo.name == 'demo.first'
+            def rejected = unit.ast.modules.find { it.context.name.contains('/b/') }
+            assert rejected.moduleDeclaration == null
+            assert !rejected.classes.any { it.name == 'module-info' }
+            assert unit.ast.moduleInfo.is(unit.ast.modules.find { it.moduleDeclaration != null }.moduleDeclaration)
+        } finally {
+            loader.close()
+        }
+    }
+
+    // GROOVY-9273
+    @Test
+    void testSecondModuleDeclarationWithoutSourceIsRejected() {
+        def config = new CompilerConfiguration()
+        def loader = new GroovyClassLoader(GroovyAssert.class.classLoader)
+        try {
+            def unit = new CompilationUnit(config, null, loader)
+            def first = new ModuleInfoNode('demo.first', false, [])
+            def second = new ModuleInfoNode('demo.second', false, [])
+            unit.ast.moduleInfo = first
+            unit.ast.moduleInfo = second
+            assert unit.ast.moduleInfo.is(first)
+            assert unit.ast.consumeModuleInfoConflict().contains('only one module declaration')
+            // Setting the rejected declaration again must still be reported.
+            unit.ast.moduleInfo = second
+            assert unit.ast.moduleInfo.is(first)
+            unit.addSource('A.groovy', 'class A {}')
+            def thrown = GroovyAssert.shouldFail(CompilationFailedException) {
+                unit.compile()
+            }
+            assert thrown.message.contains('only one module declaration')
+            assert unit.ast.moduleInfo.is(first)
+        } finally {
+            loader.close()
         }
     }
 

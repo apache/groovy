@@ -83,4 +83,15 @@ public final class CompiledClassIndex {
     public boolean hasUnnamedClass() {
         return unnamedClass;
     }
+
+    /**
+     * Drops every recorded name. {@link CompilationUnit#compile(int)} calls this
+     * so a reused compilation unit does not keep class names from the previous
+     * compilation.
+     */
+    void clear() {
+        names.clear();
+        packages.clear();
+        unnamedClass = false;
+    }
 }

@@ -23,7 +23,6 @@ import org.codehaus.groovy.ast.AnnotatedNode;
 import org.codehaus.groovy.ast.AnnotationNode;
 import org.codehaus.groovy.ast.ClassCodeVisitorSupport;
 import org.codehaus.groovy.ast.ClassNode;
-import org.codehaus.groovy.ast.CompileUnit;
 import org.codehaus.groovy.ast.ConstructorNode;
 import org.codehaus.groovy.ast.FieldNode;
 import org.codehaus.groovy.ast.GenericsType;
@@ -133,7 +132,7 @@ public class ExtendedVerifier extends ClassCodeVisitorSupport {
         if (module != null && visitedModules.add(module)) {
             visitImportAnnotations(module);
         }
-        if (moduleDeclaration(node) != null) {
+        if (ModuleInfoNode.of(node, source != null && source.getAST() != null ? source.getAST().getUnit() : null) != null) {
             // Module annotations use ElementType.MODULE, not TYPE (JLS 9.7.4 / 9.6.4.1).
             visitAnnotations(node, MODULE_TARGET);
             return;
@@ -156,24 +155,6 @@ public class ExtendedVerifier extends ClassCodeVisitorSupport {
             }
         }
         node.visitContents(this);
-    }
-
-    /**
-     * The module declaration for which {@code node} is the emission carrier.
-     * The declaration is read from the compile unit.
-     */
-    private ModuleInfoNode moduleDeclaration(final ClassNode node) {
-        CompileUnit unit = node.getCompileUnit();
-        if (unit == null && source != null && source.getAST() != null) {
-            unit = source.getAST().getUnit();
-        }
-        if (unit != null) {
-            ModuleInfoNode declaration = unit.getModuleInfo();
-            if (declaration != null) {
-                return declaration.isEmittedAs(node) ? declaration : null;
-            }
-        }
-        return ModuleInfoNode.of(node);
     }
 
     /**
