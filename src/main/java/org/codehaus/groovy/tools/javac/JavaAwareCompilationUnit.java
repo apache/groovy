@@ -21,6 +21,7 @@ package org.codehaus.groovy.tools.javac;
 import groovy.lang.GroovyClassLoader;
 import org.apache.groovy.ast.ModuleInfoNode;
 import org.codehaus.groovy.ast.ClassNode;
+import org.codehaus.groovy.ast.CompileUnit;
 import org.codehaus.groovy.ast.GroovyClassVisitor;
 import org.codehaus.groovy.ast.ModuleNode;
 import org.codehaus.groovy.classgen.GeneratorContext;
@@ -180,7 +181,8 @@ public class JavaAwareCompilationUnit extends CompilationUnit {
         addPhaseOperation((final SourceUnit source, final GeneratorContext context, final ClassNode classNode) -> {
             try {
                 if (!javaSources.isEmpty() && !isModuleDeclaration(source, classNode)) {
-                    stubGenerator.generateClass(classNode);
+                    CompileUnit fallback = source != null && source.getAST() != null ? source.getAST().getUnit() : null;
+                    stubGenerator.generateClass(classNode, fallback);
                 }
             } catch (FileNotFoundException fnfe) {
                 source.addException(fnfe);
@@ -436,9 +438,12 @@ public class JavaAwareCompilationUnit extends CompilationUnit {
      * <p>
      * The default implementation records stamps of {@code .class} files under
      * the configured target directory. An absent or non-directory target yields
-     * an empty snapshot. In-memory javac output is not part of this snapshot;
-     * this class indexes that output itself after javac. A subclass that writes
-     * class files somewhere else may return {@code null}.
+     * an empty snapshot. When in-memory javac output is bound, that directory
+     * is not this invocation's output, so the default implementation skips the
+     * disk walk and returns an empty snapshot. A failure to walk that directory
+     * must not fail the compile. In-memory names are indexed by this class
+     * after javac. A subclass that writes class files somewhere else may
+     * return {@code null}.
      *
      * @return an opaque snapshot consumed by {@link #collectCompiledClassNames(Object)},
      *         or {@code null} when no snapshot is required
@@ -446,6 +451,9 @@ public class JavaAwareCompilationUnit extends CompilationUnit {
      * @since 7.0.0
      */
     protected Object snapshotCompiledClassOutput() {
+        if (memClassBytes != null) {
+            return new LinkedHashMap<String, ClassFileStamp>();
+        }
         File targetDir = this.configuration.getTargetDirectory();
         try {
             return snapshotClassFiles(targetDir);
