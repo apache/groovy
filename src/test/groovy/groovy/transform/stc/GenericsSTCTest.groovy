@@ -4959,6 +4959,134 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-12755
+    @Test
+    void testClassOfReceiverForBoundedClass() {
+        assertScript '''
+            interface Store {}
+            class Memory implements Store {}
+            class Adapter { Adapter(Class<? extends Store> type) {} }
+            class C {
+                static <T> T with(Class<? extends Store> type, Closure<T> body) { body.call() }
+                static Object viaMethod(Store store) { with(store.getClass()) { 1 } }
+                static Object viaProperty(Store store) { with(store.class) { 2 } }
+                static Object viaConstructor(Store store) { new Adapter(store.getClass()) }
+                static Class<? extends Store> viaReturn(Store store) { store.getClass() }
+                static Class<? extends Store> viaVariable(Store store) {
+                    Class<? extends Store> type = store.getClass()
+                    type
+                }
+                static Class<? extends CharSequence> viaInstanceof(Object o) {
+                    if (o instanceof String) {
+                        Class<? extends CharSequence> type = o.getClass()
+                        return type
+                    }
+                    null
+                }
+                Class<? extends C> viaThis() { this.getClass() }
+            }
+            def store = new Memory()
+            assert C.viaMethod(store) == 1
+            assert C.viaProperty(store) == 2
+            assert C.viaConstructor(store) instanceof Adapter
+            assert C.viaReturn(store) == Memory
+            assert C.viaVariable(store) == Memory
+            assert C.viaInstanceof('x') == String
+            assert new C().viaThis() == C
+        '''
+    }
+
+    // GROOVY-12755
+    @Test
+    void testClassOfReceiverOutsideBoundedClass() {
+        shouldFailWithMessages '''
+            void test(Object o) {
+                Class<? extends CharSequence> type = o.getClass()
+            }
+        ''',
+        'Incompatible generic argument types. Cannot assign java.lang.Class<?> to: java.lang.Class<? extends java.lang.CharSequence>'
+
+        shouldFailWithMessages '''
+            void takes(Class<? extends CharSequence> type) {}
+            void test(Object o) {
+                takes(o.getClass())
+            }
+        ''',
+        '#takes(java.lang.Class<? extends java.lang.CharSequence>) with arguments [java.lang.Class<?>]'
+
+        // a Class<?> that is not the class of a receiver is not within a bound
+        shouldFailWithMessages '''
+            void test(Class<?> any) {
+                Class<? extends CharSequence> type = any
+            }
+        ''',
+        'Incompatible generic argument types. Cannot assign java.lang.Class<?> to: java.lang.Class<? extends java.lang.CharSequence>'
+    }
+
+    // GROOVY-12755
+    @Test
+    void testClassOfReceiverAsTypeArgument() {
+        assertScript '''
+            void takes(List<Class<?>> classes) {}
+            void test(String s, List<String> list) {
+                List<Class<?>> one = Collections.singletonList(s.getClass())
+                List<Class<?>> all = list*.getClass()
+                Set<Class<?>> set = list.stream().map(e -> e.getClass()).collect(java.util.stream.Collectors.toSet())
+                takes(Collections.singletonList(s.getClass()))
+                takes(list*.getClass())
+                takes(list.collect { it.getClass() })
+                def v = Collections.singletonList(s.getClass())
+                takes(v)
+            }
+            test('x', ['y'])
+        '''
+    }
+
+    // GROOVY-12714
+    @Test
+    void testGenericCallWithTypeParameterLeftOpenByArguments() {
+        assertScript '''
+            import java.util.function.*
+
+            class C {
+                static <T extends Number> int takeNumber(T t) { t.intValue() }
+                static <T extends Number> List<T> numbers() { new ArrayList<T>() }
+                static <T extends Number> T same(T t) { t }
+                static <T> Consumer<T> toConsumer(Consumer<T> c) { c }
+                static <T> Supplier<T> toSupplier(Supplier<T> s) { s }
+                static <T, R> Function<T, R> toFunction(Function<T, R> f) { f }
+            }
+
+            Consumer<Integer> c = C.toConsumer(C::takeNumber)
+            c.accept(1)
+            Consumer<Integer> nested = C.toConsumer(C.toConsumer(C::takeNumber))
+            nested.accept(2)
+            Supplier<List<Integer>> s = C.toSupplier(C::numbers)
+            assert s.get() == []
+            Function<Integer, Integer> reference = C.toFunction(C::same)
+            assert reference.apply(3) == 3
+            Function<Integer, Integer> pointer = C.toFunction(C.&same)
+            assert pointer.apply(4) == 4
+            Function<Object[], List<Object>> asList = C.toFunction(Arrays::asList)
+            assert asList.apply(['a', 'b'] as Object[]) == ['a', 'b']
+            Function<List<String>, String> first = C.toFunction(List::first)
+            assert first.apply(['a', 'b']) == 'a'
+            Comparator<Map.Entry<String, Integer>> byKey = Map.Entry.comparingByKey()
+            assert byKey.compare(Map.entry('a', 1), Map.entry('b', 0)) < 0
+        '''
+    }
+
+    // GROOVY-12714
+    @Test
+    void testTypeVariableInScopeIsCheckedAgainstTarget() {
+        shouldFailWithMessages '''
+            <T extends CharSequence> void test(List<? extends T> list) {
+                List<? extends Number> numbers = list
+            }
+        ''',
+        'Incompatible generic argument types.'
+    }
+
     // GROOVY-5885
     @Test
     void testMethodLevelGenericsForMethodCall2() {
