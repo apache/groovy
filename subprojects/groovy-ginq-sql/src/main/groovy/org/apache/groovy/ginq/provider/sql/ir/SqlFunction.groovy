@@ -26,6 +26,9 @@ import org.apache.groovy.lang.annotation.Incubating
  * aggregate such as {@code SUM}. Dialects may map the name when rendering.
  * When {@code distinct} is set, the call is an aggregate
  * {@code COUNT(DISTINCT ...)}.
+ * <p>
+ * {@code OVER} is not stored here. A window call is a {@link SqlWindowCall}
+ * whose function is one of these nodes (or a {@link SqlCountStar}).
  *
  * @since 7.0.0
  */

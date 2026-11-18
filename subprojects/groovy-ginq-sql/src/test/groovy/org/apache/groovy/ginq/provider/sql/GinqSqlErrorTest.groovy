@@ -139,11 +139,23 @@ class GinqSqlErrorTest {
         def err = shouldFail '''\
             GQ(provider: 'native-sql', dataSource: db) {
                 from e in 'employees'
-                select e.name, (rowNumber() over (orderby e.salary))
+                select e.name, (median(e.salary) over(orderby e.salary))
             }
         '''
         assert err.message.contains('window functions are deferred and are not translated by the native-sql provider')
         assert err.message.contains('mixedMode: true')
+    }
+
+    @Test
+    void testWindowNestedInsideAggregate() {
+        def err = shouldFail '''\
+            GQ(provider: 'native-sql', dataSource: db) {
+                from e in 'employees'
+                select (sum((rowNumber() over(orderby e.id))))
+            }
+        '''
+        assert err.message.contains('nested inside an aggregate')
+        assert !err.message.contains('mixedMode: true')
     }
 
     @Test

@@ -58,9 +58,14 @@ import org.apache.groovy.ginq.provider.sql.ir.SqlStar
 import org.apache.groovy.ginq.provider.sql.ir.SqlTableRef
 import org.apache.groovy.ginq.provider.sql.ir.SqlTableSource
 import org.apache.groovy.ginq.provider.sql.ir.SqlUnary
+import org.apache.groovy.ginq.provider.sql.ir.SqlWindow
+import org.apache.groovy.ginq.provider.sql.ir.SqlWindowBound
+import org.apache.groovy.ginq.provider.sql.ir.SqlWindowCall
+import org.apache.groovy.ginq.provider.sql.ir.SqlWindowFrame
 import org.apache.groovy.ginq.provider.sql.runtime.SqlGinqRuntime
 import org.apache.groovy.lang.annotation.Incubating
 import org.codehaus.groovy.ast.ASTNode
+import org.codehaus.groovy.ast.CodeVisitorSupport
 import org.codehaus.groovy.ast.ClassHelper
 import org.codehaus.groovy.ast.ClassNode
 import org.codehaus.groovy.ast.Variable
@@ -89,6 +94,9 @@ import org.codehaus.groovy.ast.stmt.Statement
 import org.codehaus.groovy.control.SourceUnit
 import org.codehaus.groovy.syntax.Types
 
+import java.math.BigDecimal
+import java.math.BigInteger
+
 import static org.codehaus.groovy.ast.tools.GeneralUtils.callX
 import static org.codehaus.groovy.ast.tools.GeneralUtils.castX
 import static org.codehaus.groovy.ast.tools.GeneralUtils.classX
@@ -101,6 +109,14 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.plusX
  * either translates cleanly or is rejected with a compile-time error. With
  * {@link #recoverUntranslatable} set, constructs that have no SQL equivalent
  * raise {@link Untranslatable} so mixed mode can move that clause in memory.
+ * <p>
+ * {@code fn(...) over(...)} is a window call. It is translated when
+ * {@code fn} is registered as {@link SqlFunctionMapping.Kind#WINDOW}.
+ * {@link SqlFunctionRegistry#standard()} registers the portable GINQ window
+ * functions. A name that is not registered ({@code median}, {@code stdev},
+ * {@code stdevp}, {@code var}, {@code varp}, {@code agg}) is rejected with
+ * the stable "window functions are deferred" message, and mixed mode keeps
+ * running that clause in memory.
  *
  * @since 7.0.0
  */
@@ -110,22 +126,46 @@ class GinqToSqlTranslator implements SyntaxErrorReportable {
     private final SourceUnit sourceUnit
     private final GinqToSqlTranslator outerScope
     private final String providerName
+    private final SqlFunctionRegistry functions
     private final List<String> tableAliases = []
     private String groupAlias
     private final Map<String, SqlExpr> groupKeysByName = [:]
     private String aggregateLambdaParam
     private boolean recoverUntranslatable
     private final SqlCapabilities capabilities
+    /** Window calls are legal in {@code select} and query {@code orderby}. */
+    private boolean windowAllowed
+    /** A window function inside another window function has no SQL form. */
+    private int windowDepth
+    /** A window function inside an aggregate has no SQL form. */
+    private int aggregateDepth
     private final SqlFunctionSite calls = new CallSite()
 
     GinqToSqlTranslator(SourceUnit sourceUnit, String providerName = 'native-sql') {
-        this(sourceUnit, providerName, null)
+        this(sourceUnit, providerName, SqlFunctionRegistry.standard(), null)
+    }
+
+    /**
+     * @param functions scalar and window mappings. {@link SqlFunctionRegistry#standard()}
+     * is the sealed built-in set. A {@link SqlFunctionRegistry#copy()} can
+     * register another {@link SqlFunctionMapping.Kind#WINDOW} name without
+     * changing that set.
+     */
+    @PackageScope
+    GinqToSqlTranslator(SourceUnit sourceUnit, String providerName, SqlFunctionRegistry functions) {
+        this(sourceUnit, providerName, functions, null)
     }
 
     GinqToSqlTranslator(SourceUnit sourceUnit, String providerName, SqlCapabilities capabilities) {
+        this(sourceUnit, providerName, SqlFunctionRegistry.standard(), capabilities)
+    }
+
+    @PackageScope
+    GinqToSqlTranslator(SourceUnit sourceUnit, String providerName, SqlFunctionRegistry functions, SqlCapabilities capabilities) {
         this.sourceUnit = sourceUnit
         this.outerScope = null
         this.providerName = providerName
+        this.functions = requireFunctions(functions)
         this.capabilities = capabilities == null ? SqlCapabilities.of(null) : capabilities
     }
 
@@ -133,14 +173,22 @@ class GinqToSqlTranslator implements SyntaxErrorReportable {
         this.sourceUnit = sourceUnit
         this.outerScope = outerScope
         this.providerName = outerScope.providerName
+        this.functions = outerScope.functions
         this.recoverUntranslatable = outerScope.recoverUntranslatable
         this.capabilities = outerScope.capabilities
+    }
+
+    private static SqlFunctionRegistry requireFunctions(SqlFunctionRegistry functions) {
+        if (functions == null) {
+            throw new IllegalArgumentException('functions is required')
+        }
+        return functions
     }
 
     private GinqToSqlTranslator nest(boolean correlated) {
         GinqToSqlTranslator child = correlated
                 ? new GinqToSqlTranslator(sourceUnit, this)
-                : new GinqToSqlTranslator(sourceUnit, providerName, capabilities)
+                : new GinqToSqlTranslator(sourceUnit, providerName, functions, capabilities)
         child.recoverUntranslatable = recoverUntranslatable
         return child
     }
@@ -240,7 +288,39 @@ class GinqToSqlTranslator implements SyntaxErrorReportable {
             SqlCast other = (SqlCast) b
             return a.sqlType == other.sqlType && sameExpr(a.expr, other.expr)
         }
+        if (a instanceof SqlLiteral) {
+            return Objects.equals(((SqlLiteral) a).value, ((SqlLiteral) b).value)
+        }
+        if (a instanceof SqlCaseWhen) {
+            SqlCaseWhen other = (SqlCaseWhen) b
+            return sameExpr(a.condition, other.condition) && sameExpr(a.thenExpr, other.thenExpr)
+                    && sameExpr(a.elseExpr, other.elseExpr)
+        }
+        if (a instanceof SqlWindowCall) {
+            SqlWindowCall other = (SqlWindowCall) b
+            return sameExpr(a.function, other.function) && sameWindow(a.window, other.window)
+        }
         return false // parameters and parameter-bearing expressions are never comparable
+    }
+
+    private static boolean sameWindow(SqlWindow a, SqlWindow b) {
+        if (a.partitionBy.size() != b.partitionBy.size() || a.orderBy.size() != b.orderBy.size()) return false
+        for (int i = 0; i < a.partitionBy.size(); i++) {
+            if (!sameExpr(a.partitionBy.get(i), b.partitionBy.get(i))) return false
+        }
+        for (int i = 0; i < a.orderBy.size(); i++) {
+            SqlOrderSpec left = a.orderBy.get(i)
+            SqlOrderSpec right = b.orderBy.get(i)
+            if (left.asc != right.asc || left.nullsLast != right.nullsLast || !sameExpr(left.expr, right.expr)) return false
+        }
+        if (a.frame == null || b.frame == null) return a.frame == null && b.frame == null
+        return a.frame.unit == b.frame.unit && sameBound(a.frame.lower, b.frame.lower) && sameBound(a.frame.upper, b.frame.upper)
+    }
+
+    private static boolean sameBound(SqlWindowBound a, SqlWindowBound b) {
+        if (a.kind != b.kind) return false
+        if (a.offset == null || b.offset == null) return a.offset == null && b.offset == null
+        return sameExpr(a.offset, b.offset)
     }
 
     private GinqExpression requireGinqExpression(AbstractGinqExpression expression) {
@@ -384,6 +464,20 @@ class GinqToSqlTranslator implements SyntaxErrorReportable {
     }
 
     private void translateOrders(Expression ordersExpr, SqlQuery query) {
+        boolean previousWindow = windowAllowed
+        windowAllowed = true
+        try {
+            for (SqlOrderSpec orderSpec : translateOrderList(ordersExpr)) {
+                query.orderBy << orderSpec
+            }
+        } finally {
+            windowAllowed = previousWindow
+        }
+    }
+
+    // Shared by query ORDER BY and window ORDER BY so asc/desc/nulls stay one path.
+    private List<SqlOrderSpec> translateOrderList(Expression ordersExpr) {
+        List<SqlOrderSpec> specs = []
         for (Expression orderExpr : ((TupleExpression) ordersExpr).expressions) {
             Expression target = orderExpr
             boolean asc = true
@@ -407,8 +501,9 @@ class GinqToSqlTranslator implements SyntaxErrorReportable {
                     nullsLast = 'nullslast' == nullsOption
                 }
             }
-            query.orderBy << new SqlOrderSpec(translateExpr(target), asc, nullsLast)
+            specs << new SqlOrderSpec(translateExpr(target), asc, nullsLast)
         }
+        return specs
     }
 
     private void translateLimit(Expression offsetAndSizeExpr, SqlQuery query) {
@@ -428,24 +523,30 @@ class GinqToSqlTranslator implements SyntaxErrorReportable {
         Boolean distinct = ginqExpression.getNodeMetaData(GinqAstBuilder.GINQ_SELECT_DISTINCT)
         query.distinct = Boolean.TRUE == distinct
 
-        for (Expression projection : ((TupleExpression) selectExpression.projectionExpr).expressions) {
-            String alias = null
-            Expression expr = projection
-            if (projection instanceof CastExpression) {
-                alias = projection.type.text
-                expr = projection.expression
-            }
-            if (expr instanceof VariableExpression && expr.text in tableAliases) {
-                if (alias != null) {
-                    error("whole-row projection `${expr.text}` cannot be aliased", projection)
+        boolean previousWindow = windowAllowed
+        windowAllowed = true
+        try {
+            for (Expression projection : ((TupleExpression) selectExpression.projectionExpr).expressions) {
+                String alias = null
+                Expression expr = projection
+                if (projection instanceof CastExpression) {
+                    alias = projection.type.text
+                    expr = projection.expression
                 }
-                query.projections << new SqlProjection(new SqlStar(expr.text))
-            } else {
-                if (alias == null) {
-                    alias = groupKeyProjectionAlias(expr)
+                if (expr instanceof VariableExpression && expr.text in tableAliases) {
+                    if (alias != null) {
+                        error("whole-row projection `${expr.text}` cannot be aliased", projection)
+                    }
+                    query.projections << new SqlProjection(new SqlStar(expr.text))
+                } else {
+                    if (alias == null) {
+                        alias = groupKeyProjectionAlias(expr)
+                    }
+                    query.projections << new SqlProjection(translateExpr(expr), alias)
                 }
-                query.projections << new SqlProjection(translateExpr(expr), alias)
             }
+        } finally {
+            windowAllowed = previousWindow
         }
     }
 
@@ -690,9 +791,8 @@ class GinqToSqlTranslator implements SyntaxErrorReportable {
     private SqlExpr translateMethodCall(MethodCallExpression call) {
         String method = call.methodAsString
         List<Expression> args = ((TupleExpression) call.arguments).expressions
-        if ('over' == method) {
-            reject("window functions are deferred and are not translated by the ${providerName} provider", call)
-            return null
+        if (isWindowOver(call)) {
+            return translateWindow(call)
         }
         if ('exists' == method && args.empty && call.objectExpression instanceof GinqExpression) {
             return new SqlExists(correlatedSubQuery((GinqExpression) call.objectExpression))
@@ -712,7 +812,7 @@ class GinqToSqlTranslator implements SyntaxErrorReportable {
                 return null
             }
         }
-        SqlFunctionMapping mapping = method == null ? null : SqlFunctionRegistry.standard().find(method, functionKind(call))
+        SqlFunctionMapping mapping = method == null ? null : functions.find(method, functionKind(call))
         if (mapping != null) {
             return mapping.translate(call, args, calls)
         }
@@ -730,6 +830,420 @@ class GinqToSqlTranslator implements SyntaxErrorReportable {
             return SqlFunctionMapping.Kind.FREE
         }
         return SqlFunctionMapping.Kind.RECEIVER
+    }
+
+    // Same shape the collection provider treats as a window: fn(...).over() or fn(...).over(spec).
+    // Checked before aggregates so sum(x) over(...) is not a grouped SUM.
+    private static boolean isWindowOver(MethodCallExpression call) {
+        if ('over' != call.methodAsString) return false
+        if (!(call.objectExpression instanceof MethodCallExpression)) return false
+        if (!(call.arguments instanceof TupleExpression)) return false
+        return ((TupleExpression) call.arguments).expressions.size() < 2
+    }
+
+    private SqlExpr translateWindow(MethodCallExpression overCall) {
+        if (!windowAllowed) {
+            reject('`over` is only supported in `select` and `orderby`', overCall, false)
+            return null
+        }
+        if (windowDepth > 0) {
+            reject('window functions cannot be nested', overCall, false)
+            return null
+        }
+        if (aggregateDepth > 0) {
+            reject('window functions cannot be nested inside an aggregate', overCall, false)
+            return null
+        }
+        windowDepth++
+        try {
+            return translateWindowCall(overCall)
+        } finally {
+            windowDepth--
+        }
+    }
+
+    private SqlExpr translateWindowCall(MethodCallExpression overCall) {
+        MethodCallExpression functionCall = (MethodCallExpression) overCall.objectExpression
+        String name = functionCall.methodAsString
+        SqlFunctionMapping mapping = name == null ? null : functions.find(name, SqlFunctionMapping.Kind.WINDOW)
+        if (mapping == null) {
+            reject("${WINDOW_DEFERRED_PREFIX}${providerName} provider", overCall)
+            return null
+        }
+        if (!functionCall.implicitThis) {
+            reject("`${name}(...) over(...)` is written as a function, not a method on a value", functionCall)
+            return null
+        }
+        if (!(functionCall.arguments instanceof TupleExpression)) {
+            reject("`${name}` cannot be translated to SQL by the ${providerName} provider", functionCall)
+            return null
+        }
+        List<Expression> functionArgs = ((TupleExpression) functionCall.arguments).expressions
+        String arity = mapping.arityError(functionArgs.size())
+        if (arity != null) {
+            reject(arity, functionCall)
+            return null
+        }
+        SqlWindow window = translateWindowSpec(overCall)
+        if (window == null) return null
+        if (window.frame != null && mapping.rejectsWindowFrame()) {
+            String unit = window.frame.unit.name().toLowerCase(Locale.ROOT)
+            String why = mapping.appliesWindowFrame()
+                    ? 'GINQ applies that frame, and SQL defines the function without one'
+                    : 'SQL defines that function without a frame'
+            reject("`${name}() over(...)` does not accept `${unit}`. " + why, overCall)
+            return null
+        }
+        if (mapping.requiresWindowOrder() && !window.orderBy) {
+            reject("`${name}() over(...)` needs `orderby`. Without it GINQ returns null", overCall)
+            return null
+        }
+        SqlWindow effective = window
+        if (mapping.wholePartitionByDefault() && window.frame == null && window.orderBy) {
+            effective = new SqlWindow(window.partitionBy, window.orderBy, wholePartitionFrame())
+        }
+        SqlFunctionMapping.WindowForm form = mapping.windowForm()
+        if (form == SqlFunctionMapping.WindowForm.NTILE) {
+            return translateNtile(functionCall, functionArgs, effective)
+        }
+        if (form == SqlFunctionMapping.WindowForm.AGGREGATE) {
+            return translateAggregateWindow(functionCall, functionArgs, effective)
+        }
+        if ((('lead' == name || 'lag' == name) && functionArgs.size() >= 2 && !acceptWholeOffset(name, functionCall, functionArgs.get(1)))
+                || (form == SqlFunctionMapping.WindowForm.NTH && !acceptNthIndex(functionCall, functionArgs.get(1)))) {
+            return null
+        }
+        SqlExpr function = mapping.translate(functionCall, functionArgs, calls)
+        if (function == null) return null
+        if (form == SqlFunctionMapping.WindowForm.NTH) {
+            function = shiftNthIndex((SqlFunction) function)
+            if (function == null) return null
+        }
+        SqlWindowCall call = new SqlWindowCall(function, effective)
+        if (form == SqlFunctionMapping.WindowForm.ZERO_BASED) {
+            return new SqlBinary('-', call, new SqlLiteral(1))
+        }
+        if (form == SqlFunctionMapping.WindowForm.PERCENT) {
+            return percentRank(call, effective)
+        }
+        return call
+    }
+
+    // GINQ's default frame is the whole partition. SQL's default, once ORDER BY
+    // is present, stops at the current row, which would turn lastValue into the
+    // current row and sum into a running total.
+    private static SqlWindowFrame wholePartitionFrame() {
+        return new SqlWindowFrame(SqlWindowFrame.Unit.ROWS,
+                SqlWindowBound.unboundedPreceding(), SqlWindowBound.unboundedFollowing())
+    }
+
+    // (buckets * (row_number() - 1)) div count(*) over the same partition.
+    // That is GINQ's 0-based bucket formula, using integer division.
+    // SQL NTILE is 1-based and places the remainder on the first buckets.
+    private SqlExpr translateNtile(MethodCallExpression call, List<Expression> args, SqlWindow window) {
+        if (!acceptNtileBuckets(call, args.get(0))) return null
+        SqlExpr buckets = translateExpr(args.get(0))
+        if (buckets == null) return null
+        SqlWindow numbering = new SqlWindow(window.partitionBy, window.orderBy, null)
+        SqlWindow counting = new SqlWindow(window.partitionBy, Collections.<SqlOrderSpec>emptyList(), null)
+        SqlExpr rowNumber = emitFunction('ROW_NUMBER', Collections.<SqlExpr>emptyList(), call)
+        if (rowNumber == null) return null
+        SqlExpr row = new SqlBinary('-',
+                new SqlWindowCall(rowNumber, numbering),
+                new SqlLiteral(1))
+        SqlExpr product = new SqlBinary('*', buckets, row)
+        SqlExpr count = new SqlWindowCall(new SqlCountStar(), counting)
+        // Integer division matches GINQ's long division and does not need FLOOR,
+        // which some dialects do not have.
+        return new SqlBinary('IDIV', product, count)
+    }
+
+    private boolean acceptNtileBuckets(MethodCallExpression call, Expression buckets) {
+        return acceptWholeNumber(buckets, '`ntile` expects a whole number of buckets >= 0', call)
+    }
+
+    // One row: GINQ returns 1. SQL PERCENT_RANK returns 0.
+    private static SqlExpr percentRank(SqlWindowCall rank, SqlWindow window) {
+        SqlWindow counting = new SqlWindow(window.partitionBy, Collections.<SqlOrderSpec>emptyList(), null)
+        SqlExpr oneRow = new SqlBinary('=', new SqlWindowCall(new SqlCountStar(), counting), new SqlLiteral(1))
+        return new SqlCaseWhen(oneRow, new SqlLiteral(1), rank)
+    }
+
+    private SqlExpr translateAggregateWindow(MethodCallExpression call, List<Expression> args, SqlWindow window) {
+        boolean lambda = 1 == args.size() && args.get(0) instanceof ClosureExpression
+        SqlExpr function = translateAggregateCall(call, args, lambda)
+        if (function == null) return null
+        SqlExpr windowed = new SqlWindowCall(function, window)
+        // GINQ sum treats null as zero, so an all-null frame is 0 rather than SQL null.
+        // The coalesce wraps the window call: COALESCE(SUM(x), 0) OVER (...) is not SQL.
+        if ('sum' == call.methodAsString) {
+            return emitFunction('COALESCE', [windowed, new SqlLiteral(0)], call)
+        }
+        return windowed
+    }
+
+    // Constants are bound parameters, same as every other GINQ literal. Adding 1
+    // in the parameter keeps NTH_VALUE 1-based without putting arithmetic in the SQL.
+    private SqlExpr shiftNthIndex(SqlFunction function) {
+        if (function.args.size() != 2 || function.args.get(1) == null) return null
+        SqlExpr index = function.args.get(1)
+        SqlExpr shifted
+        if (index instanceof SqlParam) {
+            shifted = new SqlParam(plusX(((SqlParam) index).valueExpr, constX(1)))
+        } else {
+            shifted = new SqlBinary('+', index, new SqlLiteral(1))
+        }
+        return new SqlFunction(function.name, [function.args.get(0), shifted])
+    }
+
+    private boolean acceptNthIndex(MethodCallExpression call, Expression index) {
+        return acceptWholeNumber(index, '`nthValue` index must be a whole number >= 0. The first row is 0', call)
+    }
+
+    private boolean acceptWholeOffset(String name, MethodCallExpression call, Expression offset) {
+        return acceptWholeNumber(offset, "`${name}` offset must be a whole number >= 0", call)
+    }
+
+    // A non-literal is bound as a parameter and checked by the database.
+    // ntile(0) is kept: GINQ defines that bucket count as 0.
+    private boolean acceptWholeNumber(Expression expr, String message, MethodCallExpression call) {
+        Number literal = signedFrameNumber(expr)
+        if (literal == null) return true
+        BigDecimal n = frameDecimal(literal)
+        if (n == null || n.signum() < 0 || !wholeFrameNumber(n)) {
+            reject(message, call)
+            return false
+        }
+        return true
+    }
+
+    private SqlWindow translateWindowSpec(MethodCallExpression overCall) {
+        List<Expression> args = ((TupleExpression) overCall.arguments).expressions
+        if (args.isEmpty()) {
+            return new SqlWindow([], [], null)
+        }
+        WindowClauseFinder finder = new WindowClauseFinder()
+        args.get(0).visit(finder)
+        finder.dropNestedArguments()
+        if (finder.unknown) {
+            MethodCallExpression unknown = finder.unknown.get(0)
+            reject("Unknown window clause: `${unknown.methodAsString ?: unknown.text}`", unknown)
+            return null
+        }
+        if (finder.partitionBy.isEmpty() && finder.orderBy.isEmpty() && finder.rows.isEmpty() && finder.range.isEmpty()) {
+            reject('`over` expects `partitionby`, `orderby`, `rows` or `range`', overCall)
+            return null
+        }
+        if (finder.partitionBy.size() > 1) {
+            reject('`partitionby` appears more than once in `over`', finder.partitionBy.get(1))
+            return null
+        }
+        if (finder.orderBy.size() > 1) {
+            reject('`orderby` appears more than once in `over`', finder.orderBy.get(1))
+            return null
+        }
+        if (finder.rows.size() > 1) {
+            reject('`rows` appears more than once in `over`', finder.rows.get(1))
+            return null
+        }
+        if (finder.range.size() > 1) {
+            reject('`range` appears more than once in `over`', finder.range.get(1))
+            return null
+        }
+        if (finder.rows && finder.range) {
+            reject('`rows` and `range` cannot both be used in one `over`', finder.range.get(0))
+            return null
+        }
+        MethodCallExpression orderCall = finder.orderBy ? finder.orderBy.get(0) : null
+        List<SqlOrderSpec> orderSpecs = []
+        if (orderCall != null) {
+            if (!(orderCall.arguments instanceof TupleExpression)) {
+                reject('`orderby` in `over` must list its keys', orderCall)
+                return null
+            }
+            orderSpecs = translateOrderList(orderCall.arguments)
+            for (SqlOrderSpec spec : orderSpecs) {
+                if (spec.expr == null) return null
+            }
+        }
+        MethodCallExpression frameCall = finder.rows ? finder.rows.get(0) : (finder.range ? finder.range.get(0) : null)
+        SqlWindowFrame frame = null
+        if (frameCall != null) {
+            boolean rows = 'rows' == frameCall.methodAsString
+            if (finder.range && orderSpecs.size() != 1) {
+                reject(orderCall == null
+                        ? '`orderby` is expected when using `range`'
+                        : 'Only one field is expected in the `orderby` clause when using `range`', frameCall)
+                return null
+            }
+            if (!(frameCall.arguments instanceof TupleExpression)) {
+                reject("Both lower bound and upper bound are expected for `${frameCall.methodAsString}`", frameCall)
+                return null
+            }
+            List<Expression> bounds = ((TupleExpression) frameCall.arguments).expressions
+            if (bounds.size() != 2) {
+                reject("Both lower bound and upper bound are expected for `${frameCall.methodAsString}`", frameCall)
+                return null
+            }
+            SqlWindowFrame.Unit unit = rows ? SqlWindowFrame.Unit.ROWS : SqlWindowFrame.Unit.RANGE
+            SqlWindowBound lower = translateFrameBound(bounds.get(0), true, unit)
+            if (lower == null) return null
+            SqlWindowBound upper = translateFrameBound(bounds.get(1), false, unit)
+            if (upper == null) return null
+            if (frameEndsBeforeItStarts(lower, upper)) {
+                reject('the window frame ends before it starts', frameCall)
+                return null
+            }
+            // GINQ range offsets are added to the current value. SQL PRECEDING
+            // and FOLLOWING point along the sort, so a descending order mirrors
+            // the bounds and swaps the ends. The value interval stays the same.
+            if (!rows && !orderSpecs.isEmpty() && !orderSpecs.get(0).asc) {
+                SqlWindowBound start = mirrorValueBound(upper)
+                SqlWindowBound end = mirrorValueBound(lower)
+                lower = start
+                upper = end
+            }
+            frame = new SqlWindowFrame(unit, lower, upper)
+        }
+        List<SqlExpr> partition = []
+        if (finder.partitionBy) {
+            MethodCallExpression partitionCall = finder.partitionBy.get(0)
+            if (!(partitionCall.arguments instanceof TupleExpression)) {
+                reject('`partitionby` in `over` must list its expressions', partitionCall)
+                return null
+            }
+            for (Expression part : ((TupleExpression) partitionCall.arguments).expressions) {
+                SqlExpr sql = translateExpr(part)
+                if (sql == null) return null
+                partition << sql
+            }
+        }
+        return new SqlWindow(partition, orderSpecs, frame)
+    }
+
+    // A value-space bound written as an ascending frame, mirrored into descending order.
+    private static SqlWindowBound mirrorValueBound(SqlWindowBound bound) {
+        switch (bound.kind) {
+            case SqlWindowBound.Kind.UNBOUNDED_PRECEDING: return SqlWindowBound.unboundedFollowing()
+            case SqlWindowBound.Kind.UNBOUNDED_FOLLOWING: return SqlWindowBound.unboundedPreceding()
+            case SqlWindowBound.Kind.CURRENT_ROW: return SqlWindowBound.currentRow()
+            case SqlWindowBound.Kind.PRECEDING: return SqlWindowBound.following(bound.offset)
+            case SqlWindowBound.Kind.FOLLOWING: return SqlWindowBound.preceding(bound.offset)
+            default: throw new IllegalArgumentException("Unknown window bound: ${bound.kind}")
+        }
+    }
+
+    // GINQ: null is unbounded, 0 is the current row, negative precedes, positive follows.
+    // Only literals. A variable bound would hide its sign inside a parameter, and
+    // PRECEDING/FOLLOWING is syntax, so mixed mode keeps that clause in memory.
+    private SqlWindowBound translateFrameBound(Expression expr, boolean lower, SqlWindowFrame.Unit unit) {
+        if (expr instanceof ConstantExpression && null == ((ConstantExpression) expr).value) {
+            return lower ? SqlWindowBound.unboundedPreceding() : SqlWindowBound.unboundedFollowing()
+        }
+        Number signed = signedFrameNumber(expr)
+        if (signed == null) {
+            reject('window frame bounds must be literals: a number, `0` for the current row, or `null` for an unbounded bound', expr)
+            return null
+        }
+        BigDecimal decimal = frameDecimal(signed)
+        if (decimal == null) {
+            reject('window frame bounds must be finite numbers', expr)
+            return null
+        }
+        if (SqlWindowFrame.Unit.ROWS == unit && !wholeFrameNumber(decimal)) {
+            reject('`rows` bounds must be whole numbers', expr)
+            return null
+        }
+        // RowBound uses these sentinels for the ends of the partition. A numeric
+        // literal of that magnitude is the same bound; `Long.MIN_VALUE` written
+        // as a property is not a literal and stays untranslatable.
+        if (SqlWindowFrame.Unit.ROWS == unit) {
+            if (lower && decimal.compareTo(BigDecimal.valueOf(Long.MIN_VALUE)) == 0) {
+                return SqlWindowBound.unboundedPreceding()
+            }
+            if (!lower && decimal.compareTo(BigDecimal.valueOf(Long.MAX_VALUE)) == 0) {
+                return SqlWindowBound.unboundedFollowing()
+            }
+        }
+        int sign = decimal.signum()
+        if (sign == 0) return SqlWindowBound.currentRow()
+        SqlLiteral magnitude = new SqlLiteral(frameMagnitude(decimal))
+        return sign < 0 ? SqlWindowBound.preceding(magnitude) : SqlWindowBound.following(magnitude)
+    }
+
+    private static Number signedFrameNumber(Expression expr) {
+        if (expr instanceof ConstantExpression && ((ConstantExpression) expr).value instanceof Number) {
+            return (Number) ((ConstantExpression) expr).value
+        }
+        if (expr instanceof UnaryMinusExpression) {
+            Expression inner = ((UnaryMinusExpression) expr).expression
+            if (inner instanceof ConstantExpression && ((ConstantExpression) inner).value instanceof Number) {
+                BigDecimal decimal = frameDecimal((Number) ((ConstantExpression) inner).value)
+                return decimal == null ? null : decimal.negate()
+            }
+        }
+        return null
+    }
+
+    private static BigDecimal frameDecimal(Number number) {
+        if (number instanceof BigDecimal) return (BigDecimal) number
+        if (number instanceof BigInteger) return new BigDecimal((BigInteger) number)
+        if (number instanceof Integer || number instanceof Long || number instanceof Short || number instanceof Byte) {
+            return BigDecimal.valueOf(number.longValue())
+        }
+        if (number instanceof Double || number instanceof Float) {
+            double d = number.doubleValue()
+            if (Double.isNaN(d) || Double.isInfinite(d)) return null
+            return new BigDecimal(number.toString())
+        }
+        return null
+    }
+
+    private static boolean wholeFrameNumber(BigDecimal decimal) {
+        return decimal.stripTrailingZeros().scale() <= 0
+    }
+
+    // Earlier bound has the smaller rank. Equal PRECEDING offsets: the larger
+    // offset is earlier. Equal FOLLOWING offsets: the smaller offset is earlier.
+    private static boolean frameEndsBeforeItStarts(SqlWindowBound lower, SqlWindowBound upper) {
+        int lowerRank = frameRank(lower.kind)
+        int upperRank = frameRank(upper.kind)
+        if (lowerRank != upperRank) return lowerRank > upperRank
+        BigDecimal lowerOffset = frameOffset(lower)
+        BigDecimal upperOffset = frameOffset(upper)
+        if (lowerOffset == null || upperOffset == null) return false
+        if (lower.kind == SqlWindowBound.Kind.PRECEDING) return lowerOffset.compareTo(upperOffset) < 0
+        if (lower.kind == SqlWindowBound.Kind.FOLLOWING) return lowerOffset.compareTo(upperOffset) > 0
+        return false
+    }
+
+    private static int frameRank(SqlWindowBound.Kind kind) {
+        switch (kind) {
+            case SqlWindowBound.Kind.UNBOUNDED_PRECEDING: return 0
+            case SqlWindowBound.Kind.PRECEDING: return 1
+            case SqlWindowBound.Kind.CURRENT_ROW: return 2
+            case SqlWindowBound.Kind.FOLLOWING: return 3
+            case SqlWindowBound.Kind.UNBOUNDED_FOLLOWING: return 4
+            default: return 2
+        }
+    }
+
+    private static BigDecimal frameOffset(SqlWindowBound bound) {
+        if (!(bound.offset instanceof SqlLiteral) || !(((SqlLiteral) bound.offset).value instanceof Number)) return null
+        return frameDecimal((Number) ((SqlLiteral) bound.offset).value)
+    }
+
+    private static Object frameMagnitude(BigDecimal decimal) {
+        BigDecimal magnitude = decimal.abs()
+        try {
+            return magnitude.intValueExact()
+        } catch (ArithmeticException ignored) {
+            try {
+                return magnitude.longValueExact()
+            } catch (ArithmeticException ignoredLong) {
+                return magnitude.stripTrailingZeros()
+            }
+        }
     }
 
     private SqlExpr translateLike(MethodCallExpression call, List<Expression> argList, boolean matchBefore, boolean matchAfter) {
@@ -858,6 +1372,23 @@ class GinqToSqlTranslator implements SyntaxErrorReportable {
     }
 
     private SqlExpr translateAggregate(MethodCallExpression call, List<Expression> args, boolean lambdaStyle) {
+        SqlExpr function = translateAggregateCall(call, args, lambdaStyle)
+        if (function == null) return null
+        return finishAggregate(call.methodAsString, function, call)
+    }
+
+    // The function alone, without the null-as-zero coalesce. A window sum applies
+    // that coalesce outside OVER.
+    private SqlExpr translateAggregateCall(MethodCallExpression call, List<Expression> args, boolean lambdaStyle) {
+        aggregateDepth++
+        try {
+            return translateAggregateCallBody(call, args, lambdaStyle)
+        } finally {
+            aggregateDepth--
+        }
+    }
+
+    private SqlExpr translateAggregateCallBody(MethodCallExpression call, List<Expression> args, boolean lambdaStyle) {
         String method = call.methodAsString
         String functionName = AGGREGATE_FUNCTION_MAP[method]
         if (functionName == null) {
@@ -885,7 +1416,7 @@ class GinqToSqlTranslator implements SyntaxErrorReportable {
             if (inner == null) return null
             return emitFunction(functionName, [translateExpr(inner)], true, call)
         }
-        return finishAggregate(method, emitFunction(functionName, [translateExpr(arg)], call), call)
+        return emitFunction(functionName, [translateExpr(arg)], call)
     }
 
     private SqlExpr translateLambdaAggregate(MethodCallExpression call, String method, String functionName, Expression arg) {
@@ -921,7 +1452,7 @@ class GinqToSqlTranslator implements SyntaxErrorReportable {
         String previousParam = aggregateLambdaParam
         aggregateLambdaParam = param
         try {
-            return finishAggregate(method, emitFunction(functionName, [translateExpr(body)], countDistinct, call), call)
+            return emitFunction(functionName, [translateExpr(body)], countDistinct, call)
         } finally {
             aggregateLambdaParam = previousParam
         }
@@ -1015,7 +1546,7 @@ class GinqToSqlTranslator implements SyntaxErrorReportable {
                 error(untranslatable.message, untranslatable.node ?: expression)
                 return null
             }
-            GinqToSqlTranslator splitter = new GinqToSqlTranslator(sourceUnit, providerName, capabilities)
+            GinqToSqlTranslator splitter = new GinqToSqlTranslator(sourceUnit, providerName, functions, capabilities)
             splitter.recoverUntranslatable = true
             return splitter.planSplit((GinqExpression) expression)
         } finally {
@@ -1302,6 +1833,63 @@ class GinqToSqlTranslator implements SyntaxErrorReportable {
     ]
     private static final String MIXED_HINT =
             '. Rewrite it in supported SQL, or set `mixedMode: true` to evaluate that clause in memory.'
+    private static final String WINDOW_DEFERRED_PREFIX =
+            'window functions are deferred and are not translated by the '
+
+    // Collects partitionby/orderby/rows/range and any other call in the over argument.
+    // Calls nested inside a clause's own arguments are not clauses (e.name.toUpperCase()).
+    @CompileStatic
+    private static class WindowClauseFinder extends CodeVisitorSupport {
+        private final List<MethodCallExpression> partitionBy = []
+        private final List<MethodCallExpression> orderBy = []
+        private final List<MethodCallExpression> rows = []
+        private final List<MethodCallExpression> range = []
+        private final List<MethodCallExpression> unknown = []
+
+        @Override
+        void visitMethodCallExpression(MethodCallExpression call) {
+            super.visitMethodCallExpression(call)
+            String name = call.methodAsString
+            if ('partitionby' == name) {
+                partitionBy.add(call)
+            } else if ('orderby' == name) {
+                orderBy.add(call)
+            } else if ('rows' == name) {
+                rows.add(call)
+            } else if ('range' == name) {
+                range.add(call)
+            } else {
+                unknown.add(call)
+            }
+        }
+
+        private void dropNestedArguments() {
+            List<Expression> arguments = []
+            for (MethodCallExpression call : partitionBy) arguments.add(call.arguments)
+            for (MethodCallExpression call : orderBy) arguments.add(call.arguments)
+            for (MethodCallExpression call : rows) arguments.add(call.arguments)
+            for (MethodCallExpression call : range) arguments.add(call.arguments)
+            if (arguments.isEmpty()) return
+            new ListExpression(arguments).visit(new CodeVisitorSupport() {
+                @Override
+                void visitMethodCallExpression(MethodCallExpression call) {
+                    drop(partitionBy, call)
+                    drop(orderBy, call)
+                    drop(rows, call)
+                    drop(range, call)
+                    drop(unknown, call)
+                    super.visitMethodCallExpression(call)
+                }
+            })
+        }
+
+        private static void drop(List<MethodCallExpression> calls, MethodCallExpression target) {
+            Iterator<MethodCallExpression> it = calls.iterator()
+            while (it.hasNext()) {
+                if (it.next().is(target)) it.remove()
+            }
+        }
+    }
 
     private static final Set<String> TEXT_INPUT_METHODS = Set.of(
             'toUpperCase', 'toLowerCase', 'trim', 'substring', 'replace', 'concat',

@@ -20,5 +20,11 @@
 /**
  * Intermediate representation for SQL queries derived from GINQ queries: a provider-neutral
  * model consumed by renderers. Compile-time only; never present in generated code.
+ * <p>
+ * Window calls are {@link SqlWindowCall}: a function
+ * plus an {@link SqlWindow} (partition, order, and an
+ * optional {@code ROWS} or {@code RANGE} frame). Both renderers visit that node.
+ * The translator builds one for each window function registered on the sealed
+ * standard registry.
  */
 package org.apache.groovy.ginq.provider.sql.ir;
