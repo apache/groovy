@@ -1809,7 +1809,9 @@ out:    for (ClassNode type : todo) {
         }
 
         ClassNode cn = type.getPlainNodeReference();
-        cn.setGenericsTypes(gts);
+        // JLS 4.5: a resolved type argument is a reference type, and a class
+        // that declares no type parameters does not receive any.
+        cn.setGenericsTypes(GenericsUtils.legalTypeArguments(type, gts));
         return cn;
     }
 
@@ -2916,7 +2918,7 @@ out:    for (ClassNode type : todo) {
 
     private static void storeGenericsConnection(final Map<GenericsTypeName, GenericsType> connections, final String placeholderName, final GenericsType gt) {
       //connections.merge(new GenericsTypeName(placeholderName), gt, (gt1, gt2) -> getCombinedGenericsType(gt1, gt2));
-        connections.put(new GenericsTypeName(placeholderName), gt);
+        connections.put(new GenericsTypeName(placeholderName), GenericsUtils.asReferenceTypeArgument(gt));
     }
 
     /**
@@ -3089,7 +3091,7 @@ out:    for (ClassNode type : todo) {
         }
         if (!type.isGenericsPlaceHolder()) { // convert Type<T> to Type<...>
             ClassNode cn = type.getPlainNodeReference();
-            cn.setGenericsTypes(gt);
+            cn.setGenericsTypes(GenericsUtils.legalTypeArguments(type, gt));
             return cn;
         }
 

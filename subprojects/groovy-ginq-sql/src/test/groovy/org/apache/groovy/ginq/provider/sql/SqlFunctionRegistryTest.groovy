@@ -133,6 +133,104 @@ class SqlFunctionRegistryTest {
     }
 
     @Test
+    void testPublicFactoriesKeepArityAndTranslate() {
+        def fixed = SqlFunctionMapping.receiver('replace', 'REPLACE', 2)
+        assert fixed.groovyName == 'replace'
+        assert fixed.kind == SqlFunctionMapping.Kind.RECEIVER
+        def replaced = fixed.translate(callX(propX(varX('e'), 'name'), 'replace'),
+                [constX('a'), constX('b')], recordingSite())
+        assert replaced instanceof SqlFunction
+        assert 'REPLACE' == replaced.name
+        assert 3 == replaced.args.size()
+        def fixedArity = shouldFail(IllegalArgumentException) {
+            fixed.translate(callX(propX(varX('e'), 'name'), 'replace'), [constX('a')], recordingSite())
+        }
+        assert fixedArity.message.contains('`replace` expects 2 arguments')
+
+        def ranged = SqlFunctionMapping.receiver('round', 'ROUND', 0, 1)
+        def rounded = ranged.translate(callX(propX(varX('e'), 'salary'), 'round'), [], recordingSite())
+        assert rounded instanceof SqlFunction
+        assert 'ROUND' == rounded.name
+        assert 1 == rounded.args.size()
+        def rangedArity = shouldFail(IllegalArgumentException) {
+            ranged.translate(callX(propX(varX('e'), 'salary'), 'round'), [constX(1), constX(2)], recordingSite())
+        }
+        assert rangedArity.message.contains('`round` expects 0 to 1 arguments')
+
+        def free = SqlFunctionMapping.freeFunction('coalesce', 'COALESCE', 2, Integer.MAX_VALUE)
+        assert free.kind == SqlFunctionMapping.Kind.FREE
+        def coalesced = free.translate(callX(varX('this'), 'coalesce'),
+                [propX(varX('e'), 'name'), constX('x')], recordingSite())
+        assert coalesced instanceof SqlFunction
+        assert 'COALESCE' == coalesced.name
+        assert 2 == coalesced.args.size()
+
+        def math = SqlFunctionMapping.math('max', 'GREATEST')
+        assert math.kind == SqlFunctionMapping.Kind.MATH
+        def greatest = math.translate(callX(varX('Math'), 'max'),
+                [propX(varX('e'), 'salary'), constX(1)], recordingSite())
+        assert greatest instanceof SqlFunction
+        assert 'GREATEST' == greatest.name
+
+        def window = SqlFunctionMapping.window('nthValue', 'NTH_VALUE', 1, 2)
+        assert window.kind == SqlFunctionMapping.Kind.WINDOW
+        def nth = window.translate(callX(varX('this'), 'nthValue'),
+                [propX(varX('e'), 'name'), constX(1)], recordingSite())
+        assert nth instanceof SqlFunction
+        assert 'NTH_VALUE' == nth.name
+        def windowArity = shouldFail(IllegalArgumentException) {
+            SqlFunctionMapping.window('lead', 'LEAD', 1, 3, 'lead takes 1 to 3 arguments')
+                    .translate(callX(varX('this'), 'lead'), [], recordingSite())
+        }
+        assert windowArity.message == 'lead takes 1 to 3 arguments'
+
+        def missingForm = shouldFail(IllegalArgumentException) {
+            SqlFunctionMapping.window('lead', 'LEAD', 1, 3, null, null)
+        }
+        assert missingForm.message.contains('window mapping needs a form')
+    }
+
+    @Test
+    void testConcatIsEmptyAndRejectedNames() {
+        def site = recordingSite()
+        def concat = SqlFunctionRegistry.standard().find('concat', SqlFunctionMapping.Kind.RECEIVER)
+        def joined = concat.translate(callX(propX(varX('e'), 'name'), 'concat'), [constX('!')], site)
+        assert joined instanceof SqlBinary
+        assert '||' == joined.op
+
+        def concatArity = shouldFail(IllegalArgumentException) {
+            concat.translate(callX(propX(varX('e'), 'name'), 'concat'), [], site)
+        }
+        assert concatArity.message.contains('one argument')
+
+        def empty = SqlFunctionRegistry.standard().find('isEmpty', SqlFunctionMapping.Kind.RECEIVER)
+        def blank = empty.translate(callX(propX(varX('e'), 'name'), 'isEmpty'), [], site)
+        assert blank instanceof SqlBinary
+        assert '=' == blank.op
+
+        def emptyArity = shouldFail(IllegalArgumentException) {
+            empty.translate(callX(propX(varX('e'), 'name'), 'isEmpty'), [constX(1)], site)
+        }
+        assert emptyArity.message.contains('no arguments')
+
+        def badName = shouldFail(IllegalArgumentException) {
+            SqlFunctionMapping.receiver('1bad', 'UPPER')
+        }
+        assert badName.message.contains('1bad')
+
+        def badRange = shouldFail(IllegalArgumentException) {
+            SqlFunctionMapping.receiver('round', 'ROUND', 2, 1)
+        }
+        assert badRange.message.contains('2..1')
+
+        def open = SqlFunctionMapping.freeFunction('coalesce', 'COALESCE', 2, Integer.MAX_VALUE)
+        def tooFew = shouldFail(IllegalArgumentException) {
+            open.translate(callX(varX('this'), 'coalesce'), [constX(1)], site)
+        }
+        assert tooFew.message.contains('at least 2')
+    }
+
+    @Test
     void testRegisteredFunctionTranslatesToItsSqlName() {
         def extra = SqlFunctionRegistry.standard().copy()
         extra.register(SqlFunctionMapping.receiver('signum', 'SIGN'))

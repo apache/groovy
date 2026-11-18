@@ -25,6 +25,7 @@ import groovy.lang.Tuple3;
 import groovy.transform.Internal;
 import org.apache.groovy.internal.util.Supplier;
 import org.codehaus.groovy.runtime.DefaultGroovyMethods;
+import org.codehaus.groovy.runtime.typehandling.GroovyCastException;
 import org.codehaus.groovy.runtime.dgmimpl.NumberNumberMinus;
 import org.codehaus.groovy.runtime.typehandling.NumberMath;
 
@@ -47,7 +48,9 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Queue;
 import java.util.Set;
+import java.util.Spliterator;
 import java.util.TreeSet;
+import java.util.function.Consumer;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
@@ -89,7 +92,19 @@ class QueryableCollection<T> implements Queryable<T>, Serializable {
      * @param sourceIterable the source elements
      */
     QueryableCollection(Iterable<T> sourceIterable) {
+        this(sourceIterable, sourceIterable instanceof List);
+    }
+
+    /**
+     * Creates a queryable collection backed by an iterable.
+     *
+     * @param sourceIterable the source elements
+     * @param sourceListIsUserSupplied {@code true} when {@code sourceIterable} is a
+     *        user-supplied {@link List} that {@link #toList()} may return as-is
+     */
+    QueryableCollection(Iterable<T> sourceIterable, boolean sourceListIsUserSupplied) {
         this.sourceIterable = sourceIterable;
+        this.sourceListIsUserSupplied = sourceListIsUserSupplied;
     }
 
     /**
@@ -102,21 +117,17 @@ class QueryableCollection<T> implements Queryable<T>, Serializable {
     }
 
     /**
-     * Returns an iterator over the current source.
+     * Returns an iterator over the current source. The iterator is created
+     * from {@link #stream()}, so it follows the same re-enumeration rules: a
+     * live iterable is read again, and a one-shot stream is replayed from the
+     * buffer. The read lock is not held around this call; taking it and then
+     * calling {@link #stream()} would deadlock on a lock upgrade.
      *
      * @return an iterator over the elements
      */
+    @Override
     public Iterator<T> iterator() {
-        readLock.lock();
-        try {
-            if (null != sourceIterable) {
-                return sourceIterable.iterator();
-            }
-
-            return sourceStream.iterator();
-        } finally {
-            readLock.unlock();
-        }
+        return stream().iterator();
     }
 
     /**
@@ -132,7 +143,7 @@ class QueryableCollection<T> implements Queryable<T>, Serializable {
     @Override
     public <U> Queryable<Tuple2<T, U>> innerJoin(Queryable<? extends U> queryable, BiPredicate<? super T, ? super U> joiner) {
         Stream<Tuple2<T, U>> stream =
-                this.stream()
+                openStream()
                         .flatMap(p -> {
                             if (queryable instanceof QueryableCollection) {
                                 ((QueryableCollection) queryable).makeReusable();
@@ -162,7 +173,7 @@ class QueryableCollection<T> implements Queryable<T>, Serializable {
     public <U> Queryable<Tuple2<T, U>> innerHashJoin(Queryable<? extends U> queryable, Function<? super T, ?> fieldsExtractor1, Function<? super U, ?> fieldsExtractor2) {
         final ConcurrentObjectHolder<Map<Integer, List<Candidate<U>>>> hashTableHolder = new ConcurrentObjectHolder<>(createHashTableSupplier(queryable, fieldsExtractor2));
         if (isParallel()) hashTableHolder.getObject(); // avoid nested parallel querying, which results in deadlock sometimes
-        Stream<Tuple2<T, U>> stream = this.stream().flatMap(p -> {
+        Stream<Tuple2<T, U>> stream = openStream().flatMap(p -> {
             // build hash table
             Map<Integer, List<Candidate<U>>> hashTable = hashTableHolder.getObject();
 
@@ -329,7 +340,7 @@ class QueryableCollection<T> implements Queryable<T>, Serializable {
     @Override
     public <U> Queryable<Tuple2<T, U>> crossJoin(Queryable<? extends U> queryable) {
         Stream<Tuple2<T, U>> stream =
-                this.stream()
+                openStream()
                         .flatMap(p -> {
                             if (queryable instanceof QueryableCollection) {
                                 ((QueryableCollection) queryable).makeReusable();
@@ -350,7 +361,7 @@ class QueryableCollection<T> implements Queryable<T>, Serializable {
      */
     @Override
     public Queryable<T> where(Predicate<? super T> filter) {
-        Stream<T> stream = this.stream().filter(filter);
+        Stream<T> stream = openStream().filter(filter);
 
         return from(stream);
     }
@@ -368,7 +379,7 @@ class QueryableCollection<T> implements Queryable<T>, Serializable {
     @Override
     public Queryable<Tuple2<?, Queryable<T>>> groupBy(Function<? super T, ?> classifier, Predicate<? super Tuple2<?, Queryable<? extends T>>> having) {
         Stream<Tuple2<?, Queryable<T>>> stream =
-                groupAllowingNullKeys(this.stream(), classifier, isParallel())
+                groupAllowingNullKeys(openStream(), classifier, isParallel())
                         .entrySet().stream()
                         .filter(m -> null == having || having.test(tuple(m.getKey(), from(m.getValue()))))
                         .map(m -> tuple(m.getKey(), from(m.getValue())));
@@ -392,7 +403,7 @@ class QueryableCollection<T> implements Queryable<T>, Serializable {
         // Materialize group elements as lists so they can be iterated multiple times
         // (e.g., having g.count() > 1 followed by select g.count())
         Stream<GroupResult<K, T>> stream =
-                groupAllowingNullKeys(this.stream(), classifier, isParallel())
+                groupAllowingNullKeys(openStream(), classifier, isParallel())
                         .entrySet().stream()
                         .map(m -> GroupResult.<K, T>of(castGroupKey(m.getKey()), from(m.getValue())))
                         .filter(gr -> null == having || having.test(gr));
@@ -446,7 +457,7 @@ class QueryableCollection<T> implements Queryable<T>, Serializable {
             return this;
         }
 
-        return from(this.stream().sorted(comparator));
+        return from(openStream().sorted(comparator));
     }
 
     /**
@@ -499,7 +510,7 @@ class QueryableCollection<T> implements Queryable<T>, Serializable {
      */
     @Override
     public Queryable<T> limit(long offset, long size) {
-        Stream<T> stream = this.stream().skip(offset).limit(size);
+        Stream<T> stream = openStream().skip(offset).limit(size);
 
         return from(stream);
     }
@@ -536,7 +547,7 @@ class QueryableCollection<T> implements Queryable<T>, Serializable {
                 }
             }
             if (null == stream) {
-                stream = this.stream().map((T t) -> mapper.apply(t, this));
+                stream = openStream().map((T t) -> mapper.apply(t, this));
             }
 
             if (TRUE_STR.equals(originalParallel)) {
@@ -569,7 +580,7 @@ class QueryableCollection<T> implements Queryable<T>, Serializable {
      */
     @Override
     public Queryable<T> distinct() {
-        Stream<T> stream = this.stream().distinct();
+        Stream<T> stream = openStream().distinct();
 
         return from(stream);
     }
@@ -582,7 +593,7 @@ class QueryableCollection<T> implements Queryable<T>, Serializable {
      */
     @Override
     public Queryable<T> unionAll(Queryable<? extends T> queryable) {
-        Stream<T> stream = Stream.concat(this.stream(), queryable.stream());
+        Stream<T> stream = Stream.concat(openStream(), queryable.stream());
 
         return from(stream);
     }
@@ -595,7 +606,7 @@ class QueryableCollection<T> implements Queryable<T>, Serializable {
      */
     @Override
     public Queryable<T> intersect(Queryable<? extends T> queryable) {
-        Stream<T> stream = this.stream().filter(a -> {
+        Stream<T> stream = openStream().filter(a -> {
             if (queryable instanceof QueryableCollection) {
                 ((QueryableCollection) queryable).makeReusable();
             }
@@ -614,7 +625,7 @@ class QueryableCollection<T> implements Queryable<T>, Serializable {
      */
     @Override
     public Queryable<T> minus(Queryable<? extends T> queryable) {
-        Stream<T> stream = this.stream().filter(a -> {
+        Stream<T> stream = openStream().filter(a -> {
             if (queryable instanceof QueryableCollection) {
                 ((QueryableCollection) queryable).makeReusable();
             }
@@ -659,7 +670,7 @@ class QueryableCollection<T> implements Queryable<T>, Serializable {
      */
     @Override
     public BigDecimal sum(Function<? super T, ? extends Number> mapper) {
-        return agg(q -> this.stream()
+        return agg(q -> openStream()
                 .map(e -> {
                     Number n = mapper.apply(e);
                     if (null == n) return BigDecimal.ZERO;
@@ -928,13 +939,20 @@ class QueryableCollection<T> implements Queryable<T>, Serializable {
         writeLock.lock();
         try {
             if (sourceIterable instanceof @SuppressWarnings("unchecked")List<T> list) {
-                return list;
+                if (sourceListIsUserSupplied) {
+                    return list;
+                }
+                return new ArrayList<>(list);
             }
 
-            final List<T> result = stream().collect(Collectors.toList());
+            if (upstreamBound) {
+                return new ArrayList<>(drainOneShot());
+            }
+
+            final List<T> result = openStream().collect(Collectors.toList());
             sourceIterable = result;
 
-            return result;
+            return new ArrayList<>(result);
         } finally {
             writeLock.unlock();
         }
@@ -951,14 +969,185 @@ class QueryableCollection<T> implements Queryable<T>, Serializable {
     }
 
     /**
-     * Returns a reusable stream over the current elements.
+     * Returns a new stream over the current elements. Creating the stream does not
+     * pull. An iterable source is read again by every stream. A one-shot stream is
+     * pulled into a buffer as it is consumed, and a later call replays that buffer
+     * instead of returning the stream that was already handed out.
      *
-     * @return the element stream
+     * @return a stream that has not been consumed
      */
     @Override
     public Stream<T> stream() {
         writeLock.lock();
         try {
+            if (sourceIterable != null) {
+                Stream<T> fresh = toStream(sourceIterable);
+                if (!fresh.isParallel() && isParallel()) {
+                    fresh = fresh.parallel();
+                }
+                return fresh;
+            }
+            bindUpstream();
+            return StreamSupport.stream(ReplaySpliterator::new, upstreamCharacteristics, false);
+        } finally {
+            writeLock.unlock();
+        }
+    }
+
+    /**
+     * Binds the one-shot source. The size is recorded before any element is pulled,
+     * so a later {@code count} can use it without running projections.
+     */
+    private void bindUpstream() {
+        if (upstreamBound) {
+            return;
+        }
+        upstreamBound = true;
+        upstream = openStream().spliterator();
+        long exact = upstream.getExactSizeIfKnown();
+        upstreamExactSize = exact;
+        upstreamCharacteristics = Spliterator.ORDERED;
+        if (exact >= 0) {
+            upstreamCharacteristics |= Spliterator.SIZED | Spliterator.SUBSIZED;
+        }
+    }
+
+    /**
+     * One cursor over a one-shot source. Elements are appended to {@link #replay}
+     * as they are pulled, so another stream can read them from the start.
+     * A sized source reports that size, and {@code Stream.count} then does not pull.
+     */
+    private final class ReplaySpliterator implements Spliterator<T> {
+        private int cursor;
+
+        /**
+         * The read lock, or the write lock when this cursor has caught up,
+         * covers only the buffer. The element is copied and this cursor
+         * advances before the lock is released; {@code action} runs after
+         * that. A throwing action has consumed the element, and the buffer
+         * still holds it for other cursors.
+         */
+        @Override
+        public boolean tryAdvance(Consumer<? super T> action) {
+            if (serveReplayed(action)) {
+                return true;
+            }
+            T item = null;
+            boolean present = false;
+            writeLock.lock();
+            try {
+                // Lost the race with a writer, or this cursor is the one pulling.
+                if (cursor < replay.size() || pullIntoReplay()) {
+                    item = replay.get(cursor);
+                    cursor++;
+                    present = true;
+                }
+            } finally {
+                writeLock.unlock();
+            }
+            if (!present) {
+                return false;
+            }
+            action.accept(item);
+            return true;
+        }
+
+        /**
+         * Appends one upstream element to {@link #replay}. Caller holds the write lock.
+         *
+         * @return {@code true} when a new element was appended
+         */
+        private boolean pullIntoReplay() {
+            if (oneShotDone) {
+                return false;
+            }
+            boolean[] advanced = {false};
+            boolean more = upstream.tryAdvance(pulled -> {
+                replay.add(pulled);
+                advanced[0] = true;
+            });
+            if (!more || !advanced[0]) {
+                finishOneShot();
+                return false;
+            }
+            return true;
+        }
+
+        /**
+         * Serves an element already in {@link #replay}. The read lock covers
+         * the buffer only; the callback runs after it is released so a reader
+         * does not take the write lock, and does not hold the read lock across
+         * a callback that may need the write lock. The cursor advances after
+         * the element is read, so a throwing callback has consumed it.
+         */
+        private boolean serveReplayed(Consumer<? super T> action) {
+            T item;
+            readLock.lock();
+            try {
+                if (cursor >= replay.size()) {
+                    return false;
+                }
+                item = replay.get(cursor);
+                cursor++;
+            } finally {
+                readLock.unlock();
+            }
+            action.accept(item);
+            return true;
+        }
+
+        @Override
+        public Spliterator<T> trySplit() {
+            return null;
+        }
+
+        @Override
+        public long estimateSize() {
+            if (upstreamExactSize >= 0) {
+                return Math.max(0L, upstreamExactSize - cursor);
+            }
+            return Long.MAX_VALUE;
+        }
+
+        @Override
+        public int characteristics() {
+            return upstreamCharacteristics;
+        }
+    }
+
+    private List<T> drainOneShot() {
+        List<T> result = new ArrayList<>();
+        new ReplaySpliterator().forEachRemaining(result::add);
+        sourceIterable = result;
+        sourceStream = null;
+        return result;
+    }
+
+    private void finishOneShot() {
+        oneShotDone = true;
+        if (sourceIterable == null) {
+            sourceIterable = replay;
+            sourceStream = null;
+        }
+    }
+
+    /**
+     * Opens the source for pipeline construction. An iterable is streamed again on
+     * every call. After a one-shot source has been bound, this returns a fresh
+     * stream on the public replay path instead of the already-spliterated
+     * {@link #sourceStream}. {@link #stream()} may call this while binding;
+     * the replay route is taken only when {@link #upstream} is already set, so
+     * that bind does not re-enter itself.
+     *
+     * @return a stream over the source, which may be a replay stream
+     */
+    private Stream<T> openStream() {
+        writeLock.lock();
+        try {
+            if (upstream != null) {
+                return stream();
+            }
+
             if (isReusable()) {
                 sourceStream = toStream(sourceIterable);  // we have to create new stream every time because Java stream can not be reused
             }
@@ -1113,6 +1302,11 @@ class QueryableCollection<T> implements Queryable<T>, Serializable {
         try {
             if (null != this.sourceIterable) return;
 
+            if (upstreamBound) {
+                drainOneShot();
+                return;
+            }
+
             this.sourceIterable = this.sourceStream.collect(Collectors.toList());
         } finally {
             writeLock.unlock();
@@ -1126,6 +1320,9 @@ class QueryableCollection<T> implements Queryable<T>, Serializable {
      * @return the coerced value
      */
     public Object asType(Class<?> clazz) {
+        if (clazz == null) {
+            throw new GroovyCastException("Cannot cast '" + getClass().getName() + "' to null");
+        }
         if (Queryable.class == clazz || QueryableCollection.class == clazz) {
             return this;
         }
@@ -1212,6 +1409,15 @@ class QueryableCollection<T> implements Queryable<T>, Serializable {
     private final Map<SortedPartitionCacheKey<T>, Partition<Tuple2<T, Long>>> sortedPartitionCache = new ConcurrentHashMap<>(4);
     private Stream<T> sourceStream;
     private volatile Iterable<T> sourceIterable;
+    /** True when {@link #sourceIterable} is a user-supplied {@link List}, which {@link #toList()} may return as-is. */
+    private boolean sourceListIsUserSupplied;
+    /** Elements pulled from a one-shot {@link #sourceStream}, in order. */
+    private final List<T> replay = new ArrayList<>();
+    private transient Spliterator<T> upstream;
+    private boolean upstreamBound;
+    private long upstreamExactSize = -1L;
+    private int upstreamCharacteristics = Spliterator.ORDERED;
+    private boolean oneShotDone;
     private final ReadWriteLock rwl = new ReentrantReadWriteLock();
     private final Lock readLock = rwl.readLock();
     private final Lock writeLock = rwl.writeLock();
