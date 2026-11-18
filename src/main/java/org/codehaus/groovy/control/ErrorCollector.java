@@ -268,10 +268,11 @@ public class ErrorCollector implements Serializable {
     }
 
     /**
-     * Returns true if there are any errors pending.
+     * Returns true if there are any errors pending. An empty list is not
+     * pending errors: a listener may remove the messages it has handled.
      */
     public boolean hasErrors() {
-        return (errors != null);
+        return errors != null && !errors.isEmpty();
     }
 
     /**

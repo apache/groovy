@@ -369,6 +369,126 @@ public class GenericsUtils {
     }
 
     /**
+     * Type arguments safe to store on {@code owner}. A class that declares no
+     * type parameters gets none. Each argument is a reference type.
+     * <p>
+     * The declaration is read from the class, not from whether a use site has
+     * already been resolved. A primary class records its formals on itself.
+     * A use-site proxy reads the redirect target. An unresolved name has no
+     * declaration yet, so its arguments are left in place. A source use site
+     * is not rewritten; the generics check reports a type argument that is
+     * not well-formed. Callers that build a type, such as inference or
+     * substitution, use this method so the type they store is one a signature
+     * can carry.
+     *
+     * @param owner the parameterized type
+     * @param arguments the arguments about to be stored
+     * @return the arguments to store, or {@code null} when the class declares none
+     */
+    public static GenericsType[] legalTypeArguments(final ClassNode owner, final GenericsType[] arguments) {
+        if (arguments == null) return null;
+        if (arguments.length > 0 && declaresNoTypeParameters(owner)) return null;
+        GenericsType[] legal = new GenericsType[arguments.length];
+        boolean changed = false;
+        for (int i = 0; i < arguments.length; i += 1) {
+            legal[i] = asReferenceTypeArgument(arguments[i]);
+            changed |= legal[i] != arguments[i];
+        }
+        return changed ? legal : arguments;
+    }
+
+    /**
+     * Whether {@code type}'s declaration has no type parameters.
+     * {@link ClassNode#redirect()} is never null. A primary class is not
+     * resolved to a {@code Class}, and its formals are the ones the parser
+     * recorded. A loaded class whose formals were not copied onto the node
+     * answers from {@code Class.getTypeParameters()}. An unresolved use site
+     * answers {@code false} because the declaration is not this node; its
+     * own generics are the arguments.
+     */
+    private static boolean declaresNoTypeParameters(final ClassNode type) {
+        if (type == null || type.isGenericsPlaceHolder()) return false;
+        ClassNode declared = type.redirect();
+        if (declared.isArray()) return false;
+        if (declared.isPrimaryClassNode()) {
+            // A source class records its formals on the primary node. A synthetic
+            // carrier such as the closure-hint class has no module and uses the
+            // node only to hold the arguments being inferred, so a missing formal
+            // list is not a declaration of a raw type.
+            if (declared.getModule() == null) return false;
+            GenericsType[] formals = declared.getGenericsTypes();
+            return formals == null || formals.length == 0;
+        }
+        if (declared != type) {
+            GenericsType[] formals = declared.getGenericsTypes();
+            if (formals != null) return formals.length == 0;
+            if (declared.isResolved()) {
+                return declared.getTypeClass().getTypeParameters().length == 0;
+            }
+            return false;
+        }
+        if (declared.isResolved()) {
+            return declared.getTypeClass().getTypeParameters().length == 0;
+        }
+        return false;
+    }
+
+    /**
+     * A type argument or wildcard bound is a reference type (JLS 4.5).
+     * A primitive is replaced by its wrapper. Nested arguments are corrected
+     * the same way. Placeholders are left as placeholders.
+     *
+     * @param type the type argument
+     * @return a type argument javac could write, or {@code type} when it already is one
+     */
+    public static GenericsType asReferenceTypeArgument(final GenericsType type) {
+        if (type == null) return null;
+        ClassNode base = referenceType(type.getType());
+        ClassNode[] upper = referenceTypes(type.getUpperBounds());
+        ClassNode lower = referenceType(type.getLowerBound());
+        if (base == type.getType() && upper == type.getUpperBounds() && lower == type.getLowerBound()) {
+            return type;
+        }
+        GenericsType corrected = new GenericsType(base, upper, lower);
+        corrected.setWildcard(type.isWildcard());
+        return corrected;
+    }
+
+    private static ClassNode referenceType(final ClassNode type) {
+        if (type == null || type.isGenericsPlaceHolder()) return type;
+        if (ClassHelper.isPrimitiveType(type) && !ClassHelper.isPrimitiveVoid(type)) {
+            return ClassHelper.getWrapper(type);
+        }
+        GenericsType[] arguments = type.getGenericsTypes();
+        if (arguments == null || arguments.length == 0) return type;
+        GenericsType[] corrected = null;
+        for (int i = 0; i < arguments.length; i += 1) {
+            GenericsType argument = asReferenceTypeArgument(arguments[i]);
+            if (argument != arguments[i]) {
+                if (corrected == null) corrected = Arrays.copyOf(arguments, arguments.length);
+                corrected[i] = argument;
+            }
+        }
+        if (corrected == null) return type;
+        ClassNode copy = type.getPlainNodeReference();
+        copy.setGenericsTypes(corrected);
+        return copy;
+    }
+
+    private static ClassNode[] referenceTypes(final ClassNode[] types) {
+        if (types == null) return null;
+        ClassNode[] corrected = null;
+        for (int i = 0; i < types.length; i += 1) {
+            ClassNode type = referenceType(types[i]);
+            if (type != types[i]) {
+                if (corrected == null) corrected = Arrays.copyOf(types, types.length);
+                corrected[i] = type;
+            }
+        }
+        return corrected == null ? types : corrected;
+    }
+
+    /**
      * @since 2.3.0
      */
     public static ClassNode newClass(ClassNode type) {
@@ -525,7 +645,8 @@ public class GenericsUtils {
                 }
             }
         }
-        return makeClassSafeWithGenerics(type, newgTypes);
+        GenericsType[] legal = legalTypeArguments(type, newgTypes);
+        return makeClassSafeWithGenerics(type, legal == null ? EMPTY_GENERICS_ARRAY : legal);
     }
 
     /**

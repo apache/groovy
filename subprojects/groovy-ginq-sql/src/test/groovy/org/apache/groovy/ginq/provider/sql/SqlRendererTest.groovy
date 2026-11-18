@@ -359,6 +359,38 @@ class SqlRendererTest {
         assert !sqlite.sql.contains('LOCATE')
     }
 
+    @Test
+    void testOffsetOnlyLimitSyntheticNamesAndRealDivision() {
+        def query = new SqlQuery()
+        query.from = new SqlTableRef('employees', 'e')
+        query.offset = param(4)
+        query.projections << new SqlProjection(col('e', '__ginq_present'), '__ginq_label')
+        query.projections << new SqlProjection(new SqlBinary('/', col('e', 'salary'), param(2)))
+
+        def mysql = new SqlRenderer(Dialects.resolve('mysql')).render(query)
+        assert mysql.sql.contains('LIMIT 18446744073709551615 OFFSET ?')
+        assert mysql.sql.contains('`__ginq_present`')
+        assert mysql.sql.contains('AS `__ginq_label`')
+        assert mysql.sql.contains('DOUBLE')
+        assert [2, 4] == values(mysql) || [4, 2] == values(mysql)
+
+        def postgres = new SqlRenderer(Dialects.resolve('postgres')).render(query)
+        assert postgres.sql.contains('"__ginq_present"')
+        assert postgres.sql.contains('DOUBLE PRECISION')
+
+        def sqlite = new SqlRenderer(Dialects.resolve('sqlite')).render(query)
+        assert sqlite.sql.contains('"__ginq_present"')
+        assert sqlite.sql.contains('REAL')
+
+        assert null == Dialects.fromJdbcUrl(null)
+        assert 'sqlite' == Dialects.fromJdbcUrl('  jdbc:sqlite:mem:cov')
+        assert 'mysql' == Dialects.fromJdbcUrl('jdbc:mariadb://localhost/db')
+        assert null == Dialects.fromJdbcUrl('jdbc:oracle:thin:@localhost')
+        assert Dialects.resolve(null) instanceof AnsiDialect
+        assert Dialects.resolve('') instanceof AnsiDialect
+        assert 'mariadb' == Dialects.resolve('MariaDB').name()
+    }
+
     private static SqlQuery functionQuery(String name) {
         def query = new SqlQuery()
         query.from = new SqlTableRef('employees', 'e')
