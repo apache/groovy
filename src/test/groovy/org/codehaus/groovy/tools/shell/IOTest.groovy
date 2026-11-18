@@ -29,6 +29,8 @@ class IOTest {
 
     private static final String ESC = '\u001b['
 
+    private static final String WARNING = "WARN [${AnsiProbe.name}] probe"
+
     @Test
     void testStreamsOtherThanStandardOutputGetPlainText() {
         def out = new ByteArrayOutputStream()
@@ -40,21 +42,53 @@ class IOTest {
     }
 
     @Test
-    void testRedirectedStandardOutputGetsPlainText() {
-        def result = runProbe()
+    void testRedirectedStandardOutputGetsPlainTextWithoutOpeningTheConsole() {
+        def result = runProbe([], ['console'])
 
         assertTrue(result.out.contains('ansiSupported=false'), result.toString())
-        assertTrue(result.out.contains("WARN [${AnsiProbe.name}] probe".toString()), result.toString())
+        assertTrue(result.out.contains(WARNING), result.toString())
         assertFalse(result.out.contains(ESC), result.toString())
+        assertTrue(result.out.contains('console=none'), result.toString())
+        assertFalse(result.err.contains('restricted method'), result.toString())
     }
 
     // a terminal cannot be attached to a forked JVM here, so jansi.mode=force stands in for one
     @Test
     void testStandardOutputRendersAnsiWhenJansiRendersIt() {
-        def result = runProbe('-Djansi.mode=force')
+        def result = runProbe(['-Djansi.mode=force'], ['console'])
 
         assertTrue(result.out.contains('ansiSupported=true'), result.toString())
         assertTrue(result.out.contains("${ESC}1;31mWARN${ESC}m [${AnsiProbe.name}] probe".toString()), result.toString())
+    }
+
+    @Test
+    void testStripModeDoesNotOpenTheConsole() {
+        def result = runProbe(['-Djansi.mode=strip'], ['console'])
+
+        assertTrue(result.out.contains('ansiSupported=false'), result.toString())
+        assertTrue(result.out.contains('console=none'), result.toString())
+    }
+
+    // the Ant task's case: a host replaced System.out before Logger created its IO
+    @Test
+    void testLoggerWritesThroughAStandardOutputReplacedBeforehand() {
+        def result = runProbe(['-Djansi.mode=force'], ['replaceOut'])
+
+        assertTrue(result.out.contains('ansiSupported=false'), result.toString())
+        assertTrue(result.out.contains("captured=${WARNING}".toString()), result.toString())
+        assertTrue(result.out.contains('console=none'), result.toString())
+    }
+
+    @Test
+    void testStandardOutputGetsPlainTextWithoutJansi() {
+        def classPath = System.getProperty('java.class.path').split(File.pathSeparator)
+                .findAll { !new File(it).name.startsWith('jansi') }
+        def result = runProbe(['-Djansi.mode=force'], ['console'], classPath.join(File.pathSeparator))
+
+        assertTrue(result.out.contains('console=jansi-absent'), result.toString())
+        assertTrue(result.out.contains('ansiSupported=false'), result.toString())
+        assertTrue(result.out.contains(WARNING), result.toString())
+        assertFalse(result.out.contains(ESC), result.toString())
     }
 
     private static void logWarning(IO io) {
@@ -67,9 +101,10 @@ class IOTest {
         }
     }
 
-    private static Map<String, Object> runProbe(String... jvmArgs) {
+    private static Map<String, Object> runProbe(List<String> jvmArgs, List<String> probeArgs,
+                                                String classPath = System.getProperty('java.class.path')) {
         def javaBin = new File(System.getProperty('java.home'), 'bin/java').absolutePath
-        def command = [javaBin, *jvmArgs, '-cp', System.getProperty('java.class.path'), AnsiProbe.name]
+        def command = [javaBin, *jvmArgs, '-cp', classPath, AnsiProbe.name, *probeArgs]
         def proc = command.execute()
         def out = new StringBuilder(), err = new StringBuilder()
         proc.waitForProcessOutput(out, err)
@@ -77,15 +112,39 @@ class IOTest {
     }
 
     /**
-     * Logs one warning through an IO on the JVM's own standard streams.
+     * Logs one warning through {@link Logger} on the JVM's own standard streams, then reports what happened.
+     * Arguments: {@code console} logs through {@link IO#forConsole()} rather than the IO the Logger creates
+     * itself; {@code replaceOut} replaces {@code System.out} with a buffer first, as a host such as Ant does.
      */
     static class AnsiProbe {
         static void main(String[] args) {
-            def io = new IO()
-            io.out.println("ansiSupported=${io.ansiSupported}")
-            Logger.io = io
+            def stdout = System.out
+            def captured = null
+            if ('replaceOut' in args) {
+                captured = new ByteArrayOutputStream()
+                System.setOut(new PrintStream(captured, true))
+            }
+            if ('console' in args) {
+                Logger.io = IO.forConsole()
+            }
             Logger.create(AnsiProbe).warn('probe')
-            io.flush()
+            Logger.io.flush()
+            System.setOut(stdout)
+            stdout.println("ansiSupported=${Logger.io.ansiSupported}")
+            stdout.println("console=${consoleState()}")
+            if (captured != null) {
+                stdout.println("captured=${captured}")
+            }
+            stdout.flush()
+        }
+
+        private static String consoleState() {
+            try {
+                def ansiConsole = Class.forName('org.jline.jansi.AnsiConsole')
+                ansiConsole.getMethod('getTerminal').invoke(null) == null ? 'none' : 'opened'
+            } catch (ClassNotFoundException ignore) {
+                'jansi-absent'
+            }
         }
     }
 }
