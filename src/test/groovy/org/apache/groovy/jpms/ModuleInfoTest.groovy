@@ -22,6 +22,7 @@ import groovy.test.GroovyAssert
 import groovy.transform.CompileStatic
 import org.apache.groovy.ast.ModuleInfoNode
 import org.codehaus.groovy.ast.ClassNode
+import org.codehaus.groovy.ast.ModuleNode
 import org.codehaus.groovy.classgen.GeneratorContext
 import org.codehaus.groovy.control.CompilationFailedException
 import org.codehaus.groovy.control.CompilationUnit
@@ -30,6 +31,8 @@ import org.codehaus.groovy.control.Phases
 import org.codehaus.groovy.control.SourceUnit
 import org.codehaus.groovy.control.customizers.ASTTransformationCustomizer
 import org.codehaus.groovy.tools.javac.JavaAwareCompilationUnit
+import org.codehaus.groovy.tools.javac.JavaStubCompilationUnit
+import org.codehaus.groovy.tools.javac.JavaStubGenerator
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
 import org.objectweb.asm.ClassReader
@@ -41,7 +44,9 @@ import org.objectweb.asm.Opcodes
 import java.lang.module.Configuration
 import java.lang.module.ModuleDescriptor
 import java.lang.module.ModuleFinder
+import java.nio.file.FileSystems
 import java.nio.file.Files
+import java.nio.file.attribute.PosixFilePermission
 import java.util.jar.Attributes
 import java.util.jar.JarEntry
 import java.util.jar.JarOutputStream
@@ -1597,6 +1602,172 @@ final class ModuleInfoTest {
             assert thrown.message.contains('unnamed package is not allowed in named modules')
             assert unit.compiledClasses.contains('Loose')
             assert unit.compiledClasses.hasUnnamedClass()
+        } finally {
+            loader.close()
+        }
+    }
+
+    // GROOVY-9273
+    @Test
+    void testInMemoryOutputSkipsTargetDirectorySnapshot() {
+        def root = dir('mem-skip-snapshot')
+        def src = new File(root, 'src')
+        def out = new File(root, 'out')
+        out.mkdirs()
+        def files = []
+        [
+            'module-info.groovy': '''
+                module demo.memskip {
+                    exports demo.mem;
+                }
+            ''',
+            'demo/mem/A.java': '''
+                package demo.mem;
+                public class A {
+                    public static class Inner {}
+                }
+            '''
+        ].each { name, text ->
+            def file = new File(src, name)
+            file.parentFile.mkdirs()
+            file.text = text
+            files << file
+        }
+        // A disk walk would record this leftover. The blocked directory cannot
+        // be listed, so the same walk fails before indexing can finish.
+        new File(out, 'com/stale').mkdirs()
+        new File(out, 'com/stale/Old.class').bytes = [1, 2, 3] as byte[]
+        def blocked = new File(out, 'blocked')
+        def locked = false
+        if (FileSystems.default.supportedFileAttributeViews().contains('posix')) {
+            blocked.mkdirs()
+            new File(blocked, 'Old.class').bytes = [4, 5, 6] as byte[]
+            Files.setPosixFilePermissions(blocked.toPath(), EnumSet.noneOf(PosixFilePermission))
+            locked = true
+        }
+        def config = new CompilerConfiguration(targetDirectory: out)
+        config.jointCompilationOptions = [memStub: true, memClassOutput: true]
+        def loader = new GroovyClassLoader(GroovyAssert.class.classLoader)
+        def seen = []
+        try {
+            def unit = new JavaAwareCompilationUnit(config, loader) {
+                @Override
+                protected Object snapshotCompiledClassOutput() {
+                    def snapshot = super.snapshotCompiledClassOutput()
+                    assert snapshot instanceof Map
+                    assert snapshot.isEmpty()
+                    seen << snapshot
+                    return snapshot
+                }
+            }
+            unit.addSources(files as File[])
+            unit.compile()
+            assert seen.size() == 1
+            assert unit.compiledClasses.contains('demo.mem.A')
+            assert unit.compiledClasses.contains('demo.mem.A$Inner')
+            assert unit.compiledClasses.packages.contains('demo.mem')
+            assert !unit.compiledClasses.contains('com.stale.Old')
+            assert !unit.compiledClasses.contains('blocked.Old')
+            assert !unit.compiledClasses.contains('module-info')
+            assert !unit.compiledClasses.hasUnnamedClass()
+            def md = descriptor(unit)
+            assert md.name() == 'demo.memskip'
+            assert md.exports()*.source() == ['demo.mem']
+            assert md.packages().contains('demo.mem')
+            assert !md.packages().contains('com.stale')
+            assert loader.getResource('demo/mem/A.class') != null
+            assert loader.getResource('demo/mem/A$Inner.class') != null
+        } finally {
+            if (locked) {
+                Files.setPosixFilePermissions(blocked.toPath(), EnumSet.of(
+                        PosixFilePermission.OWNER_READ,
+                        PosixFilePermission.OWNER_WRITE,
+                        PosixFilePermission.OWNER_EXECUTE))
+            }
+            loader.close()
+        }
+    }
+
+    // GROOVY-9273
+    @Test
+    void testGenerateClassSkipsModuleInfoCarrier() {
+        def root = dir('stub-carrier')
+        def config = new CompilerConfiguration(targetDirectory: new File(root, 'out'))
+        def loader = new GroovyClassLoader(GroovyAssert.class.classLoader)
+        try {
+            def unit = new CompilationUnit(config, null, loader)
+            unit.addSource('module-info.groovy', 'module demo.carrier { exports demo.carrier; }')
+            unit.addSource('demo/carrier/A.groovy', 'package demo.carrier; class A {}')
+            unit.compile(Phases.CONVERSION)
+            def carrier = unit.ast.moduleInfo.classNode
+            assert carrier != null
+            assert carrier.compileUnit.is(unit.ast)
+            assert ModuleInfoNode.of(carrier).is(unit.ast.moduleInfo)
+
+            def intact = new File(root, 'intact')
+            intact.mkdirs()
+            new JavaStubGenerator(intact, false, 'UTF-8').generateClass(carrier)
+            assert !new File(intact, 'module-info.java').exists()
+
+            // The carrier no longer points at the compile unit. A module that
+            // does not hold the declaration still lets a type stub be rendered,
+            // which is what the one-argument call does.
+            carrier.module = new ModuleNode((SourceUnit) null)
+            assert carrier.compileUnit == null
+            assert ModuleInfoNode.of(carrier) == null
+            assert ModuleInfoNode.of(carrier, unit.ast).is(unit.ast.moduleInfo)
+
+            def missed = new File(root, 'missed')
+            missed.mkdirs()
+            new JavaStubGenerator(missed, false, 'UTF-8').generateClass(carrier)
+            def typeStub = new File(missed, 'module-info.java')
+            assert typeStub.isFile()
+            assert typeStub.text.contains('interface module-info')
+
+            def kept = new File(root, 'kept')
+            kept.mkdirs()
+            new JavaStubGenerator(kept, false, 'UTF-8').generateClass(carrier, unit.ast)
+            assert !new File(kept, 'module-info.java').exists()
+        } finally {
+            loader.close()
+        }
+    }
+
+    // GROOVY-9273
+    @Test
+    void testJavaStubCompilationUnitDoesNotStubModuleInfo() {
+        def root = dir('stub-unit')
+        def src = new File(root, 'src')
+        def moduleInfo = new File(src, 'module-info.groovy')
+        moduleInfo.parentFile.mkdirs()
+        moduleInfo.text = '''
+            module demo.stubs {
+                exports demo.api;
+            }
+        '''
+        def greeter = new File(src, 'demo/api/Greeter.groovy')
+        greeter.parentFile.mkdirs()
+        greeter.text = '''
+            package demo.api
+            class Greeter {}
+        '''
+        def stubDir = new File(root, 'stubs')
+        def out = new File(root, 'out')
+        stubDir.mkdirs()
+        out.mkdirs()
+        def config = new CompilerConfiguration(targetDirectory: out)
+        def loader = new GroovyClassLoader(GroovyAssert.class.classLoader)
+        try {
+            def unit = new JavaStubCompilationUnit(config, loader, stubDir)
+            assert unit.addSource(moduleInfo) != null
+            assert unit.addSource(greeter) != null
+            unit.compile()
+            assert unit.stubCount == 1
+            assert !new File(stubDir, 'module-info.java').exists()
+            def stub = new File(stubDir, 'demo/api/Greeter.java')
+            assert stub.isFile()
+            assert stub.text.contains('class Greeter')
+            assert !stub.text.contains('interface module-info')
         } finally {
             loader.close()
         }
