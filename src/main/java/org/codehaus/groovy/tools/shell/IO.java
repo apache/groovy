@@ -24,6 +24,7 @@ import org.jline.jansi.AnsiMode;
 import org.jline.jansi.AnsiPrintStream;
 
 import java.io.Closeable;
+import java.io.Console;
 import java.io.IOError;
 import java.io.IOException;
 import java.io.InputStream;
@@ -31,12 +32,18 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.io.Reader;
+import java.lang.reflect.Method;
 
 /**
  * Container for input/output handles.
  */
 public class IO implements Closeable {
     private static final String ANSI_CONSOLE = "org.jline.jansi.AnsiConsole";
+
+    // the system properties JLine's Jansi reads, looked up here before Jansi is touched
+    private static final String JANSI_MODE = "jansi.mode";
+    private static final String JANSI_OUT_MODE = "jansi.out.mode";
+    private static final String JANSI_ERR_MODE = "jansi.err.mode";
 
     private static final boolean JANSI_AVAILABLE = isJansiAvailable();
 
@@ -71,16 +78,20 @@ public class IO implements Closeable {
     public final PrintWriter err;
 
     /**
-     * Whether {@link #out} renders ANSI escape sequences: the output stream is the JVM's standard
-     * output, JLine's Jansi is on the class path, and the output goes to a terminal (or the
+     * Whether {@link #out} renders ANSI escape sequences. Only an IO from {@link #forConsole()} does,
+     * when JLine's Jansi is on the class path and standard output is a terminal (or the
      * {@code jansi.mode} system property is {@code force}).
      */
     public final boolean ansiSupported;
 
     /**
-     * Construct a new IO container.
+     * Construct a new IO container, with plain writers on the given streams.
      */
     public IO(final InputStream inputStream, final OutputStream outputStream, final OutputStream errorStream) {
+        this(inputStream, outputStream, errorStream, false);
+    }
+
+    private IO(final InputStream inputStream, final OutputStream outputStream, final OutputStream errorStream, final boolean console) {
         assert inputStream != null;
         assert outputStream != null;
         assert errorStream != null;
@@ -90,8 +101,8 @@ public class IO implements Closeable {
         this.errorStream = errorStream;
 
         this.in = new InputStreamReader(inputStream);
-        PrintWriter out = tryConstructRenderWriter(outputStream);
-        PrintWriter err = tryConstructRenderWriter(errorStream);
+        PrintWriter out = console ? tryConstructRenderWriter(outputStream) : null;
+        PrintWriter err = console ? tryConstructRenderWriter(errorStream) : null;
         this.ansiSupported = out != null;
         if (out == null) {
             out = new PrintWriter(outputStream, true);
@@ -107,21 +118,47 @@ public class IO implements Closeable {
      * Attempts to create an ANSI-aware writer for the supplied stream.
      *
      * <p>Only the JVM's own standard output and error streams can render ANSI, through JLine's Jansi
-     * {@code AnsiConsole}, which also enables virtual terminal processing on Windows. A stream that is
-     * redirected to a file or a pipe gets no ANSI writer, so no escape sequences reach it.</p>
+     * {@code AnsiConsole}, which also enables virtual terminal processing on Windows. The console is
+     * opened only when the stream's {@code jansi.mode} is {@code force}, or is not {@code strip} and
+     * the JVM has a terminal, so output redirected to a file or a pipe never loads JLine.</p>
      *
      * @param stream the output stream to wrap
      * @return an ANSI render writer, or {@code null} if ANSI support is
      * unavailable
      */
     protected PrintWriter tryConstructRenderWriter(OutputStream stream) {
-        if (!JANSI_AVAILABLE) {
+        boolean stdout = stream == System.out;
+        if (!JANSI_AVAILABLE || !(stdout || stream == System.err) || !mayRenderAnsi(stdout)) {
             return null;
         }
         try {
-            return JansiConsole.writerFor(stream);
+            return JansiConsole.writerFor(stdout);
         } catch (IOError | RuntimeException | LinkageError e) {
             return null;
+        }
+    }
+
+    private static boolean mayRenderAnsi(boolean stdout) {
+        String mode = System.getProperty(stdout ? JANSI_OUT_MODE : JANSI_ERR_MODE, System.getProperty(JANSI_MODE));
+        if ("strip".equals(mode)) {
+            return false;
+        }
+        return "force".equals(mode) || isTerminal();
+    }
+
+    private static boolean isTerminal() {
+        Console console = System.console();
+        if (console == null) {
+            return false;
+        }
+        // from JDK 22 System.console() can exist when the streams are redirected; isTerminal() tells
+        try {
+            Method isTerminal = Console.class.getMethod("isTerminal");
+            return (Boolean) isTerminal.invoke(console);
+        } catch (NoSuchMethodException e) {
+            return true;
+        } catch (ReflectiveOperationException | RuntimeException e) {
+            return false;
         }
     }
 
@@ -139,25 +176,36 @@ public class IO implements Closeable {
      * Refers to JLine's Jansi, and is loaded only once {@link #isJansiAvailable()} found it.
      */
     private static final class JansiConsole {
-        static PrintWriter writerFor(OutputStream stream) {
-            AnsiPrintStream console;
-            // AnsiConsole writes to the streams the JVM started with, so a replaced System.out keeps its own
-            if (stream == System.out && System.out == AnsiConsole.sysOut()) {
-                console = AnsiConsole.out();
-            } else if (stream == System.err && System.err == AnsiConsole.sysErr()) {
-                console = AnsiConsole.err();
-            } else {
+        static PrintWriter writerFor(boolean stdout) {
+            // AnsiConsole writes to the streams the JVM started with, so a System.out replaced since keeps its own
+            if (stdout ? System.out != AnsiConsole.sysOut() : System.err != AnsiConsole.sysErr()) {
                 return null;
             }
+            AnsiPrintStream console = stdout ? AnsiConsole.out() : AnsiConsole.err();
             return console.getMode() == AnsiMode.Strip ? null : new PrintWriter(console, true);
         }
     }
 
     /**
-     * Construct a new IO container using system streams.
+     * Construct a new IO container using system streams, with plain writers.
      */
     public IO() {
         this(System.in, System.out, System.err);
+    }
+
+    /**
+     * Creates an IO container on the system streams that renders ANSI escape sequences when standard
+     * output is a terminal, through JLine's Jansi {@code AnsiConsole}.
+     *
+     * <p>The console writes to the JVM's own standard streams, not through {@code System.out}, so call
+     * this only where {@code System.out} and {@code System.err} have not been replaced, such as in a
+     * command-line tool's {@code main}. A host that redirects them (Ant, Gradle, an IDE) should use
+     * {@link #IO()}.</p>
+     *
+     * @return an IO container whose {@link #out} and {@link #err} may render ANSI
+     */
+    public static IO forConsole() {
+        return new IO(System.in, System.out, System.err, true);
     }
 
     /**
