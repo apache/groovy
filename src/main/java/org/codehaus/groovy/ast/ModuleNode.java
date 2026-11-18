@@ -551,12 +551,55 @@ public class ModuleNode extends ASTNode {
 
     /**
      * Records the JPMS module declaration parsed from this source.
+     * When this module already belongs to a compile unit, the declaration is
+     * adopted or rejected there. A rejected declaration is not left on this
+     * module, so a later conflict is not dropped.
      *
      * @param moduleDeclaration the declaration, or {@code null}
      * @since 7.0.0
      */
     public void setModuleDeclaration(final ModuleInfoNode moduleDeclaration) {
+        if (this.moduleDeclaration == moduleDeclaration) {
+            return;
+        }
+        ModuleInfoNode previous = this.moduleDeclaration;
         this.moduleDeclaration = moduleDeclaration;
+        if (unit == null) {
+            return;
+        }
+        unit.setModuleInfo(moduleDeclaration);
+        // A rejected declaration must not stay here. That leftover would make a
+        // later call with the same instance look unchanged and drop the conflict.
+        if (this.moduleDeclaration == moduleDeclaration
+                && moduleDeclaration != null
+                && unit.getModuleInfo() != moduleDeclaration) {
+            this.moduleDeclaration = unit.getModuleInfo() == previous ? previous : null;
+        }
+    }
+
+    /**
+     * Replaces the declaration without asking the compile unit to adopt it.
+     * Used when a rejected declaration is cleared or the accepted one is restored.
+     */
+    void replaceModuleDeclaration(final ModuleInfoNode moduleDeclaration) {
+        this.moduleDeclaration = moduleDeclaration;
+    }
+
+    /**
+     * Drops {@code node} from this module by identity. Does not synthesize a
+     * script class, and does not remove a different class of the same name.
+     */
+    void removeClass(final ClassNode node) {
+        if (node == null) {
+            return;
+        }
+        Iterator<ClassNode> it = classes.iterator();
+        while (it.hasNext()) {
+            if (it.next() == node) {
+                it.remove();
+                return;
+            }
+        }
     }
 
     /**

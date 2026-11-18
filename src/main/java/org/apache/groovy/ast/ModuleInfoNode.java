@@ -85,8 +85,11 @@ public final class ModuleInfoNode extends AnnotatedNode {
 
     /**
      * Whether {@code candidate} is the class the pipeline should treat as this
-     * declaration. A class of the same name matches as well, so replacing the
-     * carrier does not drop the declaration.
+     * declaration. The carrier matches by identity, including a redirect to it.
+     * A {@code module-info} class in the source that holds this declaration
+     * matches as well, so replacing the carrier in that source does not drop
+     * the declaration. Another class that is merely named {@code module-info}
+     * does not match.
      *
      * @param candidate the class being visited
      * @return {@code true} when the visitor should treat {@code candidate} as this declaration
@@ -99,8 +102,14 @@ public final class ModuleInfoNode extends AnnotatedNode {
         if (classNode != null && classNode.redirect() == candidate.redirect()) {
             return true;
         }
-        return "module-info".equals(candidate.getName())
-                && (classNode == null || "module-info".equals(classNode.getName()));
+        if (!"module-info".equals(candidate.getName())) {
+            return false;
+        }
+        if (classNode != null && !"module-info".equals(classNode.getName())) {
+            return false;
+        }
+        ModuleNode module = candidate.getModule();
+        return module != null && module.getModuleDeclaration() == this;
     }
 
     /**
@@ -113,19 +122,43 @@ public final class ModuleInfoNode extends AnnotatedNode {
      * @return the declaration, or {@code null} when {@code classNode} is not the carrier
      */
     public static ModuleInfoNode of(final ClassNode classNode) {
+        return of(classNode, null);
+    }
+
+    /**
+     * The module declaration for which {@code classNode} is the emission carrier,
+     * or {@code null}. The class's own compile unit is used when it has one.
+     * {@code fallback} is used only when the class no longer points at its module,
+     * which is how a visitor still finds the declaration after that link is cleared.
+     * A class that belongs to a compile unit is not bound to a different unit's
+     * declaration. Node metadata is not consulted.
+     *
+     * @param classNode the class being visited
+     * @param fallback compile unit known to the caller, or {@code null}
+     * @return the declaration, or {@code null} when {@code classNode} is not the carrier
+     * @since 7.0.0
+     */
+    public static ModuleInfoNode of(final ClassNode classNode, final CompileUnit fallback) {
         if (classNode == null) {
             return null;
         }
-        CompileUnit unit = classNode.getCompileUnit();
-        if (unit != null) {
-            ModuleInfoNode declaration = unit.getModuleInfo();
-            return declaration != null && declaration.isEmittedAs(classNode) ? declaration : null;
+        CompileUnit own = classNode.getCompileUnit();
+        if (own != null) {
+            return emittedBy(own, classNode);
+        }
+        if (fallback != null && fallback.getModuleInfo() != null) {
+            return emittedBy(fallback, classNode);
         }
         ModuleNode module = classNode.getModule();
         if (module == null) {
             return null;
         }
         ModuleInfoNode declaration = module.getModuleDeclaration();
+        return declaration != null && declaration.isEmittedAs(classNode) ? declaration : null;
+    }
+
+    private static ModuleInfoNode emittedBy(final CompileUnit unit, final ClassNode classNode) {
+        ModuleInfoNode declaration = unit.getModuleInfo();
         return declaration != null && declaration.isEmittedAs(classNode) ? declaration : null;
     }
 

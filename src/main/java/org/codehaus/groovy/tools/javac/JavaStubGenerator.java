@@ -29,7 +29,6 @@ import org.apache.groovy.io.StringBuilderWriter;
 import org.codehaus.groovy.ast.AnnotatedNode;
 import org.codehaus.groovy.ast.AnnotationNode;
 import org.codehaus.groovy.ast.ClassNode;
-import org.codehaus.groovy.ast.CompileUnit;
 import org.codehaus.groovy.ast.ConstructorNode;
 import org.codehaus.groovy.ast.DynamicVariable;
 import org.codehaus.groovy.ast.FieldNode;
@@ -190,7 +189,7 @@ public class JavaStubGenerator {
         // declaration in module-info.java is not a modular compilation unit.
         // Sibling .java files are compiled from the classpath, so they do not
         // need a stub. Class generation still writes module-info.class.
-        if (moduleDeclaration(classNode) != null) {
+        if (ModuleInfoNode.of(classNode) != null) {
             return;
         }
         // only attempt to render if super-class is resolved; else wait for it
@@ -209,21 +208,6 @@ public class JavaStubGenerator {
         } else {
             generateFileStub(classNode);
         }
-    }
-
-    /**
-     * The module declaration for which {@code classNode} is the emission carrier.
-     * Read from the compile unit, not from class metadata.
-     */
-    private static ModuleInfoNode moduleDeclaration(final ClassNode classNode) {
-        CompileUnit unit = classNode.getCompileUnit();
-        if (unit != null) {
-            ModuleInfoNode declaration = unit.getModuleInfo();
-            if (declaration != null) {
-                return declaration.isEmittedAs(classNode) ? declaration : null;
-            }
-        }
-        return ModuleInfoNode.of(classNode);
     }
 
     private void generateMemStub(ClassNode classNode) {

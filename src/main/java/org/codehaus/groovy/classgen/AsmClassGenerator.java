@@ -404,7 +404,7 @@ public class AsmClassGenerator extends ClassGenerator {
                     bytecodeVersion = minVersion;
                 }
             }
-            ModuleInfoNode moduleInfo = moduleDeclaration(classNode);
+            ModuleInfoNode moduleInfo = ModuleInfoNode.of(classNode, context != null ? context.getCompileUnit() : null);
             if (moduleInfo != null) {
                 emitModuleInfo(classNode, moduleInfo, bytecodeVersion);
                 return;
@@ -498,25 +498,6 @@ public class AsmClassGenerator extends ClassGenerator {
             gre.setModule(classNode.getModule());
             throw gre;
         }
-    }
-
-    /**
-     * The module declaration for which {@code classNode} is the emission carrier.
-     * The generator context's compile unit is consulted first, so clearing class
-     * metadata (including the module link) cannot drop the declaration.
-     */
-    private ModuleInfoNode moduleDeclaration(final ClassNode classNode) {
-        CompileUnit unit = context != null ? context.getCompileUnit() : null;
-        if (unit == null) {
-            unit = classNode.getCompileUnit();
-        }
-        if (unit != null) {
-            ModuleInfoNode declaration = unit.getModuleInfo();
-            if (declaration != null) {
-                return declaration.isEmittedAs(classNode) ? declaration : null;
-            }
-        }
-        return ModuleInfoNode.of(classNode);
     }
 
     /**

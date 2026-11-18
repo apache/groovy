@@ -783,10 +783,13 @@ public class CompilationUnit extends ProcessingUnit {
     public void compile(int throughPhase) throws CompilationFailedException {
         // to support incremental compilation, always restart the compiler;
         // individual passes are responsible for not re-processing old code
+        compiledClasses.clear();
+        flushModuleInfoConflict();
         gotoPhase(Phases.INITIALIZATION);
         throughPhase = Math.min(throughPhase, Phases.ALL);
 
         while (throughPhase >= phase && phase <= Phases.ALL) {
+            flushModuleInfoConflict();
             if (phase == Phases.CONVERSION) {
                 if (sources.size() > 1 && Boolean.TRUE.equals(configuration.getOptimizationOptions().get(CompilerConfiguration.PARALLEL_PARSE))) {
                     buildASTsInParallel();
@@ -816,7 +819,18 @@ public class CompilationUnit extends ProcessingUnit {
             }
         }
 
+        flushModuleInfoConflict();
         getErrorCollector().failIfErrors();
+    }
+
+    /**
+     * Reports a module-declaration conflict that had no source unit to attach to.
+     */
+    private void flushModuleInfoConflict() {
+        String conflict = getAST().consumeModuleInfoConflict();
+        if (conflict != null) {
+            getErrorCollector().addErrorAndContinue(Message.create(conflict, this));
+        }
     }
 
     /**

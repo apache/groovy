@@ -21,7 +21,6 @@ package org.codehaus.groovy.tools.javac;
 import groovy.lang.GroovyClassLoader;
 import org.apache.groovy.ast.ModuleInfoNode;
 import org.codehaus.groovy.ast.ClassNode;
-import org.codehaus.groovy.ast.CompileUnit;
 import org.codehaus.groovy.ast.GroovyClassVisitor;
 import org.codehaus.groovy.ast.ModuleNode;
 import org.codehaus.groovy.classgen.GeneratorContext;
@@ -212,13 +211,17 @@ public class JavaAwareCompilationUnit extends CompilationUnit {
                 }
                 addJavaCompilationUnits(stubGenerator.getJavaStubCompilationUnitSet()); // add java stubs
                 Object snapshot = snapshotCompiledClassOutput();
+                Map<String, byte[]> memoryBefore = memoryClassOutputSnapshot();
                 compiler.compile(new ArrayList<>(javaSources), this);
-                Set<String> compiledNames = collectCompiledClassNames(snapshot);
-                if (compiledNames != null) {
-                    CompiledClassIndex index = getCompiledClasses();
-                    for (String name : compiledNames) {
-                        index.add(name);
-                    }
+                Set<String> compiledNames = new LinkedHashSet<>();
+                Set<String> fromHook = collectCompiledClassNames(snapshot);
+                if (fromHook != null) {
+                    compiledNames.addAll(fromHook);
+                }
+                compiledNames.addAll(memoryClassNamesWrittenSince(memoryBefore));
+                CompiledClassIndex index = getCompiledClasses();
+                for (String name : compiledNames) {
+                    index.add(name);
                 }
                 warnIfShadowed();
             } finally {
@@ -409,15 +412,8 @@ public class JavaAwareCompilationUnit extends CompilationUnit {
      * class no longer points at its module.
      */
     private static boolean isModuleDeclaration(final SourceUnit source, final ClassNode classNode) {
-        CompileUnit unit = classNode.getCompileUnit();
-        if (unit == null && source != null && source.getAST() != null) {
-            unit = source.getAST().getUnit();
-        }
-        if (unit == null) {
-            return ModuleInfoNode.of(classNode) != null;
-        }
-        ModuleInfoNode declaration = unit.getModuleInfo();
-        return declaration != null && declaration.isEmittedAs(classNode);
+        return ModuleInfoNode.of(classNode,
+                source != null && source.getAST() != null ? source.getAST().getUnit() : null) != null;
     }
 
     private void addJavaOrGroovySource(final File file) {
@@ -440,8 +436,9 @@ public class JavaAwareCompilationUnit extends CompilationUnit {
      * <p>
      * The default implementation records stamps of {@code .class} files under
      * the configured target directory. An absent or non-directory target yields
-     * an empty snapshot. A subclass that does not write class files to the
-     * filesystem may return {@code null}.
+     * an empty snapshot. In-memory javac output is not part of this snapshot;
+     * this class indexes that output itself after javac. A subclass that writes
+     * class files somewhere else may return {@code null}.
      *
      * @return an opaque snapshot consumed by {@link #collectCompiledClassNames(Object)},
      *         or {@code null} when no snapshot is required
@@ -464,10 +461,11 @@ public class JavaAwareCompilationUnit extends CompilationUnit {
      * <p>
      * The default implementation compares the target directory against
      * {@code snapshot} and also includes inner classes of just-compiled Java
-     * sources. When there is no target directory the default returns an empty
-     * set and records nothing. A subclass that stores class bytes elsewhere,
-     * for example in memory, MUST override this method; otherwise Java-only
-     * packages will not be recorded for module verification or {@code ModulePackages}.
+     * sources. When there is no target directory, or this compile publishes
+     * javac output in memory, the default returns an empty set: in-memory
+     * names are recorded by this class after javac, not by this hook. A
+     * subclass that stores class bytes somewhere else overrides this method
+     * so those names are recorded for module verification or {@code ModulePackages}.
      *
      * @param snapshot the value returned by {@link #snapshotCompiledClassOutput()}
      *                 before javac ran, which may be {@code null}
@@ -490,6 +488,11 @@ public class JavaAwareCompilationUnit extends CompilationUnit {
      * When there is no target directory this default index is empty.
      */
     private Set<String> indexCompiledClassFiles(final Map<String, ClassFileStamp> before) {
+        // javac wrote these classes into memory. The directory is not this
+        // invocation's output, so a leftover class file there is not indexed.
+        if (memClassBytes != null) {
+            return Set.of();
+        }
         File targetDir = this.configuration.getTargetDirectory();
         if (targetDir == null || !targetDir.isDirectory()) {
             return Set.of();
@@ -628,6 +631,55 @@ public class JavaAwareCompilationUnit extends CompilationUnit {
         getErrorCollector().addError(Message.create(
                 "Failed to index class files in " + where + " for joint compilation: " + detail, this));
         throw new CompilationFailedException(getPhase(), this);
+    }
+
+    /**
+     * Names of class files in the in-memory stage before javac runs.
+     * An empty map means there is no in-memory output, or the stage is empty.
+     */
+    private Map<String, byte[]> memoryClassOutputSnapshot() {
+        if (memClassBytes == null || memClassBytes.isEmpty()) {
+            return Map.of();
+        }
+        return new LinkedHashMap<>(memClassBytes);
+    }
+
+    /**
+     * Binary names of class files javac published to the in-memory stage.
+     * A name already present with the same byte array was not written by this
+     * invocation. {@code module-info} is left for {@link CompiledClassIndex} to ignore.
+     */
+    private Set<String> memoryClassNamesWrittenSince(final Map<String, byte[]> before) {
+        if (memClassBytes == null || memClassBytes.isEmpty()) {
+            return Set.of();
+        }
+        Set<String> names = new LinkedHashSet<>();
+        for (Map.Entry<String, byte[]> entry : memClassBytes.entrySet()) {
+            byte[] previous = before.get(entry.getKey());
+            if (previous != null && previous == entry.getValue()) {
+                continue;
+            }
+            String binary = binaryNameFromResource(entry.getKey());
+            if (binary != null) {
+                names.add(binary);
+            }
+        }
+        return names;
+    }
+
+    /**
+     * {@code com/example/Outer$Inner.class} becomes {@code com.example.Outer$Inner}.
+     * A name that is not a class resource is ignored.
+     */
+    private static String binaryNameFromResource(final String resourceName) {
+        if (resourceName == null || !resourceName.endsWith(".class")) {
+            return null;
+        }
+        String binary = resourceName.substring(0, resourceName.length() - 6).replace('/', '.');
+        if (binary.isEmpty()) {
+            return null;
+        }
+        return binary;
     }
 
     /**
