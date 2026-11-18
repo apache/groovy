@@ -172,6 +172,12 @@ final class WindowImplTest {
 
     @Test
     void testRangeFramesAroundNullsAndLargeValues() {
+        assert [0L, 1L] == GQ {
+            from n in [1, null]
+            orderby n
+            select (count() over(orderby n range 100, 200))
+        }.toList()
+
         assert [[1.0d, 2L], [1.0e20d, 1L]] == GQ {
             from n in [1.0d, 1.0e20d]
             select n, (count() over(orderby n range 0, null))

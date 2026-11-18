@@ -240,7 +240,7 @@ final class GinqErrorTest {
             assert [[1, 2], [3, 6], [6, 18]] == GQ {
                 from n in [1, 1, 3, 3, 6, 6, 6]
                 groupby n
-                select n, agg(_g.stream().map(r -> r.x).reduce(BigDecimal.ZERO, BigDecimal::add))
+                select n, agg(_g.stream().map(r -> BigDecimal.valueOf(r.x)).reduce(BigDecimal.ZERO, BigDecimal::add))
             }.toList()
         '''
 

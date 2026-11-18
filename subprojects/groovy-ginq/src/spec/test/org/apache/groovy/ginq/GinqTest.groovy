@@ -36,7 +36,6 @@ import org.codehaus.groovy.syntax.Types
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.Test
 
-import static groovy.test.GroovyAssert.assertScript
 import static groovy.test.GroovyAssert.isAtLeastJdk
 import static org.junit.jupiter.api.Assumptions.assumeTrue
 
@@ -2924,7 +2923,7 @@ class GinqTest {
 // tag::ginq_grouping_03[]
                 from n in [1, 1, 3, 3, 6, 6, 6]
                 groupby n
-                select n, agg(_g.stream().map(r -> r.n).reduce(BigDecimal.ZERO, BigDecimal::add))
+                select n, agg(_g.stream().map(r -> BigDecimal.valueOf(r.n)).reduce(BigDecimal.ZERO, BigDecimal::add))
 // end::ginq_grouping_03[]
             }.toList()
         '''
@@ -3624,7 +3623,10 @@ class GinqTest {
 
     @Test
     void "testGinq - complex example transformed"() {
-        assertScript '''
+        // The maps mix strings and ints. Static checking resolves s.amount to
+        // that shared type and rejects comparing it with an int, and the group
+        // key is erased to Object. Dynamic execution is unchanged.
+        String script = '''
             import static org.apache.groovy.ginq.provider.collection.runtime.Queryable.from
             import org.apache.groovy.ginq.provider.collection.runtime.Queryable.Order
 
@@ -3648,6 +3650,9 @@ class GinqTest {
             assert result[0].toList() == ['Alice', 2, 1280]
             assert result[1].toList() == ['Bob', 2, 1950]
         '''
+        GinqScriptModes.expectUnchecked(script)
+        GinqScriptModes.expectCheckedRejection(script,
+                'compareTo', 'No such property: key', 'lambda expecting java.lang.Number')
     }
 
     @Test
@@ -4058,8 +4063,8 @@ class GinqTest {
             def source = [1, 2, 3].stream()
             def query = GQ { from n in source select n }
             assert [1, 2, 3] == query.stream().toList()
-            def consumed = shouldFail(IllegalStateException) { query.stream().toList() }
-            assert consumed.message.contains('stream has already been operated upon')
+            // the query replays its buffer; the original stream does not restart
+            assert [1, 2, 3] == query.stream().toList()
             def sourceAgain = shouldFail(IllegalStateException) { source.toList() }
             assert sourceAgain.message.contains('stream has already been operated upon')
 
@@ -4516,7 +4521,7 @@ class GinqTest {
                 innerjoin m in [2, 3, 4] on m == n
                 where n > 1 && m < 5
                 groupby n, m
-                select n, m, agg(_g.stream().map(r -> r.n + r.m + cnt++).reduce(BigDecimal.ZERO, BigDecimal::add))
+                select n, m, agg(_g.stream().map(r -> BigDecimal.valueOf(r.n + r.m + cnt++)).reduce(BigDecimal.ZERO, BigDecimal::add))
             }
             assert 0 == cnt
             def stream = result.stream()
@@ -4536,7 +4541,7 @@ class GinqTest {
                 where n > 1 && m < 5
                 groupby n, m
                 orderby n in desc, m in asc
-                select n, m, agg(_g.stream().map(r -> r.n + r.m + cnt++).reduce(BigDecimal.ZERO, BigDecimal::add))
+                select n, m, agg(_g.stream().map(r -> BigDecimal.valueOf(r.n + r.m + cnt++)).reduce(BigDecimal.ZERO, BigDecimal::add))
             }
             assert 0 == cnt
             def stream = result.stream()
@@ -4561,7 +4566,7 @@ class GinqTest {
                 ).exists()
                 groupby n, m
                 orderby n in desc, m in asc
-                select n, m, agg(_g.stream().map(r -> r.n + r.m + cnt++).reduce(BigDecimal.ZERO, BigDecimal::add))
+                select n, m, agg(_g.stream().map(r -> BigDecimal.valueOf(r.n + r.m + cnt++)).reduce(BigDecimal.ZERO, BigDecimal::add))
             }
             assert 0 == cnt
             def stream = result.stream()
@@ -4587,7 +4592,7 @@ class GinqTest {
                 groupby n, m
                 orderby n in desc, m in asc
                 limit 0, 1
-                select n, m, agg(_g.stream().map(r -> r.n + r.m + cnt++).reduce(BigDecimal.ZERO, BigDecimal::add))
+                select n, m, agg(_g.stream().map(r -> BigDecimal.valueOf(r.n + r.m + cnt++)).reduce(BigDecimal.ZERO, BigDecimal::add))
             }
             assert 0 == cnt
             def stream = result.stream()
@@ -4684,7 +4689,7 @@ class GinqTest {
             assert [[1, 3, 2, 2, 6, 3, 3, 6]] == GQ {
                 from n in [1, 2, 3]
                 select min(n), max(n), avg(n), median(n), sum(n), count(n), count(),
-                        agg(_g.stream().map(r -> r.n).reduce(BigDecimal.ZERO, BigDecimal::add))
+                        agg(_g.stream().map(r -> BigDecimal.valueOf(r.n)).reduce(BigDecimal.ZERO, BigDecimal::add))
             }.toList()
 // end::ginq_aggfunction_01[]
         '''
@@ -4757,7 +4762,7 @@ class GinqTest {
         assertGinqScript '''
             assert [6] == GQ {
                 from n in [1, 2, 3]
-                select agg(_g.stream().map(r -> r.n).reduce(BigDecimal.ZERO, BigDecimal::add))
+                select agg(_g.stream().map(r -> BigDecimal.valueOf(r.n)).reduce(BigDecimal.ZERO, BigDecimal::add))
             }.toList()
         '''
     }
@@ -6842,7 +6847,7 @@ class GinqTest {
             assert [[1, 3], [2, 3]] == GQ {
                 from n in [1, 2]
                 select n,
-                    (agg(_g.stream().map(r -> r.n).reduce(BigDecimal.ZERO, BigDecimal::add)) over())
+                    (agg(_g.stream().map(r -> BigDecimal.valueOf(r.n)).reduce(BigDecimal.ZERO, BigDecimal::add)) over())
             }.toList()
         '''
     }
@@ -6854,7 +6859,7 @@ class GinqTest {
             assert [[1, 4], [2, 2], [3, 4]] == GQ {
                 from n in [1, 2, 3]
                 select n,
-                       (agg(_g.stream().map(r -> r.n).reduce(BigDecimal.ZERO, BigDecimal::add)) over(partitionby n % 2))
+                       (agg(_g.stream().map(r -> BigDecimal.valueOf(r.n)).reduce(BigDecimal.ZERO, BigDecimal::add)) over(partitionby n % 2))
             }.toList()
 // end::ginq_winfunction_42[]
         '''
@@ -6867,7 +6872,7 @@ class GinqTest {
                 from n in [1, 2, 3]
                 join m in [1, 2, 3] on m == n
                 select n,
-                       (agg(_g.stream().map(r -> r.n).reduce(BigDecimal.ZERO, BigDecimal::add)) over(partitionby n % 2))
+                       (agg(_g.stream().map(r -> BigDecimal.valueOf(r.n)).reduce(BigDecimal.ZERO, BigDecimal::add)) over(partitionby n % 2))
             }.toList()
         '''
     }
@@ -7475,7 +7480,7 @@ class GinqTest {
                 shutdown
             }
 // end::ginq_tips_09[]
-            assert QueryableHelper.ThreadPoolHolder.THREAD_POOL.isShutdown() && QueryableHelper.ThreadPoolHolder.THREAD_POOL.isTerminated()
+            assert QueryableHelper.isShutdown() && QueryableHelper.isTerminated()
         '''
     }
 
@@ -7488,7 +7493,7 @@ class GinqTest {
                 shutdown immediate
             }
 // end::ginq_tips_10[]
-            assert QueryableHelper.ThreadPoolHolder.THREAD_POOL.isShutdown() && QueryableHelper.ThreadPoolHolder.THREAD_POOL.isTerminated()
+            assert QueryableHelper.isShutdown() && QueryableHelper.isTerminated()
         '''
     }
 
@@ -7501,7 +7506,7 @@ class GinqTest {
                 shutdown abort
             }
 // end::ginq_tips_11[]
-            assert QueryableHelper.ThreadPoolHolder.THREAD_POOL.isShutdown()
+            assert QueryableHelper.isShutdown()
         '''
     }
 
@@ -7541,5 +7546,14 @@ class GinqTest {
         scriptList.each { String c ->
             assertScript(c)
         }
+    }
+
+    /**
+     * Every script in this class, including the optimize and smart-join
+     * variants, runs under default dynamic, {@code @CompileDynamic},
+     * {@code @TypeChecked} and {@code @CompileStatic}.
+     */
+    private static void assertScript(String script) {
+        GinqScriptModes.runAll(script)
     }
 }
