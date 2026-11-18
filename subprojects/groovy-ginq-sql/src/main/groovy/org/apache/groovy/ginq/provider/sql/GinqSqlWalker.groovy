@@ -87,6 +87,11 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.varX
  * The native SQL provider: transforms a GINQ query into a call executing the
  * equivalent SQL, rendered at compile time with all user values bound as
  * positional parameters, against the configured {@code dataSource}.
+ * <p>
+ * Registered window functions are pushed down. Translation uses
+ * {@link SqlFunctionRegistry#standard()} unless a caller in this package
+ * passes another registry. A window name the built-in registry does not
+ * list is rejected, and mixed mode evaluates that clause in memory.
  *
  * @since 7.0.0
  */
@@ -97,6 +102,7 @@ class GinqSqlWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
     private Map<String, String> configuration = [:]
     private Map<String, Expression> configurationExpressions = [:]
     private Dialect dialect = new AnsiDialect()
+    private SqlFunctionRegistry functions = SqlFunctionRegistry.standard()
 
     GinqSqlWalker(SourceUnit sourceUnit) {
         this.sourceUnit = sourceUnit
@@ -385,8 +391,33 @@ class GinqSqlWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
         }
     }
 
+    /**
+     * Replaces the function registry used to translate this query.
+     * The default is the sealed built-in set, including its window functions.
+     *
+     * @param functions the registry, usually {@link SqlFunctionRegistry#standard()}
+     * or a {@link SqlFunctionRegistry#copy()} with extra mappings
+     */
+    @PackageScope
+    void setFunctions(SqlFunctionRegistry functions) {
+        if (functions == null) {
+            throw new IllegalArgumentException('functions is required')
+        }
+        this.functions = functions
+    }
+
+    /**
+     * Translates {@code expression} to SQL IR without rendering or executing it.
+     * Production {@link #visit} does both. Tests use this to inspect a
+     * {@code SqlWindowCall} produced from a GINQ {@code over} clause.
+     */
+    @PackageScope
+    SqlQueryNode translate(AbstractGinqExpression expression) {
+        return translator().translate(expression)
+    }
+
     private GinqToSqlTranslator translator() {
-        return new GinqToSqlTranslator(sourceUnit, providerName, capabilities())
+        return new GinqToSqlTranslator(sourceUnit, providerName, functions, capabilities())
     }
 
     /**

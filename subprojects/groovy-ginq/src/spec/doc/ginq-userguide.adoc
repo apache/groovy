@@ -121,6 +121,12 @@ include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_datasource_03,
 include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_datasource_01,indent=0]
 ----
 
+A Java `Stream` is one-shot. The first terminal consumes it, and that stream cannot be
+read again the way a list can. `GQ` stays lazy: building the query does not pull elements.
+`toList()` materializes the query and later terminals read that list. `stream()` on a query
+whose source is a reusable `Iterable` builds a new stream each time. `GQL`, and an `@GQ`
+method whose result type is a list, call `toList()` at the expression, so they run then.
+
 ==== Array Data Source
 [source, sql]
 ----
@@ -677,6 +683,11 @@ over(
 * `0` used as bound of `rows` and `range` clause is equivalent to SQL's `CURRENT ROW`, and negative means `PRECEDING`, positive means `FOLLOWING`
 * `null` used as the lower bound of `rows` and `range` clause is equivalent to SQL's `UNBOUNDED PRECEDING`
 * `null` used as the upper bound of `rows` and `range` clause is equivalent to SQL's `UNBOUNDED FOLLOWING`
+* When `orderby` is present and neither `rows` nor `range` is written, the frame is the whole partition. `sum` and `avg` are then partition totals, not a running total. SQL's default, which stops at the current row, is not used.
+* `rowNumber` and `nthValue` count from `0`. The first row of a one-row partition is `0`.
+* `percentRank` of a one-row partition is `1`. With more than one row it is `(rank - 1) / (total rows - 1)`.
+* An all-null `sum` is `0`. An empty `avg` frame stays null. `avg` is not turned into `0`.
+* `ntile(buckets)` is `buckets * rowNumber() / partitionSize`, using integer division. `ntile(0)` is bucket `0` for every row of a non-empty partition.
 
 Also, GINQ provides some built-in window functions:
 |===
@@ -700,7 +711,7 @@ Also, GINQ provides some built-in window functions:
 |percentRank()
 |
 |java.math.BigDecimal
-|relative rank of the current row: (rank - 1) / (total rows - 1)
+|relative rank of the current row. A one-row partition is `1`. Otherwise `(rank - 1) / (total rows - 1)`. Without `orderby` this is null
 
 |cumeDist()
 |
@@ -710,7 +721,7 @@ Also, GINQ provides some built-in window functions:
 |ntile(_expression_)
 |java.lang.Long
 |java.lang.Long
-|bucket index ranging from `0` to `expression - 1`, dividing the partition as equally as possible
+|0-based bucket `expression * rowNumber() / partitionSize`. `ntile(0)` yields `0` on a non-empty partition
 
 |lead(_expression_ [, _offset_ [, _default_]])
 |any [, java.lang.Long [, same as _expression_ type]]
@@ -735,7 +746,7 @@ Also, GINQ provides some built-in window functions:
 |nthValue(_expression_, _n_)
 |any, java.lang.Long
 |same type as _expression_
-|returns _expression_ evaluated at the row that is the _nth_ row of the window frame
+|returns _expression_ at row _n_ of the window frame. _n_ counts from `0`, so `0` is the first row
 
 
 |count()
@@ -761,12 +772,12 @@ Also, GINQ provides some built-in window functions:
 |sum(_expression_)
 |java.lang.Number
 |java.math.BigDecimal
-|sum of expression across all non-null values
+|sum of _expression_. A null contributes nothing, and an all-null window is `0`
 
 |avg(_expression_)
 |java.lang.Number
 |java.math.BigDecimal
-|the average (arithmetic mean) of all non-null values
+|the average (arithmetic mean) of all non-null values. An empty frame stays null
 
 |median(_expression_)
 |java.lang.Number
@@ -1221,8 +1232,8 @@ text never contains user-supplied values and SQL injection is structurally impos
 The SQL backend operates in strict mode by default: an expression either translates cleanly to SQL,
 or the query is rejected at compile time with an error explaining the untranslatable construct.
 Opt in to mixed mode with `mixedMode: true` (the same option on `native-sql` and `jooq-sql`) when
-a query also needs something SQL cannot express, such as an arbitrary Groovy method, a window
-function, or a join to an in-memory collection:
+a query also needs something SQL cannot express, such as an arbitrary Groovy method or a join to
+an in-memory collection:
 [source, groovy]
 ----
 def result = GQL(provider: 'native-sql', mixedMode: true, dataSource: db) {
@@ -1284,7 +1295,37 @@ and say how to rewrite it or how to enable `mixedMode`. This split follows the s
 LINQ's `AsEnumerable`: a translatable prefix runs in the database and the rest of the query
 continues in memory. It is never the default.
 
-The main current restriction in strict mode is window functions. Aggregation is supported both in
+Portable GINQ window functions translate in strict mode under `native-sql` and `jooq-sql`:
+`fn(...) over(...)` becomes ANSI `OVER`. That covers `rowNumber`, `rank`, `denseRank`,
+`percentRank`, `cumeDist`, `ntile`, `lead`, `lag`, `firstValue`, `lastValue` and `nthValue`,
+and the window aggregates `count`, `sum`, `avg`, `min` and `max`. The window forms of
+`median`, `stdev`, `stdevp`, `var`, `varp` and `agg` remain deferred and are not translated;
+strict mode rejects them, and `mixedMode: true` still evaluates that clause in memory.
+`rowNumber` and `nthValue` stay 0-based. SQL renders `ROW_NUMBER() OVER (...) - 1`, and the
+`nthValue` index is shifted by one in the bound parameter so the first row remains `0`.
+When `orderby` is present and no `rows` or `range` is written, the default frame is the
+whole partition, not SQL's running frame. The translator inserts
+`ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING`, so `sum` and `avg` equal the
+partition aggregate. `percentRank` of a one-row partition is `1`; SQL `PERCENT_RANK` would
+be `0`, and the translator rewrites that case. A window `sum` is
+`COALESCE(SUM(...) OVER (...), 0)`, with `COALESCE` outside `OVER`. An all-null window
+`sum` is `0`. `avg` is not coalesced, so an empty frame stays null.
+`rows` offsets count rows in window order. `range` offsets are added to the current
+order value in either sort direction, so `range -2, 0` runs from two below the current
+value through the current value. A descending `orderby` keeps that value interval, and
+the generated `RANGE` frame is rewritten so `PRECEDING` and `FOLLOWING` still point
+along the sort. `rank`, `denseRank`, `percentRank`, `cumeDist` and `ntile` accept
+several `orderby` keys. `rank` and its relatives need `orderby`: without it the
+collection provider returns null, and strict SQL rejects the query. `rows` and `range`
+on `rowNumber`, `rank`, `denseRank`, `percentRank`, `cumeDist`, `ntile`, `lead` and
+`lag` are rejected, because SQL defines those functions without a frame. In memory,
+`rank` and its relatives still honor a frame, and the others ignore it. `ntile` is
+GINQ's 0-based formula, rendered with integer division, so it does not depend on
+`FLOOR`. SQLite accepts a `RANGE` frame only when every bound is `UNBOUNDED` or
+`CURRENT ROW`. MySQL and MariaDB cannot combine a numeric `RANGE` offset with GINQ's
+null ordering, which those dialects emulate with a second sort key; use `rows`, or
+`h2` or `postgres`. `COUNT(DISTINCT) OVER` is not available on SQLite.
+Aggregation is supported both in
 the classic form, e.g. `groupby e.deptId` with `select e.deptId, count(), sum(e.salary)`, and the
 `groupby ... into g` form, e.g. `g.count()`, `g.sum(e -> e.salary)`.
 `count(distinct(e.deptId))` and `g.count(distinct(e -> e.deptId))` (or
@@ -1368,7 +1409,7 @@ emitted as a guess. The exact SQL behaviour of a mapped function still depends o
 
 |`sum`
 |`COALESCE(SUM(...), 0)`
-|An all-null group is 0, matching the collection provider. Other aggregates can return SQL null.
+|An all-null group is 0, matching the collection provider. A window `sum` is `COALESCE(SUM(...) OVER (...), 0)`, with `COALESCE` outside `OVER`. Other aggregates can return SQL null.
 
 |`Math.max` / `Math.min`
 |`GREATEST` / `LEAST`
@@ -1431,6 +1472,64 @@ on the runtime classpath. With no `dialect` option, jOOQ's `DEFAULT` dialect is 
 pushed prefix is rendered by jOOQ.
 Selecting `provider: 'sql'` auto-detects, preferring `jooq-sql` when jOOQ is on the compile
 classpath and otherwise using `native-sql`.
+
+=== GINQ and LINQ
+
+GINQ stays SQL-shaped. The table is a map for readers who know language-integrated LINQ.
+It does not add C# query syntax, and window functions have no `System.Linq` counterpart.
+
+[cols="2,2,3"]
+|===
+|GINQ |Language-integrated LINQ |What stays different
+
+|`from` / `where` / `select`
+|`from` / `where` / `select`
+|GINQ writes `select` last, as SQL does.
+
+|`orderby x in desc`
+|`orderby x descending`
+|`in asc` is the default. `nullsfirst` and `nullslast` are part of the order key.
+
+|`groupby x into g`
+|`group ... by ... into g`
+|GINQ also keeps classic `groupby` and `having`.
+
+|`join ... on <predicate>`
+|`join ... on ... equals ...`
+|A GINQ `on` clause is any predicate. An equality joined with `&&` can use a hash join.
+
+|`leftjoin` / `rightjoin` / `fulljoin`
+|no outer-join keywords in query syntax
+|Outer joins are written in the GINQ query. C# query syntax has none of those keywords. `LeftJoin`, `RightJoin` and `FullJoin` are methods since .NET 10 / 11.
+
+|`union` / `intersect` / `minus`
+|`Union` / `Intersect` / `Except` methods
+|Set operations are clauses. On the collection provider a trailing `orderby` orders the last operand. SQL orders the combined result.
+
+|`limit offset, size`
+|`Skip` / `Take`
+|`limit n` keeps the first `n` rows. `limit offset, size` skips, then takes.
+
+|`rowNumber`, `rank`, `ntile`, `lead`, `sum(...) over(...)`
+|no language-integrated window
+|`rowNumber` and `nthValue` count from `0`. The default frame is the whole partition.
+
+|`GQ`
+|a deferred `IEnumerable` query
+|`GQ` returns a lazy `Queryable`. A terminal pulls the elements.
+
+|`GQL`, or `@GQ` returning a list
+|`ToList`
+|Those forms call `toList()` at the expression.
+
+|`native-sql` / `jooq-sql`
+|`IQueryable`
+|Translation is compile-time and fails closed. GINQ does not hand the provider an expression tree to rewrite later.
+
+|`mixedMode: true`
+|`AsEnumerable`
+|Opt-in, and never the default. A dialect limit is still a render-time error. It is not moved into memory.
+|===
 
 === Optimize GINQ
 

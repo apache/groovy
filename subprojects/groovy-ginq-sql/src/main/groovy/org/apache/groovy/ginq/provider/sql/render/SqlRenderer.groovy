@@ -46,6 +46,10 @@ import org.apache.groovy.ginq.provider.sql.ir.SqlStar
 import org.apache.groovy.ginq.provider.sql.ir.SqlTableRef
 import org.apache.groovy.ginq.provider.sql.ir.SqlTableSource
 import org.apache.groovy.ginq.provider.sql.ir.SqlUnary
+import org.apache.groovy.ginq.provider.sql.ir.SqlWindow
+import org.apache.groovy.ginq.provider.sql.ir.SqlWindowBound
+import org.apache.groovy.ginq.provider.sql.ir.SqlWindowCall
+import org.apache.groovy.ginq.provider.sql.ir.SqlWindowFrame
 import org.apache.groovy.lang.annotation.Incubating
 import org.codehaus.groovy.GroovyBugError
 import org.codehaus.groovy.ast.expr.Expression
@@ -191,12 +195,13 @@ class SqlRenderer {
             }
             if ('/' == expr.op) {
                 // Groovy divides in real arithmetic; SQL integer division would truncate
-                String realType = dialect.realTypeName()
-                sb.append('(CAST(')
-                renderExpr(expr.left, sb, parameters)
-                sb.append(' AS ').append(realType).append(') / CAST(')
-                renderExpr(expr.right, sb, parameters)
-                sb.append(' AS ').append(realType).append('))')
+                renderDivision(expr, dialect.realTypeName(), sb, parameters)
+                return
+            }
+            if ('IDIV' == expr.op) {
+                // Truncating division. ntile uses this so the buckets match GINQ
+                // and dialects without FLOOR can still render it.
+                renderDivision(expr, dialect.integerTypeName(), sb, parameters)
                 return
             }
             int prec = precedence(expr.op)
@@ -288,6 +293,12 @@ class SqlRenderer {
                 renderExpr(argExpr, sb, parameters)
             }
             sb.append(')')
+        } else if (expr instanceof SqlWindowCall) {
+            Dialect.rejectCountDistinctOver(expr.function, dialect.countDistinctOver(), dialect.name())
+            renderExpr(expr.function, sb, parameters)
+            sb.append(' OVER (')
+            renderWindow(expr.window, sb, parameters)
+            sb.append(')')
         } else if (expr instanceof SqlCountStar) {
             sb.append('COUNT(*)')
         } else if (expr instanceof SqlStar) {
@@ -339,6 +350,71 @@ class SqlRenderer {
             throw new GroovyBugError("Unknown table source: ${tableSource?.getClass()?.name}")
         }
         sb.append(' ').append(dialect.mixedIdentifier(tableSource.alias))
+    }
+
+    private void renderWindow(SqlWindow window, StringBuilder sb, List<Expression> parameters) {
+        boolean wrote = false
+        if (window.partitionBy) {
+            sb.append('PARTITION BY ')
+            window.partitionBy.eachWithIndex { SqlExpr part, int i ->
+                if (i > 0) sb.append(', ')
+                renderExpr(part, sb, parameters)
+            }
+            wrote = true
+        }
+        if (window.orderBy) {
+            if (wrote) sb.append(' ')
+            sb.append('ORDER BY ')
+            window.orderBy.eachWithIndex { SqlOrderSpec orderSpec, int i ->
+                if (i > 0) sb.append(', ')
+                renderOrderItem(orderSpec, sb, parameters)
+            }
+            wrote = true
+        }
+        if (window.frame != null) {
+            if (wrote) sb.append(' ')
+            renderFrame(window.frame, sb, parameters)
+        }
+    }
+
+    private void renderFrame(SqlWindowFrame frame, StringBuilder sb, List<Expression> parameters) {
+        Dialect.rejectRangeOffset(frame, dialect.numericRangeOffset(), dialect.explicitNullOrdering(), dialect.name())
+        sb.append(frame.unit.name()).append(' BETWEEN ')
+        renderBound(frame.lower, sb, parameters)
+        sb.append(' AND ')
+        renderBound(frame.upper, sb, parameters)
+    }
+
+    private void renderDivision(SqlBinary expr, String typeName, StringBuilder sb, List<Expression> parameters) {
+        sb.append('(CAST(')
+        renderExpr(expr.left, sb, parameters)
+        sb.append(' AS ').append(typeName).append(') / CAST(')
+        renderExpr(expr.right, sb, parameters)
+        sb.append(' AS ').append(typeName).append('))')
+    }
+
+    private void renderBound(SqlWindowBound bound, StringBuilder sb, List<Expression> parameters) {
+        switch (bound.kind) {
+            case SqlWindowBound.Kind.UNBOUNDED_PRECEDING:
+                sb.append('UNBOUNDED PRECEDING')
+                return
+            case SqlWindowBound.Kind.UNBOUNDED_FOLLOWING:
+                sb.append('UNBOUNDED FOLLOWING')
+                return
+            case SqlWindowBound.Kind.CURRENT_ROW:
+                sb.append('CURRENT ROW')
+                return
+            case SqlWindowBound.Kind.PRECEDING:
+                renderExpr(bound.offset, sb, parameters)
+                sb.append(' PRECEDING')
+                return
+            case SqlWindowBound.Kind.FOLLOWING:
+                renderExpr(bound.offset, sb, parameters)
+                sb.append(' FOLLOWING')
+                return
+            default:
+                throw new GroovyBugError("Unknown window bound: ${bound.kind}")
+        }
     }
 
     private void renderOrderItem(SqlOrderSpec orderSpec, StringBuilder sb, List<Expression> parameters) {
