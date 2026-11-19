@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1794985248140,
+  "lastUpdate": 1795071445854,
   "repoUrl": "https://github.com/apache/groovy",
   "entries": {
     "Compiler Performance": [
@@ -9931,6 +9931,63 @@ window.BENCHMARK_DATA = {
             "name": "compile@groovy-6",
             "value": 436.50333333333333,
             "range": "±17.89",
+            "unit": "ms",
+            "extra": "6.0.0"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "Scott Murphy",
+            "username": "codeconsole",
+            "email": "scott@alwaysvip.com"
+          },
+          "committer": {
+            "name": "GitHub",
+            "username": "web-flow",
+            "email": "noreply@github.com"
+          },
+          "id": "cb6cd0519a71f0ca291656c01549dd8911ceea41",
+          "message": "GROOVY-12715: let a cast apply to await and to an async closure (#3248)\n\n* GROOVY-12715: let a cast apply to await and to an async closure\n\nawait and async have their own alternatives in the expression rule, but the\noperand of a cast is parsed by castOperandExpression, which listed only a\ncast, a postfixExpression and the unary operators, so after a cast the two\nwords fell back to identifiers: (BigDecimal) await(price) was a call to a\nmethod named await and (Awaitable<Integer>) async { 7 } a call to a method\nnamed async. At script level that is a MissingMethodException; inside an\nasync task the failure is swallowed and the code awaiting the task's result\nhangs. castOperandExpression gains the asyncClosureExprAlt and awaitExprAlt\nalternatives; the rule shares expression's contexts, so AstBuilder handles\nthem unchanged.\n\nTests in AsyncAwaitTest: a cast applied to await (single and multiple\narguments), inside an async task that binds a dataflow variable, and to an\nasync closure.\n\n* GROOVY-12715: bound the await in the cast-inside-async test, so it fails rather than hangs without the fix\n\n* GROOVY-12715: list the async and await alternatives of castOperandExpression in the grammar doc",
+          "timestamp": "2026-11-18T15:33:26Z",
+          "url": "https://github.com/apache/groovy/commit/cb6cd0519a71f0ca291656c01549dd8911ceea41"
+        },
+        "date": 1795071439117,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "compile@current",
+            "value": 370.4166666666667,
+            "range": "±14.6",
+            "unit": "ms",
+            "extra": "current"
+          },
+          {
+            "name": "compile@groovy-3",
+            "value": 515.84,
+            "range": "±175.77",
+            "unit": "ms",
+            "extra": "3.0.25"
+          },
+          {
+            "name": "compile@groovy-4",
+            "value": 458.52666666666664,
+            "range": "±119.45",
+            "unit": "ms",
+            "extra": "4.0.33"
+          },
+          {
+            "name": "compile@groovy-5",
+            "value": 375.6966666666666,
+            "range": "±18.22",
+            "unit": "ms",
+            "extra": "5.1.3"
+          },
+          {
+            "name": "compile@groovy-6",
+            "value": 381.00333333333333,
+            "range": "±18.2",
             "unit": "ms",
             "extra": "6.0.0"
           }
