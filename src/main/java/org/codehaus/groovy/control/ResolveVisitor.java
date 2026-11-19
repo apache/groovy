@@ -45,6 +45,7 @@ import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.PropertyNode;
 import org.codehaus.groovy.ast.Variable;
 import org.codehaus.groovy.ast.VariableScope;
+import org.codehaus.groovy.ast.decompiled.DecompiledClassNode;
 import org.codehaus.groovy.ast.expr.AnnotationConstantExpression;
 import org.codehaus.groovy.ast.expr.BinaryExpression;
 import org.codehaus.groovy.ast.expr.CastExpression;
@@ -66,7 +67,6 @@ import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.ast.stmt.CatchStatement;
 import org.codehaus.groovy.ast.stmt.ForStatement;
-import org.codehaus.groovy.ast.decompiled.DecompiledClassNode;
 import org.codehaus.groovy.ast.stmt.Statement;
 import org.codehaus.groovy.classgen.VariableScopeVisitor;
 import org.codehaus.groovy.syntax.Types;
@@ -962,12 +962,13 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
      * member type is not claimed, because a type star does not import it.
      * <p>
      * Customizer on-demand imports have no source location. They are tried
-     * after every source statement that did not claim the name, and before
-     * the language defaults, so a configured star can still supply
-     * {@code Date} or {@code String}. Within that tier an inaccessible type
-     * is skipped. Static stars precede package stars because the two are
-     * stored separately. An explicit single-type import is resolved earlier
-     * and therefore wins over every on-demand import.
+     * when no source statement bound the name, including when one claimed
+     * an inaccessible type, and before the language defaults, so a
+     * configured star can still supply {@code Date} or {@code String}.
+     * Within that tier an inaccessible type is skipped. Static stars
+     * precede package stars because the two are stored separately. An
+     * explicit single-type import is resolved earlier and therefore wins
+     * over every on-demand import.
      *
      * @return {@code true} if the name was bound
      */

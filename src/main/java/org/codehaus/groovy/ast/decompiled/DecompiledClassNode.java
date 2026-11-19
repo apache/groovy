@@ -205,9 +205,13 @@ public class DecompiledClassNode extends ClassNode {
      * Binary name of the immediately enclosing class when this class file's
      * InnerClasses attribute records this class as a member.
      * <p>
-     * Null for a top-level class, including one whose binary name contains
-     * {@code '$'}, and for a local or anonymous class. The {@code '$'}
-     * character alone is not evidence of an enclosing type.
+     * {@link AsmDecompiler#visitEnd} already stores the self-to-outer member
+     * chain outermost-first, and only for entries with a non-null
+     * {@code outer_class_info}, so the last entry is this class. This method
+     * reads that entry. It returns {@code null} for a top-level, local, or
+     * anonymous class, including a top-level class whose binary name contains
+     * {@code '$'}. The {@code '$'} character alone is not evidence of an
+     * enclosing type.
      *
      * @return the enclosing binary name, or {@code null} when this is not a member type
      */

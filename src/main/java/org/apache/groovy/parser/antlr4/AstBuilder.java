@@ -528,11 +528,12 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
      * {@code module-info.class}) are supported — all packages in the JAR
      * are imported since automatic modules have no explicit exports.
      * <p>
-     * Resolution treats these packages as star imports placed at this statement.
-     * The first accessible type in source order wins, including against a
-     * star import written before or after the module import. An explicit
-     * single-type import is resolved earlier and takes priority. Star imports,
-     * module imports, and default imports bind only accessible types.
+     * Resolution treats the packages of one {@code import module} as a single
+     * statement placed at this import. Within that statement the first
+     * accessible type wins. An inaccessible type found by an earlier source
+     * statement claims the name, so a later star does not bind a different
+     * type. An explicit single-type import is resolved earlier and takes
+     * priority.
      */
     private ImportNode expandModuleImport(final String moduleName, final List<AnnotationNode> annotations, final ImportDeclarationContext ctx) {
         var finder = ModuleImportHelper.moduleFinder(sourceUnit);

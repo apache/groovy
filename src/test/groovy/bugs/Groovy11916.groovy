@@ -570,7 +570,7 @@ class Use {
      */
     // GROOVY-11916
     @Test
-    void testStarImportsBindFirstAccessibleType() {
+    void testStarImportsBindFirstSourceStarThatFindsTheType() {
         def failures = []
         for (String a : ['m', 'p', 'k']) {
             for (String b : ['m', 'p', 'k']) {
@@ -614,10 +614,10 @@ class Use {
      * import, including a star of that same package.
      * <p>
      * The use class is {@code pa.Use}, with the same {@code m}/{@code p}/{@code k}
-     * matrix as {@code testStarImportsBindFirstAccessibleType}. When pa.X
-     * exists it wins whether it is public or package-private, even if pb.X
-     * or pc.X is public. When pa.X is missing, a later star is used only
-     * when no earlier source star found an inaccessible X.
+     * matrix as {@code testStarImportsBindFirstSourceStarThatFindsTheType}.
+     * When pa.X exists it wins whether it is public or package-private, even
+     * if pb.X or pc.X is public. When pa.X is missing, a later star is used
+     * only when no earlier source star found an inaccessible X.
      */
     // GROOVY-11916
     @Test
@@ -1036,30 +1036,63 @@ class Use {
     }
 
     private static void assertDollarNameResolution(CompilerConfiguration config) {
-        def topLevel = classifyAgainst(dollarLoader(false, true), [
-            'q/Use': useSource('q', 'import p.*', 'O$I')
-        ], 'q.Use', config)
-        assert topLevel == 'p.O$I' : topLevel
+        try (DollarClasspath topLevelClasses = dollarLoader(false, true)) {
+            def topLevel = classifyAgainst(topLevelClasses.loader, [
+                'q/Use': useSource('q', 'import p.*', 'O$I')
+            ], 'q.Use', config)
+            assert topLevel == 'p.O$I' : topLevel
+        }
 
-        def noOuter = classifyAgainst(dollarLoader(false, false), [
-            'q/Use': useSource('q', 'import p.*', 'O$I')
-        ], 'q.Use', config)
-        assert noOuter == 'p.O$I' : noOuter
+        try (DollarClasspath noOuterClasses = dollarLoader(false, false)) {
+            def noOuter = classifyAgainst(noOuterClasses.loader, [
+                'q/Use': useSource('q', 'import p.*', 'O$I')
+            ], 'q.Use', config)
+            assert noOuter == 'p.O$I' : noOuter
+        }
 
-        def hiddenTop = classifyAgainst(dollarLoader(false, true, false, true), [
-            'q/Use': useSource('q', 'import p.*', 'O$I')
-        ], 'q.Use', config)
-        assert hiddenTop == 'unresolved' : hiddenTop
+        try (DollarClasspath hiddenTopClasses = dollarLoader(false, true, false, true)) {
+            def hiddenTop = classifyAgainst(hiddenTopClasses.loader, [
+                'q/Use': useSource('q', 'import p.*', 'O$I')
+            ], 'q.Use', config)
+            assert hiddenTop == 'unresolved' : hiddenTop
+        }
 
-        def hiddenMember = classifyAgainst(dollarLoader(true, true, true, false), [
-            'q/Use': useSource('q', 'import p.*', 'O$I')
-        ], 'q.Use', config)
-        assert hiddenMember == 'unresolved' : hiddenMember
+        try (DollarClasspath hiddenMemberClasses = dollarLoader(true, true, true, false)) {
+            def hiddenMember = classifyAgainst(hiddenMemberClasses.loader, [
+                'q/Use': useSource('q', 'import p.*', 'O$I')
+            ], 'q.Use', config)
+            assert hiddenMember == 'unresolved' : hiddenMember
+        }
 
-        def openMember = classifyAgainst(dollarLoader(true, true, true, true), [
-            'q/Use': useSource('q', 'import p.*', 'O$I')
-        ], 'q.Use', config)
-        assert openMember == 'p.O$I' : openMember
+        try (DollarClasspath openMemberClasses = dollarLoader(true, true, true, true)) {
+            def openMember = classifyAgainst(openMemberClasses.loader, [
+                'q/Use': useSource('q', 'import p.*', 'O$I')
+            ], 'q.Use', config)
+            assert openMember == 'p.O$I' : openMember
+        }
+    }
+
+    /**
+     * Class files in a temporary directory, opened by one class loader.
+     * Closing the loader also deletes the directory.
+     */
+    private static final class DollarClasspath implements AutoCloseable {
+        final URLClassLoader loader
+        private final Path dir
+
+        DollarClasspath(URLClassLoader loader, Path dir) {
+            this.loader = loader
+            this.dir = dir
+        }
+
+        @Override
+        void close() throws IOException {
+            try {
+                loader.close()
+            } finally {
+                dir.toFile().deleteDir()
+            }
+        }
     }
 
     /**
@@ -1068,7 +1101,7 @@ class Use {
      * @param dollarPublic access of {@code p.O$I}
      * @param outerPublic access of {@code p.O}
      */
-    private static URLClassLoader dollarLoader(boolean member, boolean withOuter, boolean dollarPublic = true, boolean outerPublic = false) {
+    private static DollarClasspath dollarLoader(boolean member, boolean withOuter, boolean dollarPublic = true, boolean outerPublic = false) {
         Map<String, byte[]> classes = [:]
         int dollarAccess = dollarPublic ? Opcodes.ACC_PUBLIC : 0
         if (member) {
@@ -1081,12 +1114,24 @@ class Use {
             classes['p/O'] = classBytes('p/O', outerAccess, member ? 'p/O$I' : null, member ? 'p/O' : null, member ? 'I' : null, innerAccess)
         }
         Path dir = Files.createTempDirectory('groovy11916')
-        classes.each { String internal, byte[] bytes ->
-            Path file = dir.resolve(internal + '.class')
-            Files.createDirectories(file.parent)
-            Files.write(file, bytes)
+        URLClassLoader loader = null
+        try {
+            classes.each { String internal, byte[] bytes ->
+                Path file = dir.resolve(internal + '.class')
+                Files.createDirectories(file.parent)
+                Files.write(file, bytes)
+            }
+            loader = new URLClassLoader([dir.toUri().toURL()] as URL[], Groovy11916.classLoader)
+            return new DollarClasspath(loader, dir)
+        } catch (Throwable failure) {
+            try {
+                if (loader != null) loader.close()
+            } catch (IOException ignored) {
+                // report the failure that aborted setup
+            }
+            dir.toFile().deleteDir()
+            throw failure
         }
-        new URLClassLoader([dir.toUri().toURL()] as URL[], Groovy11916.classLoader)
     }
 
     /**
