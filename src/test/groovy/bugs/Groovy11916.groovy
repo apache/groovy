@@ -25,8 +25,12 @@ import org.codehaus.groovy.control.Phases
 import org.codehaus.groovy.control.customizers.ImportCustomizer
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
+import org.objectweb.asm.ClassWriter
+import org.objectweb.asm.Opcodes
 
 import java.lang.reflect.Modifier
+import java.nio.file.Files
+import java.nio.file.Path
 
 import static groovy.test.GroovyAssert.assertScript
 import static groovy.test.GroovyAssert.shouldFail
@@ -34,7 +38,9 @@ import static groovy.test.GroovyAssert.shouldFail
 /**
  * Star imports, module imports, and default imports resolve only accessible
  * types. A source import shadows those defaults, including {@code java.lang}.
- * Two source star imports bind the first accessible type in source order.
+ * The first source statement that finds a type claims it: an accessible type
+ * is bound, and an inaccessible one does not let a later source statement
+ * bind a different type. Packages of one module import are a single statement.
  * An explicit single-type import, a fully qualified name, and
  * {@code Class.forName} still name a type that is not public.
  */
@@ -124,10 +130,16 @@ class Use {
 """
     }
 
-    /** First public type in source order. {@code p} public, {@code k} package-private, {@code m} missing. */
+    /**
+     * First source star that finds {@code X}. {@code p} public, {@code k}
+     * package-private, {@code m} missing. A package-private type claims the
+     * name, so a later star is not used. {@code X} is not a language default.
+     */
     private static String firstStar(String a, String b, String c) {
         if (a == 'p') return 'pa.X'
+        if (a == 'k') return 'unresolved'
         if (b == 'p') return 'pb.X'
+        if (b == 'k') return 'unresolved'
         if (c == 'p') return 'pc.X'
         return 'unresolved'
     }
@@ -515,35 +527,46 @@ class Use {
         ])
     }
 
+    /**
+     * {@code import p.*; import q.*; Collision} does not bind q.Collision
+     * when p.Collision exists but is not accessible. Binding q.Collision
+     * would switch to p.Collision if p.Collision later became public.
+     * With no language default of that name, the simple name stays unresolved.
+     */
+    // GROOVY-11916
     @Test
-    void testInaccessibleStarImportDoesNotHideLaterPublicType() {
-        def loader = compile(types, [
-            'q/Collision': '''
-                package q
-                class Collision {}
-            ''',
-            'r/User': '''
-                package r
-                import p.*
-                import q.*
-                class User {
-                    static Class which() { Collision }
-                }
-            '''
-        ])
-        assert loader.loadClass('r.User').getDeclaredMethod('which').invoke(null).name == 'q.Collision'
+    void testInaccessibleSourceStarBlocksLaterSourceStar() {
+        def err = shouldFail {
+            compile(types, [
+                'q/Collision': '''
+                    package q
+                    class Collision {}
+                ''',
+                'r/User': '''
+                    package r
+                    import p.*
+                    import q.*
+                    class User {
+                        Collision c
+                    }
+                '''
+            ])
+        }
+        assert err.message.contains('unable to resolve class Collision')
     }
 
     /**
-     * Two or more source star imports bind the first accessible type.
-     * They do not tie, and an inaccessible type does not hide a later one.
+     * Two source star imports bind the earliest type that exists.
+     * They do not tie when both are accessible. An inaccessible type claims
+     * the name against later source stars.
      * <p>
      * pa.X, pb.X and pc.X are each missing ({@code m}), public ({@code p}),
      * or package-private ({@code k}). The use class is in another package
      * and imports {@code pa.*}, {@code pb.*}, {@code pc.*} in that order.
-     * The expected type is the first public X. With no public X the name
-     * stays unresolved. A repeated {@code import pa.*} still binds pa.X,
-     * and the reversed list binds pc.X.
+     * The expected type is the first public X that is not blocked by an
+     * earlier package-private X. With none, the name stays unresolved.
+     * A repeated {@code import pa.*} still binds pa.X, and the reversed
+     * list binds pc.X.
      */
     // GROOVY-11916
     @Test
@@ -593,8 +616,8 @@ class Use {
      * The use class is {@code pa.Use}, with the same {@code m}/{@code p}/{@code k}
      * matrix as {@code testStarImportsBindFirstAccessibleType}. When pa.X
      * exists it wins whether it is public or package-private, even if pb.X
-     * or pc.X is public. When pa.X is missing, the first accessible star
-     * import is used.
+     * or pc.X is public. When pa.X is missing, a later star is used only
+     * when no earlier source star found an inaccessible X.
      */
     // GROOVY-11916
     @Test
@@ -622,9 +645,9 @@ class Use {
     /**
      * A source star import shadows the language defaults, including
      * {@code java.lang}. The use class names {@code String}. pb.String and
-     * pc.String are missing, public, or package-private. The first public
-     * one is bound; a package-private one is skipped, and with none the
-     * name is {@code java.lang.String}.
+     * pc.String are missing, public, or package-private. The first one that
+     * exists is claimed. A public one is bound. A package-private one blocks
+     * a later source star, and the name stays {@code java.lang.String}.
      * <p>
      * An explicit {@code import java.lang.*} is a source star too. Written
      * before {@code pb.*} it keeps {@code java.lang.String}; written after
@@ -641,7 +664,7 @@ class Use {
                 putType(sources, 'pc', 'String', c)
                 sources['user/Use'] = useSource('user', 'import pb.*\nimport pc.*', 'String')
                 def actual = classifyUse(sources, 'user.Use')
-                def expected = b == 'p' ? 'pb.String' : c == 'p' ? 'pc.String' : 'java.lang.String'
+                def expected = b == 'p' ? 'pb.String' : b == 'k' ? 'java.lang.String' : c == 'p' ? 'pc.String' : 'java.lang.String'
                 if (actual != expected) {
                     failures << "pb=$b pc=$c expected $expected but was $actual"
                 }
@@ -765,11 +788,14 @@ class Use {
         ], 'user.Use')
         assert bothRev == 'java.sql.Date' : bothRev
 
+        // java.util.TimSort exists and is not accessible, so that source star
+        // claims the name. pb.TimSort must not be selected: it would be
+        // displaced if java.util.TimSort became public.
         def tim = classifyUse([
             'pb/TimSort': 'package pb\nclass TimSort {}',
             'user/Use'  : useSource('user', 'import java.util.*\nimport pb.*', 'TimSort')
         ], 'user.Use')
-        assert tim == 'pb.TimSort' : tim
+        assert tim == 'unresolved' : tim
 
         def timRev = classifyUse([
             'pb/TimSort': 'package pb\nclass TimSort {}',
@@ -918,5 +944,180 @@ class Use {
             'user/Use'   : useSource('user', 'import p.*', 'Collision')
         ], 'user.Use', qStar)
         assert userHidesInaccessible == 'q.Collision' : userHidesInaccessible
+    }
+
+    /**
+     * A package-private static member claims the simple name. A later source
+     * star does not bind a different type of that name.
+     */
+    // GROOVY-11916
+    @Test
+    void testInaccessibleStaticStarBlocksLaterSourceStar() {
+        def holder = '''
+            package pb
+            class Holder {
+                @groovy.transform.PackageScope
+                static class X {}
+            }
+        '''
+        def actual = classifyUse([
+            'pb/Holder': holder,
+            'pc/X'     : 'package pc\nclass X {}',
+            'user/Use' : useSource('user', 'import static pb.Holder.*\nimport pc.*', 'X')
+        ], 'user.Use')
+        assert actual == 'unresolved' : actual
+
+        def other = '''
+            package pc
+            class Other {
+                static class X {}
+            }
+        '''
+        def two = classifyUse([
+            'pb/Holder': holder,
+            'pc/Other' : other,
+            'user/Use' : useSource('user', 'import static pb.Holder.*\nimport static pc.Other.*', 'X')
+        ], 'user.Use')
+        assert two == 'unresolved' : two
+    }
+
+    /**
+     * A non-static member type is not imported by a type star, so it does not
+     * claim the simple name against a later source star.
+     */
+    // GROOVY-11916
+    @Test
+    void testNonStaticMemberDoesNotBlockLaterSourceStar() {
+        def actual = classifyUse([
+            'p/Nest'  : '''
+                package p
+                class Nest {
+                    class Room {}
+                }
+            ''',
+            'q/Room'  : 'package q\nclass Room {}',
+            'user/Use': useSource('user', 'import p.Nest.*\nimport q.*', 'Room')
+        ], 'user.Use')
+        assert actual == 'q.Room' : actual
+    }
+
+    /**
+     * {@code java.util} is a language default, so {@code import module java.base}
+     * does not repeat it. The inaccessible {@code java.util.TimSort} therefore
+     * stays in the default tier, and a later source star keeps {@code pb.TimSort}
+     * even if the JDK type later becomes public.
+     */
+    // GROOVY-11916
+    @Test
+    void testDefaultImportDoesNotStealALaterSourceStar() {
+        assert !Modifier.isPublic(Class.forName('java.util.TimSort').modifiers)
+        def actual = classifyUse([
+            'pb/TimSort': 'package pb\nclass TimSort {}',
+            'user/Use'  : useSource('user', 'import module java.base\nimport pb.*', 'TimSort')
+        ], 'user.Use')
+        assert actual == 'pb.TimSort' : actual
+    }
+
+    /**
+     * A top-level class whose binary name contains {@code '$'} is not a member
+     * type. A package-private class that shares the prefix must not hide it.
+     * A real member type still follows its declaring class: a public member of
+     * an inaccessible outer is not imported, and a public member of a public
+     * outer is. The class-loader path (ASM resolving off) uses
+     * {@code Class.getDeclaringClass()} for the same distinction.
+     */
+    // GROOVY-11916
+    @Test
+    void testBinaryDollarNameIsNotAlwaysAMemberType() {
+        assertDollarNameResolution(null)
+        def config = new CompilerConfiguration()
+        config.optimizationOptions.put('asmResolving', Boolean.FALSE)
+        assertDollarNameResolution(config)
+    }
+
+    private static void assertDollarNameResolution(CompilerConfiguration config) {
+        def topLevel = classifyAgainst(dollarLoader(false, true), [
+            'q/Use': useSource('q', 'import p.*', 'O$I')
+        ], 'q.Use', config)
+        assert topLevel == 'p.O$I' : topLevel
+
+        def noOuter = classifyAgainst(dollarLoader(false, false), [
+            'q/Use': useSource('q', 'import p.*', 'O$I')
+        ], 'q.Use', config)
+        assert noOuter == 'p.O$I' : noOuter
+
+        def hiddenTop = classifyAgainst(dollarLoader(false, true, false, true), [
+            'q/Use': useSource('q', 'import p.*', 'O$I')
+        ], 'q.Use', config)
+        assert hiddenTop == 'unresolved' : hiddenTop
+
+        def hiddenMember = classifyAgainst(dollarLoader(true, true, true, false), [
+            'q/Use': useSource('q', 'import p.*', 'O$I')
+        ], 'q.Use', config)
+        assert hiddenMember == 'unresolved' : hiddenMember
+
+        def openMember = classifyAgainst(dollarLoader(true, true, true, true), [
+            'q/Use': useSource('q', 'import p.*', 'O$I')
+        ], 'q.Use', config)
+        assert openMember == 'p.O$I' : openMember
+    }
+
+    /**
+     * @param member when true, {@code p.O$I} is a static member of {@code p.O}
+     * @param withOuter when true, also define {@code p.O}
+     * @param dollarPublic access of {@code p.O$I}
+     * @param outerPublic access of {@code p.O}
+     */
+    private static URLClassLoader dollarLoader(boolean member, boolean withOuter, boolean dollarPublic = true, boolean outerPublic = false) {
+        Map<String, byte[]> classes = [:]
+        int dollarAccess = dollarPublic ? Opcodes.ACC_PUBLIC : 0
+        if (member) {
+            dollarAccess = dollarAccess | Opcodes.ACC_STATIC
+        }
+        int innerAccess = member ? dollarAccess : 0
+        classes['p/O$I'] = classBytes('p/O$I', dollarAccess, member ? 'p/O$I' : null, member ? 'p/O' : null, member ? 'I' : null, innerAccess)
+        if (withOuter) {
+            int outerAccess = outerPublic ? Opcodes.ACC_PUBLIC : 0
+            classes['p/O'] = classBytes('p/O', outerAccess, member ? 'p/O$I' : null, member ? 'p/O' : null, member ? 'I' : null, innerAccess)
+        }
+        Path dir = Files.createTempDirectory('groovy11916')
+        classes.each { String internal, byte[] bytes ->
+            Path file = dir.resolve(internal + '.class')
+            Files.createDirectories(file.parent)
+            Files.write(file, bytes)
+        }
+        new URLClassLoader([dir.toUri().toURL()] as URL[], Groovy11916.classLoader)
+    }
+
+    /**
+     * When {@code memberInternal} is set, both the member class and its
+     * enclosing class record the same InnerClasses entry. The JVM rejects a
+     * pair that disagrees.
+     */
+    private static byte[] classBytes(String internalName, int access, String memberInternal, String outerInternal, String innerName, int innerAccess) {
+        def cw = new ClassWriter(0)
+        cw.visit(Opcodes.V11, access, internalName, null, 'java/lang/Object', null)
+        if (memberInternal != null) {
+            cw.visitInnerClass(memberInternal, outerInternal, innerName, innerAccess)
+        }
+        cw.visitEnd()
+        cw.toByteArray()
+    }
+
+    private static String classifyAgainst(ClassLoader parent, Map<String, String> sources, String className, CompilerConfiguration config) {
+        try {
+            def loader = compile(parent, sources, config)
+            return loader.loadClass(className).getDeclaredMethod('which').invoke(null).name
+        } catch (Exception e) {
+            String text = ''
+            for (Throwable t = e; t != null; t = t.cause) {
+                if (t.message != null) text += t.message + '\n'
+            }
+            if (text.contains('ambiguous')) return 'ambiguous'
+            if (text.contains('unable to resolve')) return 'unresolved'
+            if (text.contains('not public')) return 'not-public'
+            def snippet = text.readLines().collect { it.trim() }.findAll { it }.take(4).join(' | ')
+            return 'other:' + (snippet ?: e.getClass().simpleName)
+        }
     }
 }

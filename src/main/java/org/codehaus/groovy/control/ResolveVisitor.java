@@ -66,6 +66,7 @@ import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.ast.stmt.CatchStatement;
 import org.codehaus.groovy.ast.stmt.ForStatement;
+import org.codehaus.groovy.ast.decompiled.DecompiledClassNode;
 import org.codehaus.groovy.ast.stmt.Statement;
 import org.codehaus.groovy.classgen.VariableScopeVisitor;
 import org.codehaus.groovy.syntax.Types;
@@ -942,96 +943,120 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
      * <p>
      * A source import shadows every default import, including implicit
      * {@code java.lang.*} and star imports added by a compilation customizer.
-     * Source static-import-on-demand, source type-import-on-demand, and
-     * packages expanded from a source {@code import module} are one sequence
-     * in source order. The first accessible type in that sequence is bound.
-     * A later import does not create an ambiguity, and an inaccessible type
-     * is skipped so it does not hide a later accessible type.
+     * Source static-import-on-demand, source type-import-on-demand, and the
+     * packages expanded from one source {@code import module} are walked in
+     * source order. The packages of a single module import are one statement:
+     * the first accessible type among them is bound, and an inaccessible type
+     * in an earlier exported package does not hide a later package of that
+     * same statement.
+     * <p>
+     * Separate source statements are not a fallback for each other. The first
+     * statement that finds the type claims it. An accessible type is bound.
+     * That is the long-standing rule: {@code import java.util.*} before
+     * {@code import java.sql.*} selects {@code java.util.Date}, and the
+     * reverse selects {@code java.sql.Date}. Two accessible source stars are
+     * not an ambiguity. An inaccessible type also claims the name, so a later
+     * source statement does not bind a different type that would be displaced
+     * if the earlier type became visible. The name then falls through to
+     * customizer on-demand imports and the language defaults. A non-static
+     * member type is not claimed, because a type star does not import it.
      * <p>
      * Customizer on-demand imports have no source location. They are tried
-     * after every source on-demand import and before the language defaults,
-     * so a configured star can still supply {@code Date} or {@code String}
-     * without tying with {@code java.lang} or {@code java.util}. Within that
-     * tier, static stars precede package stars because the two are stored
-     * separately. An explicit single-type import is resolved earlier and
-     * therefore wins over every on-demand import.
+     * after every source statement that did not claim the name, and before
+     * the language defaults, so a configured star can still supply
+     * {@code Date} or {@code String}. Within that tier an inaccessible type
+     * is skipped. Static stars precede package stars because the two are
+     * stored separately. An explicit single-type import is resolved earlier
+     * and therefore wins over every on-demand import.
      *
      * @return {@code true} if the name was bound
      */
     private boolean resolveFromOnDemandImports(final ClassNode type, final String name, final ModuleNode module) {
         OnDemandImports order = onDemandImports(module);
-        for (ImportNode importNode : order.declared) {
-            if (bindOnDemand(type, name, importNode)) return true;
-        }
-        for (ImportNode importNode : order.customizer) {
-            if (bindOnDemand(type, name, importNode)) return true;
+        if (bindOnDemandTier(type, name, order.declared, true)) return true;
+        return bindOnDemandTier(type, name, order.customizer, false);
+    }
+
+    /**
+     * @param claim when {@code true}, a group that finds the type but cannot
+     *              access it stops later groups in this tier. Customizer
+     *              imports pass {@code false} and skip that group.
+     * @return {@code true} if a type was bound
+     */
+    private boolean bindOnDemandTier(final ClassNode type, final String name, final List<List<ImportNode>> groups, final boolean claim) {
+        for (List<ImportNode> group : groups) {
+            OnDemandHit hit = bindOnDemandGroup(type, name, group);
+            if (hit == OnDemandHit.BOUND) return true;
+            if (claim && hit == OnDemandHit.BLOCKED) return false;
         }
         return false;
     }
 
-    private boolean bindOnDemand(final ClassNode type, final String name, final ImportNode importNode) {
+    private OnDemandHit bindOnDemandGroup(final ClassNode type, final String name, final List<ImportNode> group) {
+        boolean blocked = false;
+        for (ImportNode importNode : group) {
+            OnDemandHit hit = bindOnDemand(type, name, importNode);
+            if (hit == OnDemandHit.BOUND) return OnDemandHit.BOUND;
+            if (hit == OnDemandHit.BLOCKED) blocked = true;
+        }
+        return blocked ? OnDemandHit.BLOCKED : OnDemandHit.MISS;
+    }
+
+    private OnDemandHit bindOnDemand(final ClassNode type, final String name, final ImportNode importNode) {
         ClassNode outer = importNode.getType();
         if (outer != null) {
             // The star named a type: "import static Type.*" (the parser sets
             // the type) or "import Type.*" (visitClass sets it when the name
             // resolves to a class). Both import member types of that type,
             // and only a static member type is in scope, the same rule as a
-            // single static import. A non-static inner class is not.
-            // A member type of an interface is implicitly static, so
-            // Map.Entry still matches.
+            // single static import. A non-static inner class is not, and it
+            // does not claim the name. A member type of an interface is
+            // implicitly static, so Map.Entry still matches.
             ClassNode tmp = new ConstructedNestedClass(outer, name);
-            if (resolve(tmp, false, false, true) && Modifier.isStatic(tmp.getModifiers())
-                    && isStarImportAccessible(tmp, outer)) {
-                type.setRedirect(tmp.redirect());
-                return true;
+            if (!resolve(tmp, false, false, true) || !Modifier.isStatic(tmp.getModifiers())) {
+                return OnDemandHit.MISS;
             }
-            return false;
+            if (!isStarImportAccessible(tmp, outer)) return OnDemandHit.BLOCKED;
+            type.setRedirect(tmp.redirect());
+            return OnDemandHit.BOUND;
         }
         String packageName = importNode.getPackageName();
-        if (packageName == null) return false;
+        if (packageName == null) return OnDemandHit.MISS;
         ClassNode tmp = new ConstructedClassWithPackage(packageName, name);
-        if (resolve(tmp, false, false, true) && isStarImportAccessible(tmp, null)) {
-            type.setRedirect(tmp.redirect());
-            return true;
-        }
-        return false;
+        if (!resolve(tmp, false, false, true)) return OnDemandHit.MISS;
+        if (!isStarImportAccessible(tmp, null)) return OnDemandHit.BLOCKED;
+        type.setRedirect(tmp.redirect());
+        return OnDemandHit.BOUND;
     }
 
     /**
-     * Source on-demand imports in source order, then customizer on-demand
-     * imports. Recomputed when needed: the lists are small, and storing them
-     * as module metadata would keep them for the rest of compilation.
+     * Source on-demand imports in source order, grouped by statement, then
+     * customizer on-demand imports. Recomputed when needed: the lists are
+     * small, and storing them as module metadata would keep them for the
+     * rest of compilation.
      * <p>
      * {@code import module} expands to one star per exported package, but only
      * the last of those nodes carries the statement's line and column. The
      * packages before it have no position of their own and must inherit that
-     * position, in export order. Sorting the nodes by the line numbers they
-     * actually store would place those packages, and every customizer import
-     * (line &lt;= 0), ahead of the source imports. {@code List.sort} is stable,
-     * so nodes that share a position keep the order they were added and no
-     * separate sequence key is required.
+     * position, in export order, as one statement. Sorting separate nodes by
+     * the line numbers they actually store would place those packages, and
+     * every customizer import (line &lt;= 0), ahead of the source imports.
+     * {@code List.sort} is stable, so statements that share a position keep
+     * the order they were added.
      */
     private static OnDemandImports onDemandImports(final ModuleNode module) {
         List<PositionedImport> positioned = new ArrayList<>();
         for (ImportNode node : module.getStaticStarImports().values()) {
-            if (node.getLineNumber() > 0) {
-                positioned.add(new PositionedImport(node.getLineNumber(), node.getColumnNumber(), node));
-            }
+            if (node.getLineNumber() > 0) positioned.add(single(node));
         }
         for (ImportNode node : module.getStarImports()) {
-            if (node.getLineNumber() > 0) {
-                positioned.add(new PositionedImport(node.getLineNumber(), node.getColumnNumber(), node));
-            }
+            if (node.getLineNumber() > 0) positioned.add(single(node));
         }
         List<ImportNode> pendingModule = new ArrayList<>();
         for (ImportNode node : module.getModuleStarImports()) {
             pendingModule.add(node);
             if (node.getLineNumber() > 0) {
-                int line = node.getLineNumber();
-                int column = node.getColumnNumber();
-                for (ImportNode part : pendingModule) {
-                    positioned.add(new PositionedImport(line, column, part));
-                }
+                positioned.add(new PositionedImport(node.getLineNumber(), node.getColumnNumber(), List.copyOf(pendingModule)));
                 pendingModule.clear();
             }
         }
@@ -1041,27 +1066,41 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
             return Integer.compare(a.column, b.column);
         });
 
-        List<ImportNode> declared = new ArrayList<>(positioned.size());
+        List<List<ImportNode>> declared = new ArrayList<>(positioned.size());
         for (PositionedImport positionedImport : positioned) {
-            declared.add(positionedImport.node);
+            declared.add(positionedImport.nodes);
         }
-        List<ImportNode> customizer = new ArrayList<>();
+        List<List<ImportNode>> customizer = new ArrayList<>();
         for (ImportNode node : module.getStaticStarImports().values()) {
-            if (node.getLineNumber() <= 0) customizer.add(node);
+            if (node.getLineNumber() <= 0) customizer.add(List.of(node));
         }
         for (ImportNode node : module.getStarImports()) {
-            if (node.getLineNumber() <= 0) customizer.add(node);
+            if (node.getLineNumber() <= 0) customizer.add(List.of(node));
         }
-        customizer.addAll(pendingModule);
-
+        for (ImportNode node : pendingModule) {
+            customizer.add(List.of(node));
+        }
         return new OnDemandImports(declared, customizer);
     }
 
-    private static final class OnDemandImports {
-        final List<ImportNode> declared;
-        final List<ImportNode> customizer;
+    private static PositionedImport single(final ImportNode node) {
+        return new PositionedImport(node.getLineNumber(), node.getColumnNumber(), List.of(node));
+    }
 
-        OnDemandImports(final List<ImportNode> declared, final List<ImportNode> customizer) {
+    private enum OnDemandHit {
+        /** No type of this name. */
+        MISS,
+        /** An accessible type was bound. */
+        BOUND,
+        /** The type exists and is not accessible, so this statement claims the name. */
+        BLOCKED
+    }
+
+    private static final class OnDemandImports {
+        final List<List<ImportNode>> declared;
+        final List<List<ImportNode>> customizer;
+
+        OnDemandImports(final List<List<ImportNode>> declared, final List<List<ImportNode>> customizer) {
             this.declared = declared;
             this.customizer = customizer;
         }
@@ -1070,12 +1109,12 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
     private static final class PositionedImport {
         final int line;
         final int column;
-        final ImportNode node;
+        final List<ImportNode> nodes;
 
-        PositionedImport(final int line, final int column, final ImportNode node) {
+        PositionedImport(final int line, final int column, final List<ImportNode> nodes) {
             this.line = line;
             this.column = column;
-            this.node = node;
+            this.nodes = nodes;
         }
     }
 
@@ -1214,8 +1253,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
                 }
             }
             // Source on-demand imports, then ImportCustomizer on-demand imports.
-            // The first accessible type wins. Language defaults are tried only
-            // when this returns false.
+            // Language defaults are tried only when this returns false.
             if (resolveFromOnDemandImports(type, name, module)) {
                 return true;
             }
@@ -1600,24 +1638,39 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
     }
 
     /**
-     * Enclosing binary type of a member type whose {@link ClassNode#getOuterClass()}
+     * Enclosing class of a member type whose {@link ClassNode#getOuterClass()}
      * is unset. Source inner classes are {@link InnerClassNode} and carry that
-     * link. Classes read from bytecode are ordinary class nodes and do not, so
-     * the enclosing type is recovered from the {@code $} in the binary name
-     * rather than by reclassing every loaded member type as an
-     * {@link InnerClassNode}.
+     * link. A class file records membership in its InnerClasses attribute.
+     * A top-level class may contain {@code '$'} in its binary name, the same
+     * spelling as a nested class, so the name is not used to guess an outer
+     * type. A class loaded by the class loader uses
+     * {@link Class#getDeclaringClass()}, which is null for a top-level, local,
+     * or anonymous class.
      */
     private ClassNode binaryEnclosing(final ClassNode type) {
-        String name = type.getName();
-        int dollar = name.lastIndexOf('$');
-        if (dollar <= 0 || classNodeResolver == null) {
-            return null;
-        }
-        ClassNodeResolver.LookupResult lr = classNodeResolver.resolveName(name.substring(0, dollar), compilationUnit);
+        if (classNodeResolver == null) return null;
+        String enclosing = memberDeclaringName(type.redirect());
+        if (enclosing == null) return null;
+        ClassNodeResolver.LookupResult lr = classNodeResolver.resolveName(enclosing, compilationUnit);
         if (lr != null && lr.isClassNode()) {
             return lr.getClassNode();
         }
         return null;
+    }
+
+    /**
+     * Binary name of the immediately enclosing class, or {@code null} when
+     * {@code node} is not a member type.
+     */
+    private static String memberDeclaringName(final ClassNode node) {
+        if (node instanceof DecompiledClassNode decompiled) {
+            return decompiled.getMemberDeclaringClassName();
+        }
+        if (!node.isResolved()) return null;
+        Class<?> loaded = node.getTypeClass();
+        if (loaded == null) return null;
+        Class<?> declaring = loaded.getDeclaringClass();
+        return declaring == null ? null : declaring.getName();
     }
 
     private static boolean isVisibleNestedClass(final ClassNode innerType, final ClassNode outerType) {

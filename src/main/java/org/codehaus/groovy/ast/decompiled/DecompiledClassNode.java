@@ -202,6 +202,25 @@ public class DecompiledClassNode extends ClassNode {
     }
 
     /**
+     * Binary name of the immediately enclosing class when this class file's
+     * InnerClasses attribute records this class as a member.
+     * <p>
+     * Null for a top-level class, including one whose binary name contains
+     * {@code '$'}, and for a local or anonymous class. The {@code '$'}
+     * character alone is not evidence of an enclosing type.
+     *
+     * @return the enclosing binary name, or {@code null} when this is not a member type
+     */
+    @Internal
+    public String getMemberDeclaringClassName() {
+        List<InnerClassStub> entries = classData.innerClassEntries;
+        if (entries == null || entries.isEmpty()) return null;
+        String outerName = entries.get(entries.size() - 1).outerName();
+        if (outerName == null) return null;
+        return AsmDecompiler.fromInternalName(outerName);
+    }
+
+    /**
      * Returns the {@link PackageNode} for this decompiled class, carrying any annotations declared
      * on the package's compiled {@code package-info.class} (GROOVY-12207). Unlike a source-based
      * {@link ClassNode}, a decompiled class has no owning module, so the package (and its
