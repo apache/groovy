@@ -575,6 +575,27 @@ final class ThisAndSuperTest {
         """
     }
 
+    // GROOVY-12519: a static method of the superclass the class does not hide, from a closure or lambda
+    @ParameterizedTest
+    @ValueSource(strings=['', '@groovy.transform.TypeChecked', '@groovy.transform.CompileStatic'])
+    void testSuperDotStaticMethodInClosure(String mode) {
+        assertScript """
+            import java.util.function.Supplier
+
+            class Base {
+                static String sm() { 'sm:base' }
+            }
+            $mode
+            class Sub extends Base {
+                List test() {
+                    Supplier<String> lambda = () -> super.sm()
+                    [{ -> super.sm() }(), lambda.get()]
+                }
+            }
+            assert new Sub().test() == ['sm:base', 'sm:base']
+        """
+    }
+
     // GROOVY-12519: a static property of the superclass hidden by one of the class
     @ParameterizedTest
     @ValueSource(strings=['', '@groovy.transform.TypeChecked', '@groovy.transform.CompileStatic'])
