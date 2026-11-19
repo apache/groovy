@@ -59,6 +59,24 @@ class IOTest {
 
         assertTrue(result.out.contains('ansiSupported=true'), result.toString())
         assertTrue(result.out.contains("${ESC}1;31mWARN${ESC}m [${AnsiProbe.name}] probe".toString()), result.toString())
+        assertTrue(result.out.contains('console=opened'), result.toString())
+    }
+
+    @Test
+    void testConsoleIsOpenedOnlyByTheFirstColoredLine() {
+        def result = runProbe(['-Djansi.mode=force'], ['console', 'noLog'])
+
+        assertTrue(result.out.contains('ansiSupported=true'), result.toString())
+        assertTrue(result.out.contains('console=none'), result.toString())
+    }
+
+    @Test
+    void testStandardOutputReplacedBeforeTheFirstLineGetsNoConsole() {
+        def result = runProbe(['-Djansi.mode=force'], ['console', 'replaceOutAfterIO'])
+
+        assertTrue(result.out.contains('console=none'), result.toString())
+        assertTrue(result.out.contains(WARNING), result.toString())
+        assertFalse(result.out.contains(ESC), result.toString())
     }
 
     @Test
@@ -114,7 +132,8 @@ class IOTest {
     /**
      * Logs one warning through {@link Logger} on the JVM's own standard streams, then reports what happened.
      * Arguments: {@code console} logs through {@link IO#forConsole()} rather than the IO the Logger creates
-     * itself; {@code replaceOut} replaces {@code System.out} with a buffer first, as a host such as Ant does.
+     * itself; {@code replaceOut} replaces {@code System.out} with a buffer first, as a host such as Ant does;
+     * {@code replaceOutAfterIO} does so after creating the IO but before the first line; {@code noLog} logs nothing.
      */
     static class AnsiProbe {
         static void main(String[] args) {
@@ -127,7 +146,15 @@ class IOTest {
             if ('console' in args) {
                 Logger.io = IO.forConsole()
             }
-            Logger.create(AnsiProbe).warn('probe')
+            if ('replaceOutAfterIO' in args) {
+                captured = new ByteArrayOutputStream()
+                System.setOut(new PrintStream(captured, true))
+            }
+            if ('noLog' in args) {
+                Logger.io = Logger.io ?: new IO()
+            } else {
+                Logger.create(AnsiProbe).warn('probe')
+            }
             Logger.io.flush()
             System.setOut(stdout)
             stdout.println("ansiSupported=${Logger.io.ansiSupported}")
