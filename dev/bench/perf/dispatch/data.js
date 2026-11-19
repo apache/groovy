@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1794985271029,
+  "lastUpdate": 1795071463231,
   "repoUrl": "https://github.com/apache/groovy",
   "entries": {
     "Dispatch Metrics": [
@@ -7093,6 +7093,58 @@ window.BENCHMARK_DATA = {
           "url": "https://github.com/apache/groovy/commit/87ffe062aa86565af1abe2caea7d7d7d16f2c0a6"
         },
         "date": 1794985270354,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "classes.loaded.total",
+            "value": 4068,
+            "unit": "classes"
+          },
+          {
+            "name": "classes.lambdaForms",
+            "value": 440,
+            "unit": "classes"
+          },
+          {
+            "name": "classes.hidden",
+            "value": 870,
+            "unit": "classes"
+          },
+          {
+            "name": "classes.groovyRuntime",
+            "value": 1572,
+            "unit": "classes"
+          },
+          {
+            "name": "bytecode.corpus.bytes",
+            "value": 193866,
+            "unit": "bytes"
+          },
+          {
+            "name": "bytecode.corpus.classes",
+            "value": 57,
+            "unit": "classes"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "Scott Murphy",
+            "username": "codeconsole",
+            "email": "scott@alwaysvip.com"
+          },
+          "committer": {
+            "name": "GitHub",
+            "username": "web-flow",
+            "email": "noreply@github.com"
+          },
+          "id": "cb6cd0519a71f0ca291656c01549dd8911ceea41",
+          "message": "GROOVY-12715: let a cast apply to await and to an async closure (#3248)\n\n* GROOVY-12715: let a cast apply to await and to an async closure\n\nawait and async have their own alternatives in the expression rule, but the\noperand of a cast is parsed by castOperandExpression, which listed only a\ncast, a postfixExpression and the unary operators, so after a cast the two\nwords fell back to identifiers: (BigDecimal) await(price) was a call to a\nmethod named await and (Awaitable<Integer>) async { 7 } a call to a method\nnamed async. At script level that is a MissingMethodException; inside an\nasync task the failure is swallowed and the code awaiting the task's result\nhangs. castOperandExpression gains the asyncClosureExprAlt and awaitExprAlt\nalternatives; the rule shares expression's contexts, so AstBuilder handles\nthem unchanged.\n\nTests in AsyncAwaitTest: a cast applied to await (single and multiple\narguments), inside an async task that binds a dataflow variable, and to an\nasync closure.\n\n* GROOVY-12715: bound the await in the cast-inside-async test, so it fails rather than hangs without the fix\n\n* GROOVY-12715: list the async and await alternatives of castOperandExpression in the grammar doc",
+          "timestamp": "2026-11-18T15:33:26Z",
+          "url": "https://github.com/apache/groovy/commit/cb6cd0519a71f0ca291656c01549dd8911ceea41"
+        },
+        "date": 1795071462271,
         "tool": "customSmallerIsBetter",
         "benches": [
           {
