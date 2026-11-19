@@ -24,7 +24,6 @@ import groovy.transform.NonSealed;
 import groovy.transform.Sealed;
 import groovy.transform.Trait;
 import groovy.transform.TupleConstructor;
-import org.antlr.v4.runtime.ANTLRErrorListener;
 import org.antlr.v4.runtime.CharStream;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
@@ -32,7 +31,6 @@ import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.RecognitionException;
 import org.antlr.v4.runtime.Recognizer;
 import org.antlr.v4.runtime.Token;
-import org.antlr.v4.runtime.TokenStream;
 import org.antlr.v4.runtime.atn.PredictionMode;
 import org.antlr.v4.runtime.misc.Interval;
 import org.antlr.v4.runtime.misc.ParseCancellationException;
@@ -197,7 +195,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
     public AstBuilder(final SourceUnit sourceUnit, final boolean groovydocEnabled, final boolean runtimeGroovydocEnabled) {
         this.sourceUnit = sourceUnit;
         this.moduleNode = new ModuleNode(sourceUnit);
-        CharStream charStream = createCharStream(sourceUnit);
+        CharStream charStream = this.createCharStream(sourceUnit);
 
         this.lexer = new GroovyLangLexer(charStream);
         this.parser = new GroovyLangParser(new CommonTokenStream(this.lexer));
@@ -213,66 +211,66 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
     }
 
     private CharStream createCharStream(final SourceUnit sourceUnit) {
-        CharStream charStream;
-
         try {
-            charStream = CharStreams.fromReader(
-                    new BufferedReader(sourceUnit.getSource().getReader()),
-                    sourceUnit.getName());
+            var reader = new BufferedReader(sourceUnit.getSource().getReader());
+            return CharStreams.fromReader(reader, sourceUnit.getName());
         } catch (IOException e) {
             throw new RuntimeException("Error occurred when reading source code.", e);
         }
-
-        return charStream;
     }
 
     private GroovyParserRuleContext buildCST() throws CompilationFailedException {
-        GroovyParserRuleContext result;
-
         try {
-            // an over-limit DFA cache is replaced rather than cleared in place, so parsing
-            // proceeds on its own ATN without coordinating with other parsers
-            final TokenStream tokenStream = parser.getInputStream();
-            if (errorRecovery) {
-                // Recovery needs LL + listeners so every syntax error is reported.
-                // Skip SLL: recovering under SLL can "succeed" with a degraded tree
-                // and never re-run LL.
-                result = buildCST(PredictionMode.LL);
-            } else if (SLL_THRESHOLD >= 0 && tokenStream.size() > SLL_THRESHOLD) {
-                // The more tokens to parse, the more possibility SLL will fail and the more parsing time will waste.
-                // The option `groovy.antlr4.sll.threshold` could be tuned for better parsing performance, but it is disabled by default.
-                // If the token count is greater than `groovy.antlr4.sll.threshold`, use LL directly.
-                result = buildCST(PredictionMode.LL);
-            } else {
+            // An over-limit DFA cache is replaced rather than cleared in place,
+            // so parsing proceeds on its own ATN without other parser sharing.
+
+            // Recovery needs LL + listeners so every syntax error is reported.
+            // Skip SLL: recovering under SLL can "succeed" with a degraded tree
+            // and never re-run LL.
+
+            // The more tokens to parse, the more possibility SLL will fail and
+            // the more parsing time will waste. The option `groovy.antlr4.sll.threshold`
+            // could be tuned for better parsing performance, but it is disabled
+            // by default. If the token count is greater than the limit, use LL.
+
+            if (!errorRecovery && (SLL_THRESHOLD < 0 || parser.getInputStream().size() < SLL_THRESHOLD)) {
                 try {
-                    result = buildCST(PredictionMode.SLL);
+                    lexer.removeErrorListeners();
+                    parser.removeErrorListeners();
+
+                    parser.getInterpreter().setPredictionMode(PredictionMode.SLL);
+
+                    return parser.compilationUnit();
                 } catch (Throwable t) {
                     // if some syntax error occurred in the lexer, no need to retry the powerful LL mode
-                    if (t instanceof GroovySyntaxError && GroovySyntaxError.LEXER == ((GroovySyntaxError) t).getSource()) {
+                    if (t instanceof GroovySyntaxError gse && gse.getSource() == GroovySyntaxError.LEXER) {
                         throw t;
                     }
-
-                    tokenStream.seek(0);
-                    result = buildCST(PredictionMode.LL);
+                    parser.getInputStream().seek(0);
                 }
             }
-        } catch (Throwable t) {
-            throw convertException(t);
-        }
 
-        return result;
+            lexer.removeErrorListeners();
+            lexer.addErrorListener(this::acceptSyntaxError);
+
+            parser.removeErrorListeners();
+            parser.addErrorListener(this::acceptSyntaxError);
+
+            parser.getInterpreter().setPredictionMode(PredictionMode.LL);
+
+            return parser.compilationUnit();
+        } catch (Throwable t) {
+            throw this.convertException(t);
+        }
     }
 
-    private GroovyParserRuleContext buildCST(final PredictionMode predictionMode) {
-        parser.getInterpreter().setPredictionMode(predictionMode);
-
-        if (PredictionMode.SLL.equals(predictionMode)) {
-            this.removeErrorListeners();
-        } else {
-            this.addErrorListeners();
-        }
-
-        return parser.compilationUnit();
+    /**
+     * Records the message as a {@link SyntaxException} at the given {@code line}
+     * and a 1-based column ({@code charPositionInLine + 1}). The recognizer, the
+     * offending symbol and the recognition exception are not consulted.
+     */
+    private <Symbol> void acceptSyntaxError(final Recognizer<Symbol, ?> recognizer, final Symbol symbol, final int line, final int charPositionInLine, final String msg, final RecognitionException e) {
+        this.collectSyntaxError(new SyntaxException(msg, line, charPositionInLine + 1));
     }
 
     private CompilationFailedException convertException(final Throwable t) {
@@ -281,9 +279,9 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
         if (t instanceof CompilationFailedException) {
             cfe = (CompilationFailedException) t;
         } else if (t instanceof ParseCancellationException) {
-            cfe = createParsingFailedException(t.getCause());
+            cfe = this.createParsingFailedException(t.getCause());
         } else {
-            cfe = createParsingFailedException(t);
+            cfe = this.createParsingFailedException(t);
         }
 
         return cfe;
@@ -307,8 +305,8 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
             // Under recovery, return the partial module only when diagnostics were actually
             // recorded — an empty collector with a CFE would otherwise look like silent success
             // (belt-and-braces guard suggested in PR review).
-            CompilationFailedException cfe = convertException(t);
-            if (shouldReturnPartialModuleOnFailure()) {
+            CompilationFailedException cfe = this.convertException(t);
+            if (this.shouldReturnPartialModuleOnFailure()) {
                 return this.moduleNode;
             }
             throw cfe;
@@ -317,7 +315,12 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
             // A replaced prediction cache stays reachable through any parser that still
             // points at the retired ATN, which is what pushes a single large class over
             // the default compiler heap during class generation.
-            releaseRecognizers();
+
+            // Detach this parse from the shared prediction cache. The cache itself stays
+            // softly reachable for the next file; this parse must not keep a retired copy.
+            if (lexer != null) lexer.release();
+            if (parser != null) parser.release();
+
             parameterContexts.clear();
             parameterModifierManagers.clear();
         }
@@ -6785,42 +6788,6 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
 
     private void collectException(final Exception e) {
         sourceUnit.getErrorCollector().addException(e, this.sourceUnit);
-    }
-
-    private ANTLRErrorListener createANTLRErrorListener() {
-        return new ANTLRErrorListener() {
-            /**
-             * Records {@code msg} as a {@link SyntaxException} at {@code line} and a 1-based column
-             * ({@code charPositionInLine + 1}). The recognizer, the offending symbol, and the
-             * recognition exception are not consulted.
-             */
-            @Override
-            public void syntaxError(final Recognizer recognizer, final Object offendingSymbol, final int line, final int charPositionInLine, final String msg, final RecognitionException e) {
-                collectSyntaxError(new SyntaxException(msg, line, charPositionInLine + 1));
-            }
-        };
-    }
-
-    /**
-     * Detach this parse from the shared prediction cache. The cache itself stays
-     * softly reachable for the next file; this parse must not keep a retired copy.
-     */
-    private void releaseRecognizers() {
-        if (parser != null) parser.release();
-        if (lexer != null) lexer.release();
-    }
-
-    private void removeErrorListeners() {
-        lexer.removeErrorListeners();
-        parser.removeErrorListeners();
-    }
-
-    private void addErrorListeners() {
-        lexer.removeErrorListeners();
-        lexer.addErrorListener(this.createANTLRErrorListener());
-
-        parser.removeErrorListeners();
-        parser.addErrorListener(this.createANTLRErrorListener());
     }
 
     //--------------------------------------------------------------------------
