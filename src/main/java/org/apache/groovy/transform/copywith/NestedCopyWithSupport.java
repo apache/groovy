@@ -64,6 +64,20 @@ public final class NestedCopyWithSupport {
         return InvokerHelper.invokeMethod(self, "copyWith", new Object[]{sink});
     }
 
+    /**
+     * Flattens dotted {@code copyWith} keys against {@code self}. A null
+     * {@code raw} map yields an empty map. A key with no dot is copied
+     * through. A key {@code head.rest} is grouped under {@code head}, and
+     * the current value of that property is replaced by calling
+     * {@code copyWith} on it with the remaining entries. Using one name
+     * both as a whole value and as a dotted path is rejected. A null
+     * nested value, a {@link Class} value, or a value that does not answer
+     * {@code copyWith(Map)} is rejected as well.
+     *
+     * @param self object whose nested properties are copied
+     * @param raw plain and dotted keys supplied to {@code copyWith}
+     * @return a map whose keys are top-level property names
+     */
     @SuppressWarnings("unchecked")
     public static Map<Object, Object> flatten(final Object self, final Map<Object, Object> raw) {
         if (raw == null) return new LinkedHashMap<>();

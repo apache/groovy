@@ -20,9 +20,14 @@ package org.codehaus.groovy.runtime.memoize
 
 import org.junit.jupiter.api.Test
 
+import java.util.concurrent.atomic.AtomicInteger
+
 import static groovy.test.GroovyAssert.assertScript
+import static groovy.test.GroovyAssert.shouldFail
 
 class MemoizeTest extends AbstractMemoizeTestCase {
+
+    private static final AtomicInteger NULL_RESULT_CALLS = new AtomicInteger()
 
     Closure buildMemoizeClosure(Closure cl) {
         cl.memoize()
@@ -125,6 +130,27 @@ class MemoizeTest extends AbstractMemoizeTestCase {
         assert c.mcSoftRef() == 1
     }
 
+    // GROOVY-12677
+    @Test
+    void testCachedNullResultSurvivesSerialization() {
+        NULL_RESULT_CALLS.set(0)
+        Closure memoized = { x -> MemoizeTest.NULL_RESULT_CALLS.incrementAndGet(); null }.dehydrate().memoize()
+        assert memoized(1) == null
+        assert NULL_RESULT_CALLS.get() == 1
+
+        def bytes = new ByteArrayOutputStream()
+        bytes.withObjectOutputStream { it.writeObject(memoized) }
+        Closure copy = new ByteArrayInputStream(bytes.toByteArray()).withObjectInputStream(MemoizeTest.classLoader) {
+            it.readObject()
+        }
+
+        assert copy(1) == null
+        assert copy(1) == null
+        assert NULL_RESULT_CALLS.get() == 1
+        assert copy(2) == null
+        assert NULL_RESULT_CALLS.get() == 2
+    }
+
     // GROOVY-8486
     @Test
     void testMemoizeConcurrently() {
@@ -194,6 +220,66 @@ class MemoizeTest extends AbstractMemoizeTestCase {
         '''
     }
 
+    // GROOVY-12669
+    @Test
+    void testRehydratedCopyKeepsAnUnlimitedCache() {
+        def p = new Named('p')
+        Closure copy = new Named('o').closure().memoize().rehydrate(null, p, p)
+        (1..200).each { assert copy(it) == "p$it" }
+        (1..200).each { assert copy(it) == "p$it" }
+        assert p.calls == 200
+    }
+
+    // GROOVY-12669
+    @Test
+    void testDehydratedCopySerializesAndRehydrates() {
+        def o = new Named('o')
+        def p = new Named('p')
+        Closure mem = o.closure().memoize()
+        assert mem(1) == 'o1'
+        shouldFail(NotSerializableException) {
+            serialize(mem)
+        }
+
+        Closure copy = deserialize(serialize(mem.dehydrate()))
+        Closure rehydrated = copy.rehydrate(null, p, p)
+        assert rehydrated(1) == 'p1'
+        assert rehydrated(1) == 'p1'
+        assert p.calls == 1
+
+        Closure again = deserialize(serialize(rehydrated.dehydrate())).rehydrate(null, o, o)
+        assert again(1) == 'o1'
+        assert o.calls == 2
+    }
+
+    // GROOVY-12669
+    @Test
+    void testCopyOfClosureMemoizedWithSuppliedCacheSharesTheCache() {
+        def o = new Named('o')
+        def p = new Named('p')
+        Closure mem = Memoize.buildMemoizeFunction(new ConcurrentCommonCache<Object, Object>(), o.closure())
+        assert mem(1) == 'o1'
+
+        Closure copy = mem.rehydrate(null, p, p)
+        assert copy(1) == 'o1'
+        assert copy(2) == 'p2'
+        assert mem(2) == 'p2'
+        assert o.calls == 1
+        assert p.calls == 1
+    }
+
+    private static byte[] serialize(Object obj) {
+        def out = new ByteArrayOutputStream()
+        out.withObjectOutputStream { it.writeObject(obj) }
+        out.toByteArray()
+    }
+
+    private static Object deserialize(byte[] bytes) {
+        new ByteArrayInputStream(bytes).withObjectInputStream(MemoizeTest.classLoader) {
+            it.readObject()
+        }
+    }
+
     private static class ClassWithMemoizeClosureProperty {
         int timesCalled, timesCalledSoftRef
         def mc = {
@@ -203,5 +289,17 @@ class MemoizeTest extends AbstractMemoizeTestCase {
         def mcSoftRef = {
             ++timesCalledSoftRef
         }.memoizeAtLeast(4)
+    }
+
+    // GROOVY-12674
+    @Test
+    void testSerializedCopyKeepsCachedValues() {
+        Closure mem = new Counting().closure().memoize()
+        assert mem(1) == 2
+
+        Closure copy = roundTrip(mem)
+        Counting owner = copy.owner
+        assert copy(1) == 2
+        assert owner.calls == 1
     }
 }

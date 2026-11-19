@@ -22,6 +22,7 @@ import org.codehaus.groovy.reflection.CachedClass;
 
 import static org.codehaus.groovy.reflection.ReflectionCache.OBJECT_ARRAY_CLASS;
 
+/** {@code getAt} for an {@code Object[]}. */
 public class ObjectArrayGetAtMetaMethod extends ArrayGetAtMetaMethod {
 
     @Override

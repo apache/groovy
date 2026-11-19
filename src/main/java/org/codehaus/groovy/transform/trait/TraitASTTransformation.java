@@ -19,6 +19,7 @@
 package org.codehaus.groovy.transform.trait;
 
 import groovy.lang.GroovyRuntimeException;
+import groovy.lang.MissingFieldException;
 import groovy.lang.MissingMethodException;
 import groovy.transform.CompilationUnitAware;
 import groovy.transform.Sealed;
@@ -128,6 +129,12 @@ public class TraitASTTransformation extends AbstractASTTransformation implements
      * Metadata key that stores an expression replacement to apply after type checking.
      */
     public static final String POST_TYPECHECKING_REPLACEMENT = TraitReceiverTransformer.class + ".replacement";
+
+    /**
+     * Metadata key that marks the cast applied to a value written to a trait field, which
+     * type checking treats as an assignment to the field.
+     */
+    public static final String FIELD_ASSIGNMENT = TraitReceiverTransformer.class + ".fieldAssignment";
 
     private CompilationUnit compilationUnit;
 
@@ -318,6 +325,18 @@ public class TraitASTTransformation extends AbstractASTTransformation implements
             cNode.addMethod(createInterfaceStaticForwarder(cNode, helper, m));
         }
 
+        // GROOVY-12597: a forwarder passes the trait itself as $static$self, but
+        // static state exists only in implementing classes; install accessors on
+        // the trait interface that report this instead of a missing T__x$get
+        if (!interfaceStatics.isEmpty()) {
+            for (FieldNode field : fields) {
+                if (field.isStatic()) {
+                    cNode.addMethod(createTraitStaticStateAccessor(cNode, field, Traits.helperGetterName(field), Parameter.EMPTY_ARRAY));
+                    cNode.addMethod(createTraitStaticStateAccessor(cNode, field, Traits.helperSetterName(field), new Parameter[]{new Parameter(field.getOriginType(), "val")}));
+                }
+            }
+        }
+
         // copy statements from static and instance init blocks
         if (staticInitStatements != null) {
             BlockStatement toBlock = getBlockStatement(staticInitializer, staticInitializer.getCode());
@@ -330,7 +349,7 @@ public class TraitASTTransformation extends AbstractASTTransformation implements
         BlockStatement toBlock = getBlockStatement(initializer, toCode);
         for (Statement next : initStatements) {
             Parameter selfParam = createSelfParameter(cNode, false);
-            toBlock.addStatement(processBody(varX(selfParam), next, cNode, helper, fieldHelper, fieldNames));
+            toBlock.addStatement(processBody(varX(selfParam), next, cNode, helper, fieldHelper, fieldNames, isStaticallyCompiled(cNode, cNode)));
         }
         initStatements.clear();
 
@@ -558,7 +577,7 @@ public class TraitASTTransformation extends AbstractASTTransformation implements
         if (initExpression != null) {
             VariableExpression thisObject = varX(selectedMethod.getParameters()[0]);
             ExpressionStatement initValue = new ExpressionStatement(initExpression);
-            processBody(thisObject, initValue, trait, helper, fieldHelper, knownFields);
+            processBody(thisObject, initValue, trait, helper, fieldHelper, knownFields, isStaticallyCompiled(trait, trait));
             initExpression = initValue.getExpression(); // extract transformed expression
             if (field.isFinal()) {
                 String baseName = field.isStatic() ? Traits.STATIC_INIT_METHOD : Traits.INIT_METHOD;
@@ -739,6 +758,24 @@ public class TraitASTTransformation extends AbstractASTTransformation implements
         return forwarder;
     }
 
+    /**
+     * Builds a public-static accessor on the trait interface for a static trait
+     * field. Implementing classes declare their own accessors, so this one is
+     * reached only when a promoted trait static is called through the trait
+     * itself; it throws, as the trait has no static state of its own.
+     */
+    private static MethodNode createTraitStaticStateAccessor(final ClassNode traitClass, final FieldNode field, final String name, final Parameter[] params) {
+        String message = "Cannot access static field " + field.getName() + " of trait " + traitClass.getName()
+                + " through the trait itself: trait static state belongs to each implementing class,"
+                + " so call the trait static method on an implementing class";
+        Statement body = throwS(ctorX(ClassHelper.make(MissingFieldException.class),
+                args(constX(message), constX(field.getName()), classX(traitClass))));
+        MethodNode accessor = new MethodNode(name, ACC_PUBLIC | ACC_STATIC | ACC_SYNTHETIC,
+                params.length == 0 ? field.getOriginType() : VOID_TYPE, params, ClassNode.EMPTY_ARRAY, body);
+        accessor.setSourcePosition(field);
+        return accessor;
+    }
+
     private MethodNode processMethod(final ClassNode traitClass, final ClassNode traitHelperClass, final MethodNode methodNode, final ClassNode fieldHelper, final Collection<String> knownFields) {
         boolean isAbstractMethod = methodNode.isAbstract();
         boolean isPrivateMethod = methodNode.isPrivate();
@@ -770,7 +807,7 @@ public class TraitASTTransformation extends AbstractASTTransformation implements
                 methodNode.getReturnType(),
                 helperParams,
                 methodNode.getExceptions(),
-                processBody(varX(helperParams[0]), methodNode.getCode(), traitClass, traitHelperClass, fieldHelper, knownFields)
+                processBody(varX(helperParams[0]), methodNode.getCode(), traitClass, traitHelperClass, fieldHelper, knownFields, isStaticallyCompiled(methodNode, traitClass))
         );
         for (AnnotationNode annotation : methodNode.getAnnotations()) {
             if (!annotation.getClassNode().equals(OVERRIDE_TYPE)) {
@@ -791,13 +828,34 @@ public class TraitASTTransformation extends AbstractASTTransformation implements
         return mNode;
     }
 
-    private Statement processBody(final VariableExpression thisObject, final Statement code, final ClassNode trait, final ClassNode traitHelper, final ClassNode fieldHelper, final Collection<String> knownFields) {
+    private Statement processBody(final VariableExpression thisObject, final Statement code, final ClassNode trait, final ClassNode traitHelper, final ClassNode fieldHelper, final Collection<String> knownFields, final boolean staticallyCompiled) {
         if (code != null) {
             code.visit(new NAryOperationRewriter(sourceUnit, knownFields));
             code.visit(new SuperCallTraitTransformer(sourceUnit));
-            code.visit(new TraitReceiverTransformer(thisObject, sourceUnit, trait, traitHelper, fieldHelper, knownFields));
+            code.visit(new TraitReceiverTransformer(thisObject, sourceUnit, trait, traitHelper, fieldHelper, knownFields, staticallyCompiled));
         }
         return code;
+    }
+
+    /**
+     * Indicates whether trait code will be statically compiled: the member, or else the trait, is
+     * annotated with {@code @CompileStatic}, and not with {@code @CompileDynamic} or in skip mode.
+     */
+    private static boolean isStaticallyCompiled(final AnnotatedNode member, final ClassNode trait) {
+        for (AnnotatedNode node : new AnnotatedNode[]{member, trait}) {
+            boolean compileStatic = false;
+            for (AnnotationNode annotation : node.getAnnotations()) {
+                String name = annotation.getClassNode().getName();
+                Expression mode = annotation.getMember("value");
+                if (name.equals("groovy.transform.CompileDynamic") || (mode != null && mode.getText().equals("groovy.transform.TypeCheckingMode.SKIP")
+                        && (name.equals("groovy.transform.CompileStatic") || name.equals("groovy.transform.TypeChecked")))) {
+                    return false;
+                }
+                compileStatic = compileStatic || name.equals("groovy.transform.CompileStatic");
+            }
+            if (compileStatic) return true;
+        }
+        return false;
     }
 
     //--------------------------------------------------------------------------

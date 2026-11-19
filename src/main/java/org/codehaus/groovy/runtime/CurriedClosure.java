@@ -104,6 +104,13 @@ public final class CurriedClosure<V> extends Closure<V> {
         }
     }
 
+    /**
+     * Curries {@code arguments} at index {@code 0} of {@code uncurriedClosure}.
+     * <p>A non-vararg closure given more arguments than it can accept is rejected.
+     *
+     * @param uncurriedClosure the closure the curried arguments are injected into
+     * @param arguments values placed at the front of each later call
+     */
     @GroovyABI(since = "1.0.0")
     public CurriedClosure(final Closure<V> uncurriedClosure, final Object... arguments) {
         this(0, uncurriedClosure, arguments);
@@ -133,6 +140,16 @@ public final class CurriedClosure<V> extends Closure<V> {
         return super.call(argument);
     }
 
+    /**
+     * Inserts the curried arguments into {@code arguments} at the curry index.
+     * A vararg closure normalizes a negative index against the combined length and
+     * rejects an index outside {@code 0..arguments.length}. A non-vararg closure
+     * rejects a call that supplies fewer arguments than the curry index requires,
+     * then inserts at {@code min(index, arguments.length)}.
+     *
+     * @param arguments arguments supplied by the call, which may be empty
+     * @return a new array with the curried values inserted
+     */
     public Object[] getUncurriedArguments(final Object... arguments) {
         if (isVararg()) {
             int normalizedIndex = index < 0 ? index + arguments.length + curriedArguments.length : index;
@@ -187,10 +204,33 @@ public final class CurriedClosure<V> extends Closure<V> {
     }
 
     @Override
+    public Object getThisObject() {
+        return getOwner().getThisObject();
+    }
+
+    @Override
     public Object clone() {
         @SuppressWarnings("unchecked")
         Closure<V> uncurriedClosure = (Closure<V>) getOwner().clone();
         return new CurriedClosure<V>(index, uncurriedClosure, curriedArguments);
+    }
+
+    /**
+     * Dehydrates the wrapped closure and curries the copy: the owner of a curried closure is the
+     * closure it wraps, so clearing it would leave nothing to call.
+     */
+    @Override
+    public Closure<V> dehydrate() {
+        return new CurriedClosure<V>(index, getOwner().dehydrate(), curriedArguments);
+    }
+
+    /**
+     * Rehydrates the wrapped closure and curries the copy: the owner of a curried closure is the
+     * closure it wraps, so replacing it would leave nothing to call.
+     */
+    @Override
+    public Closure<V> rehydrate(final Object delegate, final Object owner, final Object thisObject) {
+        return new CurriedClosure<V>(index, getOwner().rehydrate(delegate, owner, thisObject), curriedArguments);
     }
 
     @Override

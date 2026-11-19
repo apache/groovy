@@ -364,9 +364,10 @@ public class BinaryExpressionMultiTypeDispatcher extends BinaryExpressionHelper 
         // load return value
         operandStack.load(rightType, resultValueId);
 
-        // cleanup
-        compileStack.removeVar(resultValueId);
-        compileStack.removeVar(subscriptValueId);
+        // The subscript slot is an int. Clear a reference result now that its
+        // value has been reloaded; a primitive result keeps no heap object.
+        releaseTemporary(rightType, resultValueId);
+        releaseTemporary(int_TYPE, subscriptValueId);
         return true;
     }
 
@@ -433,16 +434,20 @@ public class BinaryExpressionMultiTypeDispatcher extends BinaryExpressionHelper 
 
             // load rhs
             rhsValueLoader.visit(asmGenerator);
+            // The store consumes the value. Duplicate it under the array reference
+            // and the int index first, so the assignment expression can yield the
+            // original value without a local variable. The copy is taken before the
+            // component cast, which applies to the consumed value only.
+            if (!Boolean.TRUE.equals(orig.getNodeMetaData(AsmClassGenerator.ELIDE_EXPRESSION_VALUE))) {
+                operandStack.dupUnderTwo();
+            }
             operandStack.doGroovyCast(arrayType.getComponentType());
 
             // store value in array
             bew.arraySet(false);
 
-            // update operand stack
+            // update operand stack; a duplicated value stays as the expression result
             operandStack.remove(3);
-
-            if (!Boolean.TRUE.equals(orig.getNodeMetaData(AsmClassGenerator.ELIDE_EXPRESSION_VALUE)))
-                rhsValueLoader.visit(asmGenerator); // re-load result value
         } else {
             super.assignToArray(orig, receiver, index, rhsValueLoader, safe);
         }

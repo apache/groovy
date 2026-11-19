@@ -29,10 +29,20 @@ public class SpreadExpression extends Expression {
 
     private final Expression expression;
 
+    /**
+     * Creates a spread of {@code expression}, as in {@code [*expression]}.
+     *
+     * @param expression the expression whose contents are spread
+     */
     public SpreadExpression(final Expression expression) {
         this.expression = expression;
     }
 
+    /**
+     * The expression being spread.
+     *
+     * @return the expression passed to the constructor
+     */
     public Expression getExpression() {
         return expression;
     }

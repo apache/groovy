@@ -267,7 +267,9 @@ static boolean matches(String regex, CharSequence input)
 a|`java.util.regex.Matcher`
 [source,groovy]
 ----
-String group(int group)
+String group(int group)          String group(String name)
+int start(int group)             int start(String name)
+int end(int group)               int end(String name)
 matcher[matchCount][groupCount]  // getAt shorthand
 ----
 a|Operators
@@ -351,6 +353,12 @@ include::../test/RegexCheckerTest.groovy[tags=introduction_example,indent=0]
 <4> A local variable containing a regex pattern
 <5> Using the pattern with grep
 <6> An API call passing a String literal regex
+
+For `Pattern.compile(regex, flags)`, the regex is checked as compiled with its flags,
+since flags like `COMMENTS` and `LITERAL` change how it is parsed. The flags must also be
+_constant-like_: an int literal, a `Pattern` flag constant such as `Pattern.COMMENTS`,
+such values combined with `|`, or a field or local variable initialized with one of these.
+When the flags are only known at runtime, the call is not checked.
 
 === Errors detected
 

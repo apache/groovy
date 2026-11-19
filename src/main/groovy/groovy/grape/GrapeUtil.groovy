@@ -25,6 +25,7 @@ import org.codehaus.groovy.reflection.CachedClass
 import org.codehaus.groovy.reflection.ClassInfo
 import org.codehaus.groovy.runtime.m12n.ExtensionModuleScanner
 import org.codehaus.groovy.runtime.metaclass.MetaClassRegistryImpl
+import org.codehaus.groovy.transform.stc.AbstractExtensionMethodCache
 
 import java.util.jar.JarFile
 import java.util.logging.Level
@@ -80,20 +81,7 @@ class GrapeUtil {
                             props.load(is)
                         }
 
-                        Map<CachedClass, List<MetaMethod>> metaMethods = [:]
-                        mcRegistry.registerExtensionModuleFromProperties(props, loader, metaMethods)
-                        // add old methods to the map
-                        metaMethods.each { CachedClass c, List<MetaMethod> methods ->
-                            // GROOVY-5543: if a module was loaded using grab, there are chances that subclasses
-                            // have their own ClassInfo, and we must change them as well!
-                            Set<CachedClass> classesToBeUpdated = [c].toSet()
-                            ClassInfo.onAllClassInfo { ClassInfo info ->
-                                if (c.getTheClass().isAssignableFrom(info.getCachedClass().getTheClass())) {
-                                    classesToBeUpdated << info.getCachedClass()
-                                }
-                            }
-                            classesToBeUpdated*.addNewMopMethods(methods)
-                        }
+                        registerExtensionModule(mcRegistry, loader, props)
                     }
                 } catch (ZipException e) {
                     // Corrupt JAR (e.g. truncated download from a CDN 429/partial response): skip
@@ -103,6 +91,44 @@ class GrapeUtil {
                     LOGGER.log(Level.WARNING, "Grape could not process jar '${file}' for extension methods", e)
                 }
             }
+        }
+    }
+
+    /**
+     * Registers the extension modules whose load was deferred because a class named by their
+     * {@code requiredClasses} was missing and can now be loaded (a grab may have supplied it), then
+     * drops the compile-time extension method caches so that the type checker and the macro
+     * transform see every module this grab registered.
+     *
+     * @since 7.0.0
+     */
+    static void processDeferredExtensionModules() {
+        def mcRegistry = GroovySystem.metaClassRegistry
+        if (mcRegistry instanceof MetaClassRegistryImpl) {
+            ExtensionModuleScanner.claimSatisfiedDeferredModules().each { ClassLoader loader, List<Properties> modules ->
+                for (Properties props : modules) {
+                    LOGGER.log(Level.FINE, "Module [${props.getProperty('moduleName')}] - deferred load now proceeding")
+                    registerExtensionModule(mcRegistry, loader, props)
+                }
+            }
+        }
+        AbstractExtensionMethodCache.invalidateAllCaches()
+    }
+
+    private static void registerExtensionModule(MetaClassRegistryImpl mcRegistry, ClassLoader loader, Properties props) {
+        Map<CachedClass, List<MetaMethod>> metaMethods = [:]
+        mcRegistry.registerExtensionModuleFromProperties(props, loader, metaMethods)
+        // add old methods to the map
+        metaMethods.each { CachedClass c, List<MetaMethod> methods ->
+            // GROOVY-5543: if a module was loaded using grab, there are chances that subclasses
+            // have their own ClassInfo, and we must change them as well!
+            Set<CachedClass> classesToBeUpdated = [c].toSet()
+            ClassInfo.onAllClassInfo { ClassInfo info ->
+                if (c.getTheClass().isAssignableFrom(info.getCachedClass().getTheClass())) {
+                    classesToBeUpdated << info.getCachedClass()
+                }
+            }
+            classesToBeUpdated*.addNewMopMethods(methods)
         }
     }
 

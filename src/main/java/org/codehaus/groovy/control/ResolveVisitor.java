@@ -26,6 +26,9 @@ import org.codehaus.groovy.ast.AnnotatedNode;
 import org.codehaus.groovy.ast.AnnotationNode;
 import org.codehaus.groovy.ast.ClassCodeExpressionTransformer;
 import org.codehaus.groovy.ast.ClassHelper;
+import org.apache.groovy.ast.pattern.MatchPattern.RecordPattern;
+import org.apache.groovy.ast.pattern.MatchPattern.RestPattern;
+import org.apache.groovy.ast.pattern.MatchPattern.TypePattern;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.CompileUnit;
 import org.codehaus.groovy.ast.DynamicVariable;
@@ -54,6 +57,7 @@ import org.codehaus.groovy.ast.expr.ListExpression;
 import org.codehaus.groovy.ast.expr.MapEntryExpression;
 import org.codehaus.groovy.ast.expr.MapExpression;
 import org.codehaus.groovy.ast.expr.MethodCallExpression;
+import org.codehaus.groovy.ast.expr.PatternExpression;
 import org.codehaus.groovy.ast.expr.PropertyExpression;
 import org.codehaus.groovy.ast.expr.SpreadMapExpression;
 import org.codehaus.groovy.ast.expr.SwitchExpression;
@@ -147,6 +151,13 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
     private static class ConstructedNestedClass extends ClassNode {
         final ClassNode knownEnclosingType;
 
+        /**
+         * Names the nested class {@code outer.getName() + "$" + inner}, with each
+         * {@code '.'} in {@code inner} replaced by {@code '$'}. The node is not primary.
+         *
+         * @param outer the enclosing class, already resolved
+         * @param inner the nested name, with {@code '.'} between further levels
+         */
         public ConstructedNestedClass(final ClassNode outer, final String inner) {
             super(outer.getName() + "$" + inner.replace('.', '$'), Opcodes.ACC_PUBLIC, ClassHelper.OBJECT_TYPE);
             this.knownEnclosingType = outer;
@@ -187,6 +198,14 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
         final String prefix;
         String className;
 
+        /**
+         * Names the class {@code pkg + name}, adding no separator of its own. The node is
+         * not primary, and {@code pkg} is kept apart so a later inner-class search does
+         * not rewrite the package portion.
+         *
+         * @param pkg prefix concatenated in front of {@code name}
+         * @param name the class name appended to {@code pkg}
+         */
         public ConstructedClassWithPackage(final String pkg, final String name) {
             super(pkg + name, Opcodes.ACC_PUBLIC, ClassHelper.OBJECT_TYPE);
             isPrimaryNode = false;
@@ -231,6 +250,12 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
     private static class LowerCaseClass extends ClassNode {
         final String className;
 
+        /**
+         * Stores {@code name} on a node that is not a primary class node.
+         *
+         * @param name the lower-case identifier stored as this node's class name.
+         *             The node is not a primary class node.
+         */
         public LowerCaseClass(final String name) {
             super(name, Opcodes.ACC_PUBLIC, ClassHelper.OBJECT_TYPE);
             isPrimaryNode = false;
@@ -643,12 +668,38 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
 
         if (!typeName.equals(maybeOuter.getName())) {
             ClassNode maybeNested = new ConstructedNestedClass(maybeOuter, typeName);
-            if (resolveFromCompileUnit(maybeNested) || resolveToOuter(maybeNested)) {
+            if (resolveFromCompileUnit(maybeNested) || resolveNestedFromPrecompiledOuter(maybeOuter, maybeNested)) {
                 type.setRedirect(maybeNested);
                 return true;
             }
         }
         return false;
+    }
+
+    /**
+     * Member types of a source class in this compile unit are declared in its
+     * body (JLS 8.5) and are registered before resolution, so a miss in the
+     * compile unit is final for that outer type. A precompiled outer type keeps
+     * the loader lookup: its member types are not part of this unit, and the
+     * absence of a class resource is not evidence that a parent cannot define them.
+     */
+    private boolean resolveNestedFromPrecompiledOuter(final ClassNode maybeOuter, final ClassNode maybeNested) {
+        if (memberTypesAreDeclaredInThisUnit(maybeOuter)) {
+            return false;
+        }
+        return resolveToOuter(maybeNested);
+    }
+
+    private boolean memberTypesAreDeclaredInThisUnit(final ClassNode maybeOuter) {
+        if (currentClass == null || !maybeOuter.isPrimaryClassNode()) {
+            return false;
+        }
+        CompileUnit unit = currentClass.getCompileUnit();
+        ClassNode outer = maybeOuter.redirect();
+        if (unit == null || outer.getCompileUnit() != unit) {
+            return false;
+        }
+        return unit.getClass(outer.getName()) == outer;
     }
 
     private static String replaceLastPointWithDollar(final String name) {
@@ -1036,6 +1087,8 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
         } else if (exp instanceof SwitchExpression se) {
             visitSwitchExpression(se);
             ret = se;
+        } else if (exp instanceof PatternExpression pe) {
+            ret = transformPatternExpression(pe);
         } else if (exp instanceof ConstructorCallExpression) {
             ret = transformConstructorCallExpression((ConstructorCallExpression) exp);
         } else if (exp instanceof AnnotationConstantExpression) {
@@ -1502,6 +1555,24 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
         newDeclExpr.copyNodeMetaData(de);
         fixDeclaringClass(newDeclExpr);
         return newDeclExpr;
+    }
+
+    /**
+     * Resolves the types a pattern (GEP-19) names, in place, and then the
+     * expressions written in the match: the matched value, the guard and the
+     * literal elements. The variables the pattern binds share the type nodes
+     * of their type patterns, so they are resolved with them.
+     */
+    protected Expression transformPatternExpression(final PatternExpression pe) {
+        pe.getPattern().forEach(pattern -> {
+            ClassNode type = pattern instanceof TypePattern typed ? typed.type()
+                    : pattern instanceof RecordPattern record ? record.type()
+                    : pattern instanceof RestPattern rest ? rest.type() : null;
+            if (type != null) {
+                resolveOrFail(type, type.getLineNumber() > 0 ? type : pe);
+            }
+        });
+        return pe.transformExpression(this);
     }
 
     // TODO: get normal resolving to set declaring class

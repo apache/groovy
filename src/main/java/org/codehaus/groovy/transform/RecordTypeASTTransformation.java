@@ -124,6 +124,7 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.throwS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.tryCatchS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
 import static org.codehaus.groovy.runtime.StringGroovyMethods.isAtLeast;
+import static org.codehaus.groovy.transform.ImmutableASTTransformation.IMMUTABLE_BREADCRUMB;
 import static org.objectweb.asm.Opcodes.ACC_ABSTRACT;
 import static org.objectweb.asm.Opcodes.ACC_FINAL;
 import static org.objectweb.asm.Opcodes.ACC_PRIVATE;
@@ -163,6 +164,11 @@ public class RecordTypeASTTransformation extends AbstractASTTransformation imple
     static final String TO_LIST = "toList";
     static final String TO_MAP = "toMap";
 
+    /**
+     * Redirect node for {@link RecordBase}. {@code makeWithoutCaching} with generics
+     * omitted builds a fresh node that redirects to the cached class, so this is not
+     * the shared {@link ClassNode}.
+     */
     public static final ClassNode MY_TYPE = makeWithoutCaching(RecordBase.class, false);
     private static final String MY_TYPE_NAME = MY_TYPE.getNameWithoutPackage();
 
@@ -178,6 +184,12 @@ public class RecordTypeASTTransformation extends AbstractASTTransformation imple
         this.compilationUnit = unit;
     }
 
+    /**
+     * Returns the compilation unit's transform loader when {@code compilationUnit}
+     * has been set, and otherwise the source unit's class loader.
+     *
+     * @return the loader used to resolve transform helpers
+     */
     protected GroovyClassLoader getTransformLoader() {
         return compilationUnit != null ? compilationUnit.getTransformLoader() : sourceUnit.getClassLoader();
     }
@@ -636,6 +648,8 @@ public class RecordTypeASTTransformation extends AbstractASTTransformation imple
     private static void adjustPropertyForShallowImmutability(ClassNode cNode, PropertyNode pNode, PropertyHandler handler) {
         final FieldNode fNode = pNode.getField();
         fNode.setModifiers((pNode.getModifiers() & (~ACC_PUBLIC)) | ACC_FINAL | ACC_PRIVATE);
+        // records have no setters, so other transforms (e.g. @IndexedProperty) shouldn't add any
+        fNode.setNodeMetaData(IMMUTABLE_BREADCRUMB, Boolean.TRUE);
         boolean isGetterDefined = cNode.getDeclaredMethods(pNode.getName()).stream()
                 .anyMatch(MethodNodeUtils::isGetterCandidate);
         pNode.setGetterName(pNode.getName());

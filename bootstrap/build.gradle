@@ -17,6 +17,8 @@
  *  under the License.
  */
 
+import javax.inject.Inject
+
 def props = new Properties()
 file("$projectDir/../gradle.properties").withInputStream {
     props.load(it)
@@ -37,11 +39,25 @@ tasks.withType(Wrapper).configureEach {
     }
 }
 
+interface BootstrapServices {
+    @Inject
+    FileSystemOperations getFileSystemOperations()
+}
+
+def fileSystemOperations = objects.newInstance(BootstrapServices).fileSystemOperations
+
 tasks.register('bootstrap') {
     dependsOn 'wrapper'
+    def generatedDir = projectDir
+    def rootDir = projectDir.parentFile
     doLast {
-        ant.move file: "${projectDir}/gradlew", todir: "${projectDir}/../"
-        ant.move file: "${projectDir}/gradlew.bat", todir: "${projectDir}/../"
-        ant.move file: "${projectDir}/gradle/wrapper", todir: "${projectDir}/../gradle/"
+        fileSystemOperations.copy { spec ->
+            spec.from(generatedDir) { include 'gradlew', 'gradlew.bat', 'gradle/wrapper/**' }
+            spec.into(rootDir)
+        }
+        fileSystemOperations.delete { spec ->
+            spec.delete(new File(generatedDir, 'gradlew'), new File(generatedDir, 'gradlew.bat'),
+                    new File(generatedDir, 'gradle/wrapper'))
+        }
     }
 }

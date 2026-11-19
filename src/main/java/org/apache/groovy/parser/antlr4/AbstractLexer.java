@@ -36,6 +36,11 @@ import org.antlr.v4.runtime.Token;
  */
 public abstract class AbstractLexer extends Lexer implements SyntaxErrorReportable {
 
+    /**
+     * Creates a lexer over {@code input}.
+     *
+     * @param input the character stream to tokenize
+     */
     public AbstractLexer(CharStream input) {
         super(input);
     }

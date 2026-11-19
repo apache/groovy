@@ -29,7 +29,6 @@ import org.codehaus.groovy.ast.AnnotationNode;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.expr.BooleanExpression;
 import org.codehaus.groovy.ast.expr.ClosureExpression;
-import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.ast.stmt.DoWhileStatement;
 import org.codehaus.groovy.ast.stmt.LoopingStatement;
@@ -75,6 +74,10 @@ public class LoopInvariantASTTransformation implements ASTTransformation, Compil
 
     private CompilationUnit compilationUnit;
 
+    /**
+     * Stores {@code unit} so invariant expressions moved into a loop body can
+     * be resolved from {@link #visit(ASTNode[], SourceUnit)}.
+     */
     @Override
     public void setCompilationUnit(final CompilationUnit unit) {
         this.compilationUnit = unit;
@@ -96,11 +99,14 @@ public class LoopInvariantASTTransformation implements ASTTransformation, Compil
         // existing GContractsASTTransformation global pipeline.
         if (!(nodes[1] instanceof LoopingStatement loopStatement)) return;
 
-        Expression value = annotation.getMember("value");
-        if (!(value instanceof ClosureExpression closureExpression)) return;
+        ClosureExpression closureExpression = LoopContractSupport.contractClosure(annotation, source);
+        if (closureExpression == null) return;
 
         List<BooleanExpression> booleanExpressions = ExpressionUtils.getBooleanExpression(closureExpression);
-        if (booleanExpressions == null || booleanExpressions.isEmpty()) return;
+        if (booleanExpressions == null || booleanExpressions.isEmpty()) {
+            LoopContractSupport.warn(annotation, source, "({}) on a loop has no condition, so nothing is checked");
+            return;
+        }
 
         BlockStatement assertStatements = AssertStatementCreationUtility.getAssertionStatements(booleanExpressions);
 

@@ -24,6 +24,7 @@ import java.util.List;
 
 // GROOVY-12534: m12n.TestStringExtension depends on bugs.Groovy12534People
 import bugs.Groovy12534People;
+import bugs.Groovy12649PeopleSet;
 
 public class TestStringExtension {
 
@@ -61,5 +62,10 @@ public class TestStringExtension {
     // GROOVY-12534: name belongs to the list subclass, and collides with the element property
     public static String getName(Groovy12534People self) {
         return "the collection";
+    }
+
+    // GROOVY-12649: name belongs to the set subclass, and collides with the element property
+    public static String getName(Groovy12649PeopleSet self) {
+        return "the set";
     }
 }

@@ -20,20 +20,27 @@ package org.apache.groovy.contracts.ast;
 
 import groovy.contracts.Contracted;
 import groovy.contracts.Invariant;
+import org.apache.groovy.contracts.annotations.meta.ContractElement;
 import org.apache.groovy.contracts.ast.visitor.AnnotationClosureVisitor;
 import org.apache.groovy.contracts.ast.visitor.ConfigurationSetup;
 import org.apache.groovy.contracts.ast.visitor.ContractElementVisitor;
 import org.apache.groovy.contracts.generation.CandidateChecks;
+import org.apache.groovy.contracts.util.AnnotationUtils;
 import org.codehaus.groovy.ast.ASTNode;
+import org.codehaus.groovy.ast.AnnotatedNode;
 import org.codehaus.groovy.ast.AnnotationNode;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.ImportNode;
+import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.ModuleNode;
+import org.codehaus.groovy.ast.expr.ClassExpression;
 import org.codehaus.groovy.ast.expr.ClosureExpression;
+import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.control.CompilePhase;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.control.io.ReaderSource;
+import org.codehaus.groovy.syntax.SyntaxException;
 import org.codehaus.groovy.transform.ASTTransformation;
 import org.codehaus.groovy.transform.GroovyASTTransformation;
 
@@ -59,7 +66,40 @@ public class ClosureExpressionEvaluationASTTransformation extends BaseASTTransfo
         ReaderSource source = getReaderSource(unit);
         final List<ClassNode> classNodes = new ArrayList<>(moduleNode.getClasses());
 
+        rejectNonClosureConditions(unit, classNodes);
         generateAnnotationClosureClasses(unit, source, classNodes);
+    }
+
+    /**
+     * Reports a contract annotation whose value is not a closure. The annotation type declares its value as a
+     * {@code Class}, so a class literal passes the annotation checks, but later phases would take it for the
+     * condition class generated from a closure: it was never checked, or failed compilation when the contract
+     * was inherited. A condition already replaced by its generated class, when another source unit visited
+     * this class as a supertype first, is recognised by its metadata.
+     */
+    private static void rejectNonClosureConditions(final SourceUnit unit, final List<ClassNode> classNodes) {
+        for (ClassNode classNode : classNodes) {
+            rejectNonClosureConditions(unit, classNode);
+            for (MethodNode methodNode : classNode.getMethods()) {
+                rejectNonClosureConditions(unit, methodNode);
+            }
+            for (MethodNode constructorNode : classNode.getDeclaredConstructors()) {
+                rejectNonClosureConditions(unit, constructorNode);
+            }
+        }
+    }
+
+    private static void rejectNonClosureConditions(final SourceUnit unit, final AnnotatedNode node) {
+        for (AnnotationNode annotation : AnnotationUtils.hasMetaAnnotations(node, ContractElement.class.getName())) {
+            Expression value = annotation.getMember("value");
+            if (value == null || value instanceof ClosureExpression
+                    || value.getNodeMetaData(AnnotationClosureVisitor.META_DATA_ORIGINAL_TRY_CATCH_BLOCK) != null) continue;
+            String name = annotation.getClassNode().getNameWithoutPackage();
+            unit.addError(new SyntaxException(
+                    "@" + name + " requires a closure containing the condition, e.g. @" + name + "({ ... }); found "
+                            + (value instanceof ClassExpression ? "a class " : "") + value.getText(),
+                    annotation.getLineNumber(), annotation.getColumnNumber()));
+        }
     }
 
     /**

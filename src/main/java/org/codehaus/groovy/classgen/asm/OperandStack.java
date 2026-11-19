@@ -296,6 +296,30 @@ public class OperandStack {
     }
 
     /**
+     * Duplicates the top operand and inserts the copy beneath the two
+     * operands immediately under it.
+     * <p>
+     * Those two operands are one word each, as with an array reference and
+     * an int index under a store value. The duplicated operand is one word,
+     * or two when it is a {@code long} or a {@code double}
+     * ({@code DUP_X2} or {@code DUP2_X2}). The inserted copy is the preserved
+     * value; the original stays on top to be consumed.
+     */
+    public void dupUnderTwo() {
+        int size = stack.size();
+        if (size < 3) {
+            throw new GroovyBugError("dupUnderTwo requires three operands but the operand stack has " + size);
+        }
+        ClassNode top = stack.get(size - 1);
+        if (isTwoSlotType(stack.get(size - 2)) || isTwoSlotType(stack.get(size - 3))) {
+            throw new GroovyBugError("dupUnderTwo requires two one-word operands under the value");
+        }
+        controller.getMethodVisitor().visitInsn(isTwoSlotType(top) ? DUP2_X2 : DUP_X2);
+        // [below, under, top] -> [top, below, under, top]
+        stack.add(size - 3, top);
+    }
+
+    /**
      * replace top level element with new element of given type
      */
     public void replace(final ClassNode type) {
