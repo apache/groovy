@@ -2313,9 +2313,11 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
             return null;
         }
         ClassNode mapValueType = mapTypeArguments[1].getType();
-        // the value is accepted for a variable of the value type
+        // the value is accepted for a variable of the value type; a value that is not a Class
+        // is converted to a parameterized Class as to a raw one, so it has no type arguments to check
         if (!checkCompatibleAssignmentTypes(mapValueType, valueType, null, false)
                 || (mapValueType.isUsingGenerics() && !missesGenericsTypes(valueType)
+                    && !(isClassType(mapValueType) && !isClassType(valueType))
                     && !GenericsUtils.buildWildcardType(mapValueType).isCompatibleWith(wrapTypeIfNecessary(valueType)))) {
             return null;
         }
@@ -7296,7 +7298,8 @@ trying: for (ClassNode[] signature : signatures) {
                     return initialType;
                 }
             } else if (isClassType(left) && left.isUsingGenerics() && !isClassType(right)) {
-                // a field initializer or a property write: a value that is not a Class is converted at run time
+                // a target that is not a variable, such as a field initializer, a property, attribute or map
+                // entry write, or an array element: a value that is not a Class is converted as for a raw Class
                 return left;
             }
 
