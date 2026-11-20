@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1795071463231,
+  "lastUpdate": 1795157704864,
   "repoUrl": "https://github.com/apache/groovy",
   "entries": {
     "Dispatch Metrics": [
@@ -7145,6 +7145,58 @@ window.BENCHMARK_DATA = {
           "url": "https://github.com/apache/groovy/commit/cb6cd0519a71f0ca291656c01549dd8911ceea41"
         },
         "date": 1795071462271,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "classes.loaded.total",
+            "value": 4068,
+            "unit": "classes"
+          },
+          {
+            "name": "classes.lambdaForms",
+            "value": 440,
+            "unit": "classes"
+          },
+          {
+            "name": "classes.hidden",
+            "value": 870,
+            "unit": "classes"
+          },
+          {
+            "name": "classes.groovyRuntime",
+            "value": 1572,
+            "unit": "classes"
+          },
+          {
+            "name": "bytecode.corpus.bytes",
+            "value": 193866,
+            "unit": "bytes"
+          },
+          {
+            "name": "bytecode.corpus.classes",
+            "value": 57,
+            "unit": "classes"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "Scott Murphy Heiberg",
+            "username": "codeconsole",
+            "email": "scott@alwaysvip.com"
+          },
+          "committer": {
+            "name": "Paul King",
+            "username": "paulk-asert",
+            "email": "paulk@asert.com.au"
+          },
+          "id": "077ff21217c82a6e26c5d06962947449250118ee",
+          "message": "GROOVY-12784: Open the ANSI console on the Logger's first colored line\n\nIO.forConsole() opened JLine's console in its constructor, so groovydoc on\na terminal built JLine's system terminal, loaded its native library and\nsent its probes even when it never logged a line.\n\nIO's out and err are now always plain, and ansiSupported, still final, is\ndecided without opening the console. The new IO.getAnsiOut() opens it on\nits first call, which Logger makes for its first colored line, and returns\nnull when the console cannot render ANSI after all or System.out was\nreplaced since the IO was created; Logger then prints the plain line.",
+          "timestamp": "2026-11-19T00:05:14Z",
+          "url": "https://github.com/apache/groovy/commit/077ff21217c82a6e26c5d06962947449250118ee"
+        },
+        "date": 1795157704199,
         "tool": "customSmallerIsBetter",
         "benches": [
           {
