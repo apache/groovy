@@ -1147,6 +1147,32 @@ which consults its delegate, or qualify the name (`x.cnt`).
 delegate of such a lambda still supplies the name; closures; and the method
 form `getCnt()`.
 
+### Groovy 6.0.1 — trait static state used through the trait itself throws `MissingFieldException` (GROOVY-12597)
+
+A public static method of a trait is promoted onto the trait interface, so it
+can be called as `T.m()` as well as through an implementing class. Called
+through the trait, it has no implementing class, and so no static state: a
+trait's static fields and properties exist only in the classes that implement
+it. Reading or writing one there, as in `T.count`, `T.getCount()`, or `T.m()`
+where `m` uses a static field of `T`, now throws a `MissingFieldException`.
+Its message says that the state belongs to each implementing class, and its
+`field` and `type` are the field's name and the trait. In 6.0.0 the same code
+threw a `MissingMethodException` that named an internal accessor, such as
+`T__count$get`.
+
+To do this, the interface of a trait that has promoted static methods now
+declares a synthetic public static accessor for each static field of the
+trait.
+
+**Who is affected.** Code that catches `MissingMethodException`, or
+inspects its message or method name, around such a call. Catch
+`MissingFieldException` (or `GroovyRuntimeException`, which both extend), or
+better, call the method through an implementing class, as in `C.m()`.
+
+**What is unchanged.** Calls through an implementing class; promoted static
+methods that do not use static state; and code that reaches the static state
+of a super trait, which can still fail with a `MissingMethodException`.
+
 ### Groovy 6.0.1 — a late subscriber of `BroadcastChannel.asPublisher()` completes (GROOVY-12571)
 
 In 6.0.0, a subscriber of `BroadcastChannel.asPublisher()` that arrived after
