@@ -573,6 +573,323 @@ final class GenericsJavaCompatibilityTest {
         assertPositive(className, javaSrc, 'second-first')
     }
 
+    /**
+     * JLS 5.1.10, 18.5.1: the capture of {@code ? extends B} is a subtype of {@code B}, so
+     * an argument such as {@code List<? extends Integer>} infers a type parameter bounded
+     * by {@code Number}, and {@code Class<? extends String>} one bounded by {@code CharSequence}.
+     */
+    @Test
+    void testUpperBoundedWildcardArgumentForBoundedTypeParameter() {
+        final String className = 'gls.generics.test.ExtendsWildcardArgument'
+        final String javaSrc = '''
+            package gls.generics.test;
+            import java.util.*;
+            public class ExtendsWildcardArgument {
+                static <T extends Number> T first(List<T> list) { return list.get(0); }
+                static <T extends CharSequence> String named(Class<T> type) { return type.getSimpleName(); }
+                static String check(List<? extends Integer> ints, Class<? extends String> type) {
+                    Integer i = first(ints);
+                    Number n = first(ints);
+                    return i + ":" + n + ":" + named(type);
+                }
+                public static String test() {
+                    return check(Arrays.asList(4, 2), String.class);
+                }
+            }
+        '''
+        assertPositive(className, javaSrc, '4:4:String')
+    }
+
+    /**
+     * JLS 18.5.1: the capture of {@code ? extends Number} is not known to be a subtype of
+     * {@code Integer}, so it does not infer a type parameter bounded by {@code Integer}.
+     */
+    @Test
+    void testNegativeUpperBoundedWildcardArgumentOutsideTypeParameterBound() {
+        final String className = 'gls.generics.test.ExtendsWildcardArgumentOutOfBound'
+        final String javaSrc = '''
+            package gls.generics.test;
+            import java.util.*;
+            public class ExtendsWildcardArgumentOutOfBound {
+                static <T extends Integer> T narrow(List<T> list) { return list.get(0); }
+                static Object check(List<? extends Number> numbers) { return narrow(numbers); }
+            }
+        '''
+        assertNegativeCompile(className, javaSrc, "incompatible bounds", "Cannot call <T extends java.lang.Integer>")
+    }
+
+    /**
+     * JLS 5.1.10, 18.5.1: the capture of {@code ? extends B} is checked against every bound
+     * of the type parameter, with the capture in place of the type parameter. It satisfies
+     * {@code Comparable<? super T>} when {@code B} is comparable to a supertype of itself, a
+     * parameterized bound when {@code B} has matching type arguments, and a bound of
+     * {@code Number} when {@code B} is a type variable that extends {@code Integer}.
+     */
+    @Test
+    void testUpperBoundedWildcardArgumentForTypeParameterInItsOwnBound() {
+        final String className = 'gls.generics.test.ExtendsWildcardArgumentSelfBound'
+        final String javaSrc = '''
+            package gls.generics.test;
+            import java.util.*;
+            public class ExtendsWildcardArgumentSelfBound {
+                static <T extends Comparable<? super T>> T first(List<T> list) { return list.get(0); }
+                static <T extends Number & Comparable<? super T>> T second(List<T> list) { return list.get(1); }
+                static <T extends List<? extends Number>> T head(List<T> lists) { return lists.get(0); }
+                static <T extends Map<String, ? extends Number>> int count(Collection<T> maps) { return maps.size(); }
+                static <T extends Number> T number(List<T> list) { return list.get(0); }
+                static <E extends Integer> Number viaTypeVariable(List<? extends E> list) { return number(list); }
+                static String check(List<? extends Integer> ints, List<? extends ArrayList<Integer>> lists,
+                        List<? extends HashMap<String, Integer>> maps) {
+                    Integer i = first(ints);
+                    ArrayList<Integer> list = head(lists);
+                    return i + ":" + second(ints) + ":" + list + ":" + count(maps) + ":" + viaTypeVariable(ints);
+                }
+                public static String test() {
+                    List<ArrayList<Integer>> lists = new ArrayList<>();
+                    lists.add(new ArrayList<>(Arrays.asList(1)));
+                    List<HashMap<String, Integer>> maps = new ArrayList<>();
+                    return check(Arrays.asList(4, 2), lists, maps);
+                }
+            }
+        '''
+        assertPositive(className, javaSrc, '4:2:[1]:0:4')
+    }
+
+    /**
+     * JLS 5.1.10, 18.5.1: the capture of {@code ? extends B} is a fresh type variable, not
+     * {@code B}. {@code B} being a {@code Comparable<B>} or an {@code Enum<B>} does not make
+     * the capture comparable to itself, so it is not within a bound that names the type
+     * parameter as a type argument.
+     */
+    @Test
+    void testNegativeUpperBoundedWildcardArgumentOutsideBoundThatNamesTypeParameter() {
+        [
+            SelfComparable: '''
+                static <T extends Comparable<T>> T id(List<T> list) { return list.get(0); }
+                static Object check(List<? extends Integer> list) { return id(list); }
+            ''',
+            SelfComparableNumber: '''
+                static <T extends Number & Comparable<T>> T id(List<T> list) { return list.get(0); }
+                static Object check(List<? extends Integer> list) { return id(list); }
+            ''',
+            SelfComparableElements: '''
+                static <T extends Comparable<T>> int cmp(List<T> list) { return list.get(0).compareTo(list.get(1)); }
+                static int check(List<? extends Integer> list) { return cmp(list); }
+            ''',
+            SelfComparableSuperclass: '''
+                static class Base implements Comparable<Base> {
+                    public int compareTo(Base that) { return 0; }
+                }
+                static class Sub extends Base {}
+                static <T extends Comparable<T>> T id(List<T> list) { return list.get(0); }
+                static Object check(List<? extends Sub> list) { return id(list); }
+            ''',
+            SelfEnum: '''
+                static <T extends Enum<T>> T id(List<T> list) { return list.get(0); }
+                static Object check(List<? extends Thread.State> list) { return id(list); }
+            ''',
+            EnumOfUnknown: '''
+                static Object check(Class<? extends Enum<?>> type) { return Enum.valueOf(type, "NEW"); }
+            ''',
+            ComparableToUnknown: '''
+                static <T extends Comparable<? super T>> void order(List<T> list) {}
+                static void check(List<? extends Comparable<?>> list) { order(list); }
+            '''
+        ].each { String name, String members ->
+            assertNegativeCompile("gls.generics.test.$name", """
+                package gls.generics.test;
+                import java.util.*;
+                public class $name {
+                    $members
+                }
+            """, 'cannot be applied to given types', 'Cannot call <T extends')
+        }
+    }
+
+    /**
+     * JLS 4.9, 18.5.1: the capture of {@code ? extends B} is within an intersection bound
+     * only when it is a subtype of every type of the intersection.
+     */
+    @Test
+    void testNegativeUpperBoundedWildcardArgumentOutsideIntersectionBound() {
+        final String className = 'gls.generics.test.ExtendsWildcardArgumentIntersection'
+        final String javaSrc = '''
+            package gls.generics.test;
+            import java.util.*;
+            public class ExtendsWildcardArgumentIntersection {
+                static <T extends CharSequence & Appendable> T id(List<T> list) { return list.get(0); }
+                static Object check(List<? extends String> list) { return id(list); }
+            }
+        '''
+        assertNegativeCompile(className, javaSrc, 'cannot be applied to given types', 'Cannot call <T extends')
+    }
+
+    /**
+     * JLS 4.10.2, 18.5.1: a parameterized bound is checked with its type arguments. The
+     * capture of {@code ? extends ArrayList<String>} is not a {@code List<Integer>}.
+     */
+    @Test
+    void testNegativeUpperBoundedWildcardArgumentOutsideParameterizedBound() {
+        [
+            ClassOfArrayList: '''
+                static <T extends List<Integer>> T cast(Class<T> type) { return null; }
+                static void check(Class<? extends ArrayList<String>> type) { cast(type); }
+            ''',
+            ClassOfList: '''
+                static <T extends List<Integer>> T cast(Class<T> type) { return null; }
+                static void check(Class<? extends List<String>> type) { cast(type); }
+            ''',
+            ListOfArrayList: '''
+                static <T extends List<Integer>> T id(List<T> lists) { return lists.get(0); }
+                static Object check(List<? extends ArrayList<String>> lists) { return id(lists); }
+            ''',
+            WildcardBound: '''
+                static <T extends List<? extends Integer>> T id(List<T> lists) { return lists.get(0); }
+                static Object check(List<? extends ArrayList<String>> lists) { return id(lists); }
+            '''
+        ].each { String name, String members ->
+            assertNegativeCompile("gls.generics.test.$name", """
+                package gls.generics.test;
+                import java.util.*;
+                public class $name {
+                    $members
+                }
+            """, 'cannot be applied to given types', 'Cannot call <T extends')
+        }
+    }
+
+    /**
+     * JLS 4.5: {@code ? extends ArrayList<String>} is not within the bound of a type parameter
+     * declared as {@code E extends List<Integer>}. javac reports the type argument and static
+     * Groovy the call that passes it.
+     */
+    @Test
+    void testNegativeUpperBoundedWildcardArgumentOutsideDeclaredBound() {
+        final String className = 'gls.generics.test.ExtendsWildcardArgumentDeclaredBound'
+        final String javaSrc = '''
+            package gls.generics.test;
+            import java.util.*;
+            public class ExtendsWildcardArgumentDeclaredBound {
+                static class ListBox<E extends List<Integer>> {}
+                static <T extends List<Integer>> T id(ListBox<T> box) { return null; }
+                static Object check(ListBox<? extends ArrayList<String>> box) { return id(box); }
+            }
+        '''
+        assertNegativeCompile(className, javaSrc, 'not within bounds of type-variable E', 'Cannot call <T extends')
+    }
+
+    /**
+     * JLS 5.1.10: each wildcard type argument has its own capture and a wildcard nested in a
+     * type argument has none, so neither two wildcards nor a nested one infer a single
+     * type parameter.
+     */
+    @Test
+    void testNegativeUpperBoundedWildcardArgumentCapturedTwiceOrNested() {
+        [
+            TwoCaptures: '''
+                static <T extends Number> void take(Map<T, T> map) {}
+                static void check(Map<? extends Integer, ? extends Integer> map) { take(map); }
+            ''',
+            NestedWildcard: '''
+                static <T extends Number> void take(List<List<T>> lists) {}
+                static void check(List<List<? extends Integer>> lists) { take(lists); }
+            '''
+        ].each { String name, String members ->
+            assertNegativeCompile("gls.generics.test.$name", """
+                package gls.generics.test;
+                import java.util.*;
+                public class $name {
+                    $members
+                }
+            """, 'cannot be applied to given types', 'Cannot call <T extends')
+        }
+    }
+
+    /**
+     * JLS 18.3.1, 18.5.1: a bound that names another type parameter, such as {@code T} in
+     * {@code <T extends Number, U extends T>} or {@code List<T>} in
+     * {@code <T extends Number, U extends List<T>>}, constrains that type parameter too, so the
+     * capture of the wildcard must fit within the bounds of {@code T}.
+     */
+    @Test
+    void testUpperBoundedWildcardArgumentForBoundThatNamesAnotherTypeParameter() {
+        final String className = 'gls.generics.test.ExtendsWildcardArgumentOtherTypeParameter'
+        final String javaSrc = '''
+            package gls.generics.test;
+            import java.util.*;
+            public class ExtendsWildcardArgumentOtherTypeParameter {
+                static <T extends Number, U extends T> U first(List<U> list) { return list.get(0); }
+                static <T extends Number, U extends List<T>> String named(Class<U> type) { return type.getSimpleName(); }
+                static String check(List<? extends Integer> ints, Class<? extends ArrayList<Integer>> lists) {
+                    Number n = first(ints);
+                    return n + ":" + named(lists);
+                }
+                @SuppressWarnings("unchecked")
+                public static String test() {
+                    return check(Arrays.asList(4, 2), (Class<? extends ArrayList<Integer>>) (Class<?>) ArrayList.class);
+                }
+            }
+        '''
+        assertPositive(className, javaSrc, '4:ArrayList')
+    }
+
+    /**
+     * JLS 18.3.1, 18.5.1: the capture of {@code ? extends String} is not within
+     * {@code T extends Number} for {@code U extends T}, and {@code ArrayList<String>} gives a
+     * {@code T} of {@code String} for {@code U extends List<T>}.
+     */
+    @Test
+    void testNegativeUpperBoundedWildcardArgumentOutsideBoundOfAnotherTypeParameter() {
+        [
+            OtherTypeParameter: '''
+                static <T extends Number, U extends T> U first(List<U> list) { return list.get(0); }
+                static Object check(List<? extends String> list) { Number n = first(list); return n; }
+            ''',
+            NarrowerOtherTypeParameter: '''
+                static <T extends Integer, U extends T> U first(List<U> list) { return list.get(0); }
+                static Object check(List<? extends Number> list) { return first(list); }
+            ''',
+            OtherTypeParameterArgument: '''
+                static <T extends Number, U extends List<T>> int count(Class<U> type) { return 1; }
+                static int check(Class<? extends ArrayList<String>> type) { return count(type); }
+            '''
+        ].each { String name, String members ->
+            assertNegativeCompile("gls.generics.test.$name", """
+                package gls.generics.test;
+                import java.util.*;
+                public class $name {
+                    $members
+                }
+            """, 'incompatible', 'Cannot call <T extends')
+        }
+    }
+
+    /**
+     * JLS 5.1.10, 18.5.1: the capture of {@code ? extends E} is bounded by the bound of the
+     * type variable {@code E}, so it is not within a bound that {@code E} is not within.
+     */
+    @Test
+    void testNegativeUpperBoundedWildcardArgumentBoundedByTypeVariable() {
+        [
+            WiderTypeVariable: '''
+                static <T extends Integer> T narrow(List<T> list) { return list.get(0); }
+                static <E extends Number> Object check(List<? extends E> list) { return narrow(list); }
+            ''',
+            UnboundedTypeVariable: '''
+                static <T extends Number> T first(List<T> list) { return list.get(0); }
+                static <E> Object check(List<? extends E> list) { return first(list); }
+            '''
+        ].each { String name, String members ->
+            assertNegativeCompile("gls.generics.test.$name", """
+                package gls.generics.test;
+                import java.util.*;
+                public class $name {
+                    $members
+                }
+            """, 'cannot be applied to given types', 'Cannot call <T extends')
+        }
+    }
+
     // =========================================================================
     // Category 4: Diamond and target-type inference (JLS 15.9.3, 18.5.2)
     // =========================================================================
