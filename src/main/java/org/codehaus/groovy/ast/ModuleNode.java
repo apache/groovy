@@ -18,6 +18,7 @@
  */
 package org.codehaus.groovy.ast;
 
+import groovy.transform.NoScript;
 import org.apache.groovy.ast.tools.ClassNodeUtils;
 import org.codehaus.groovy.ast.expr.BinaryExpression;
 import org.codehaus.groovy.ast.expr.ConstructorCallExpression;
@@ -59,6 +60,7 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
 import static org.objectweb.asm.Opcodes.ACC_ABSTRACT;
 import static org.objectweb.asm.Opcodes.ACC_FINAL;
 import static org.objectweb.asm.Opcodes.ACC_INTERFACE;
+import static org.objectweb.asm.Opcodes.ACC_PRIVATE;
 import static org.objectweb.asm.Opcodes.ACC_PUBLIC;
 import static org.objectweb.asm.Opcodes.ACC_STATIC;
 
@@ -68,6 +70,8 @@ import static org.objectweb.asm.Opcodes.ACC_STATIC;
  * intermixed with statements like scripts in Python or Ruby
  */
 public class ModuleNode extends ASTNode {
+
+    private static final String NO_SCRIPT = NoScript.class.getName();
 
     private List<ClassNode> classes = new LinkedList<>();
     private final List<MethodNode> methods = new ArrayList<>();
@@ -669,6 +673,33 @@ public class ModuleNode extends ASTNode {
             }
         }
 
+        List<AnnotationNode> classAnnotations = new ArrayList<>();
+        AnnotationNode noScript = removeNoScriptMarkers(classAnnotations);
+        if (noScript != null) {
+            if (hasUncontainedStatements) {
+                getContext().addErrorAndContinue(new SyntaxException("Annotation @NoScript cannot be used"
+                        + " in a script with statements other than declarations", noScript));
+            } else {
+                ClassNode result = new ClassNode(classNode.getName(), ACC_PUBLIC, ClassHelper.OBJECT_TYPE);
+                classAnnotations.forEach(result::addAnnotation);
+                if (existingMain != null) {
+                    for (AnnotationNode annotation : existingMain.getAnnotations()) {
+                        if (!isKnownMethodOnly(annotation)) result.addAnnotation(annotation);
+                    }
+                    result.putNodeMetaData("_SKIPPABLE_ANNOTATIONS", Boolean.TRUE);
+                    existingMain.putNodeMetaData("_SKIPPABLE_ANNOTATIONS", Boolean.TRUE);
+                }
+                methods.forEach(result::addMethod);
+                fields.forEach(result::addField);
+                initializers.forEach(result::addObjectInitializerStatements);
+                // a class of static methods only is never instantiated
+                if (fields.isEmpty() && !methods.isEmpty() && methods.stream().allMatch(MethodNode::isStatic)) {
+                    result.addConstructor(ACC_PRIVATE, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, new BlockStatement());
+                }
+                return result;
+            }
+        }
+
         if (existingMain != null && !hasUncontainedStatements) { // JEP 445 main
             ClassNode result = new ClassNode(classNode.getName(), 0, ClassHelper.OBJECT_TYPE);
             for (AnnotationNode annotation : existingMain.getAnnotations()) {
@@ -777,6 +808,58 @@ public class ModuleNode extends ASTNode {
             }
         }
         return "java.lang.Override".equals(name) || "java.beans.Transient".equals(name);
+    }
+
+    /**
+     * Removes every {@code @NoScript} annotation from the package declaration, the imports and the
+     * top-level declarations, so that none reaches the transform that reports a misplaced one.
+     * Annotations alongside one on the package declaration or an import are moved to
+     * {@code classAnnotations}, for the generated class.
+     *
+     * @return the first {@code @NoScript} found, or {@code null} if there is none
+     */
+    private AnnotationNode removeNoScriptMarkers(final List<AnnotationNode> classAnnotations) {
+        List<AnnotatedNode> holders = new ArrayList<>();
+        if (packageNode != null) holders.add(packageNode);
+        holders.addAll(getImports());
+        holders.addAll(getStarImports());
+        holders.addAll(getStaticImports().values());
+        holders.addAll(getStaticStarImports().values());
+        int moveFrom = holders.size();
+        for (Statement statement : statementBlock.getStatements()) {
+            if (statement instanceof ExpressionStatement es && es.getExpression() instanceof DeclarationExpression de) {
+                holders.add(de);
+            }
+        }
+
+        AnnotationNode found = null;
+        for (int i = 0; i < holders.size(); i++) {
+            List<AnnotationNode> annotations = holders.get(i).getAnnotations();
+            AnnotationNode marker = annotations.stream().filter(this::isNoScript).findFirst().orElse(null);
+            if (marker == null) continue;
+            if (found == null) found = marker;
+            annotations.removeIf(this::isNoScript);
+            if (i < moveFrom) {
+                classAnnotations.addAll(annotations);
+                annotations.clear();
+            }
+        }
+        return found;
+    }
+
+    /**
+     * Best effort, as for {@link #isKnownMethodOnly}: annotation types are not resolved yet in
+     * this phase, so the check is by name, through a fully-qualified name, a single-type import
+     * (aliased or not) or a star import of {@code groovy.transform}.
+     */
+    private boolean isNoScript(final AnnotationNode annotation) {
+        String name = annotation.getClassNode().getName();
+        if (NO_SCRIPT.equals(name)) return true;
+        if (name.indexOf('.') >= 0) return false;
+        ImportNode importNode = getImport(name);
+        if (importNode != null) return NO_SCRIPT.equals(importNode.getType().getName());
+        return "NoScript".equals(name)
+                && getStarImports().stream().anyMatch(i -> "groovy.transform.".equals(i.getPackageName()));
     }
 
     private MethodNode findRun() {
