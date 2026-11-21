@@ -1439,6 +1439,50 @@ ${' ' * 46}value.prop += 1
         '''
     }
 
+    // GROOVY-12678: a type-checked lambda is a closure
+    @Test
+    void testNestedLambdaDelegateOwner() {
+        for (prop in ['delegate', 'owner', 'getDelegate()', 'getOwner()']) {
+            assertScript """
+                import java.util.function.Supplier
+                class C {
+                    String name = 'n'
+                    void m() {
+                        def that
+                        that = { ->
+                            Supplier<Object> s = () -> {
+                                name
+                                @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                                    def type = node.getNodeMetaData(INFERRED_TYPE)
+                                    assert type/*of $prop*/ == CLOSURE_TYPE
+                                })
+                                Object ref = $prop
+                                assert ref == that
+                            }
+                            s.get()
+                        }
+                        that.call()
+                        Supplier<Object> t = () -> {
+                            name
+                            Supplier<Object> s = () -> {
+                                name
+                                @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                                    def type = node.getNodeMetaData(INFERRED_TYPE)
+                                    assert type/*of $prop*/ == CLOSURE_TYPE
+                                })
+                                Object ref = $prop
+                                assert ref instanceof Closure
+                            }
+                            s.get()
+                        }
+                        t.get()
+                    }
+                }
+                new C().m()
+            """
+        }
+    }
+
     // GROOVY-9652
     @Test
     void testDelegatePropertyAndCharCompareOptimization() {
