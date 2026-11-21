@@ -45,6 +45,11 @@ public class JComponentProperties {
         Map<String, TriggerBinding> result = new HashMap<String, TriggerBinding>();
         result.put(JComponent.class.getName() + "#size",
             (source, target) -> new AbstractJComponentBinding((PropertyBinding) source, target, "size") {
+                /**
+                 * Refreshes the {@code size} binding after the component is resized.
+                 *
+                 * @param event the resize event
+                 */
                 @Override
                 public void componentResized(ComponentEvent event) {
                     update();
@@ -52,6 +57,11 @@ public class JComponentProperties {
             });
         result.put(JComponent.class.getName() + "#width",
             (source, target) -> new AbstractJComponentBinding((PropertyBinding) source, target, "width") {
+                /**
+                 * Refreshes the {@code width} binding after the component is resized.
+                 *
+                 * @param event the resize event
+                 */
                 @Override
                 public void componentResized(ComponentEvent event) {
                     update();
@@ -59,6 +69,11 @@ public class JComponentProperties {
             });
         result.put(JComponent.class.getName() + "#height",
             (source, target) -> new AbstractJComponentBinding((PropertyBinding) source, target, "height") {
+                /**
+                 * Refreshes the {@code height} binding after the component is resized.
+                 *
+                 * @param event the resize event
+                 */
                 @Override
                 public void componentResized(ComponentEvent event) {
                     update();
@@ -66,10 +81,20 @@ public class JComponentProperties {
             });
         result.put(JComponent.class.getName() + "#bounds",
             (source, target) -> new AbstractJComponentBinding((PropertyBinding) source, target, "bounds") {
+                /**
+                 * Refreshes the {@code bounds} binding after the component is resized.
+                 *
+                 * @param event the resize event
+                 */
                 @Override
                 public void componentResized(ComponentEvent event) {
                     update();
                 }
+                /**
+                 * Refreshes the {@code bounds} binding after the component moves.
+                 *
+                 * @param event the move event
+                 */
                 @Override
                 public void componentMoved(ComponentEvent event) {
                     update();
@@ -77,6 +102,11 @@ public class JComponentProperties {
             });
         result.put(JComponent.class.getName() + "#x",
             (source, target) -> new AbstractJComponentBinding((PropertyBinding) source, target, "x") {
+                /**
+                 * Refreshes the {@code x} binding after the component moves.
+                 *
+                 * @param event the move event
+                 */
                 @Override
                 public void componentMoved(ComponentEvent event) {
                     update();
@@ -84,6 +114,11 @@ public class JComponentProperties {
             });
         result.put(JComponent.class.getName() + "#y",
             (source, target) -> new AbstractJComponentBinding((PropertyBinding) source, target, "y") {
+                /**
+                 * Refreshes the {@code y} binding after the component moves.
+                 *
+                 * @param event the move event
+                 */
                 @Override
                 public void componentMoved(ComponentEvent event) {
                     update();
@@ -91,10 +126,20 @@ public class JComponentProperties {
             });
         result.put(JComponent.class.getName() + "#visible",
             (source, target) -> new AbstractJComponentBinding((PropertyBinding) source, target, "visible") {
+                /**
+                 * Refreshes the {@code visible} binding after the component is hidden.
+                 *
+                 * @param event the hide event
+                 */
                 @Override
                 public void componentHidden(ComponentEvent event) {
                     update();
                 }
+                /**
+                 * Refreshes the {@code visible} binding after the component is shown.
+                 *
+                 * @param event the show event
+                 */
                 @Override
                 public void componentShown(ComponentEvent event) {
                     update();
@@ -161,12 +206,32 @@ abstract class AbstractJComponentBinding extends AbstractSyntheticBinding implem
         ((JComponent)event.getNewValue()).addComponentListener(this);
     }
 
+    /**
+     * No-op. A binding that tracks visibility overrides this to refresh when the component is hidden.
+     *
+     * @param event the hide event
+     */
     @Override
     public void componentHidden(ComponentEvent event) {}
+    /**
+     * No-op. A binding that tracks visibility overrides this to refresh when the component is shown.
+     *
+     * @param event the show event
+     */
     @Override
     public void componentShown(ComponentEvent event) {}
+    /**
+     * No-op. Bindings that track position override this to refresh when the component moves.
+     *
+     * @param event the move event
+     */
     @Override
     public void componentMoved(ComponentEvent event) {}
+    /**
+     * No-op. Bindings that track size or bounds override this to refresh when the component is resized.
+     *
+     * @param event the resize event
+     */
     @Override
     public void componentResized(ComponentEvent event) {}
 }

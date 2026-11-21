@@ -312,26 +312,50 @@ class TraitStaticDispatchMatrix {
     }
 
     // ---- Row 9acc — accessor pattern: per-implementer overridable defaults ----
-    // The supported pattern for per-implementer overridable static defaults
-    // (GEP-22 § Static members item 7's worked example): declare a static
-    // accessor in the trait, optionally override with a same-name static
-    // accessor on the implementer; trait-body property access resolves
-    // through the getter chain and follows row 1's dispatch path. This is
-    // the recommended replacement for the field-override pattern row 9
+    // The supported pattern for per-implementer overridable static defaults:
+    // declare a @Virtual static accessor in the trait, optionally override
+    // with a same-name static accessor on the implementer. A trait-body
+    // property read is a call of the accessor and follows row 1's dispatch
+    // path, for the property form and the method form alike. This is the
+    // recommended replacement for the field-override pattern row 9
     // documents as a non-goal.
     @Test
     void row09acc_accessorPattern_overrideVisibleToTraitBody() {
         def r = ev '''
+            import groovy.transform.Virtual
             trait V {
-                static String getOrigin() { 'trait' }
+                @Virtual static String getOrigin() { 'trait' }
                 static String describe() { "origin is ${origin}" }
+                static String describeByCall() { "origin is ${getOrigin()}" }
             }
             class Over implements V {
                 static String getOrigin() { 'class' }
             }
-            Over.describe()
+            [Over.describe(), Over.describeByCall()]
         '''
-        assert r == 'origin is class' : "row9acc: accessor pattern must dispatch through implementer like row 1 (got ${r})"
+        assert r == ['origin is class', 'origin is class'] : "row9acc: accessor pattern must dispatch through implementer like row 1 (got ${r})"
+    }
+
+    // ---- Row 9accp — plain static accessor: declarer-bound in both forms ----
+    // Without @Virtual a static accessor is declarer-bound like any other
+    // trait static (row 1's comment): a trait-body property read is a call
+    // of the accessor, so it does not see an accessor of the implementer,
+    // whether written in the property form or the method form.
+    @Test
+    void row09accp_plainAccessor_declarerBoundInPropertyAndMethodForm() {
+        def r = ev '''
+            trait V {
+                static String getOrigin() { 'trait' }
+                static String describe() { "origin is ${origin}" }
+                static String describeThis() { "origin is ${this.origin}" }
+                static String describeByCall() { "origin is ${getOrigin()}" }
+            }
+            class Over implements V {
+                static String getOrigin() { 'class' }
+            }
+            [Over.describe(), Over.describeThis(), Over.describeByCall(), Over.origin]
+        '''
+        assert r == ['origin is trait', 'origin is trait', 'origin is trait', 'class'] : "row9accp: a plain static accessor is declarer-bound in trait code (got ${r})"
     }
 
     // ---- Row 9v — @Virtual accessor present, direct field read still trait-bound ----

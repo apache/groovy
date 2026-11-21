@@ -18,22 +18,35 @@
  */
 package org.codehaus.groovy.tools.shell;
 
-import org.codehaus.groovy.runtime.InvokerHelper;
+import org.codehaus.groovy.tools.shell.util.Logger;
 import org.codehaus.groovy.tools.shell.util.Preferences;
+import org.jline.jansi.AnsiConsole;
+import org.jline.jansi.AnsiMode;
+import org.jline.jansi.AnsiPrintStream;
 
 import java.io.Closeable;
+import java.io.Console;
+import java.io.IOError;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.io.Reader;
+import java.lang.reflect.Method;
 
 /**
  * Container for input/output handles.
  */
 public class IO implements Closeable {
-    private static final String ANSI_RENDER_WRITER = "org.fusesource.jansi.AnsiRenderWriter";
+    private static final String ANSI_CONSOLE = "org.jline.jansi.AnsiConsole";
+
+    // the system properties JLine's Jansi reads, looked up here before Jansi is touched
+    private static final String JANSI_MODE = "jansi.mode";
+    private static final String JANSI_OUT_MODE = "jansi.out.mode";
+    private static final String JANSI_ERR_MODE = "jansi.err.mode";
+
+    private static final boolean JANSI_AVAILABLE = isJansiAvailable();
 
     /**
      * Raw input stream.
@@ -66,14 +79,25 @@ public class IO implements Closeable {
     public final PrintWriter err;
 
     /**
-     * Whether ansi support is available
+     * Whether standard output can render ANSI escape sequences, through {@link #getAnsiOut()}: the IO
+     * comes from {@link #forConsole()}, JLine's Jansi is on the class path, and standard output is a
+     * terminal (or the {@code jansi.mode} system property is {@code force}). This is decided without
+     * opening the console. {@link #out} and {@link #err} are always plain.
      */
     public final boolean ansiSupported;
 
+    private PrintWriter ansiOut;
+
+    private boolean ansiOutOpened;
+
     /**
-     * Construct a new IO container.
+     * Construct a new IO container, with plain writers on the given streams.
      */
     public IO(final InputStream inputStream, final OutputStream outputStream, final OutputStream errorStream) {
+        this(inputStream, outputStream, errorStream, false);
+    }
+
+    private IO(final InputStream inputStream, final OutputStream outputStream, final OutputStream errorStream, final boolean console) {
         assert inputStream != null;
         assert outputStream != null;
         assert errorStream != null;
@@ -83,50 +107,121 @@ public class IO implements Closeable {
         this.errorStream = errorStream;
 
         this.in = new InputStreamReader(inputStream);
-        boolean ansiSupported = false;
-        try {
-            Class.forName(ANSI_RENDER_WRITER, false, IO.class.getClassLoader());
-            ansiSupported = true;
-        } catch (ClassNotFoundException ignore) {
+        this.out = new PrintWriter(outputStream, true);
+        this.err = new PrintWriter(errorStream, true);
+        this.ansiSupported = console && JANSI_AVAILABLE && outputStream == System.out && mayRenderAnsi(true);
+    }
+
+    /**
+     * Returns a writer on standard output that renders ANSI escape sequences, opening JLine's Jansi
+     * console on the first call. Opening it builds JLine's system terminal, which loads JLine's native
+     * library and sends the terminal's probes, so it happens only once something is written in color.
+     *
+     * @return the ANSI writer, or {@code null} if {@link #ansiSupported} is {@code false}, or the console
+     * cannot render ANSI after all, or {@code System.out} has been replaced since this IO was created
+     */
+    public synchronized PrintWriter getAnsiOut() {
+        if (!ansiOutOpened) {
+            ansiOutOpened = true;
+            if (ansiSupported) {
+                ansiOut = tryConstructRenderWriter(outputStream);
+            }
         }
-        this.ansiSupported = ansiSupported;
-        PrintWriter out = null;
-        PrintWriter err = null;
-        if (ansiSupported) {
-            out = tryConstructRenderWriter(outputStream);
-            err = tryConstructRenderWriter(errorStream);
-        }
-        if (out == null) {
-            out = new PrintWriter(outputStream, true);
-        }
-        if (err == null) {
-            err = new PrintWriter(errorStream, true);
-        }
-        this.out = out;
-        this.err = err;
+        return ansiOut;
     }
 
     /**
      * Attempts to create an ANSI-aware writer for the supplied stream.
+     *
+     * <p>Only the JVM's own standard output and error streams can render ANSI, through JLine's Jansi
+     * {@code AnsiConsole}, which also enables virtual terminal processing on Windows. The console is
+     * opened only when the stream's {@code jansi.mode} is {@code force}, or is not {@code strip} and
+     * the JVM has a terminal, so output redirected to a file or a pipe never loads JLine.</p>
      *
      * @param stream the output stream to wrap
      * @return an ANSI render writer, or {@code null} if ANSI support is
      * unavailable
      */
     protected PrintWriter tryConstructRenderWriter(OutputStream stream) {
-        // load via reflection to avoid hard-coded dependency on jansi jar
+        boolean stdout = stream == System.out;
+        if (!JANSI_AVAILABLE || !(stdout || stream == System.err) || !mayRenderAnsi(stdout)) {
+            return null;
+        }
         try {
-            return (PrintWriter) InvokerHelper.invokeConstructorOf(ANSI_RENDER_WRITER, new Object[]{stream, true});
-        } catch (ClassNotFoundException ignore) {
+            return JansiConsole.writerFor(stdout);
+        } catch (IOError | RuntimeException | LinkageError e) {
             return null;
         }
     }
 
+    private static boolean mayRenderAnsi(boolean stdout) {
+        String mode = System.getProperty(stdout ? JANSI_OUT_MODE : JANSI_ERR_MODE, System.getProperty(JANSI_MODE));
+        if ("strip".equals(mode)) {
+            return false;
+        }
+        return "force".equals(mode) || isTerminal();
+    }
+
+    private static boolean isTerminal() {
+        Console console = System.console();
+        if (console == null) {
+            return false;
+        }
+        // from JDK 22 System.console() can exist when the streams are redirected; isTerminal() tells
+        try {
+            Method isTerminal = Console.class.getMethod("isTerminal");
+            return (Boolean) isTerminal.invoke(console);
+        } catch (NoSuchMethodException e) {
+            return true;
+        } catch (ReflectiveOperationException | RuntimeException e) {
+            return false;
+        }
+    }
+
+    private static boolean isJansiAvailable() {
+        // JLine's Jansi is optional for groovy, so look it up before JansiConsole links against it
+        try {
+            Class.forName(ANSI_CONSOLE, false, IO.class.getClassLoader());
+            return true;
+        } catch (ClassNotFoundException | LinkageError e) {
+            return false;
+        }
+    }
+
     /**
-     * Construct a new IO container using system streams.
+     * Refers to JLine's Jansi, and is loaded only once {@link #isJansiAvailable()} found it.
+     */
+    private static final class JansiConsole {
+        static PrintWriter writerFor(boolean stdout) {
+            // AnsiConsole writes to the streams the JVM started with, so a System.out replaced since keeps its own
+            if (stdout ? System.out != AnsiConsole.sysOut() : System.err != AnsiConsole.sysErr()) {
+                return null;
+            }
+            AnsiPrintStream console = stdout ? AnsiConsole.out() : AnsiConsole.err();
+            return console.getMode() == AnsiMode.Strip ? null : new PrintWriter(console, true);
+        }
+    }
+
+    /**
+     * Construct a new IO container using system streams, with plain writers.
      */
     public IO() {
         this(System.in, System.out, System.err);
+    }
+
+    /**
+     * Creates an IO container on the system streams whose {@link #getAnsiOut()} renders ANSI escape
+     * sequences when standard output is a terminal, through JLine's Jansi {@code AnsiConsole}.
+     * {@link Logger} colors its lines through it, and the console is opened on the first such line.
+     *
+     * <p>The console writes to the JVM's own standard output, not through {@code System.out}, so call
+     * this only where {@code System.out} has not been replaced, such as in a command-line tool's
+     * {@code main}. A host that redirects it (Ant, Gradle, an IDE) should use {@link #IO()}.</p>
+     *
+     * @return an IO container that may render ANSI on standard output
+     */
+    public static IO forConsole() {
+        return new IO(System.in, System.out, System.err, true);
     }
 
     /**

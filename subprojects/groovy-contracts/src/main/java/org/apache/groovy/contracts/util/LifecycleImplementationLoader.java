@@ -229,6 +229,10 @@ public final class LifecycleImplementationLoader<S> implements Iterable<S> {
 
             final Iterator<Map.Entry<String, S>> knownProviders = providers.entrySet().iterator();
 
+            /**
+             * Returns whether a cached provider remains or the service configuration
+             * can still yield one.
+             */
             @Override
             public boolean hasNext() {
                 if (knownProviders.hasNext())
@@ -236,6 +240,10 @@ public final class LifecycleImplementationLoader<S> implements Iterable<S> {
                 return lookupIterator.hasNext();
             }
 
+            /**
+             * Returns the next cached provider, or loads the next provider named in
+             * the service configuration.
+             */
             @Override
             public S next() {
                 if (knownProviders.hasNext())
@@ -243,6 +251,10 @@ public final class LifecycleImplementationLoader<S> implements Iterable<S> {
                 return lookupIterator.next();
             }
 
+            /**
+             * Throws {@link UnsupportedOperationException}; providers cannot be removed
+             * through this iterator.
+             */
             @Override
             public void remove() {
                 throw new UnsupportedOperationException();

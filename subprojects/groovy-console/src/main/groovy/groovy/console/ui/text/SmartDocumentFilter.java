@@ -562,14 +562,29 @@ public class SmartDocumentFilter extends DocumentFilter {
             this.text = text;
         }
 
+        /**
+         * Returns the character offset of this bracket in the document.
+         *
+         * @return the start offset
+         */
         public int getOffset() {
             return offset;
         }
 
+        /**
+         * Returns how many characters this bracket occupies.
+         *
+         * @return the bracket length
+         */
         public int getLength() {
             return length;
         }
 
+        /**
+         * Returns the bracket characters recorded for this span.
+         *
+         * @return the delimiter text
+         */
         public String getText() {
             return text;
         }

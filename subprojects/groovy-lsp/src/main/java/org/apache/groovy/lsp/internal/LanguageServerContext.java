@@ -284,6 +284,13 @@ public final class LanguageServerContext {
         return converted;
     }
 
+    /**
+     * Sends {@code workspace/applyEdit} when a client is connected,
+     * {@code edit} is non-null, and the client advertises apply-edit
+     * support.
+     *
+     * @param edit workspace edit to send
+     */
     public void applyEdit(final WorkspaceEdit edit) {
         LanguageClient languageClient = client.get();
         if (languageClient == null || edit == null
@@ -293,6 +300,13 @@ public final class LanguageServerContext {
         languageClient.applyEdit(new ApplyWorkspaceEditParams(edit));
     }
 
+    /**
+     * Text of the open buffer for {@code uri}, or the last compiled text
+     * when that file is not open.
+     *
+     * @param uri document URI
+     * @return the text, or {@code null} when {@code uri} is null or unknown
+     */
     public String documentText(final URI uri) {
         if (uri == null) {
             return null;
@@ -305,20 +319,40 @@ public final class LanguageServerContext {
         return compiled == null ? null : compiled.getText();
     }
 
+    /**
+     * Workspace folder URIs currently held by the session.
+     *
+     * @return a copy of the folder set
+     */
     public List<URI> workspaceFolders() {
         synchronized (workspaceFolders) {
             return List.copyOf(workspaceFolders);
         }
     }
 
+    /**
+     * Classpath entries from the current {@link CompilerSettings}.
+     *
+     * @return the classpath
+     */
     public List<String> classpath() {
         return settings.get().getClasspath();
     }
 
+    /**
+     * Source paths from the current {@link CompilerSettings}.
+     *
+     * @return the source paths
+     */
     public List<String> sourcePaths() {
         return settings.get().getSourcePaths();
     }
 
+    /**
+     * Extra {@code groovy.*} settings from the current compiler settings.
+     *
+     * @return the extra map
+     */
     public Map<String, String> extraSettings() {
         return settings.get().getExtra();
     }
@@ -333,6 +367,11 @@ public final class LanguageServerContext {
         return key == null ? null : extraSettings().get(key);
     }
 
+    /**
+     * Protocol name of this session's {@link PositionEncoding}.
+     *
+     * @return the {@code PositionEncodingKind} string
+     */
     public String positionEncoding() {
         return positionEncoding.get().protocolName();
     }
@@ -385,6 +424,11 @@ public final class LanguageServerContext {
         }
     }
 
+    /**
+     * Open buffers for this session.
+     *
+     * @return the document store
+     */
     public DocumentStore getDocuments() {
         return documents;
     }
@@ -405,46 +449,105 @@ public final class LanguageServerContext {
         return compiled == null ? null : compiled.toTextDocument();
     }
 
+    /**
+     * Compiler {@link #recompile()} uses for open documents and workspace
+     * sources.
+     *
+     * @return the session compiler
+     */
     public GroovyCompiler getCompiler() {
         return compiler;
     }
 
+    /**
+     * Scanner that finds Groovy and Java sources for the next compile.
+     *
+     * @return the workspace scanner
+     */
     public WorkspaceScanner getScanner() {
         return scanner;
     }
 
+    /**
+     * Maps compiler messages onto {@link Diagnostic}s.
+     *
+     * @return the diagnostic converter
+     */
     public DiagnosticConverter getDiagnostics() {
         return diagnostics;
     }
 
+    /**
+     * Client that receives diagnostics, progress, and edits.
+     *
+     * @return the client, or {@code null} when none is connected
+     */
     public LanguageClient getClient() {
         return client.get();
     }
 
+    /**
+     * Records the language client for this session.
+     *
+     * @param client connected client, or {@code null}
+     */
     public void setClient(final LanguageClient client) {
         this.client.set(client);
     }
 
+    /**
+     * Client capabilities recorded for this session, normally from
+     * {@code initialize}.
+     *
+     * @return the capabilities, or {@code null} when unset
+     */
     public ClientCapabilities getClientCapabilities() {
         return clientCapabilities.get();
     }
 
+    /**
+     * Records client capabilities supplied by {@code initialize}.
+     *
+     * @param clientCapabilities capabilities, or {@code null}
+     */
     public void setClientCapabilities(final ClientCapabilities clientCapabilities) {
         this.clientCapabilities.set(clientCapabilities);
     }
 
+    /**
+     * Position encoding for this session. The value starts as UTF-16
+     * until {@code initialize} negotiates one.
+     *
+     * @return the encoding
+     */
     public PositionEncoding getPositionEncoding() {
         return positionEncoding.get();
     }
 
+    /**
+     * Records the position encoding negotiated during {@code initialize}.
+     *
+     * @param positionEncoding encoding to use
+     */
     public void setPositionEncoding(final PositionEncoding positionEncoding) {
         this.positionEncoding.set(positionEncoding);
     }
 
+    /**
+     * Compiler settings for the next compile.
+     *
+     * @return the current settings
+     */
     public synchronized CompilerSettings getSettings() {
         return settings.get();
     }
 
+    /**
+     * Replaces the compiler settings and clears the compile fingerprint
+     * so the next compile builds a fresh snapshot.
+     *
+     * @param settings replacement settings
+     */
     public synchronized void setSettings(final CompilerSettings settings) {
         this.settings.set(settings);
         compileFingerprint = null;
@@ -498,38 +601,83 @@ public final class LanguageServerContext {
         return loader == null ? getClass().getClassLoader() : loader;
     }
 
+    /**
+     * Latest compilation result. The initial value is empty.
+     *
+     * @return the current snapshot
+     */
     public CompilationSnapshot getSnapshot() {
         return snapshot.get();
     }
 
+    /**
+     * Stores a compilation snapshot for later requests.
+     *
+     * @param snapshot replacement snapshot
+     */
     public void setSnapshot(final CompilationSnapshot snapshot) {
         this.snapshot.set(snapshot);
     }
 
+    /**
+     * Whether the {@code initialized} notification has been recorded.
+     *
+     * @return the flag
+     */
     public boolean isInitialized() {
         return initialized;
     }
 
+    /**
+     * Records whether the {@code initialized} notification has been handled.
+     *
+     * @param initialized new flag
+     */
     public void setInitialized(final boolean initialized) {
         this.initialized = initialized;
     }
 
+    /**
+     * Whether this session has been shut down.
+     *
+     * @return the flag
+     */
     public boolean isShutdown() {
         return shutdown;
     }
 
+    /**
+     * Records the shutdown flag. {@link #close()} also sets it.
+     *
+     * @param shutdown new flag
+     */
     public void setShutdown(final boolean shutdown) {
         this.shutdown = shutdown;
     }
 
+    /**
+     * Process exit code stored for this session.
+     *
+     * @return the code, or {@code null} when unset
+     */
     public Integer getExitCode() {
         return exitCode;
     }
 
+    /**
+     * Records the process exit code from {@code exit}.
+     *
+     * @param exitCode code to report, or {@code null}
+     */
     public void setExitCode(final Integer exitCode) {
         this.exitCode = exitCode;
     }
 
+    /**
+     * Live set of workspace folder URIs held by the session.
+     *
+     * @return the synchronized folder set; {@link #workspaceFolders()} is a copy
+     */
     public Set<URI> getWorkspaceFolders() {
         return workspaceFolders;
     }

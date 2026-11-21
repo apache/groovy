@@ -55,6 +55,17 @@ public class PositionConfigureUtils {
         return astNode;
     }
 
+    /**
+     * Returns the exclusive end line and column of {@code token}.
+     * Lines are 1-based. A null token text is zero-width: the end is the token's
+     * line and its 1-based start column. With no newline, the column is
+     * {@code charPositionInLine + 1} plus the text's code-point count. With
+     * newlines, the line advances by that count and the column is the code-point
+     * count from the last newline, inclusive, through the end of the text.
+     *
+     * @param token the token whose end is measured; a null text is tolerated, a null token is not
+     * @return end line in {@code v1} and exclusive end column in {@code v2}
+     */
     public static Tuple2<Integer, Integer> endPosition(Token token) {
         String stopText = token.getText();
         // ANTLR EOF / unset tokens often have null text; treat as zero-width
@@ -76,10 +87,32 @@ public class PositionConfigureUtils {
         }
     }
 
+    /**
+     * Copies the position of {@code terminalNode}'s symbol onto {@code astNode}.
+     * This is {@link #configureAST(ASTNode, Token)} and does not advance the end
+     * line when the token text contains newlines.
+     *
+     * @param <T> the node type, returned as the same instance
+     * @param astNode the node whose positions are overwritten
+     * @param terminalNode the terminal whose symbol supplies the token
+     * @return {@code astNode}
+     */
     public static <T extends ASTNode> T configureAST(T astNode, TerminalNode terminalNode) {
         return configureAST(astNode, terminalNode.getSymbol());
     }
 
+    /**
+     * Sets the start and end of {@code astNode} from a single token.
+     * The start column is {@code charPositionInLine + 1}. The end line stays the
+     * token's line even when the text contains newlines. The end column is that
+     * start column plus the text's code-point count, or the start column when the
+     * text is null. The same node is returned.
+     *
+     * @param <T> the node type, returned as the same instance
+     * @param astNode the node whose positions are overwritten
+     * @param token the token that supplies every coordinate
+     * @return {@code astNode}
+     */
     public static <T extends ASTNode> T configureAST(T astNode, Token token) {
         astNode.setLineNumber(token.getLine());
         astNode.setColumnNumber(token.getCharPositionInLine() + 1);
@@ -92,6 +125,16 @@ public class PositionConfigureUtils {
         return astNode;
     }
 
+    /**
+     * Copies line, column, last line, and last column from {@code source} onto
+     * {@code astNode}, including a {@code -1} that marks a missing position.
+     * The same node is returned.
+     *
+     * @param <T> the node type, returned as the same instance
+     * @param astNode the node whose positions are overwritten
+     * @param source the node whose four position fields are copied
+     * @return {@code astNode}
+     */
     public static <T extends ASTNode> T configureAST(T astNode, ASTNode source) {
         astNode.setLineNumber(source.getLineNumber());
         astNode.setColumnNumber(source.getColumnNumber());
@@ -133,6 +176,14 @@ public class PositionConfigureUtils {
         return astNode;
     }
 
+    /**
+     * Sets the last line and last column of {@code astNode} from {@link #endPosition(Token)}.
+     * The start line and start column are left unchanged.
+     *
+     * @param <T> the node type
+     * @param astNode the node whose end position is overwritten
+     * @param token the token measured by {@link #endPosition(Token)}
+     */
     public static <T extends ASTNode> void configureEndPosition(T astNode, Token token) {
         Tuple2<Integer, Integer> endPosition = endPosition(token);
         astNode.setLastLineNumber(endPosition.getV1());

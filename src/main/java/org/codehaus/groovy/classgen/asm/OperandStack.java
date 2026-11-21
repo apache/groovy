@@ -29,6 +29,7 @@ import org.codehaus.groovy.ast.expr.ConstantExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.tools.WideningCategories;
 import org.codehaus.groovy.classgen.ClassGeneratorException;
+import org.codehaus.groovy.transform.sc.StaticCompilationMetadataKeys;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
 
@@ -36,6 +37,7 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Function;
 
 import static java.lang.System.Logger.Level.ERROR;
 
@@ -58,6 +60,7 @@ import static org.objectweb.asm.Opcodes.DUP;
 import static org.objectweb.asm.Opcodes.DUP2;
 import static org.objectweb.asm.Opcodes.DUP2_X1;
 import static org.objectweb.asm.Opcodes.DUP2_X2;
+import static org.objectweb.asm.Opcodes.DUP_X1;
 import static org.objectweb.asm.Opcodes.DUP_X2;
 import static org.objectweb.asm.Opcodes.F2D;
 import static org.objectweb.asm.Opcodes.F2I;
@@ -296,6 +299,30 @@ public class OperandStack {
     }
 
     /**
+     * Duplicates the top operand and inserts the copy beneath the two
+     * operands immediately under it.
+     * <p>
+     * Those two operands are one word each, as with an array reference and
+     * an int index under a store value. The duplicated operand is one word,
+     * or two when it is a {@code long} or a {@code double}
+     * ({@code DUP_X2} or {@code DUP2_X2}). The inserted copy is the preserved
+     * value; the original stays on top to be consumed.
+     */
+    public void dupUnderTwo() {
+        int size = stack.size();
+        if (size < 3) {
+            throw new GroovyBugError("dupUnderTwo requires three operands but the operand stack has " + size);
+        }
+        ClassNode top = stack.get(size - 1);
+        if (isTwoSlotType(stack.get(size - 2)) || isTwoSlotType(stack.get(size - 3))) {
+            throw new GroovyBugError("dupUnderTwo requires two one-word operands under the value");
+        }
+        controller.getMethodVisitor().visitInsn(isTwoSlotType(top) ? DUP2_X2 : DUP_X2);
+        // [below, under, top] -> [top, below, under, top]
+        stack.add(size - 3, top);
+    }
+
+    /**
      * replace top level element with new element of given type
      */
     public void replace(final ClassNode type) {
@@ -381,6 +408,20 @@ public class OperandStack {
         ClassNode top = stack.get(size - 1);
         if (top == (targetType = targetType.redirect()) // quick check
                 || ClassNodeUtils.isCompatibleWith(top, targetType)) {
+            return;
+        }
+
+        // a statically compiled closure converted to the functional interface its class can be adapted to
+        Function<ClassNode, ClassNode> adapters = top.getNodeMetaData(StaticCompilationMetadataKeys.FUNCTIONAL_INTERFACE_ADAPTER);
+        ClassNode adapter = (adapters != null ? adapters.apply(targetType) : null);
+        if (adapter != null) {
+            MethodVisitor mv = controller.getMethodVisitor();
+            String adapterName = BytecodeHelper.getClassInternalName(adapter);
+            mv.visitTypeInsn(NEW, adapterName);
+            mv.visitInsn(DUP_X1);
+            mv.visitInsn(SWAP);
+            mv.visitMethodInsn(INVOKESPECIAL, adapterName, "<init>", "(" + BytecodeHelper.getTypeDescription(top) + ")V", false);
+            replace(adapter);
             return;
         }
 

@@ -40,6 +40,15 @@ import java.util.List;
  */
 public final class DocumentLinkService {
 
+    /**
+     * Builds links from import names to workspace sources that define the
+     * imported type. An import whose type is not in {@code snapshot} is omitted.
+     *
+     * @param document the compiled source, possibly {@code null}
+     * @param snapshot latest compile, possibly {@code null}
+     * @param encoding negotiated position encoding
+     * @return the links, empty when {@code document} or its module is missing
+     */
     public List<DocumentLink> documentLinks(final CompiledDocument document, final CompilationSnapshot snapshot,
                                             final PositionEncoding encoding) {
         List<DocumentLink> links = new ArrayList<>();
