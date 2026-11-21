@@ -99,13 +99,34 @@ abstract class TypeSignatureParser extends SignatureVisitor {
      * @return the genericType with erasure information set
      */
     protected static ClassNode applyErasure(final ClassNode genericType, final ClassNode erasure) {
-        if (genericType.isArray() && erasure.isArray() && genericType.getComponentType().isGenericsPlaceHolder()) {
-            genericType.setRedirect(erasure);
-            genericType.getComponentType().setRedirect(erasure.getComponentType());
+        if (genericType.isArray() && erasure.isArray()) {
+            redirectTypeVariableArray(genericType, erasure);
         } else if (genericType.isGenericsPlaceHolder()) {
             genericType.setRedirect(erasure);
         }
         return genericType;
+    }
+
+    /**
+     * Redirects an array of a type variable, of any number of dimensions, and each of its component
+     * types to the matching level of its erasure, so that the innermost component, the type variable,
+     * erases to the variable's bound rather than {@code Object}. The JVM descriptor of the array is
+     * built from that component. An array of any other type is left alone.
+     *
+     * @param genericType the array type with generic information
+     * @param erasure the erased array type, with the same number of dimensions
+     */
+    private static void redirectTypeVariableArray(final ClassNode genericType, final ClassNode erasure) {
+        ClassNode component = genericType;
+        while (component.isArray()) {
+            component = component.getComponentType();
+        }
+        if (!component.isGenericsPlaceHolder()) return;
+
+        for (ClassNode type = genericType, erased = erasure; type != null && erased != null;
+                type = type.getComponentType(), erased = erased.getComponentType()) {
+            type.setRedirect(erased);
+        }
     }
 
     /**
