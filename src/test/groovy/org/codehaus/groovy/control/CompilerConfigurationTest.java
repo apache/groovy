@@ -65,6 +65,9 @@ public final class CompilerConfigurationTest {
         // GROOVY-9192: parser error recovery is opt-in
         assertFalse(config.isErrorRecoveryEnabled());
         assertEquals("errorRecovery", CompilerConfiguration.ERROR_RECOVERY);
+        // GROOVY-12555: the default-package lookup before the default imports is on unless set to false
+        assertNull(config.getOptimizationOptions().get(CompilerConfiguration.DEFAULT_PACKAGE_FIRST));
+        assertNull(config.getOptimizationOptions().get(CompilerConfiguration.DEFAULT_PACKAGE_SOURCES));
     }
 
     @Test
@@ -92,7 +95,9 @@ public final class CompilerConfigurationTest {
             "groovy.generate.stub.in.memory=true",
             "groovy.recompile.minimumInterval=867892345",
             "groovy.frame.computation.max.bytes=12345678",
-            "groovy.frame.computation.max.operations=9876543210"})
+            "groovy.frame.computation.max.operations=9876543210",
+            "groovy.resolve.default.package.first=false",
+            "groovy.resolve.default.package.sources=false"})
     public void testSetViaSystemProperties() {
         // Properties are set on the JVM command line via @ForkedJvm; the
         // forked child reads them through the normal System.getProperties()
@@ -111,6 +116,8 @@ public final class CompilerConfigurationTest {
         assertEquals(9876543210L, config.getFrameComputationMaxOperations());
         assertEquals(12345678, new CompilerConfiguration().getFrameComputationMaxBytes());
         assertEquals(9876543210L, new CompilerConfiguration().getFrameComputationMaxOperations());
+        assertEquals(Boolean.FALSE, config.getOptimizationOptions().get(CompilerConfiguration.DEFAULT_PACKAGE_FIRST)); // GROOVY-12555
+        assertEquals(Boolean.FALSE, config.getOptimizationOptions().get(CompilerConfiguration.DEFAULT_PACKAGE_SOURCES));
         assertEquals(CompilerConfiguration.DEFAULT.getSourceEncoding(), config.getSourceEncoding());
         assertEquals(CompilerConfiguration.DEFAULT.getTargetBytecode(), config.getTargetBytecode());
         assertFalse(config.getRecompileGroovySource());

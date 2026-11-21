@@ -248,6 +248,13 @@ public class TextUndoManager extends UndoManager {
 
         private long editedTime;
 
+        /**
+         * Accepts {@code edit} into this compound edit. The first acceptance
+         * records the current time.
+         *
+         * @param edit the edit to add
+         * @return whether the compound edit accepted {@code edit}
+         */
         @Override
         public boolean addEdit(UndoableEdit edit) {
             boolean result = super.addEdit(edit);
@@ -257,15 +264,31 @@ public class TextUndoManager extends UndoManager {
             return result;
         }
 
+        /**
+         * Returns whether this compound edit contains at least one child edit.
+         *
+         * @return {@code true} when {@code edits} is not empty
+         */
         @Override
         public boolean canUndo() {
             return !edits.isEmpty();
         }
 
+        /**
+         * Returns the time in milliseconds recorded when the first child edit
+         * was accepted, or {@code 0} when no edit has been accepted.
+         *
+         * @return the recorded edit time
+         */
         protected long editedTime() {
             return editedTime;
         }
 
+        /**
+         * Returns {@code false} so this compound edit is treated as already closed.
+         *
+         * @return {@code false}
+         */
         @Override
         public boolean isInProgress() {
             return false;

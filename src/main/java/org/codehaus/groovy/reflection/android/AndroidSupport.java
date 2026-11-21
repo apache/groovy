@@ -50,6 +50,14 @@ public abstract class AndroidSupport {
         }
     }
 
+    /**
+     * Whether this runtime was detected as Android. The answer is computed once:
+     * {@code java.vm.name} starting with {@code "Dalvik"} means Android. If that
+     * property cannot be read, the answer is whether {@code android.app.Activity}
+     * can be loaded by this class's loader.
+     *
+     * @return {@code true} when the runtime was detected as Android
+     */
     public static boolean isRunningAndroid() {
         return IS_ANDROID;
     }

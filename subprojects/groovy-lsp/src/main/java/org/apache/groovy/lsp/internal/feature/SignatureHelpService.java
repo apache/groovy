@@ -45,6 +45,15 @@ import java.util.List;
  */
 public final class SignatureHelpService {
 
+    /**
+     * Builds signature help for the call or constructor enclosing {@code position}.
+     * Overloads are taken from the method call, the static call, or the
+     * constructed type's declared constructors. The active signature is the
+     * overload whose parameter count is closest to the number of arguments.
+     * The active parameter advances as the caret moves past each argument
+     * and is kept inside the chosen signature. Empty help is returned when
+     * the document has no module or no overload is found.
+     */
     public SignatureHelp signatureHelp(final TextDocument document, final CompilationSnapshot snapshot,
                                        final Position position, final PositionEncoding encoding) {
         CompiledDocument compiled = snapshot == null ? null : snapshot.get(document);
