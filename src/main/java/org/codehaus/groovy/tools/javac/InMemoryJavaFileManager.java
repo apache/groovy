@@ -440,9 +440,7 @@ class InMemoryJavaFileManager extends ForwardingJavaFileManager<JavaFileManager>
             if (bytes == null || bytes.length == 0) {
                 return null;
             }
-            MemClassFileObject file = new MemClassFileObject(resource, resource, null, JavaFileObject.Kind.OTHER);
-            file.openOutputStream().write(bytes);
-            return file;
+            return MemClassFileObject.forReading(resource, resource, JavaFileObject.Kind.OTHER, bytes);
         }
         if (location == StandardLocation.CLASS_PATH && classpathStore != null && relativeName != null
                 && relativeName.endsWith(JavaFileObject.Kind.CLASS.extension)) {

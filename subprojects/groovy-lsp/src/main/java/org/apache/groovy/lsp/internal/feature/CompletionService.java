@@ -633,11 +633,15 @@ public final class CompletionService {
         addLocals(items, module, groovy[0], groovy[1], prefix);
         addNamedArgumentCompletions(items, module, groovy[0], groovy[1], snapshot, prefix);
         addOverrideCompletions(items, module, document, position, encoding, prefix);
+        ClassNode scriptClass = null;
         for (ClassNode classNode : module.getClasses()) {
             addMembers(items, classNode, prefix);
+            if (classNode.isScript()) {
+                scriptClass = classNode;
+            }
         }
         addWorkspaceTypes(items, compiled, snapshot, prefix, encoding);
-        addImplicitReceiverMembers(items, module, groovy[0], groovy[1], prefix);
+        addImplicitReceiverMembers(items, module, scriptClass, groovy[0], groovy[1], prefix);
     }
 
     /**
@@ -648,13 +652,14 @@ public final class CompletionService {
      * an unloaded class waits for two characters, as it does after a dot.
      */
     private static void addImplicitReceiverMembers(final List<CompletionItem> items, final ModuleNode module,
-                                                   final int line, final int column, final String prefix) {
+                                                   final ClassNode scriptClass, final int line,
+                                                   final int column, final String prefix) {
         if (prefix.isEmpty()) {
             return;
         }
         MethodNode enclosing = AstQuery.enclosingMethod(module, line, column);
         // a script's top-level statements are not inside a method of the source, but run on the script
-        ClassNode receiver = enclosing != null ? enclosing.getDeclaringClass() : scriptClass(module);
+        ClassNode receiver = enclosing != null ? enclosing.getDeclaringClass() : scriptClass;
         if (receiver == null) {
             return;
         }
@@ -679,15 +684,6 @@ public final class CompletionService {
                 items.add(item);
             }
         }
-    }
-
-    private static ClassNode scriptClass(final ModuleNode module) {
-        for (ClassNode classNode : module.getClasses()) {
-            if (classNode.isScript()) {
-                return classNode;
-            }
-        }
-        return null;
     }
 
     private static void addStaticMembers(final List<CompletionItem> items, final ClassNode receiver,

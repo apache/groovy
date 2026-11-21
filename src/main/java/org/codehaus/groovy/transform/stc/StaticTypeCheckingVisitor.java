@@ -2690,7 +2690,7 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
                 PropertyNode property = current.getProperty(propertyName);
                 property = allowStaticAccessToMember(property, staticOnly);
                 ClassNode setterReceiverType = receiverType;
-                if (!readMode && setters.isEmpty() && current != receiverType && isInTraitCode() && Traits.isTrait(current) && hasTraitCodeReceiver(pexp)) {
+                if (!readMode && setters.isEmpty() && current != receiverType && isTraitHelper(enclosingTypes.iterator().next()) && Traits.isTrait(current) && hasTraitCodeReceiver(pexp)) {
                     // GROOVY-12608: trait code inherits the static setter of a super trait
                     for (MethodNode method : current.getDeclaredMethods(setterName)) {
                         if (method.isStatic() && method.isPublic() && method.getParameters().length == 1) {
@@ -5988,12 +5988,11 @@ out:                if (mn.size() != 1) {
     }
 
     /**
-     * Indicates whether the code being checked is trait code, which is moved to the
-     * trait's helper class before it is checked.
+     * Indicates whether {@code type} is a trait's helper class, where trait code is moved
+     * before static type checking.
      */
-    private boolean isInTraitCode() {
-        ClassNode enclosingType = typeCheckingContext.getEnclosingClassNode();
-        return Traits.isTrait(enclosingType.getOuterClass()) && enclosingType.getName().endsWith("$Helper");
+    private static boolean isTraitHelper(final ClassNode type) {
+        return Traits.isTrait(type.getOuterClass()) && type.getName().endsWith("$Helper");
     }
 
     /**
@@ -6006,7 +6005,7 @@ out:                if (mn.size() != 1) {
     }
 
     private static void addTraitType(final ClassNode receiver, final List<Receiver<String>> owners) {
-        if (Traits.isTrait(receiver.getOuterClass()) && receiver.getName().endsWith("$Helper")) {
+        if (isTraitHelper(receiver)) {
             ClassNode traitType = receiver.getOuterClass();
             owners.add(Receiver.make(traitType));
             addSelfTypes(traitType, owners);
@@ -9106,7 +9105,6 @@ out:    for (ClassNode type : todo) {
         if (!receiver.equals(declaring) && !implementsInterfaceOrIsSubclassOf(receiver, declaring)) return null;
 
         Map<GenericsTypeName, GenericsType> spec = extractPlaceHoldersVisibleToDeclaration(receiver, target, null);
-        if (spec == null) return null;
         GenericsType witness = spec.get(new GenericsTypeName(declaredReturn.getUnresolvedName()));
         if (witness == null || !witness.isWildcard()) return null;
         return prettyPrintCapture(witness);

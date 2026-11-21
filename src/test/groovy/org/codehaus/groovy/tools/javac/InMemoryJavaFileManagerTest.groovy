@@ -18,6 +18,7 @@
  */
 package org.codehaus.groovy.tools.javac
 
+import org.codehaus.groovy.control.CompilerConfiguration
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Timeout
 
@@ -216,6 +217,51 @@ final class InMemoryJavaFileManagerTest {
             new InMemoryJavaFileManager(null)
         }
         assert thrown.message.contains('fileManager')
+    }
+
+    @Test
+    void testClasspathStoreStageLifecycleAndEmptyMerge() {
+        def parent = new GroovyClassLoader(this.class.classLoader)
+        try {
+            def published = MemClassOutputClasspath.newPublishedOutput()
+            published.merge([:])
+            assert published.snapshot().isEmpty()
+            assert published.get('p/A.class') == null
+
+            def loader = MemClassOutputClasspath.newCompilationLoader(parent, new CompilerConfiguration(), published)
+            try {
+                assert loader.ownStore() == null
+                def store = MemClassOutputClasspath.open(loader)
+                assert loader.ownStore().is(store)
+
+                // commit and abort with no open stage are no-ops
+                store.commit()
+                store.abort()
+                assert store.visible().isEmpty()
+
+                // repeated begin() returns the same open stage
+                def stage = store.begin()
+                assert store.begin().is(stage)
+                stage.put('p/Staged.class', MARKER)
+                assert store.visible()['p/Staged.class'] == MARKER
+
+                // abort drops the stage
+                store.abort()
+                assert store.visible().isEmpty()
+
+                // commit publishes staged entries to committed and clears the stage
+                store.begin().put('p/Committed.class', MARKER)
+                store.commit()
+                assert store.visible()['p/Committed.class'] == MARKER
+
+                store.copyCommittedInto(published)
+                assert published.get('p/Committed.class') == MARKER
+            } finally {
+                loader.close()
+            }
+        } finally {
+            parent.close()
+        }
     }
 
     // GROOVY-12751

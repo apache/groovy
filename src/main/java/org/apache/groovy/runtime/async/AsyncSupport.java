@@ -282,6 +282,7 @@ public class AsyncSupport {
      * deferred actions may rethrow one shared exception instance, for example
      * by awaiting the same failed task.
      */
+    @SuppressWarnings("java:S2445") // client-side locking on primary's own monitor, matching Throwable#getSuppressed and #addSuppressed
     static void addSuppressedOnce(Throwable primary, Throwable secondary) {
         Throwable failure = innermost(secondary);
         if (failure == primary || failure == primary.getCause()) return;

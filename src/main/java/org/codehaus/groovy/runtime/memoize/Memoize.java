@@ -245,7 +245,7 @@ public abstract class Memoize {
          * copy leaves this function alone. The copy shares the cache.
          */
         @Override
-        @SuppressWarnings("unchecked")
+        @SuppressWarnings({"unchecked", "java:S2975"}) // overrides Closure.clone() public contract so copies wrap an independent closure
         public Object clone() {
             MemoizeFunction<V> result = (MemoizeFunction<V>) super.clone();
             result.closure = (Closure<V>) closure.clone();
