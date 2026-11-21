@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1795157704864,
+  "lastUpdate": 1795244471737,
   "repoUrl": "https://github.com/apache/groovy",
   "entries": {
     "Dispatch Metrics": [
@@ -7217,6 +7217,58 @@ window.BENCHMARK_DATA = {
           {
             "name": "classes.groovyRuntime",
             "value": 1572,
+            "unit": "classes"
+          },
+          {
+            "name": "bytecode.corpus.bytes",
+            "value": 193866,
+            "unit": "bytes"
+          },
+          {
+            "name": "bytecode.corpus.classes",
+            "value": 57,
+            "unit": "classes"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "Paul King",
+            "username": "paulk-asert",
+            "email": "paulk@asert.com.au"
+          },
+          "committer": {
+            "name": "Paul King",
+            "username": "paulk-asert",
+            "email": "paulk@asert.com.au"
+          },
+          "id": "3af435f3e6489d222de11c5e53214feb248aff96",
+          "message": "GROOVY-12748: STC: keep the parameter count of an implicit-parameter closure when its call is checked again\n\nA closure with an implicit parameter passed to a method overloaded on\nfunctional interfaces that take different numbers of parameters, such as\nFunction and BinaryOperator, was matched to the interface taking none or\none parameter (GROOVY-10905) the first time the call was type checked,\nfrom the parameter count the closure's type carries. Visiting the closure\nstored its inferred type without that count, so when the call was checked\nagain, as the body of a loop or closure in which a variable changes type\nis, or while looking for a property after a method was not found on the\ncall's result, the overloads were at the same distance and the call was\nreported as ambiguous. The stored type now carries the parameter count too.",
+          "timestamp": "2026-11-09T03:14:00Z",
+          "url": "https://github.com/apache/groovy/commit/3af435f3e6489d222de11c5e53214feb248aff96"
+        },
+        "date": 1795244470961,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "classes.loaded.total",
+            "value": 4075,
+            "unit": "classes"
+          },
+          {
+            "name": "classes.lambdaForms",
+            "value": 441,
+            "unit": "classes"
+          },
+          {
+            "name": "classes.hidden",
+            "value": 874,
+            "unit": "classes"
+          },
+          {
+            "name": "classes.groovyRuntime",
+            "value": 1577,
             "unit": "classes"
           },
           {
