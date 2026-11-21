@@ -558,6 +558,38 @@ public class GroovyEngine implements ScriptEngine {
         return s.run();
     }
 
+    /**
+     * The directory under {@code root} that can hold the sources of package {@code domain}, or of the
+     * packages whose name starts with it: the one its complete segments name, as the last segment may
+     * be partial. Only that directory is walked for sources, instead of the whole tree under the
+     * working directory, which took seconds for each Tab in a large directory.
+     *
+     * @param root the directory the sources are looked up in
+     * @param domain a package name, or the start of one
+     * @return the directory to walk, or {@code null} when a complete segment is not a Java identifier
+     * (as in {@code [1..2].}) or the directory does not exist
+     */
+    static Path packageDirectory(Path root, String domain) {
+        Path dir = root;
+        int last = domain.lastIndexOf('.');
+        if (last >= 0) {
+            for (String segment : domain.substring(0, last).split("\\.", -1)) {
+                if (!isJavaIdentifier(segment)) {
+                    return null;
+                }
+                dir = dir.resolve(segment);
+            }
+        }
+        return Files.isDirectory(dir) ? dir : null;
+    }
+
+    private static boolean isJavaIdentifier(String name) {
+        if (name.isEmpty() || !Character.isJavaIdentifierStart(name.codePointAt(0))) {
+            return false;
+        }
+        return name.codePoints().skip(1).allMatch(Character::isJavaIdentifierPart);
+    }
+
     private static Set<Object> classesForPackage(String pckgname, GroovyShell shell) throws ClassNotFoundException {
         String name = pckgname;
         Matcher matcher = PATTERN_CLASS.matcher(name);
@@ -1561,7 +1593,14 @@ public class GroovyEngine implements ScriptEngine {
                 }
                 dom = "regex:\\." + dom + "[A-Z]+[a-zA-Z]*\\.groovy";
                 PathMatcher matcher = FileSystems.getDefault().getPathMatcher(dom);
-                try (Stream<Path> pathStream = Files.walk(Paths.get("."))) {
+                Path start = Paths.get(".");
+                if (domain != null && !domain.isEmpty()) {
+                    start = packageDirectory(start, domain);
+                    if (start == null) {
+                        return out;
+                    }
+                }
+                try (Stream<Path> pathStream = Files.walk(start)) {
                     Stream<String> classes = pathStream
                         .filter(matcher::matches)
                         .filter(p -> p.getFileName().toString().matches("[A-Z]+[a-zA-Z]*\\.groovy"))
@@ -1830,6 +1869,14 @@ public class GroovyEngine implements ScriptEngine {
     private static class AsCompleter implements Completer {
         private final Completer delegate = new StringsCompleter("as");
 
+        /**
+         * Adds the {@code as} candidate unless the word at the cursor,
+         * trimmed, already ends with {@code *}.
+         *
+         * @param reader the line reader, passed to the delegate
+         * @param line the parsed line
+         * @param candidates where the {@code as} candidate is added
+         */
         @Override
         public void complete(LineReader reader, ParsedLine line, List<Candidate> candidates) {
             String buffer = line.word().substring(0, line.wordCursor());
@@ -1853,6 +1900,15 @@ public class GroovyEngine implements ScriptEngine {
             this.isStatic = isStatic;
         }
 
+        /**
+         * Completes a static import's fields and methods when the prefix ends
+         * with a dot and that class can be evaluated. Otherwise adds package
+         * candidates for the prefix before the last dot.
+         *
+         * @param reader the line reader, unused
+         * @param line the parsed line
+         * @param candidates where matches are added
+         */
         @Override
         public void complete(LineReader reader, ParsedLine line, List<Candidate> candidates) {
             assert line != null;
@@ -1905,6 +1961,14 @@ public class GroovyEngine implements ScriptEngine {
             this.groovyEngine = groovyEngine;
         }
 
+        /**
+         * Adds candidates of this completer's type for the package prefix
+         * before the last dot in the word at the cursor.
+         *
+         * @param reader the line reader, unused
+         * @param line the parsed line
+         * @param candidates where matches are added
+         */
         @Override
         public void complete(LineReader reader, ParsedLine line, List<Candidate> candidates) {
             assert line != null;
@@ -1942,6 +2006,23 @@ public class GroovyEngine implements ScriptEngine {
             this.groovyEngine = engine;
         }
 
+        /**
+         * Fills {@code candidates} for the word at the cursor. Commands,
+         * scripts, and {@code import} lines are left unchanged, as are an
+         * open quote and a buffer whose brackets cannot be parsed. A
+         * single-word assignment offers the string value of the expression
+         * before {@code =}. A dotted receiver after a closing parenthesis is
+         * completed with its methods when restricted completion is off. A
+         * {@code new} expression completes constructors. Otherwise keywords
+         * or {@code true}/{@code false}, statement variables, and classes
+         * with static methods are offered, and a dot selects methods,
+         * declared classes, or static methods of the receiver. A known
+         * script or binding name is not scanned as a package.
+         *
+         * @param reader the line reader, passed on to constructor completion
+         * @param commandLine the parsed line
+         * @param candidates where matches are added
+         */
         @Override
         public void complete(LineReader reader, ParsedLine commandLine, List<Candidate> candidates) {
             assert commandLine != null;

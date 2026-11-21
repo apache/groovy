@@ -72,6 +72,12 @@ public class MethodVariantASTTransformation implements ASTTransformation {
 
     private static final AtomicLong COUNTER = new AtomicLong();
 
+    /**
+     * Instruments a method annotated with {@link Decreases}. The closure must
+     * contain a single measure expression; an empty closure is reported and
+     * left unchanged. Anything other than that annotation placed on a method
+     * is ignored.
+     */
     @Override
     public void visit(final ASTNode[] nodes, final SourceUnit source) {
         if (nodes.length != 2) return;

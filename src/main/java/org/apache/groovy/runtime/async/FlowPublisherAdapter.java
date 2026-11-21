@@ -268,9 +268,7 @@ public final class FlowPublisherAdapter implements AwaitableAdapter {
                 }
                 if (item == ERROR) {
                     terminated = true;
-                    if (error instanceof RuntimeException re) throw re;
-                    if (error instanceof Error err) throw err;
-                    throw new RuntimeException(error);
+                    throw AsyncSupport.rethrow(error);
                 }
                 next = item;
                 hasNext = true;

@@ -39,10 +39,20 @@ public class InterfaceHelperClassNode extends InnerClassNode {
         setCallSites(callSites);
     }
 
+    /**
+     * Replaces the call-site list. A null argument stores an empty list.
+     *
+     * @param cs call-site names used by the interface, or null
+     */
     public void setCallSites(List<String> cs) {
         callSites = (cs != null ? cs : new ArrayList<>());
     }
 
+    /**
+     * Returns the call-site names stored for this helper.
+     *
+     * @return those names; empty when none were supplied
+     */
     public List<String> getCallSites() {
         return callSites;
     }

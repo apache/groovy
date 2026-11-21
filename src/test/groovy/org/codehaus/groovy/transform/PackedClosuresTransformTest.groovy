@@ -479,6 +479,97 @@ final class PackedClosuresTransformTest {
         assertEquals([101, 102], instance(src + '\n new C()').m())  // captured local 100, not field 999
     }
 
+    // GROOVY-12658
+    @Test
+    void packedClosureReadsAndWritesOwnerPropertiesThroughAccessors() {
+        // the hoisted body is a method of the owner, but "e" and "this.e" must still go through
+        // getE()/setE() as in the closure class, not straight to the field; "this.@e" stays direct
+        def bodies = [
+            '{ -> e }()'          : '[1, 1, 1, 0]',
+            '{ -> this.e }()'     : '[1, 1, 1, 0]',
+            '[1].collect { e }[0]': '[1, 1, 1, 0]',
+            '{ -> e = 5 }()'      : '[5, 5, 0, 1]',
+            '{ -> this.e = 5 }()' : '[5, 5, 0, 1]',
+            '{ -> e += 1 }()'     : '[2, 2, 1, 1]',
+            '{ -> this.e += 1 }()': '[2, 2, 1, 1]',
+            '{ -> e++ }()'        : '[1, 2, 1, 1]',
+            '{ -> ++e }()'        : '[2, 2, 1, 1]',
+            '{ -> this.e-- }()'   : '[1, 0, 1, 1]',
+            '{ -> --this.e }()'   : '[0, 0, 1, 1]',
+            '{ -> this.@e }()'    : '[1, 1, 0, 0]',
+            '{ -> this.@e++ }()'  : '[1, 2, 0, 0]',
+        ]
+        ['', '@groovy.transform.CompileStatic'].each { mode ->
+            bodies.each { body, expected ->
+                String src = """$mode
+                    @groovy.transform.PackedClosures
+                    class Box {
+                        int gets, sets
+                        BigDecimal e = 1
+                        BigDecimal getE() { gets++; e }
+                        void setE(BigDecimal v) { sets++; e = v }
+                        def m() { def r = $body; [r, this.@e, gets, sets] }
+                    }"""
+                assertEquals(['Box'], generatedClassNames(src), "[$mode] $body should pack")
+                assertEquals(expected, instance(src + '\n new Box().m()').toString(), "[$mode] $body")
+            }
+        }
+    }
+
+    // GROOVY-12658
+    @Test
+    void packedClosureReachesAccessorsOverriddenOrDeclaredElsewhere() {
+        // a subclass override of a generated accessor, a static property and a boolean "is" getter
+        // are reached exactly as from the closure class
+        ['', '@groovy.transform.CompileStatic'].each { mode ->
+            String src = """$mode
+                @groovy.transform.PackedClosures
+                class A {
+                    BigDecimal x = 1
+                    def m() { [{ -> x }(), { -> this.x }(), { -> x = 3 }(), this.@x] }
+                }
+                $mode
+                class B extends A {
+                    BigDecimal getX() { 2 }
+                    void setX(BigDecimal v) { super.setX(v * 10) }
+                }
+                $mode
+                @groovy.transform.PackedClosures
+                class S {
+                    static int gets, sets
+                    static BigDecimal e = 1
+                    static BigDecimal getE() { gets++; e }
+                    static void setE(BigDecimal v) { sets++; e = v }
+                    static m() { def r = { -> e++ }(); [r, e, gets, sets] }
+                }
+                $mode
+                @groovy.transform.PackedClosures
+                class C {
+                    int gets
+                    boolean ok = true
+                    boolean isOk() { gets++; ok }
+                    def m() { def r = { -> ok }(); [r, gets] }
+                }"""
+            assertEquals(['A', 'B', 'C', 'S'], generatedClassNames(src), "[$mode] every closure should pack")
+            assertEquals('[2, 2, 3, 30]', instance(src + '\n new B().m()').toString(), "[$mode] subclass accessors")
+            assertEquals('[1, 2, 1, 1]', instance(src + '\n S.m()').toString(), "[$mode] static accessors")
+            assertEquals([true, 1], instance(src + '\n new C().m()'), "[$mode] is-getter")
+        }
+    }
+
+    // GROOVY-12658
+    @Test
+    void dynamicPackedClosureReadsOwnerPropertyThroughGetProperty() {
+        String src = '''@groovy.transform.PackedClosures
+            class G {
+                def x = 1
+                def getProperty(String name) { name == 'x' ? 42 : super.getProperty(name) }
+                def m() { [{ -> x }(), { -> this.x }()] }
+            }'''
+        assertEquals(['G'], generatedClassNames(src))
+        assertEquals([42, 42], instance(src + '\n new G().m()'))
+    }
+
     // GROOVY-12655
     @Test
     void bindingAndDynamicPropertyStoresAreDeclinedAtCompileTime() {
@@ -1207,5 +1298,36 @@ final class PackedClosuresTransformTest {
             assertEquals(6, r(3))                        // + 1 three times
             assertEquals(7, e.local(twice, 3))
         }
+    }
+
+    // GROOVY-12654
+    @Test
+    void compileStaticPackedClosureInStaticMethodCallsClassMethodsOnTheClass() {
+        // a closure in a static method has the class as its owner, so toString(), getName() and
+        // the other methods of Class are called on it; the hoisted body is a static method, where
+        // the call loaded local slot 0 (a VerifyError, or a captured value) instead of the class
+        String src = '''import groovy.transform.CompileStatic
+            @CompileStatic
+            @groovy.transform.PackedClosures
+            class S {
+                String toString() { 'S' }
+                static Object string()               { { -> toString() }() }
+                static Object name()                 { { -> getName() }() }
+                static Object captured(String s)     { { -> getSimpleName() + s }() }
+                static Object parameter()            { { String p -> getSimpleName() + p }('!') }
+                static Object implicit(List<String> xs) { xs.collect { getSimpleName() + it } }
+                static Object objectMethods()        { { -> [getClass(), hashCode() == S.hashCode()] }() }
+                Object instance()                    { { -> toString() }() }
+            }'''
+        assertEquals(['S'], generatedClassNames(src))   // every closure packs, no class remains
+
+        def s = instance(src + '\n new S()')
+        assertEquals('class S', s.string())
+        assertEquals('S', s.name())
+        assertEquals('Sx', s.captured('x'))
+        assertEquals('S!', s.parameter())
+        assertEquals(['Sa', 'Sb'], s.implicit(['a', 'b']))
+        assertEquals([Class, true], s.objectMethods())
+        assertEquals('S', s.instance())
     }
 }

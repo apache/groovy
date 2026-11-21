@@ -61,8 +61,9 @@ import java.util.concurrent.atomic.AtomicReference;
  * <p>
  * {@link #remove(Class)} stays a <em>hard detach</em> (the identity entry and
  * any pin go too), preserving the documented undeploy semantics of
- * {@link ClassInfo#remove(Class)}: the next {@code get} creates a fresh value
- * even if the old one is still reachable somewhere.
+ * {@link ClassInfo#remove(Class)}: the next {@code get} computes the value
+ * again even if the old one is still reachable somewhere, and the compute
+ * function decides what that value is.
  *
  * @param <T> the value type
  */

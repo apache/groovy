@@ -163,6 +163,12 @@ public class NativeImageMetadataGenerator {
 
     /** The metadata directory inside the jar, per the GraalVM convention {@code META-INF/native-image/<groupId>/<artifactId>/}. */
     public static final String METADATA_DIRECTORY = "META-INF/native-image/org.apache.groovy/groovy";
+    /**
+     * File name of the GraalVM reachability metadata.
+     * {@link #write} places it under {@link #METADATA_DIRECTORY}.
+     * {@link #writeForModule} places it under
+     * {@code META-INF/native-image/org.apache.groovy/<artifactId>/}.
+     */
     public static final String METADATA_FILE = "reachability-metadata.json";
 
     /** Prefixes of the packages whose classes Groovy ships and is responsible for. */

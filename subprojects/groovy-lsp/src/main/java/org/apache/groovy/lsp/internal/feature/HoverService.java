@@ -70,6 +70,17 @@ public final class HoverService {
         }
     }
 
+    /**
+     * Builds a markdown hover for the caret. Returns {@code null} when the
+     * hover text is empty. Appends an italic inferred marker when the type
+     * was inferred, and sets the hover range when an identifier range is known.
+     *
+     * @param document open document
+     * @param snapshot latest compile
+     * @param position caret
+     * @param encoding negotiated encoding
+     * @return the protocol hover, or {@code null}
+     */
     public Hover hover(final TextDocument document, final CompilationSnapshot snapshot,
                        final Position position, final PositionEncoding encoding) {
         HoverInfo info = info(document, snapshot, position, encoding);

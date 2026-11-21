@@ -70,7 +70,7 @@ class Main {
      * @param args command-line arguments
      */
     static void main(final String[] args) {
-        IO io = new IO()
+        IO io = IO.forConsole()
         Logger.io = io
 
         def cli = new CliBuilderInternal(usage: 'groovydoc [options] [packagenames] [sourcefiles]', writer: io.out, posix: false,

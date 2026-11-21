@@ -304,6 +304,10 @@ final class JavaExtensionSourceSet {
 @CompileStatic
 @PackageScope
 final class JavaExtensionContext {
+    /**
+     * Java primitive type names. A receiver whose erased name is one of these
+     * is reported as a primitive type.
+     */
     public static final Set<String> PRIMITIVES = Set.of('boolean', 'byte', 'char', 'double', 'float', 'int', 'long', 'short')
     private static final List<String> DEFAULT_IMPORT_LIST = List.of(ResolveVisitor.DEFAULT_IMPORTS)
     private static final String VOID_TYPE = 'void'

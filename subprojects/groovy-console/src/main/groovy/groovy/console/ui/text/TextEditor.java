@@ -119,6 +119,11 @@ public class TextEditor extends JTextPane implements Pageable, Printable {
             new MouseAdapter() {
                 Cursor cursor;
 
+                /**
+                 * If the event point is inside this editor, remembers the current cursor
+                 * and sets the layered pane to the text cursor. Otherwise restores the
+                 * cursor remembered on the way in.
+                 */
                 @Override
                 public void mouseEntered(MouseEvent me) {
                     if (contains(me.getPoint())) {
@@ -130,6 +135,9 @@ public class TextEditor extends JTextPane implements Pageable, Printable {
                     }
                 }
 
+                /**
+                 * Clears the cursor installed on the layered pane.
+                 */
                 @Override
                 public void mouseExited(MouseEvent me) {
                     getRootPane().getLayeredPane().setCursor(null);
@@ -484,6 +492,9 @@ public class TextEditor extends JTextPane implements Pageable, Printable {
     }
 
     private static class FindAction extends AbstractAction {
+        /**
+         * Opens the find dialog.
+         */
         @Override
         public void actionPerformed(ActionEvent ae) {
             FindReplaceUtility.showDialog();
@@ -491,6 +502,9 @@ public class TextEditor extends JTextPane implements Pageable, Printable {
     }
 
     private static class ReplaceAction extends AbstractAction {
+        /**
+         * Opens the find dialog in replace mode.
+         */
         @Override
         public void actionPerformed(ActionEvent ae) {
             FindReplaceUtility.showDialog(true);
@@ -498,6 +512,11 @@ public class TextEditor extends JTextPane implements Pageable, Printable {
     }
 
     private class ShiftTabAction extends AbstractAction {
+        /**
+         * When multi-line tabbing is on and text is selected, expands the selection
+         * to whole lines and removes one leading tab, or up to four leading spaces
+         * when tabs are inserted as spaces, from each of those lines.
+         */
         @Override
         public void actionPerformed(ActionEvent ae) {
             try {
@@ -526,6 +545,12 @@ public class TextEditor extends JTextPane implements Pageable, Printable {
     }
 
     private class TabAction extends AbstractAction {
+        /**
+         * Inserts a tab, or four spaces when tabs are inserted as spaces.
+         * A multi-line selection is expanded to whole lines and the indent is
+         * inserted at the start of each line; otherwise the text is inserted at
+         * the caret.
+         */
         @Override
         public void actionPerformed(ActionEvent ae) {
             try {
@@ -569,6 +594,10 @@ public class TextEditor extends JTextPane implements Pageable, Printable {
     private static class OvertypeCaret extends DefaultCaret {
         //The overtype caret will simply be a horizontal line one pixel high
         // (once we determine where to paint it)
+        /**
+         * When the caret is visible, fills a rectangle the width of {@code w} and
+         * the font height at the caret position, XOR-painted in the caret color.
+         */
         @Override
         @SuppressWarnings("deprecation") // TODO switch modelToView => modelToView2D once minimum JDK version for Groovy >= 9
         public void paint(Graphics g) {
@@ -595,6 +624,10 @@ public class TextEditor extends JTextPane implements Pageable, Printable {
          *  Damage must be overridden whenever the paint method is overridden
          *  (The damaged area is the area the caret is painted in. We must
          *  consider the area for the default caret and this caret)
+         */
+        /**
+         * Repaints a region the width of {@code w} and the height of {@code r}
+         * at the caret. A null rectangle is ignored.
          */
         @Override
         protected synchronized void damage(Rectangle r) {

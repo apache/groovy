@@ -32,20 +32,42 @@ public class ExpectedToFailContext {
     private final String message;
     private final Throwable cause;
 
+    /**
+     * Captures {@code thrown} together with its message and cause.
+     *
+     * @param thrown the exception the predicate will inspect
+     */
     public ExpectedToFailContext(Throwable thrown) {
         this.ex = thrown;
         this.message = thrown.getMessage();
         this.cause = thrown.getCause();
     }
 
+    /**
+     * Returns the exception this context was built from.
+     *
+     * @return the captured exception
+     */
     public Throwable getEx() {
         return ex;
     }
 
+    /**
+     * Returns the message taken from the exception at construction.
+     * May be {@code null}.
+     *
+     * @return the captured message
+     */
     public String getMessage() {
         return message;
     }
 
+    /**
+     * Returns the cause taken from the exception at construction.
+     * May be {@code null}.
+     *
+     * @return the captured cause
+     */
     public Throwable getCause() {
         return cause;
     }
