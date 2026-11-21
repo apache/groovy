@@ -618,6 +618,10 @@ public class ClosureWriter {
      * {@code >>=}), returned, appended with {@code <<}, or placed in a list/map literal. Transitive escapes
      * (via a local that is later returned) are intentionally not chased here; the runtime guard remains
      * the backstop for those.
+     * <p>
+     * A literal composed with {@code >>} or {@code <<}, or by {@code andThen}, {@code compose},
+     * {@code andThenSelf} or {@code composeSelf}, escapes wherever the composition does, e.g.
+     * {@code h.handler = c >> { ... }}; the same composition used only in the method still packs.
      */
     private boolean escapesEnclosingMethod(final ClosureExpression expression) {
         if (expression.getNodeMetaData(ESCAPES_METHOD) != null) return true;
@@ -681,7 +685,16 @@ public class ClosureWriter {
         Set<ClosureExpression> escaping = Collections.newSetFromMap(new IdentityHashMap<>());
         code.visit(new CodeVisitorSupport() {
             private void mark(final Expression e) {
-                if (e instanceof ClosureExpression) escaping.add((ClosureExpression) e);
+                if (e instanceof ClosureExpression) {
+                    escaping.add((ClosureExpression) e);
+                } else if (e instanceof BinaryExpression && isComposition(((BinaryExpression) e).getOperation().getType())) {
+                    mark(((BinaryExpression) e).getLeftExpression());     // composed, e.g. c >> { ... } or { ... } << c
+                    mark(((BinaryExpression) e).getRightExpression());
+                } else if (e instanceof MethodCallExpression && isCompositionCall((MethodCallExpression) e)) {
+                    MethodCallExpression call = (MethodCallExpression) e; // c.rightShift({ ... }), also how SC compiles c >> { ... }
+                    mark(call.getObjectExpression());
+                    ((TupleExpression) call.getArguments()).getExpressions().forEach(this::mark); // none for andThenSelf()
+                }
             }
             @Override public void visitReturnStatement(final ReturnStatement statement) {
                 mark(statement.getExpression());
@@ -733,6 +746,31 @@ public class ClosureWriter {
         // a DynamicVariable is stored through the MOP: to a script's binding, or to a dynamic
         // property of the owner, where code outside the method can read it
         return !(v instanceof FieldNode) && !(v instanceof PropertyNode) && !(v instanceof DynamicVariable);
+    }
+
+    /**
+     * True for {@code >>} and {@code <<}. On closures they compose: the {@code ComposedClosure} keeps a
+     * clone of each operand (a clone of a packed closure is still packed) and passes a delegate set on
+     * it on to them. On a collection {@code <<} appends. Either way the result holds the operands, so
+     * an operand escapes wherever the result does.
+     */
+    private static boolean isComposition(final int op) {
+        return op == Types.RIGHT_SHIFT || op == Types.LEFT_SHIFT;
+    }
+
+    /**
+     * True for a composing call: a one-argument {@code rightShift} or {@code leftShift}, the method form
+     * of {@link #isComposition}, or its alias {@code andThen} or {@code compose}; or {@code andThenSelf}
+     * or {@code composeSelf}, which compose the receiver with itself. The result keeps the receiver and
+     * any closure argument.
+     */
+    private static boolean isCompositionCall(final MethodCallExpression call) {
+        if (!(call.getArguments() instanceof TupleExpression)) return false;
+        String name = call.getMethodAsString();
+        int arity = ((TupleExpression) call.getArguments()).getExpressions().size();
+        return (arity == 1 && ("rightShift".equals(name) || "leftShift".equals(name)
+                        || "andThen".equals(name) || "compose".equals(name)))
+                || (arity <= 1 && ("andThenSelf".equals(name) || "composeSelf".equals(name)));
     }
 
     /**
