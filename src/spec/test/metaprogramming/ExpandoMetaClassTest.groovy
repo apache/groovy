@@ -262,4 +262,38 @@ final class ExpandoMetaClassTest {
             // end::emc_interface[]
         '''
     }
+
+    @Test
+    void testMetaClassSharedWithAnotherClass() {
+        assertScript '''
+            // tag::emc_shared_with_another_class[]
+            class Greeter {
+                String greet() { 'hello' }
+            }
+
+            class GreeterProxy extends Greeter {                        // <1>
+                @Override
+                MetaClass getMetaClass() {
+                    GroovySystem.metaClassRegistry.getMetaClass(Greeter)
+                }
+
+                @Override
+                String greet() { 'hello from the proxy' }
+            }
+
+            String greetVia(Greeter greeter) {
+                greeter.greet()                                         // <2>
+            }
+
+            Greeter.metaClass.wave = { -> 'waving' }
+
+            def proxy = new GreeterProxy()
+            assert proxy.wave() == 'waving'                             // <3>
+            assert greetVia(proxy) == 'hello from the proxy'            // <4>
+
+            Greeter.metaClass.greet = { -> 'replaced' }
+            assert greetVia(proxy) == 'replaced'                        // <5>
+            // end::emc_shared_with_another_class[]
+        '''
+    }
 }

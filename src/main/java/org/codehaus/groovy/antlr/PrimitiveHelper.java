@@ -31,11 +31,24 @@ import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveInt;
 import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveLong;
 import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveShort;
 
+/**
+ * Default constants for primitive {@link ClassNode}s.
+ */
 public class PrimitiveHelper {
 
     private PrimitiveHelper() {
     }
 
+    /**
+     * Returns a zero or {@code false} constant for one of the eight primitive types.
+     * {@code int}, {@code long}, {@code double}, {@code float}, {@code char}, and
+     * {@code boolean} keep that primitive type. {@code byte} and {@code short} are stored
+     * as those values, but {@link ConstantExpression} types them as the boxed class.
+     * {@code void} and reference types return {@code null}.
+     *
+     * @param type the type whose default constant is required
+     * @return that constant, or {@code null} when {@code type} is not a numeric or boolean primitive
+     */
     public static Expression getDefaultValueForPrimitive(final ClassNode type) {
         if (isPrimitiveInt(type)) {
             return new ConstantExpression(0, true);

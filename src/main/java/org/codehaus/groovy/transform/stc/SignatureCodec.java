@@ -49,7 +49,20 @@ import org.codehaus.groovy.ast.ClassNode;
  * single {@code int} is the version.
  */
 public interface SignatureCodec {
+    /**
+     * Encodes {@code node} as the inferred-signature string stored on
+     * {@link TypeChecked.TypeCheckingInfo}.
+     *
+     * @param node the inferred return type
+     * @return the encoded signature
+     */
     String encode(ClassNode node);
 
+    /**
+     * Decodes a signature produced by {@link #encode(ClassNode)}.
+     *
+     * @param signature the encoded return type
+     * @return the decoded class node
+     */
     ClassNode decode(String signature);
 }

@@ -47,6 +47,13 @@ public class FXBindableASTStubber extends AbstractASTTransformation {
 
     private static final ClassNode MY_TYPE = make(FXBindable.class);
 
+    /**
+     * When {@code nodes} carries the FXBindable annotation, adds a public
+     * {@code nameProperty()} stub that returns null for each selected property.
+     * An annotated class contributes its non-static, non-final properties; an
+     * annotated field contributes the property of the same name. Interfaces are
+     * skipped, and a property that already declares the accessor is left unchanged.
+     */
     @Override
     public void visit(ASTNode[] nodes, SourceUnit source) {
         init(nodes, source);

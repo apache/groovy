@@ -2164,6 +2164,12 @@ public class NioExtensions extends DefaultGroovyMethodsSupport {
     private static void readFully(AsynchronousFileChannel channel, ByteBuffer buf,
                                   long position, CompletableFuture<byte[]> result) {
         channel.read(buf, position, null, new CompletionHandler<Integer, Void>() {
+            /**
+             * When the read returns end-of-file or the buffer is full, closes the
+             * channel and completes the future with the bytes that were read.
+             * Otherwise continues the read at the next position. A failure while
+             * closing completes the future exceptionally.
+             */
             @Override
             public void completed(Integer bytesRead, Void attachment) {
                 if (bytesRead == -1 || !buf.hasRemaining()) {
@@ -2182,6 +2188,9 @@ public class NioExtensions extends DefaultGroovyMethodsSupport {
                 }
             }
 
+            /**
+             * Closes the channel and completes the future with the read failure.
+             */
             @Override
             public void failed(Throwable exc, Void attachment) {
                 try {
@@ -2282,6 +2291,12 @@ public class NioExtensions extends DefaultGroovyMethodsSupport {
     private static void writeFully(AsynchronousFileChannel channel, ByteBuffer buf,
                                    long position, CompletableFuture<Void> result) {
         channel.write(buf, position, null, new CompletionHandler<Integer, Void>() {
+            /**
+             * Continues the write while the buffer still has bytes and the last write
+             * made progress. No progress closes the channel and fails the future with
+             * an I/O exception. A drained buffer closes the channel and completes the
+             * future, or completes it exceptionally if the close fails.
+             */
             @Override
             public void completed(Integer bytesWritten, Void attachment) {
                 if (buf.hasRemaining()) {
@@ -2305,6 +2320,9 @@ public class NioExtensions extends DefaultGroovyMethodsSupport {
                 }
             }
 
+            /**
+             * Closes the channel and completes the future with the write failure.
+             */
             @Override
             public void failed(Throwable exc, Void attachment) {
                 try {

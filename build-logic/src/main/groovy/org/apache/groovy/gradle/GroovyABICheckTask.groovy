@@ -56,8 +56,17 @@ import org.objectweb.asm.Opcodes
  */
 abstract class GroovyABICheckTask extends DefaultTask {
 
+    /**
+     * ASM descriptor matched against annotation visits to recognize {@code GroovyABI}.
+     */
     public static final String ABI_DESC = 'Lorg/apache/groovy/lang/annotation/GroovyABI;'
 
+    /**
+     * Class-output directories to scan, each entry {@code module=path}.
+     * A module may contribute more than one directory. Read by
+     * {@code generate} and {@code sync}; {@code change} and {@code release}
+     * do not scan classes.
+     */
     @Input
     abstract ListProperty<String> getModuleClassDirs()
 
@@ -75,9 +84,16 @@ abstract class GroovyABICheckTask extends DefaultTask {
 
     // registryFile/schemaFile are accessed manually (read/write); keep them @Internal so
     // generate can create the registry before it exists (no @InputFile validation).
+    /**
+     * Registry JSON. {@code generate} rewrites it; every other mode reads it
+     * when the file is present.
+     */
     @Internal
     abstract RegularFileProperty getRegistryFile()
 
+    /**
+     * Schema file supplied with the registry. {@link #run()} does not open it.
+     */
     @Internal
     abstract RegularFileProperty getSchemaFile()
 
@@ -85,9 +101,22 @@ abstract class GroovyABICheckTask extends DefaultTask {
     @Internal
     abstract Property<String> getBaselineRegistryJson()
 
+    /**
+     * Version string stored as {@code version} when the registry is rewritten.
+     */
     @Input
     abstract Property<String> getVersion()
 
+    /**
+     * Runs the configured mode. {@code generate} and {@code sync} scan
+     * {@link #getModuleClassDirs()} and reject {@code GroovyABI} in a module
+     * that is neither tracked nor ignored. {@code generate} rewrites the
+     * registry from the tracked modules. {@code sync} fails when that scan
+     * and the committed registry disagree, including when the registry has
+     * entries but the scan found none. {@code change} and {@code release}
+     * compare the committed registry with {@link #getBaselineRegistryJson()}
+     * and do not scan classes. Any other mode fails.
+     */
     @TaskAction
     void run() {
         def mode = mode.get()
@@ -186,14 +215,31 @@ abstract class GroovyABICheckTask extends DefaultTask {
 
     // ------------------------------------------------------------------ scanning
 
+    /**
+     * Collects {@code GroovyABI} elements from the class file {@code f}.
+     * A class-level {@code since} is copied onto each public non-synthetic
+     * method that has no annotation of its own; {@code <clinit>} is excluded.
+     * An annotated method is kept only when it is public and non-synthetic,
+     * and an annotated field only when it is public.
+     *
+     * @return the annotated elements and the public method keys
+     *         ({@code type}, name, descriptor) seen in the class
+     */
     Map scanClass(File f, String module) {
         def cr = new ClassReader(new FileInputStream(f))
         def holder = [annotated: [], publicMethods: [], classSince: null, type: cr.className.replace('/', '.')]
         cr.accept(new ClassVisitor(Opcodes.ASM9) {
+            /**
+             * When {@code desc} is {@link GroovyABICheckTask#ABI_DESC}, returns a visitor that
+             * records the class-level {@code since}. Any other annotation is ignored.
+             */
             @Override
             AnnotationVisitor visitAnnotation(String desc, boolean visible) {
                 if (desc == ABI_DESC) {
                     return new AnnotationVisitor(Opcodes.ASM9) {
+                        /**
+                         * Stores a {@code since} value as the class-level version.
+                         */
                         @Override
                         void visit(String nm, Object val) {
                             if (nm == 'since') {
@@ -205,6 +251,11 @@ abstract class GroovyABICheckTask extends DefaultTask {
                 return null
             }
 
+            /**
+             * Remembers a public, non-synthetic method other than {@code <clinit>}.
+             * The returned visitor records a method-level {@code since} and keeps
+             * the method at the end of the visit when that version is present.
+             */
             @Override
             MethodVisitor visitMethod(int access, String mname, String mdesc, String sig, String[] exns) {
                 boolean isPublic = (access & Opcodes.ACC_PUBLIC) != 0 && (access & Opcodes.ACC_PRIVATE) == 0
@@ -214,10 +265,18 @@ abstract class GroovyABICheckTask extends DefaultTask {
                 }
                 def method = [kind: 'method', name: mname, descriptor: mdesc, type: holder.type]
                 return new MethodVisitor(Opcodes.ASM9) {
+                    /**
+                     * When {@code adesc} is {@link GroovyABICheckTask#ABI_DESC}, returns a visitor
+                     * that records this method's {@code since}. Any other annotation
+                     * is ignored.
+                     */
                     @Override
                     AnnotationVisitor visitAnnotation(String adesc, boolean visible) {
                         if (adesc == ABI_DESC) {
                             return new AnnotationVisitor(Opcodes.ASM9) {
+                                /**
+                                 * Stores a {@code since} value on this method.
+                                 */
                                 @Override
                                 void visit(String nm, Object val) {
                                     if (nm == 'since') {
@@ -229,6 +288,10 @@ abstract class GroovyABICheckTask extends DefaultTask {
                         return null
                     }
 
+                    /**
+                     * Keeps this method when it carries a {@code since} and is
+                     * public and non-synthetic.
+                     */
                     @Override
                     void visitEnd() {
                         if (method.since != null && isPublic && !isSynthetic) {
@@ -238,15 +301,28 @@ abstract class GroovyABICheckTask extends DefaultTask {
                 }
             }
 
+            /**
+             * Returns a visitor that records a field-level {@code since} and
+             * keeps the field at the end of the visit when that version is
+             * present and the field is public.
+             */
             @Override
             FieldVisitor visitField(int access, String fname, String fdesc, String sig, Object fval) {
                 boolean isPublic = (access & Opcodes.ACC_PUBLIC) != 0 && (access & Opcodes.ACC_PRIVATE) == 0
                 def field = [kind: 'field', name: fname, descriptor: fdesc, type: holder.type]
                 return new FieldVisitor(Opcodes.ASM9) {
+                    /**
+                     * When {@code adesc} is {@link GroovyABICheckTask#ABI_DESC}, returns a visitor
+                     * that records this field's {@code since}. Any other annotation
+                     * is ignored.
+                     */
                     @Override
                     AnnotationVisitor visitAnnotation(String adesc, boolean visible) {
                         if (adesc == ABI_DESC) {
                             return new AnnotationVisitor(Opcodes.ASM9) {
+                                /**
+                                 * Stores a {@code since} value on this field.
+                                 */
                                 @Override
                                 void visit(String nm, Object val) {
                                     if (nm == 'since') {
@@ -258,6 +334,9 @@ abstract class GroovyABICheckTask extends DefaultTask {
                         return null
                     }
 
+                    /**
+                     * Keeps this field when it carries a {@code since} and is public.
+                     */
                     @Override
                     void visitEnd() {
                         if (field.since != null && isPublic) {
@@ -296,14 +375,25 @@ abstract class GroovyABICheckTask extends DefaultTask {
 
     // ------------------------------------------------------------------ helpers
 
+    /**
+     * Identity of one scanned element: {@code type#kind:name} followed by its descriptor.
+     */
     String elementKey(Map el) {
         "${el.type}#${el.kind}:${el.name}${el.descriptor}"
     }
 
+    /**
+     * Parses registry JSON into maps and lists.
+     */
     Map parseJson(String text) {
         new JsonSlurper().parseText(text)
     }
 
+    /**
+     * Groups {@code entries} by module, sorts modules and elements, and writes
+     * pretty-printed registry JSON (schema {@code 1}, plus a trailing newline)
+     * to {@link #getRegistryFile()}.
+     */
     void writeRegistry(Map entries, Map moduleOf) {
         def modules = [:]
         entries.values().each { el ->
@@ -320,6 +410,11 @@ abstract class GroovyABICheckTask extends DefaultTask {
         logger.lifecycle("GroovyABI registry written to $f")
     }
 
+    /**
+     * Copies an element into the registry shape: kind, name, descriptor,
+     * since, a null {@code deprecated-since}, a null tombstone, and type
+     * when the element has one.
+     */
     Map sanitize(Map el) {
         def out = [kind: el.kind, name: el.name, descriptor: el.descriptor, since: el.since,
                    'deprecated-since': null, tombstone: null]
@@ -331,6 +426,14 @@ abstract class GroovyABICheckTask extends DefaultTask {
 
     // ------------------------------------------------------------------ sync
 
+    /**
+     * Fails when {@code registry} is missing or invalid, or when a registry
+     * element disagrees with {@code liveEntries}: its module changed, it is
+     * absent and not tombstoned (reported as an annotation removal when the
+     * method descriptor is still in {@code outline}, otherwise as a removal),
+     * or its {@code since} changed without a {@code version-changed} tombstone
+     * whose {@code previous-since} equals the registry value.
+     */
     void checkSync(Map liveEntries, Map moduleOf, Map registry, Map outline) {
         if (registry == null) {
             throw new GradleException('No registry file present; run checkGroovyABI with mode=generate first.')
@@ -387,6 +490,17 @@ abstract class GroovyABICheckTask extends DefaultTask {
 
     // ------------------------------------------------------------------ baseline
 
+    /**
+     * Compares {@code current} with {@code baseline}. A missing current
+     * registry fails. A missing baseline is logged as an empty prior and does
+     * not fail. A newly tombstoned {@code removed} or {@code annotation-removed}
+     * element must name a {@code deprecated-since} whose major is less than or
+     * equal to the tombstone version's major. A new {@code version-changed}
+     * tombstone must record {@code previous-since}. A baseline element missing
+     * from the current key set must still be present as a tombstone. A
+     * {@code since} change is allowed only when either side is a
+     * {@code version-changed} tombstone.
+     */
     void checkBaseline(Map current, Map baseline) {
         if (current == null) {
             throw new GradleException('Current registry is missing at the commit being checked.')
@@ -460,10 +574,19 @@ abstract class GroovyABICheckTask extends DefaultTask {
         logger.lifecycle('GroovyABI baseline comparison passed.')
     }
 
+    /**
+     * Identity of a registry element within a module:
+     * {@code module#type#kind:name} followed by its descriptor.
+     */
     String registryKey(Map el, String module) {
         "${module}#${el.type}#${el.kind}:${el.name}${el.descriptor}"
     }
 
+    /**
+     * Returns whether the major number of {@code deprecatedSince} is less than
+     * or equal to the major number of {@code tombVersion}. Each major is the
+     * digits before the first dot.
+     */
     boolean sameOrEarlierMajor(String deprecatedSince, String tombVersion) {
         def a = (deprecatedSince =~ /^(\d+)\./)[0][1] as int
         def b = (tombVersion =~ /^(\d+)\./)[0][1] as int
@@ -473,6 +596,13 @@ abstract class GroovyABICheckTask extends DefaultTask {
 
     // ------------------------------------------------------------------ validation
 
+    /**
+     * Rejects a registry whose {@code abiSchema} is not {@code 1}, whose
+     * version is not {@code X.Y.Z} or {@code SNAPSHOT}, or whose elements have
+     * an unknown kind, an invalid {@code since}, or a tombstone other than
+     * {@code removed}, {@code annotation-removed}, or {@code version-changed}.
+     * A {@code version-changed} tombstone must include {@code previous-since}.
+     */
     void validateRegistry(Map reg) {
         if (!(reg.abiSchema == 1 || reg.abiSchema == '1')) {
             throw new GradleException("Unsupported abiSchema '${reg.abiSchema}'; this tool requires abiSchema 1.")
@@ -503,6 +633,10 @@ abstract class GroovyABICheckTask extends DefaultTask {
         }
     }
 
+    /**
+     * Accepts {@code SNAPSHOT} or a numeric {@code X.Y.Z} version, with an
+     * optional {@code -SNAPSHOT} suffix.
+     */
     boolean validVersion(String v) {
         v == 'SNAPSHOT' || (v ==~ /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(-SNAPSHOT)?$/)
     }

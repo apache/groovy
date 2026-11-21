@@ -39,6 +39,16 @@ import java.util.Set;
  */
 public final class FormattingService {
 
+    /**
+     * Rewrites indentation in {@code document}. A null {@code range} formats
+     * every line and, when the text changes, returns one edit of the whole
+     * buffer, appending a final newline when the result is non-empty and does
+     * not already end with one. Otherwise the edit covers the selected lines,
+     * from column 0 through the end of the last line. Continuation lines of
+     * multiline strings and comments are left unchanged. An inverted range, or
+     * text that already has this indentation, yields an empty list. A null
+     * {@code encoding} is read as UTF-16.
+     */
     public List<TextEdit> format(final TextDocument document, final Range range, final int tabSize,
                                  final boolean insertSpaces, final PositionEncoding encoding) {
         String text = document.getText();
