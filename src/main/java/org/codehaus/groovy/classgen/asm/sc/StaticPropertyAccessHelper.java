@@ -85,6 +85,13 @@ public abstract class StaticPropertyAccessHelper {
         private final TemporaryVariableExpression tmp;
         private final PoppingMethodCallExpression call;
 
+        /**
+         * Passes {@code tmp} then {@code call} to {@link ListOfExpressionsExpression}
+         * and retains both.
+         *
+         * @param tmp temporary that holds the assigned value
+         * @param call setter call that reads the temporary
+         */
         public PoppingListOfExpressionsExpression(final TemporaryVariableExpression tmp, final PoppingMethodCallExpression call) {
             super(Arrays.asList(tmp, call));
             this.tmp = tmp;
@@ -110,6 +117,15 @@ public abstract class StaticPropertyAccessHelper {
 
         private final TemporaryVariableExpression tmp;
 
+        /**
+         * Creates a call to {@code setterMethod} on {@code receiver} whose only
+         * argument is {@code tmp}. The argument list takes its source position from
+         * {@code tmp}, and the call's method target is {@code setterMethod}.
+         *
+         * @param receiver the object the setter is invoked on
+         * @param setterMethod the setter; its name is the call name and it is the method target
+         * @param tmp the argument, a temporary holding the assigned value
+         */
         public PoppingMethodCallExpression(final Expression receiver, final MethodNode setterMethod, final TemporaryVariableExpression tmp) {
             super(receiver, setterMethod.getName(), new ArgumentListExpression(tmp));
             getArguments().setSourcePosition(tmp);

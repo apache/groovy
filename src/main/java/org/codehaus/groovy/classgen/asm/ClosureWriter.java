@@ -177,8 +177,10 @@ public class ClosureWriter {
     // constructed, so a by-value capture would see the stale (null) value.
     private final Map<MethodNode, Set<String>> writtenNamesByMethod = new HashMap<>();
 
-    /** Name prefix of the synthetic methods holding hoisted closure bodies. */
-    /** Name prefix of hoisted packed-closure bodies (also consulted by the static call-site writer). */
+    /**
+     * Name prefix of the synthetic methods that hold hoisted packed-closure bodies.
+     * Also consulted by the static call-site writer.
+     */
     public static final String PACKED_METHOD_PREFIX = "$packed$closure$";
 
     // The class's registered dispatch targets (hoisted closure bodies), in id order. Kept as node
@@ -329,7 +331,17 @@ public class ClosureWriter {
         // we may need to pass in some other constructors
         //cv.visitMethodInsn(INVOKESPECIAL, innerClassinternalName, "<init>", prototype + ")V");
         mv.visitMethodInsn(INVOKESPECIAL, closureClassinternalName, "<init>", BytecodeHelper.getMethodDescriptor(ClassHelper.VOID_TYPE, localVariableParams), false);
-        controller.getOperandStack().replace(ClassHelper.CLOSURE_TYPE, localVariableParams.length);
+        controller.getOperandStack().replace(getClosureInstanceType(closureClass), localVariableParams.length);
+    }
+
+    /**
+     * Returns the operand stack type of a newly created instance of the given closure class.
+     *
+     * @param closureClass the generated closure class
+     * @return {@link ClassHelper#CLOSURE_TYPE} unless a subclass knows a more precise type
+     */
+    protected ClassNode getClosureInstanceType(final ClassNode closureClass) {
+        return ClassHelper.CLOSURE_TYPE;
     }
 
     /**
@@ -801,7 +813,16 @@ public class ClosureWriter {
         Set<ClosureExpression> escaping = Collections.newSetFromMap(new IdentityHashMap<>());
         code.visit(new CodeVisitorSupport() {
             private void mark(final Expression e) {
-                if (e instanceof ClosureExpression) escaping.add((ClosureExpression) e);
+                if (e instanceof ClosureExpression) {
+                    escaping.add((ClosureExpression) e);
+                } else if (e instanceof BinaryExpression && isComposition(((BinaryExpression) e).getOperation().getType())) {
+                    mark(((BinaryExpression) e).getLeftExpression());     // composed, e.g. c >> { ... } or { ... } << c
+                    mark(((BinaryExpression) e).getRightExpression());
+                } else if (e instanceof MethodCallExpression && isCompositionCall((MethodCallExpression) e)) {
+                    MethodCallExpression call = (MethodCallExpression) e; // c.rightShift({ ... }), also how SC compiles c >> { ... }
+                    mark(call.getObjectExpression());
+                    ((TupleExpression) call.getArguments()).getExpressions().forEach(this::mark); // none for andThenSelf()
+                }
             }
             /**
              * Marks every literal the escaping value {@code e} can be or keep: both branches of a
@@ -1541,11 +1562,13 @@ public class ClosureWriter {
                 typesDescriptor.toString()));
         os.push(ClassHelper.CLASS_Type.makeArray());
         // strict guard only for the dynamic trust path; a PROVEN delegate-independent closure --
-        // statically (StaticTypesClosureWriter) or syntactically (SYNTACTIC_PACK, dynamic) --
-        // stores-and-ignores a caller-set delegate, like a @CompileStatic closure class.
+        // statically (StaticTypesClosureWriter) or syntactically (no free name, whether packed by
+        // the flag or the annotation) -- stores-and-ignores a caller-set delegate, and the owner
+        // and this object rehydrate installs, like a @CompileStatic closure class.
         // an open closure takes no strict flag: its live resolver honours a caller-set delegate
         if (!open) {
-            boolean strict = packedClosureUsesDelegateGuard() && expression.getNodeMetaData(SYNTACTIC_PACK) == null;
+            boolean strict = packedClosureUsesDelegateGuard() && expression.getNodeMetaData(SYNTACTIC_PACK) == null
+                    && !isSyntacticallyDelegateIndependent(expression);
             mv.visitInsn(strict ? Opcodes.ICONST_1 : Opcodes.ICONST_0);
             os.push(ClassHelper.boolean_TYPE);
         }
@@ -1706,17 +1729,6 @@ public class ClosureWriter {
     }
 
     /**
-     * An array-free dispatch table for the targets whose captured-plus-argument count is exactly
-     * {@code paramCount}: each case loads the receiver and arguments from parameter slots — no
-     * packed array — and invokes the target directly. Membership is sparse over the id space, so
-     * cases switch with {@code lookupswitch}; ids of other arities land on the default (routing is
-     * the adapter's responsibility, so reaching it is a compiler bug). Past {@link #DISPATCH_CHUNK}
-     * members the table goes two-level under the same inline-budget discipline as the array table:
-     * the entry method shifts the id down to a chunk index and forwards, and each chunk method
-     * switches over its id-range's members (at most {@code DISPATCH_CHUNK}, since a range spans
-     * {@code DISPATCH_CHUNK} consecutive ids).
-     */
-    /**
      * Emits the hosting class's dispatcher factory: three <em>bytecode-level</em>
      * {@code LambdaMetafactory} sites adapting its private static tables to their functional
      * interfaces, wrapped in one {@code Bundle}.
@@ -1758,6 +1770,17 @@ public class ClosureWriter {
                 Type.getMethodType(tableDesc));
     }
 
+    /**
+     * An array-free dispatch table for the targets whose captured-plus-argument count is exactly
+     * {@code paramCount}: each case loads the receiver and arguments from parameter slots — no
+     * packed array — and invokes the target directly. Membership is sparse over the id space, so
+     * cases switch with {@code lookupswitch}; ids of other arities land on the default (routing is
+     * the adapter's responsibility, so reaching it is a compiler bug). Past {@link #DISPATCH_CHUNK}
+     * members the table goes two-level under the same inline-budget discipline as the array table:
+     * the entry method shifts the id down to a chunk index and forwards, and each chunk method
+     * switches over its id-range's members (at most {@code DISPATCH_CHUNK}, since a range spans
+     * {@code DISPATCH_CHUNK} consecutive ids).
+     */
     private static void writeArityTable(final ClassVisitor cv, final String internal,
             final ClassNode enclosing, final List<MethodNode> targets, final int paramCount,
             final String tableMethod, final String tableDesc) {

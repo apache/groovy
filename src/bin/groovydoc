@@ -39,6 +39,10 @@ while [ -h "$PRG" ] ; do
     fi
 done
 
+if [ "$(expr "$JAVA_VERSION" \> "17.")" ]; then
+    JAVA_OPTS="$JAVA_OPTS --enable-native-access=ALL-UNNAMED"
+fi
+
 DIRNAME="$(dirname "$PRG")"
 
 . "$DIRNAME/startGroovy"

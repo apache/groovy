@@ -211,7 +211,9 @@ public class GStringTemplateEngine extends TemplateEngine {
                             : createClassLoader(parentLoader);
             final Class<?> groovyClass;
             try {
-                groovyClass = loader.parseClass(new GroovyCodeSource(templateExpressions.toString(), "GStringTemplateScript" + counter.incrementAndGet() + ".groovy", "x"));
+                GroovyCodeSource codeSource = new GroovyCodeSource(templateExpressions.toString(), "GStringTemplateScript" + counter.incrementAndGet() + ".groovy", "x");
+                codeSource.setNameGenerated(true);
+                groovyClass = loader.parseClass(codeSource);
             } catch (Exception e) {
                 throw new GroovyRuntimeException("Failed to parse template script (your template may contain an error or be trying to use expressions not currently supported): " + e.getMessage());
             }

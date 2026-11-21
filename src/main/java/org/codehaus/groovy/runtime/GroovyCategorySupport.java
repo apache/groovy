@@ -46,13 +46,33 @@ public class GroovyCategorySupport {
 
     private static int categoriesInUse = 0;
 
+    /**
+     * Category methods that share one name at a single {@code use}
+     * nesting level. A deeper level copies the methods from the
+     * previous level and shares its usage counter. Adding a method
+     * increments that counter.
+     */
     public static class CategoryMethodList extends ArrayList<CategoryMethod> {
         @Serial
         private static final long serialVersionUID = 1631799972200881802L;
+
+        /**
+         * Nesting depth of the {@code use} scope that installed this list.
+         */
         public final int level;
         final CategoryMethodList previous;
         final AtomicInteger usage;
 
+        /**
+         * Builds the list for {@code name} at {@code level}. When
+         * {@code previous} is present its methods are copied and its
+         * usage counter is shared; otherwise a counter is taken for
+         * {@code name}.
+         *
+         * @param name method name, used to find the usage counter when {@code previous} is null
+         * @param level scope depth that owns this list
+         * @param previous list from the surrounding scope, or null for the outermost scope
+         */
         public CategoryMethodList(String name, int level, CategoryMethodList previous) {
             this.level = level;
             this.previous = previous;
@@ -72,6 +92,11 @@ public class GroovyCategorySupport {
         }
     }
 
+    /**
+     * Category methods active on one thread, keyed by method name.
+     * Each {@code use} pushes a scope and pops it when the closure
+     * finishes. Getters and setters are also indexed by property name.
+     */
     public static class ThreadCategoryInfo extends HashMap<String, CategoryMethodList>{
 
         private static final Object LOCK = new Object();
@@ -130,6 +155,20 @@ public class GroovyCategorySupport {
             }
         }
 
+        /**
+         * Opens a scope, installs the public static methods of each class
+         * in {@code categoryClasses}, and calls {@code closure}. The scope
+         * is closed on the way out, including when the closure throws.
+         * A method is installed only when it is public and static and has
+         * at least one parameter; the first parameter type is the receiver.
+         * Methods inherited from superclasses are installed too, stopping
+         * before {@link Object}.
+         *
+         * @param <T> return type of {@code closure}
+         * @param categoryClasses classes that supply category methods, applied in order
+         * @param closure called while those methods are visible
+         * @return the value returned by {@code closure}
+         */
         public <T> T use(List<Class> categoryClasses, Closure<T> closure) {
             newScope();
             try {
@@ -202,6 +241,14 @@ public class GroovyCategorySupport {
             }
         }
 
+        /**
+         * Returns the category methods registered under {@code name}
+         * while a scope is active.
+         *
+         * @param name method name to look up
+         * @return the list for {@code name}, or null when this thread is not inside {@code use}
+         *         or no method of that name is registered
+         */
         public CategoryMethodList getCategoryMethods(String name) {
             return level == 0 ? null : get(name);
         }
@@ -221,9 +268,22 @@ public class GroovyCategorySupport {
 
     private static final MyThreadLocal THREAD_INFO = new MyThreadLocal();
 
+    /**
+     * A public static category method seen as an instance method of
+     * its first parameter type. Ordering places a more specific receiver
+     * type ahead of a less specific one. The method is not cached,
+     * because the active category set changes with the scope.
+     */
     public static class CategoryMethod extends NewInstanceMetaMethod implements Comparable {
         private final Class metaClass;
 
+        /**
+         * Wraps {@code metaMethod} and records {@code metaClass} as the
+         * receiver type used when category methods are ordered.
+         *
+         * @param metaMethod static category method
+         * @param metaClass class of that method's first parameter, the receiver type
+         */
         public CategoryMethod(CachedMethod metaMethod, Class metaClass) {
             super(metaMethod);
             this.metaClass = metaClass;
@@ -250,6 +310,14 @@ public class GroovyCategorySupport {
         }
     }
 
+    /**
+     * Returns the shared counter of category methods named {@code name}
+     * that are currently installed. The same counter is incremented as
+     * methods are added and adjusted as a scope ends.
+     *
+     * @param name category method name
+     * @return the counter for {@code name}, created at zero on first use
+     */
     public static AtomicInteger getCategoryNameUsage (String name) {
         return THREAD_INFO.getUsage (name);
     }
@@ -257,6 +325,7 @@ public class GroovyCategorySupport {
     /**
      * Create a scope based on given categoryClass and invoke closure within that scope.
      *
+     * @param <T> return type of {@code closure}
      * @param categoryClass the class containing category methods
      * @param closure the closure during which to make the category class methods available
      * @return the value returned from the closure
@@ -268,6 +337,7 @@ public class GroovyCategorySupport {
     /**
      * Create a scope based on given categoryClasses and invoke closure within that scope.
      *
+     * @param <T> return type of {@code closure}
      * @param categoryClasses the list of classes containing category methods
      * @param closure the closure during which to make the category class methods available
      * @return the value returned from the closure
@@ -276,6 +346,12 @@ public class GroovyCategorySupport {
         return THREAD_INFO.getInfo().use(categoryClasses, closure);
     }
 
+    /**
+     * Reports whether the current thread is inside a {@code use} block.
+     * Returns false at once when no thread has an active category scope.
+     *
+     * @return {@code true} when this thread's category scope depth is non-zero
+     */
     public static boolean hasCategoryInCurrentThread() {
         /*
          * Synchronization is avoided here for performance reasons since
@@ -298,6 +374,9 @@ public class GroovyCategorySupport {
     }
 
     /**
+     * Reports whether a {@code use} scope is open on any thread.
+     *
+     * @return {@code true} when at least one category scope is still active
      * @deprecated use {@link #hasCategoryInCurrentThread()}
      */
     @Deprecated
@@ -318,11 +397,28 @@ public class GroovyCategorySupport {
         return categoryInfo == null ? null : categoryInfo.getCategoryMethods(name);
     }
 
+    /**
+     * Returns the category getter installed for {@code propertyName} on
+     * the current thread. Both {@code getX} and boolean {@code isX}
+     * methods are eligible. When {@code propertyName} is not a key, its
+     * decapitalized spelling is tried.
+     *
+     * @param propertyName property whose getter is required
+     * @return the getter's method name, or null when this thread has no matching category getter
+     */
     public static String getPropertyCategoryGetterName(String propertyName) {
          final ThreadCategoryInfo categoryInfo = THREAD_INFO.getInfoNullable();
          return categoryInfo == null ? null : categoryInfo.getPropertyCategoryGetterName(propertyName);
     }
 
+    /**
+     * Returns the category setter installed for {@code propertyName} on
+     * the current thread. When {@code propertyName} is not a key, its
+     * decapitalized spelling is tried.
+     *
+     * @param propertyName property whose setter is required
+     * @return the setter's method name, or null when this thread has no matching category setter
+     */
     public static String getPropertyCategorySetterName(String propertyName) {
          final ThreadCategoryInfo categoryInfo = THREAD_INFO.getInfoNullable();
          return categoryInfo == null ? null : categoryInfo.getPropertyCategorySetterName(propertyName);
@@ -332,6 +428,12 @@ public class GroovyCategorySupport {
 
         final ConcurrentHashMap<String,AtomicInteger> usage = new ConcurrentHashMap<String,AtomicInteger> ();
 
+        /**
+         * Returns this thread's category info. A missing info object,
+         * or one whose soft reference has been cleared, is created and stored.
+         *
+         * @return the current thread's category info
+         */
         public ThreadCategoryInfo getInfo() {
             final SoftReference reference = get();
             ThreadCategoryInfo tcinfo;
@@ -349,11 +451,23 @@ public class GroovyCategorySupport {
             return tcinfo;
         }
 
+        /**
+         * Returns this thread's category info without creating one.
+         *
+         * @return the stored info, or null when none is set or the soft reference was cleared
+         */
         public ThreadCategoryInfo getInfoNullable() {
             final SoftReference reference = get();
             return reference == null ? null : (ThreadCategoryInfo) reference.get();
         }
 
+        /**
+         * Returns the shared usage counter for category methods named
+         * {@code name}. The first caller stores a zero counter.
+         *
+         * @param name category method name
+         * @return the counter already stored for {@code name}, or the one just stored
+         */
         public AtomicInteger getUsage (String name) {
             AtomicInteger u = usage.get(name);
             if (u != null) {

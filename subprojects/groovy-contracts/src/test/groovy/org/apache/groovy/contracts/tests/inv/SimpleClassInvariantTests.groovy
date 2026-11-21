@@ -398,4 +398,115 @@ class Rocket {
             a.dec(false)
         }
     }
+
+    // GROOVY-12742: a trait forwarder's body is a bare expression statement, not a block; the invariant
+    // call was appended after it, so the forwarder's implicit return value was lost
+    def trait_forwarder_source = '''
+        import groovy.contracts.*
+
+        @Invariant({ count >= 0 })
+        class C implements Counting {
+            int count = 0
+            int add(int n) { count += n; count }
+        }
+
+        trait Counting {
+            int one() { 1 }
+            String greet() { 'hi' }
+            void drain() { count = -1 }
+            int takeAll() { count = -1; count }
+        }
+    '''
+
+    // GROOVY-12742
+    @Test
+    void trait_forwarder_returns_primitive_value() {
+        def c = create_instance_of(trait_forwarder_source)
+        assert c.one() == 1
+    }
+
+    // GROOVY-12742
+    @Test
+    void trait_forwarder_returns_object_value() {
+        def c = create_instance_of(trait_forwarder_source)
+        assert c.greet() == 'hi'
+    }
+
+    // GROOVY-12742: the invariant is still checked after a void forwarder
+    @Test
+    void void_trait_forwarder_checks_invariant() {
+        def c = create_instance_of(trait_forwarder_source)
+        shouldFail(ClassInvariantViolation) {
+            c.drain()
+        }
+    }
+
+    // GROOVY-12742: the invariant is still checked after a forwarder that returns a value
+    @Test
+    void trait_forwarder_with_value_checks_invariant() {
+        def c = create_instance_of(trait_forwarder_source)
+        shouldFail(ClassInvariantViolation) {
+            c.takeAll()
+        }
+    }
+
+    // GROOVY-12742: a method the class defines itself is unaffected
+    @Test
+    void own_method_beside_trait_forwarders() {
+        def c = create_instance_of(trait_forwarder_source)
+        assert c.add(2) == 2
+        shouldFail(ClassInvariantViolation) {
+            c.add(-5)
+        }
+    }
+
+    // GROOVY-12742: the accessors generated for a trait property have the same bare-statement body
+    @Test
+    void trait_property_accessors_keep_their_values() {
+        def source = '''
+        import groovy.contracts.*
+
+        @Invariant({ count >= 0 })
+        class D implements Named {
+            int count = 0
+        }
+
+        trait Named {
+            String name = 'x'
+            int size = 3
+        }
+        '''
+
+        def d = create_instance_of(source)
+        assert d.name == 'x'
+        assert d.size == 3
+        d.name = 'y'
+        d.size = 4
+        assert d.name == 'y'
+        assert d.size == 4
+    }
+
+    // GROOVY-12742: @Synchronized leaves a non-block body too; an explicit return inside it skipped the invariant
+    @Test
+    void synchronized_method_with_explicit_return_checks_invariant() {
+        def source = '''
+        import groovy.contracts.*
+        import groovy.transform.Synchronized
+
+        @Invariant({ count >= 0 })
+        class E {
+            int count = 0
+            @Synchronized
+            int dec() {
+                count -= 5
+                return count
+            }
+        }
+        '''
+
+        def e = create_instance_of(source)
+        shouldFail(ClassInvariantViolation) {
+            e.dec()
+        }
+    }
 }

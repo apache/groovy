@@ -26,8 +26,14 @@ import groovy.lang.MetaMethod;
  */
 public abstract class MetaMethodSite extends MetaClassSite {
     final MetaMethod metaMethod;
+    /**
+     * Parameter classes captured with the cached meta-method.
+     */
     protected final Class[] params;
 
+    /**
+     * Stores {@code metaMethod} and {@code params} with the cached meta-class.
+     */
     public MetaMethodSite(CallSite site, MetaClass metaClass, MetaMethod metaMethod, Class[] params) {
         super(site, metaClass);
         this.metaMethod = metaMethod;
