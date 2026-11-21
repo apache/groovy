@@ -18,6 +18,7 @@
  */
 package org.codehaus.groovy.classgen.asm.sc;
 
+import groovy.lang.Tuple2;
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.ast.ClassCodeVisitorSupport;
 import org.apache.groovy.util.SystemUtil;
@@ -46,17 +47,21 @@ import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.transform.sc.StaticCompilationMetadataKeys;
 import org.objectweb.asm.Opcodes;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
 import static org.apache.groovy.ast.tools.ClassNodeUtils.addGeneratedMethod;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.args;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.callX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.castX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.constX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.isOrImplements;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.nullX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.returnS;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.stmt;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
+import static org.codehaus.groovy.transform.stc.StaticTypesMarker.CLOSURE_TARGET_INTERFACE;
 import static org.codehaus.groovy.transform.stc.StaticTypesMarker.DIRECT_METHOD_CALL_TARGET;
 import static org.codehaus.groovy.transform.stc.StaticTypesMarker.DYNAMIC_RESOLUTION;
 import static org.codehaus.groovy.transform.stc.StaticTypesMarker.IMPLICIT_RECEIVER;
@@ -239,6 +244,7 @@ public class StaticTypesClosureWriter extends ClosureWriter {
         // runtime proxy. Markers are only added when they are true marker
         // interfaces (no abstract methods we'd be obliged to implement).
         addIntersectionMarkers(closureClass, expression);
+        addTargetInterface(closureClass, doCallMethod, expression);
         closureClass.putNodeMetaData(StaticCompilationMetadataKeys.STATIC_COMPILE_NODE, Boolean.TRUE);
         return closureClass;
     }
@@ -258,6 +264,62 @@ public class StaticTypesClosureWriter extends ClosureWriter {
             if (hasAbstractMethods(marker)) continue;
             closureClass.addInterface(marker);
         }
+    }
+
+    /**
+     * Makes the closure class implement the functional interface that the type checker found the closure
+     * literal written for, in a slot declared with a type parameter, such as {@code E} of {@code List.add(E)}
+     * for a {@code List<Supplier<String>>}. Its abstract method is declared with the interface's parameterized
+     * signature and calls {@code doCall}, as the direct {@code call} methods do; the verifier adds the bridge
+     * for its erasure. The closure is then stored as it is: dynamic code can still call it as a closure.
+     */
+    private static void addTargetInterface(final ClassNode closureClass, final MethodNode doCallMethod, final ClosureExpression expression) {
+        ClassNode type = expression.getNodeMetaData(CLOSURE_TARGET_INTERFACE);
+        if (type == null || closureClass.implementsInterface(type)) return;
+
+        MethodNode sam = ClassHelper.findSAM(type);
+        Tuple2<ClassNode[], ClassNode> signature = GenericsUtils.parameterizeSAM(type);
+        ClassNode[] types = signature.getV1();
+        Parameter[] parameters = new Parameter[types.length];
+        for (int i = 0; i < types.length; i += 1) {
+            parameters[i] = new Parameter(erasure(types[i]), "arg" + i);
+        }
+        Parameter[] doCallParameters = doCallMethod.getParameters();
+        Expression call;
+        if (doCallParameters.length == parameters.length) {
+            List<Expression> arguments = new ArrayList<>(parameters.length);
+            for (int i = 0; i < parameters.length; i += 1) {
+                arguments.add(castX(doCallParameters[i].getType(), varX(parameters[i])));
+            }
+            call = callDoCall(closureClass, doCallMethod, args(arguments));
+        } else if (parameters.length == 0 && doCallParameters.length == 1) { // an implicit parameter
+            call = callDoCall(closureClass, doCallMethod, args(defaultArgument(doCallParameters[0])));
+        } else { // call(Object...) chooses the doCall method at run time
+            List<Expression> arguments = new ArrayList<>(parameters.length);
+            for (Parameter parameter : parameters) {
+                arguments.add(castX(ClassHelper.OBJECT_TYPE, varX(parameter)));
+            }
+            MethodCallExpression callCall = callX(varX("this", closureClass), "call", args(new ArrayExpression(ClassHelper.OBJECT_TYPE, arguments)));
+            callCall.setImplicitThis(true);
+            callCall.setMethodTarget(ClassHelper.CLOSURE_TYPE.getMethod("call", new Parameter[]{new Parameter(ClassHelper.OBJECT_TYPE.makeArray(), "args")}));
+            call = callCall;
+        }
+        ClassNode returnType = erasure(signature.getV2());
+        Statement code = ClassHelper.isPrimitiveVoid(returnType) ? stmt(call) : returnS(castX(returnType, call));
+
+        closureClass.addInterface(type);
+        addGeneratedMethod(closureClass, new MethodNode(sam.getName(), Opcodes.ACC_PUBLIC, returnType, parameters, sam.getExceptions(), code), true);
+    }
+
+    private static MethodCallExpression callDoCall(final ClassNode closureClass, final MethodNode doCallMethod, final Expression arguments) {
+        MethodCallExpression call = callX(varX("this", closureClass), "doCall", arguments);
+        call.setImplicitThis(true);
+        call.setMethodTarget(doCallMethod);
+        return call;
+    }
+
+    private static ClassNode erasure(final ClassNode type) {
+        return type.isGenericsPlaceHolder() || type.getGenericsTypes() != null ? GenericsUtils.erasure(type) : type;
     }
 
     private static boolean hasAbstractMethods(final ClassNode iface) {

@@ -252,6 +252,46 @@ final class CoercionTest {
     }
 
     @Test
+    void testFunctionalLiteralForATypeParameter() {
+        assertScript '''
+            import groovy.transform.CompileStatic
+            import java.util.function.Function
+
+            // tag::functional_literal_for_type_parameter[]
+            @CompileStatic
+            Map<String, Function<String, String>> commands() {
+                Map<String, Function<String, String>> commands = [:]
+                commands['shout'] = { it.toUpperCase() }                // V of putAt(Map<K, V>, K, V)
+                commands.put('whisper') { String s -> s.toLowerCase() } // V of put(K, V)
+                commands.put('trim', String::trim)
+                commands
+            }
+            // end::functional_literal_for_type_parameter[]
+
+            // tag::functional_literal_for_type_parameter_assertions[]
+            def commands = commands()
+            assert commands.shout.apply('Hi') == 'HI'     // the closure is a Function
+            assert commands.whisper('Hi') == 'hi'         // and still a Closure
+            assert commands.trim.apply(' Hi ') == 'Hi'    // the method reference is only a Function
+            // end::functional_literal_for_type_parameter_assertions[]
+
+            // tag::closure_value_for_type_parameter[]
+            @CompileStatic
+            List<Function<String, String>> wrap(Closure<String> closure) {
+                List<Function<String, String>> functions = []
+                functions.add(closure)                    // warning: stored as a Closure
+                functions.add(closure as Function<String, String>)
+                functions
+            }
+            // end::closure_value_for_type_parameter[]
+
+            def functions = wrap { it * 2 }
+            assert functions[0] instanceof Closure && !(functions[0] instanceof Function)
+            assert functions[1].apply('a') == 'aa'
+        '''
+    }
+
+    @Test
     void testClosureCoercionToInterface() {
         assertScript '''
             // tag::foobar_interface[]

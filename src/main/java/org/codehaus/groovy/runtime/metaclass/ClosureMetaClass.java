@@ -45,8 +45,10 @@ import org.codehaus.groovy.util.FastArray;
 import java.beans.PropertyDescriptor;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -73,6 +75,8 @@ public final class ClosureMetaClass extends MetaClassImpl {
 
     private volatile boolean attributeInitDone;
     private final FastArray closureMethods = new FastArray(3);
+    /** the methods the closure class declares for a functional interface it implements, such as {@code apply} */
+    private final FastArray interfaceMethods = new FastArray(1);
     private final Map<String, CachedField> attributes = new HashMap<>();
     private MethodChooser chooser;
 
@@ -294,6 +298,7 @@ public final class ClosureMetaClass extends MetaClassImpl {
         MetaMethod cmm = null;
         if (method == null && (resolveStrategy != Closure.DELEGATE_ONLY || !isInternalMethod(methodName))) {
             method = CLOSURE_METACLASS.pickMethod(methodName, argClasses);
+            if (method == null) method = pickInterfaceMethod(methodName, argClasses);
             // GROOVY-11858: delegate or owner may be desired target
             if (method != null && resolveStrategy != Closure.TO_SELF
                     && sender == getNonClosureOuter(getTheClass())) {
@@ -438,13 +443,45 @@ public final class ClosureMetaClass extends MetaClassImpl {
     public synchronized void initialize() {
         if (!isInitialized()) {
             CachedMethod[] methodArray = theCachedClass.getMethods();
+            Set<String> interfaceMethodNames = getInterfaceMethodNames(theClass);
             for (CachedMethod cachedMethod : methodArray) {
-                if (!cachedMethod.getName().equals(CLOSURE_DO_CALL_METHOD)) continue;
-                closureMethods.add(cachedMethod);
+                if (cachedMethod.getName().equals(CLOSURE_DO_CALL_METHOD)) {
+                    closureMethods.add(cachedMethod);
+                } else if (interfaceMethodNames.contains(cachedMethod.getName())
+                        && cachedMethod.getDeclaringClass() == theCachedClass
+                        && !cachedMethod.isStatic() && !cachedMethod.getCachedMethod().isSynthetic()) {
+                    interfaceMethods.add(cachedMethod);
+                }
             }
             assignMethodChooser();
             super.reinitialize();
         }
+    }
+
+    /**
+     * Returns the names of the abstract methods of the interfaces a closure class declares besides
+     * {@link GeneratedClosure}: statically compiled code makes a closure class implement the functional
+     * interface it is written for, if the closure is stored where a type parameter is bound to the interface.
+     */
+    private static Set<String> getInterfaceMethodNames(final Class<?> closureClass) {
+        Set<String> names = new HashSet<>();
+        for (Class<?> type : closureClass.getInterfaces()) {
+            if (type == GeneratedClosure.class) continue;
+            for (Method method : type.getMethods()) {
+                if (Modifier.isAbstract(method.getModifiers())) names.add(method.getName());
+            }
+        }
+        return names;
+    }
+
+    private MetaMethod pickInterfaceMethod(final String methodName, final Class<?>[] argClasses) {
+        if (interfaceMethods.isEmpty()) return null;
+        FastArray named = new FastArray(1);
+        for (int i = 0, n = interfaceMethods.size(); i < n; i += 1) {
+            MetaMethod method = (MetaMethod) interfaceMethods.get(i);
+            if (method.getName().equals(methodName)) named.add(method);
+        }
+        return named.isEmpty() ? null : (MetaMethod) new NormalMethodChooser(theClass, named).chooseMethod(argClasses, false);
     }
 
     private void assignMethodChooser() {
@@ -556,6 +593,7 @@ public final class ClosureMetaClass extends MetaClassImpl {
     public List<MetaMethod> getMethods() {
         List<MetaMethod> answer = CLOSURE_METACLASS.getMetaMethods();
         answer.addAll(closureMethods.toList());
+        answer.addAll(interfaceMethods.toList());
         return answer;
     }
 
@@ -596,7 +634,9 @@ public final class ClosureMetaClass extends MetaClassImpl {
         if (CLOSURE_CALL_METHOD.equals(methodName) || CLOSURE_DO_CALL_METHOD.equals(methodName)) {
             return pickClosureMethod(argumentTypes != null ? argumentTypes : MetaClassHelper.EMPTY_CLASS_ARRAY);
         }
-        return CLOSURE_METACLASS.getMetaMethod(methodName, argumentTypes);
+        MetaMethod method = CLOSURE_METACLASS.getMetaMethod(methodName, argumentTypes);
+        if (method == null) method = pickInterfaceMethod(methodName, argumentTypes != null ? argumentTypes : MetaClassHelper.EMPTY_CLASS_ARRAY);
+        return method;
     }
 
     /**
