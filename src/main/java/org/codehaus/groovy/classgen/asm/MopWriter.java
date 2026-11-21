@@ -30,6 +30,7 @@ import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.MethodCallExpression;
 import org.codehaus.groovy.ast.expr.PropertyExpression;
 import org.codehaus.groovy.ast.tools.ParameterUtils;
+import org.codehaus.groovy.classgen.AsmClassGenerator;
 import org.codehaus.groovy.control.SourceUnit;
 import org.objectweb.asm.MethodVisitor;
 
@@ -238,6 +239,8 @@ public class MopWriter {
             // super$ method for non-private isThis=false
             // --> results in XOR
             if (isThis ^ mn.isPrivate()) continue;
+            // a super$ method cannot call a package-private method of another run-time package
+            if (!isThis && mn.isPackageScope() && !AsmClassGenerator.isInSameRuntimePackage(mn.getDeclaringClass(), controller.getClassNode())) continue;
 
             String methodName = mn.getName();
             Parameter[] parameters = mn.getParameters();
