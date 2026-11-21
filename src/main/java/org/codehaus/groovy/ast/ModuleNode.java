@@ -560,20 +560,30 @@ public class ModuleNode extends ASTNode {
      */
     public void setModuleDeclaration(final ModuleInfoNode moduleDeclaration) {
         if (this.moduleDeclaration == moduleDeclaration) {
+            attachModuleDeclaration(moduleDeclaration);
             return;
         }
         ModuleInfoNode previous = this.moduleDeclaration;
+        // Leave the previous declaration attached until adoption succeeds.
+        // Detaching it first hides the owner, and a rejection then restores null.
         this.moduleDeclaration = moduleDeclaration;
+        attachModuleDeclaration(moduleDeclaration);
         if (unit == null) {
+            detachModuleDeclaration(previous);
             return;
         }
         unit.setModuleInfo(moduleDeclaration);
-        // A rejected declaration must not stay here. That leftover would make a
-        // later call with the same instance look unchanged and drop the conflict.
-        if (this.moduleDeclaration == moduleDeclaration
-                && moduleDeclaration != null
-                && unit.getModuleInfo() != moduleDeclaration) {
-            this.moduleDeclaration = unit.getModuleInfo() == previous ? previous : null;
+        if (unit.getModuleInfo() == moduleDeclaration) {
+            detachModuleDeclaration(previous);
+            return;
+        }
+        // Rejected. rejectModuleInfo restores the accepted declaration when this
+        // module owns it. A leftover rejected instance would make a later call
+        // with the same instance look unchanged and drop the conflict.
+        detachModuleDeclaration(moduleDeclaration);
+        if (unit.getModuleInfo() == previous && this.moduleDeclaration != previous) {
+            this.moduleDeclaration = previous;
+            attachModuleDeclaration(previous);
         }
     }
 
@@ -582,23 +592,22 @@ public class ModuleNode extends ASTNode {
      * Used when a rejected declaration is cleared or the accepted one is restored.
      */
     void replaceModuleDeclaration(final ModuleInfoNode moduleDeclaration) {
+        if (this.moduleDeclaration != moduleDeclaration) {
+            detachModuleDeclaration(this.moduleDeclaration);
+        }
         this.moduleDeclaration = moduleDeclaration;
+        attachModuleDeclaration(moduleDeclaration);
     }
 
-    /**
-     * Drops {@code node} from this module by identity. Does not synthesize a
-     * script class, and does not remove a different class of the same name.
-     */
-    void removeClass(final ClassNode node) {
-        if (node == null) {
-            return;
+    private void attachModuleDeclaration(final ModuleInfoNode moduleDeclaration) {
+        if (moduleDeclaration != null) {
+            moduleDeclaration.setSourceModule(this);
         }
-        Iterator<ClassNode> it = classes.iterator();
-        while (it.hasNext()) {
-            if (it.next() == node) {
-                it.remove();
-                return;
-            }
+    }
+
+    private void detachModuleDeclaration(final ModuleInfoNode moduleDeclaration) {
+        if (moduleDeclaration != null && moduleDeclaration.getSourceModule() == this) {
+            moduleDeclaration.setSourceModule(null);
         }
     }
 

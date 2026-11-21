@@ -19,9 +19,7 @@
 package org.codehaus.groovy.tools.javac;
 
 import groovy.lang.GroovyClassLoader;
-import org.apache.groovy.ast.ModuleInfoNode;
 import org.codehaus.groovy.ast.ClassNode;
-import org.codehaus.groovy.ast.CompileUnit;
 import org.codehaus.groovy.classgen.GeneratorContext;
 import org.codehaus.groovy.classgen.VariableScopeVisitor;
 import org.codehaus.groovy.control.CompilationFailedException;
@@ -70,14 +68,7 @@ public class JavaStubCompilationUnit extends CompilationUnit {
 
         addPhaseOperation((final SourceUnit source, final GeneratorContext context, final ClassNode classNode) -> {
             try {
-                CompileUnit fallback = source != null && source.getAST() != null ? source.getAST().getUnit() : null;
-                // A module-info carrier is not a type. A type declaration in
-                // module-info.java is not a modular compilation unit, so it is
-                // neither written nor counted.
-                if (ModuleInfoNode.of(classNode, fallback) != null) {
-                    return;
-                }
-                stubGenerator.generateClass(classNode, fallback);
+                stubGenerator.generateClass(classNode);
                 stubCount += 1;
             } catch (FileNotFoundException e) {
                 source.addException(e);

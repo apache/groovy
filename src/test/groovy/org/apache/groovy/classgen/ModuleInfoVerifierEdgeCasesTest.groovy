@@ -30,7 +30,6 @@ import org.codehaus.groovy.ast.ClassNode
 import org.codehaus.groovy.ast.CompileUnit
 import org.codehaus.groovy.ast.ImportNode
 import org.codehaus.groovy.ast.ModuleNode
-import org.codehaus.groovy.classgen.AsmClassGenerator
 import org.codehaus.groovy.classgen.GeneratorContext
 import org.codehaus.groovy.control.CompilationUnit
 import org.codehaus.groovy.control.CompilerConfiguration
@@ -63,32 +62,20 @@ final class ModuleInfoVerifierEdgeCasesTest {
         assert ModuleInfoNode.isModuleInfoSource('module-info.java')
         assert ModuleInfoNode.isModuleInfoSource('src/module-info.groovy')
         assert ModuleInfoNode.isModuleInfoSource('src\\module-info.java')
-        assert ModuleInfoNode.of(null) == null
-        assert ModuleInfoNode.of(new ClassNode('Foo', 0, ClassHelper.OBJECT_TYPE)) == null
 
         def config = new CompilerConfiguration()
         def loader = new GroovyClassLoader()
         def source = new SourceUnit('Foo.groovy', 'class Foo {}', config, loader, new ErrorCollector(config))
-        def guarded = new ClassNode('module-info', 0, ClassHelper.OBJECT_TYPE)
-        // Class metadata is not the declaration. Without a compile unit, of() is null.
-        guarded.putNodeMetaData(ModuleInfoNode.class, new ModuleInfoNode('demo.guard', false, []))
-        assert ModuleInfoNode.of(guarded) == null
-        ModuleInfoVerifier.check(null, guarded)
-        ModuleInfoVerifier.check(source, new ClassNode('Foo', 0, ClassHelper.OBJECT_TYPE))
+        ModuleInfoVerifier.check(null, (ModuleInfoNode) null)
+        ModuleInfoVerifier.check(source, (ModuleInfoNode) null)
 
         def compileUnit = new CompileUnit(loader, null, config)
         def module = new ModuleNode(compileUnit)
         def declaration = new ModuleInfoNode('demo.guard', false, [])
-        declaration.classNode = guarded
-        module.addClass(guarded)
         module.moduleDeclaration = declaration
         compileUnit.addModule(module)
         assert compileUnit.moduleInfo.is(declaration)
-        assert declaration.classNode.is(guarded)
-        assert ModuleInfoNode.of(guarded).is(declaration)
-        guarded.metaDataMap = null
-        assert guarded.getNodeMetaData(ModuleInfoNode) == null
-        assert compileUnit.moduleInfo.is(declaration)
+        assert declaration.sourceModule.is(module)
     }
 
     @Test
@@ -107,8 +94,9 @@ final class ModuleInfoVerifierEdgeCasesTest {
         source.parse()
         source.completePhase()
         source.convert()
-        def moduleInfo = source.AST.classes.find { it.name == 'module-info' }
-        def declaration = ModuleInfoNode.of(moduleInfo)
+        def declaration = source.AST.moduleDeclaration
+        assert declaration != null
+        assert !source.AST.classes.any { it.name == 'module-info' }
         declaration.addAnnotation(new AnnotationNode(ClassHelper.make('missing.Anno')))
         // Static-star import node carries a null package name; simple-name lookup must skip it.
         source.AST.starImports << new ImportNode(ClassHelper.OBJECT_TYPE)
@@ -118,7 +106,7 @@ final class ModuleInfoVerifierEdgeCasesTest {
         source.AST.starImports << new ImportNode('java.util')
         source.AST.starImports << new ImportNode('java.util')
         assert source.AST.unit == null
-        ModuleInfoVerifier.check(source, moduleInfo)
+        ModuleInfoVerifier.check(source, declaration)
         def messages = (0..<source.errorCollector.errorCount).collect { source.errorCollector.getSyntaxError(it)?.message }.join('\n')
         assert messages.contains('not accessible')
         assert declaration.uses.find { it.serviceName == 'java.lang.Runnable' }.resolvedType.name == 'java.lang.Runnable'
@@ -138,9 +126,8 @@ final class ModuleInfoVerifierEdgeCasesTest {
         loader.set(source, null)
         assert source.classLoader == null
         assert source.AST.unit == null
-        def moduleInfo = source.AST.classes.find { it.name == 'module-info' }
-        ModuleInfoVerifier.check(source, moduleInfo)
-        def declaration = ModuleInfoNode.of(moduleInfo)
+        def declaration = source.AST.moduleDeclaration
+        ModuleInfoVerifier.check(source, declaration)
         assert declaration.uses[0].resolvedType.name == 'java.lang.Runnable'
         assert source.errorCollector.errorCount == 0
     }
@@ -165,9 +152,6 @@ final class ModuleInfoVerifierEdgeCasesTest {
         def concealed = new ClassNode('demo.other.X', Opcodes.ACC_PUBLIC, ClassHelper.OBJECT_TYPE)
         module.addClass(hidden)
         module.addClass(concealed)
-        def classNode = new ClassNode('module-info', Opcodes.ACC_ABSTRACT | Opcodes.ACC_INTERFACE, ClassHelper.OBJECT_TYPE)
-        classNode.setModule(module)
-        module.addClass(classNode)
         compileUnit.addModule(module)
         def declaration = new ModuleInfoNode('demo.emit', false, [
             new Requires('java.sql', true, true),
@@ -177,17 +161,13 @@ final class ModuleInfoVerifierEdgeCasesTest {
             new Provides('java.lang.Runnable', ['demo.hid.H'])
         ])
         declaration.addAnnotation(new AnnotationNode(ClassHelper.DEPRECATED_TYPE))
-        classNode.addAnnotation(declaration.annotations[0])
-        declaration.classNode = classNode
         module.moduleDeclaration = declaration
         compileUnit.moduleInfo = declaration
+        def context = new GeneratorContext(compileUnit)
 
         def writer = new ClassWriter(0)
-        def generator = new AsmClassGenerator(null, new GeneratorContext(compileUnit), writer, 'module-info.groovy')
-        def emit = AsmClassGenerator.getDeclaredMethod('emitModuleInfo', ClassNode, ModuleInfoNode, int)
-        emit.accessible = true
         // Below the module class-file minimum: the emitter must raise it to V9.
-        emit.invoke(generator, classNode, declaration, 52)
+        ModuleInfoClassGenerator.write(writer, null, context, declaration, 52)
         def md = ModuleDescriptor.read(new ByteArrayInputStream(writer.toByteArray()))
         assert !md.open
         assert md.name() == 'demo.emit'
@@ -198,25 +178,22 @@ final class ModuleInfoVerifierEdgeCasesTest {
         // Unresolved service names are still written, with dots folded to slashes by the fallback.
         assert md.uses().contains('java.lang.Runnable') || md.uses().contains('java/lang/Runnable')
         assert md.packages().contains('demo.other')
+        assert new String(writer.toByteArray(), 'ISO-8859-1').contains('Deprecated')
 
         def skipping = new ClassVisitor(Opcodes.ASM9) {}
-        def skippingGenerator = new AsmClassGenerator(null, new GeneratorContext(compileUnit), skipping, 'module-info.groovy')
-        emit.invoke(skippingGenerator, classNode, declaration, Opcodes.V17)
+        ModuleInfoClassGenerator.write(skipping, null, context, declaration, Opcodes.V17)
 
         // A default-package class and provider are skipped (unnamed packages cannot appear in ModulePackages).
         def looseType = new ClassNode('Loose', Opcodes.ACC_PUBLIC, ClassHelper.OBJECT_TYPE)
         module.addClass(looseType)
         declaration.provides[0].resolvedProviders = [looseType, hidden]
         def unnamed = new ClassWriter(0)
-        def unnamedGenerator = new AsmClassGenerator(null, new GeneratorContext(compileUnit), unnamed, 'module-info.groovy')
-        emit.invoke(unnamedGenerator, classNode, declaration, Opcodes.V17)
+        ModuleInfoClassGenerator.write(unnamed, null, context, declaration, Opcodes.V17)
 
-        // Module java.base has no implicit requires edge, and a class with no compile unit skips package scanning.
+        // Module java.base has no implicit requires edge.
         def baseDecl = new ModuleInfoNode('java.base', false, [])
-        def baseNode = new ClassNode('module-info', Opcodes.ACC_ABSTRACT | Opcodes.ACC_INTERFACE, ClassHelper.OBJECT_TYPE)
         def baseWriter = new ClassWriter(0)
-        def baseGenerator = new AsmClassGenerator(null, new GeneratorContext(compileUnit), baseWriter, 'module-info.groovy')
-        emit.invoke(baseGenerator, baseNode, baseDecl, Opcodes.V17)
+        ModuleInfoClassGenerator.write(baseWriter, null, new GeneratorContext(new CompileUnit(loader, null, config)), baseDecl, Opcodes.V17)
         def base = ModuleDescriptor.read(new ByteArrayInputStream(baseWriter.toByteArray()))
         assert base.name() == 'java.base'
         assert base.requires().empty
@@ -225,30 +202,25 @@ final class ModuleInfoVerifierEdgeCasesTest {
     @Test
     void testNullModuleAndUnparsedSource() {
         def parsed = parsed('module demo.nullmod { uses Runnable; }')
-        def classNode = parsed.AST.classes.find { it.name == 'module-info' }
+        def declaration = parsed.AST.moduleDeclaration
+        declaration.sourceModule = null
         def holding = new CompilationUnit(parsed.configuration, null, new GroovyClassLoader())
-        holding.AST.moduleInfo = parsed.AST.moduleDeclaration
-        classNode.setModule(null)
-        ModuleInfoVerifier.check(parsed, classNode, holding)
+        holding.AST.moduleInfo = declaration
+        ModuleInfoVerifier.check(parsed, declaration, holding)
         assert messages(parsed).contains('unable to resolve class Runnable')
 
         def config = new CompilerConfiguration()
         def loader = new GroovyClassLoader()
         def unparsed = new SourceUnit('module-info.groovy', 'module demo.x {}', config, loader, new ErrorCollector(config))
-        def info = new ClassNode('module-info', Opcodes.ACC_ABSTRACT | Opcodes.ACC_INTERFACE, ClassHelper.OBJECT_TYPE)
         def module = new ModuleNode(unparsed)
-        info.setModule(module)
-        def declaration = new ModuleInfoNode('demo.x', false, [
+        def info = new ModuleInfoNode('demo.x', false, [
             new ModuleInfoNode.Requires('java.base', false, false)
         ])
-        declaration.classNode = info
-        module.moduleDeclaration = declaration
-        assert ModuleInfoNode.of(info).is(declaration)
+        module.moduleDeclaration = info
+        assert info.sourceModule.is(module)
         def hosted = ClassHelper.makeWithoutCaching('not.yet.Resolved')
         hosted.putNodeMetaData(ModuleNode, new ModuleNode(new CompileUnit(loader, null, config)))
-        def annotation = new AnnotationNode(hosted)
-        declaration.addAnnotation(annotation)
-        info.addAnnotation(annotation)
+        info.addAnnotation(new AnnotationNode(hosted))
         assert unparsed.AST == null
         ModuleInfoVerifier.check(unparsed, info)
         assert messages(unparsed).contains('annotation @not.yet.Resolved is not accessible')
@@ -268,8 +240,7 @@ final class ModuleInfoVerifierEdgeCasesTest {
             }
         }
         def parsed = parsed('module demo.gap { uses java.lang.Runnable; }')
-        def moduleInfo = parsed.AST.classes.find { it.name == 'module-info' }
-        ModuleInfoVerifier.check(parsed, moduleInfo, null, emptyFinder)
+        ModuleInfoVerifier.check(parsed, parsed.AST.moduleDeclaration, null, emptyFinder)
         assert messages(parsed).contains('not accessible')
     }
 
@@ -313,55 +284,22 @@ final class ModuleInfoVerifierEdgeCasesTest {
 
     // GROOVY-9273
     @Test
-    void testModuleInfoIdentityAndRepeatedDeclaration() {
-        def carrier = new ClassNode('module-info', Opcodes.ACC_ABSTRACT | Opcodes.ACC_INTERFACE, ClassHelper.OBJECT_TYPE)
-        def declaration = new ModuleInfoNode('demo.one', false, [])
-        declaration.classNode = carrier
-        def stranger = new ClassNode('module-info', Opcodes.ACC_ABSTRACT | Opcodes.ACC_INTERFACE, ClassHelper.OBJECT_TYPE)
-        assert declaration.isEmittedAs(carrier)
-        assert !declaration.isEmittedAs(stranger)
-        assert !declaration.isEmittedAs(new ClassNode('demo.One', 0, ClassHelper.OBJECT_TYPE))
-        assert !declaration.isEmittedAs(null)
-
+    void testRepeatedDeclarationIsRejected() {
         def config = new CompilerConfiguration()
         def loader = new GroovyClassLoader()
         def compileUnit = new CompileUnit(loader, null, config)
         def module = new ModuleNode(compileUnit)
-        module.addClass(carrier)
+        def declaration = new ModuleInfoNode('demo.one', false, [])
         module.moduleDeclaration = declaration
         assert compileUnit.moduleInfo.is(declaration)
-        assert ModuleInfoNode.of(carrier).is(declaration)
+        assert declaration.sourceModule.is(module)
+        assert !module.classes.any { it.name == 'module-info' }
 
-        // A replacement carrier in the same source still belongs to this declaration.
-        def replaced = new ClassNode('module-info', Opcodes.ACC_ABSTRACT | Opcodes.ACC_INTERFACE, ClassHelper.OBJECT_TYPE)
-        replaced.setModule(module)
-        assert declaration.isEmittedAs(replaced)
-        assert ModuleInfoNode.of(replaced).is(declaration)
-
-        // A different source's module-info is not this declaration, name notwithstanding.
-        def other = new ClassNode('module-info', Opcodes.ACC_ABSTRACT | Opcodes.ACC_INTERFACE, ClassHelper.OBJECT_TYPE)
-        def otherDeclaration = new ModuleInfoNode('demo.two', false, [])
-        otherDeclaration.classNode = other
-        def otherModule = new ModuleNode(new CompileUnit(loader, null, config))
-        otherModule.addClass(other)
-        otherModule.moduleDeclaration = otherDeclaration
-        assert !declaration.isEmittedAs(other)
-        assert otherDeclaration.isEmittedAs(other)
-        assert ModuleInfoNode.of(other).is(otherDeclaration)
-        assert ModuleInfoNode.of(stranger) == null
-
-        // The caller's compile unit is used when the class no longer points at its module.
-        carrier.setModule(null)
-        assert carrier.compileUnit == null
-        assert ModuleInfoNode.of(carrier, compileUnit).is(declaration)
-        assert ModuleInfoNode.of(stranger, compileUnit) == null
-
-        // Setting another declaration on the same module, with no SourceUnit, is rejected
-        // and does not leave the rejected declaration in place.
         def second = new ModuleInfoNode('demo.second', false, [])
         module.moduleDeclaration = second
         assert compileUnit.moduleInfo.is(declaration)
         assert module.moduleDeclaration.is(declaration)
+        assert second.sourceModule == null
         assert compileUnit.consumeModuleInfoConflict().contains('only one module declaration')
         module.moduleDeclaration = second
         assert compileUnit.moduleInfo.is(declaration)
@@ -385,7 +323,7 @@ final class ModuleInfoVerifierEdgeCasesTest {
             }
         }
         def parsed = parsed("module ${moduleName} { requires ${missing}; }")
-        ModuleInfoVerifier.check(parsed, parsed.AST.classes.find { it.name == 'module-info' }, failing, null)
+        ModuleInfoVerifier.check(parsed, parsed.AST.moduleDeclaration, failing, null)
         assert messages(parsed).contains('module resolution failed for ' + moduleName)
     }
 

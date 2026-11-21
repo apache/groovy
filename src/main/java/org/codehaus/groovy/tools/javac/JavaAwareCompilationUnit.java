@@ -21,7 +21,6 @@ package org.codehaus.groovy.tools.javac;
 import groovy.lang.GroovyClassLoader;
 import org.apache.groovy.ast.ModuleInfoNode;
 import org.codehaus.groovy.ast.ClassNode;
-import org.codehaus.groovy.ast.CompileUnit;
 import org.codehaus.groovy.ast.GroovyClassVisitor;
 import org.codehaus.groovy.ast.ModuleNode;
 import org.codehaus.groovy.classgen.GeneratorContext;
@@ -180,9 +179,8 @@ public class JavaAwareCompilationUnit extends CompilationUnit {
 
         addPhaseOperation((final SourceUnit source, final GeneratorContext context, final ClassNode classNode) -> {
             try {
-                if (!javaSources.isEmpty() && !isModuleDeclaration(source, classNode)) {
-                    CompileUnit fallback = source != null && source.getAST() != null ? source.getAST().getUnit() : null;
-                    stubGenerator.generateClass(classNode, fallback);
+                if (!javaSources.isEmpty()) {
+                    stubGenerator.generateClass(classNode);
                 }
             } catch (FileNotFoundException fnfe) {
                 source.addException(fnfe);
@@ -406,16 +404,6 @@ public class JavaAwareCompilationUnit extends CompilationUnit {
             return;
         }
         super.writeClassFile(groovyClass);
-    }
-
-    /**
-     * Whether {@code classNode} is the emission carrier of this compilation's
-     * module declaration. The compile unit is taken from the source when the
-     * class no longer points at its module.
-     */
-    private static boolean isModuleDeclaration(final SourceUnit source, final ClassNode classNode) {
-        return ModuleInfoNode.of(classNode,
-                source != null && source.getAST() != null ? source.getAST().getUnit() : null) != null;
     }
 
     private void addJavaOrGroovySource(final File file) {

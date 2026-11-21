@@ -22,7 +22,6 @@ import groovy.test.GroovyAssert
 import groovy.transform.CompileStatic
 import org.apache.groovy.ast.ModuleInfoNode
 import org.codehaus.groovy.ast.ClassNode
-import org.codehaus.groovy.ast.ModuleNode
 import org.codehaus.groovy.classgen.GeneratorContext
 import org.codehaus.groovy.control.CompilationFailedException
 import org.codehaus.groovy.control.CompilationUnit
@@ -102,12 +101,9 @@ final class ModuleInfoTest {
                 class Pub {}
             '''
         ])
-        def cn = unit.ast.classes.find { it.name == 'module-info' }
         def decl = unit.ast.moduleInfo
         assert decl != null
-        assert decl.is(ModuleInfoNode.of(cn))
-        assert decl.classNode.is(cn)
-        assert cn.getNodeMetaData(ModuleInfoNode) == null
+        assert !unit.ast.classes.any { it.name == 'module-info' }
         assert decl.name == 'demo.ast'
         assert decl.open
         assert decl.directives.size() == decl.requires.size() + decl.exports.size() + decl.uses.size() + decl.provides.size()
@@ -1240,8 +1236,7 @@ final class ModuleInfoTest {
                 }
             ''')
             unit.compile()
-            def cn = unit.ast.classes.find { it.name == 'module-info' }
-            assert cn.groovydoc?.content?.contains('Module documentation')
+            assert unit.ast.moduleInfo.groovydoc?.content?.contains('Module documentation')
             def text = new String(unit.classes.find { it.name == 'module-info' }.bytes, 'ISO-8859-1')
             assert text.contains('Lgroovy/lang/Groovydoc;')
             assert descriptor(unit).name() == 'demo.nl'
@@ -1690,7 +1685,7 @@ final class ModuleInfoTest {
 
     // GROOVY-9273
     @Test
-    void testGenerateClassSkipsModuleInfoCarrier() {
+    void testGenerateClassDoesNotInventModuleInfoStub() {
         def root = dir('stub-carrier')
         def config = new CompilerConfiguration(targetDirectory: new File(root, 'out'))
         def loader = new GroovyClassLoader(GroovyAssert.class.classLoader)
@@ -1699,35 +1694,17 @@ final class ModuleInfoTest {
             unit.addSource('module-info.groovy', 'module demo.carrier { exports demo.carrier; }')
             unit.addSource('demo/carrier/A.groovy', 'package demo.carrier; class A {}')
             unit.compile(Phases.CONVERSION)
-            def carrier = unit.ast.moduleInfo.classNode
-            assert carrier != null
-            assert carrier.compileUnit.is(unit.ast)
-            assert ModuleInfoNode.of(carrier).is(unit.ast.moduleInfo)
+            assert unit.ast.moduleInfo != null
+            assert unit.ast.moduleInfo.name == 'demo.carrier'
+            assert !unit.ast.classes.any { it.name == 'module-info' }
+            def type = unit.ast.classes.find { it.name == 'demo.carrier.A' }
+            assert type != null
 
-            def intact = new File(root, 'intact')
-            intact.mkdirs()
-            new JavaStubGenerator(intact, false, 'UTF-8').generateClass(carrier)
-            assert !new File(intact, 'module-info.java').exists()
-
-            // The carrier no longer points at the compile unit. A module that
-            // does not hold the declaration still lets a type stub be rendered,
-            // which is what the one-argument call does.
-            carrier.module = new ModuleNode((SourceUnit) null)
-            assert carrier.compileUnit == null
-            assert ModuleInfoNode.of(carrier) == null
-            assert ModuleInfoNode.of(carrier, unit.ast).is(unit.ast.moduleInfo)
-
-            def missed = new File(root, 'missed')
-            missed.mkdirs()
-            new JavaStubGenerator(missed, false, 'UTF-8').generateClass(carrier)
-            def typeStub = new File(missed, 'module-info.java')
-            assert typeStub.isFile()
-            assert typeStub.text.contains('interface module-info')
-
-            def kept = new File(root, 'kept')
-            kept.mkdirs()
-            new JavaStubGenerator(kept, false, 'UTF-8').generateClass(carrier, unit.ast)
-            assert !new File(kept, 'module-info.java').exists()
+            def stubs = new File(root, 'stubs')
+            stubs.mkdirs()
+            new JavaStubGenerator(stubs, false, 'UTF-8').generateClass(type)
+            assert new File(stubs, 'demo/carrier/A.java').isFile()
+            assert !new File(stubs, 'module-info.java').exists()
         } finally {
             loader.close()
         }
@@ -1871,15 +1848,17 @@ final class ModuleInfoTest {
         def loader = new GroovyClassLoader(GroovyAssert.class.classLoader)
         try {
             def unit = new CompilationUnit(config, null, loader)
+            def seen = []
             unit.addPhaseOperation({ SourceUnit source, GeneratorContext context, ClassNode classNode ->
-                if (classNode.name == 'module-info') {
-                    // Drop auxiliary metadata, including a ModuleInfoNode key, but keep the
-                    // module link the rest of the pipeline uses to find the compile unit.
-                    def module = classNode.module
-                    classNode.metaDataMap = null
-                    classNode.module = module
-                    assert classNode.getNodeMetaData(ModuleInfoNode) == null
-                }
+                assert classNode.name != 'module-info'
+                seen << classNode.name
+                // Class metadata is not where the declaration lives. Clearing it
+                // must not drop the compile-unit declaration. The module link is
+                // restored because later phases read it from the class.
+                def module = classNode.module
+                classNode.metaDataMap = null
+                classNode.module = module
+                assert classNode.getNodeMetaData(ModuleInfoNode) == null
             }, Phases.SEMANTIC_ANALYSIS)
             unit.addSource('module-info.groovy', '''
                 module demo.strip {
@@ -1894,11 +1873,8 @@ final class ModuleInfoTest {
             def declaration = unit.ast.moduleInfo
             assert declaration != null
             assert declaration.name == 'demo.strip'
-            def carrier = declaration.classNode
-            assert carrier != null
-            assert carrier.name == 'module-info'
-            assert carrier.getNodeMetaData(ModuleInfoNode) == null
-            assert ModuleInfoNode.of(carrier).is(declaration)
+            assert seen == ['demo.strip.A']
+            assert !unit.ast.classes.any { it.name == 'module-info' }
             assert unit.compiledClasses.packages.empty
             assert !unit.compiledClasses.hasUnnamedClass()
             def md = descriptor(unit)
@@ -2041,6 +2017,98 @@ final class ModuleInfoTest {
         } finally {
             loader.close()
         }
+    }
+
+    // GROOVY-9273
+    @Test
+    void testModuleInfoIsProcessedBeforeClasses() {
+        def config = new CompilerConfiguration(targetDirectory: dir('order'))
+        def loader = new GroovyClassLoader(GroovyAssert.class.classLoader)
+        try {
+            def unit = new CompilationUnit(config, null, loader)
+            def seen = []
+            unit.addFirstPhaseOperation({ SourceUnit source, GeneratorContext context, ClassNode classNode ->
+                assert classNode.name != 'module-info'
+                def declaration = unit.ast.moduleInfo
+                assert declaration != null
+                assert declaration.readsReady
+                assert !declaration.resolutionFailed
+                assert declaration.hasResolvedTypes()
+                assert declaration.uses[0].resolvedType?.name == 'java.lang.Runnable'
+                seen << classNode.name
+            }, Phases.SEMANTIC_ANALYSIS)
+            unit.addSource('module-info.groovy', '''
+                module demo.order {
+                    exports demo.order;
+                    uses java.lang.Runnable;
+                }
+            ''')
+            unit.addSource('demo/order/A.groovy', '''
+                package demo.order
+                class A implements Runnable { void run() {} }
+            ''')
+            unit.compile()
+            assert seen == ['demo.order.A']
+            assert !unit.ast.classes.any { it.name == 'module-info' }
+            def moduleClass = unit.classes.find { it.name == 'module-info' }
+            assert moduleClass != null
+            def md = ModuleDescriptor.read(new ByteArrayInputStream(moduleClass.bytes))
+            assert md.name() == 'demo.order'
+            assert md.exports()*.source() == ['demo.order']
+            assert md.uses() == ['java.lang.Runnable'] as Set
+        } finally {
+            loader.close()
+        }
+    }
+
+    // GROOVY-9273
+    @Test
+    void testClassTransformsDoNotSeeModuleDeclaration() {
+        def unit = compile(dir('xform'), [
+            'module-info.groovy': 'module demo.xform { exports demo.xform; }',
+            'A.groovy': 'package demo.xform; class A {}'
+        ])
+        assert unit.ast.moduleInfo.name == 'demo.xform'
+        assert unit.ast.classes*.name == ['demo.xform.A']
+        assert unit.classes.any { it.name == 'module-info' }
+    }
+
+    // GROOVY-9273
+    @Test
+    void testNamedModuleRejectsTypeFromUnreadModule() {
+        def messages = fail(dir('awt'), [
+            'module-info.groovy': 'module demo.awt { exports demo.awt; }',
+            'A.groovy': 'package demo.awt; class A { java.awt.Frame frame }'
+        ])
+        assert messages.contains('not accessible')
+        assert messages.contains('java.awt.Frame')
+    }
+
+    // GROOVY-9273
+    @Test
+    void testNamedModuleAllowsTypeFromRequiredModule() {
+        def unit = compile(dir('awt-ok'), [
+            'module-info.groovy': '''
+                module demo.awt {
+                    requires java.desktop;
+                    exports demo.awt;
+                }
+            ''',
+            'A.groovy': 'package demo.awt; class A { java.awt.Frame frame }'
+        ])
+        assert unit.classes.any { it.name == 'demo.awt.A' }
+        assert unit.classes.any { it.name == 'module-info' }
+    }
+
+    // GROOVY-9273
+    @Test
+    void testUnnamedCompilationDoesNotApplyModuleAccess() {
+        def unit = compile(dir('awt-unnamed'), [
+            'A.groovy': 'class A { java.awt.Frame frame }'
+        ])
+        assert unit.ast.moduleInfo == null
+        assert unit.classes.any { it.name == 'A' }
+        assert unit.classes.every { it.name != 'module-info' }
     }
 
     private File dir(String name) {

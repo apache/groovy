@@ -22,6 +22,7 @@ import org.apache.groovy.ast.ModuleInfoNode;
 import org.codehaus.groovy.ast.AnnotatedNode;
 import org.codehaus.groovy.ast.AnnotationNode;
 import org.codehaus.groovy.ast.ClassCodeVisitorSupport;
+import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.ConstructorNode;
 import org.codehaus.groovy.ast.FieldNode;
@@ -109,6 +110,25 @@ public class ExtendedVerifier extends ClassCodeVisitorSupport {
     }
 
     /**
+     * Checks annotations on a module declaration against {@code ElementType.MODULE}.
+     * A temporary class is used only because annotation checking records that the
+     * current class is annotated. The class is not part of the AST.
+     *
+     * @param declaration the module declaration
+     */
+    public void visitModuleAnnotations(final ModuleInfoNode declaration) {
+        if (declaration == null || declaration.getAnnotations().isEmpty()) {
+            return;
+        }
+        this.currentClass = new ClassNode(ModuleInfoNode.CLASS_FILE_NAME, Opcodes.ACC_ABSTRACT | Opcodes.ACC_INTERFACE, ClassHelper.OBJECT_TYPE);
+        try {
+            visitAnnotations(declaration, MODULE_TARGET);
+        } finally {
+            this.currentClass = null;
+        }
+    }
+
+    /**
      * {@inheritDoc}
      */
     @Override
@@ -131,11 +151,6 @@ public class ExtendedVerifier extends ClassCodeVisitorSupport {
         ModuleNode module = node.getModule();
         if (module != null && visitedModules.add(module)) {
             visitImportAnnotations(module);
-        }
-        if (ModuleInfoNode.of(node, source != null && source.getAST() != null ? source.getAST().getUnit() : null) != null) {
-            // Module annotations use ElementType.MODULE, not TYPE (JLS 9.7.4 / 9.6.4.1).
-            visitAnnotations(node, MODULE_TARGET);
-            return;
         }
         if (node.isAnnotationDefinition()) {
             visitAnnotations(node, ANNOTATION_TARGET);

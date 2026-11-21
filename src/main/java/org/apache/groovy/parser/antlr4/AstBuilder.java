@@ -566,18 +566,10 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
         ModuleInfoNode declaration = new ModuleInfoNode(name, open, directives);
         declaration.addAnnotations(this.visitAnnotationsOpt(ctx.annotationsOpt()));
         configureAST(declaration, ctx);
-
-        // Carrier so resolution, annotation checking, and class writing have a
-        // node to visit. The declaration itself lives on the compile unit
-        // (JLS §7.7); bytecode emission writes ACC_MODULE, not this interface.
-        ClassNode moduleInfo = new ClassNode("module-info", Opcodes.ACC_ABSTRACT | Opcodes.ACC_INTERFACE, ClassHelper.OBJECT_TYPE);
-        declaration.setClassNode(moduleInfo);
-        moduleInfo.addAnnotations(declaration.getAnnotations());
-        configureAST(moduleInfo, ctx);
+        // The declaration is not a class (JLS §7.7). It stays on the module
+        // and the compile unit, and is visited by its own phase operation.
         this.groovydocManager.handle(declaration, ctx);
-        this.groovydocManager.handle(moduleInfo, ctx);
         this.moduleNode.setModuleDeclaration(declaration);
-        this.moduleNode.addClass(moduleInfo);
         return this.moduleNode;
     }
 

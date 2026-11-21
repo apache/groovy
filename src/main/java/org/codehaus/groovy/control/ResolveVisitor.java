@@ -20,6 +20,7 @@ package org.codehaus.groovy.control;
 
 import groovy.lang.Tuple2;
 import groovy.transform.Internal;
+import org.apache.groovy.ast.ModuleInfoNode;
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.AnnotatedNode;
@@ -463,16 +464,90 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
         }
         if (preferImports && !type.isResolved() && !type.isPrimaryClassNode()) {
             resolveGenericsTypes(type.getGenericsTypes());
-            if (resolveAliasFromModule(type)) return;
+            if (resolveAliasFromModule(type)) {
+                checkModuleAccessibility(type, node);
+                return;
+            }
         }
-        if (resolve(type)) return;
-        if (resolveToInner(type)) return;
+        if (resolve(type)) {
+            checkModuleAccessibility(type, node);
+            return;
+        }
+        if (resolveToInner(type)) {
+            checkModuleAccessibility(type, node);
+            return;
+        }
 
         if (!type.hasPackageName() && isTypeParameterHiddenByStatic(type.getUnresolvedName())) {
             addError("The non-static type parameter " + type.getUnresolvedName() + " cannot be referenced from a static context", node);
             return;
         }
         addError("unable to resolve class " + type.toString(false) + msg, node);
+    }
+
+    /**
+     * Rejects a resolved type the current module declaration cannot read.
+     * No-op when this compilation has no module declaration, or when that
+     * declaration's readability set is not ready. Types declared in this
+     * compilation, including classes produced by joint compilation, stay
+     * accessible. A package that no explicit module owns is left alone, so
+     * language-runtime types on the classpath are not rejected. The module
+     * declaration is resolved before source classes so this test sees the graph.
+     *
+     * @param type a type that was resolved
+     * @param node the site to report, or {@code null} to use {@code type}
+     */
+    protected void checkModuleAccessibility(final ClassNode type, final ASTNode node) {
+        if (compilationUnit == null || type == null) {
+            return;
+        }
+        CompileUnit unit = compilationUnit.getAST();
+        ModuleInfoNode declaration = unit == null ? null : unit.getModuleInfo();
+        if (declaration == null || !declaration.isReadsReady()) {
+            return;
+        }
+        ClassNode resolved = type.redirect();
+        while (resolved.isArray()) {
+            resolved = resolved.getComponentType();
+        }
+        if (resolved.isGenericsPlaceHolder() || ClassHelper.isPrimitiveType(resolved)) {
+            return;
+        }
+        if (resolved.getCompileUnit() == unit || unit.getClass(resolved.getName()) != null) {
+            return;
+        }
+        ModuleNode owner = resolved.getModule();
+        if (owner != null && owner.getUnit() == unit) {
+            return;
+        }
+        CompiledClassIndex index = compilationUnit.getCompiledClasses();
+        if (index != null && index.contains(resolved.getName())) {
+            return;
+        }
+        if (!declaration.canAccess(resolved)) {
+            addError("class " + resolved.getName() + " is not accessible in module " + declaration.getName(), node == null ? type : node);
+        }
+    }
+
+    /**
+     * Runs {@code action} with {@code source} and {@code context} installed as the
+     * current resolution state, then restores the previous state.
+     *
+     * @param source the source errors are reported against
+     * @param context the class whose module and compile unit lookup uses
+     * @param action the resolution work
+     */
+    protected void withResolveContext(final SourceUnit source, final ClassNode context, final Runnable action) {
+        ClassNode previousClass = this.currentClass;
+        SourceUnit previousSource = this.source;
+        this.source = source;
+        this.currentClass = context;
+        try {
+            action.run();
+        } finally {
+            this.currentClass = previousClass;
+            this.source = previousSource;
+        }
     }
 
     /**
@@ -1754,6 +1829,57 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
     }
 
     /**
+     * Resolves a module's imports once. Single-type, star, and static imports
+     * share this path for classes and for a module declaration.
+     *
+     * @param module the module whose imports are resolved
+     */
+    protected void resolveImports(final ModuleNode module) {
+        if (module.hasImportsResolved()) {
+            return;
+        }
+        for (ImportNode importNode : module.getImports()) {
+            currentImport = importNode;
+            try {
+                ClassNode type = importNode.getType();
+                if (!resolve(type, false, false, true)) {
+                    addError("unable to resolve class " + type.getName(), type);
+                }
+            } finally {
+                currentImport = null;
+            }
+        }
+        for (ImportNode importNode : module.getStarImports()) {
+            if (importNode.getLineNumber() > 0) {
+                currentImport = importNode;
+                try {
+                    String importName = importNode.getPackageName();
+                    importName = importName.substring(0, importName.length() - 1);
+                    ClassNode type = ClassHelper.makeWithoutCaching(importName);
+                    if (resolve(type, false, false, true)) {
+                        importNode.setType(type);
+                    }
+                } finally {
+                    currentImport = null;
+                }
+            }
+        }
+        for (ImportNode importNode : module.getStaticImports().values()) {
+            ClassNode type = importNode.getType();
+            if (!resolve(type, true, true, true)) {
+                addError("unable to resolve class " + type.getName(), type);
+            }
+        }
+        for (ImportNode importNode : module.getStaticStarImports().values()) {
+            ClassNode type = importNode.getType();
+            if (!resolve(type, true, true, true)) {
+                addError("unable to resolve class " + type.getName(), type);
+            }
+        }
+        module.setImportsResolved(true);
+    }
+
+    /**
      * Resolves imports, headers, and member types for the supplied class.
      *
      * @param node the class to visit
@@ -1763,49 +1889,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
         ClassNode oldNode = currentClass; currentClass = node;
         Map<GenericsTypeName, GenericsType> outerNames = null;
         try {
-            ModuleNode module = node.getModule();
-            if (!module.hasImportsResolved()) {
-                for (ImportNode importNode : module.getImports()) {
-                    currentImport = importNode;
-                    try {
-                        ClassNode type = importNode.getType();
-                        if (!resolve(type, false, false, true)) {
-                            addError("unable to resolve class " + type.getName(), type);
-                        }
-                    } finally {
-                        currentImport = null;
-                    }
-                }
-                for (ImportNode importNode : module.getStarImports()) {
-                    if (importNode.getLineNumber() > 0) {
-                        currentImport = importNode;
-                        try {
-                            String importName = importNode.getPackageName();
-                            importName = importName.substring(0, importName.length()-1);
-                            ClassNode type = ClassHelper.makeWithoutCaching(importName);
-                            if (resolve(type, false, false, true)) {
-                                importNode.setType(type);
-                            }
-                        } finally {
-                            currentImport = null;
-                        }
-                    }
-                }
-                for (ImportNode importNode : module.getStaticImports().values()) {
-                    ClassNode type = importNode.getType();
-                    if (!resolve(type, true, true, true))
-                        addError("unable to resolve class " + type.getName(), type);
-                }
-                for (ImportNode importNode : module.getStaticStarImports().values()) {
-                    ClassNode type = importNode.getType();
-                    if (!resolve(type, true, true, true))
-                        addError("unable to resolve class " + type.getName(), type);
-                }
-
-                module.setImportsResolved(true);
-            }
-
-            //
+            resolveImports(node.getModule());
 
             if (phase < 2) node.putNodeMetaData(AnnotationNode[].class, new LinkedHashSet<>());
 
