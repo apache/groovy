@@ -56,6 +56,7 @@ import org.codehaus.groovy.syntax.Types;
 
 import java.util.Collection;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Set;
 
 import static org.apache.groovy.ast.tools.AnnotatedNodeUtils.hasAnnotation;
@@ -656,7 +657,22 @@ class TraitReceiverTransformer extends ClassCodeExpressionTransformer {
                     // this.m(x) --> (this or T$Trait$Helper).m($self or $static$self or (Class)$self.getClass(), x)
                     Expression selfClassOrObject = methodNode.isStatic() && !ClassHelper.isClassType(weaved.getOriginType()) ? castX(ClassHelper.CLASS_Type.getPlainNodeReference(), selfGetClass()) : weaved;
                     newCall = callX(!inClosure ? thisExpr : classX(traitHelper), method, createArgumentList(selfClassOrObject, arguments));
-                    if (inClosure) newCall.setImplicitThis(false); // not a call on the closure's delegate
+                    // GROOVY-12611: T$Trait$Helper.m($self, x) is not checked against the closure's delegate
+                    if (inClosure) newCall.setImplicitThis(false);
+                    if (inClosure && !inLambda && call.isImplicitThis() && methodNode.getDeclaringClass().equals(traitClass)) {
+                        // GROOVY-12611: m(x) in a closure may target the closure's delegate; the type
+                        // checker of statically compiled code keeps T$Trait$Helper.m($self, x) or
+                        // selects m(x) on the delegate, otherwise the closure resolves m(x) and its
+                        // metaclass falls back to the trait helper for the owner
+                        List<Expression> args = ((ArgumentListExpression) newCall.getArguments()).getExpressions();
+                        MethodCallExpression closureCall = callX(thisExpr, method, args(args.subList(1, args.size()).toArray(Expression[]::new)));
+                        closureCall.setGenericsTypes(call.getGenericsTypes());
+                        closureCall.setImplicitThis(true);
+                        closureCall.setSafe(call.isSafe());
+                        closureCall.setSpreadSafe(call.isSpreadSafe());
+                        closureCall.setSourcePosition(call);
+                        newCall.putNodeMetaData(TraitASTTransformation.POST_TYPECHECKING_REPLACEMENT, closureCall);
+                    }
                 }
                 newCall.setGenericsTypes(call.getGenericsTypes());
                 newCall.setSpreadSafe(call.isSpreadSafe());
