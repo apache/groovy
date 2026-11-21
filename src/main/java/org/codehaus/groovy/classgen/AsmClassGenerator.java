@@ -115,6 +115,7 @@ import org.codehaus.groovy.classgen.asm.PeepholeOptimizingMethodVisitor;
 import org.codehaus.groovy.classgen.asm.WriterController;
 import org.codehaus.groovy.classgen.asm.WriterControllerFactory;
 import org.codehaus.groovy.classgen.asm.sc.RuntimePackageCheck;
+import org.codehaus.groovy.classgen.asm.sc.StaticInvocationWriter;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.runtime.IntersectionCastSupport;
 import org.codehaus.groovy.runtime.ScriptBytecodeAdapter;
@@ -1557,7 +1558,7 @@ public class AsmClassGenerator extends ClassGenerator {
                 } else {
                     fieldNode = classNode.getSuperClass().getDeclaredField(name);
                     // GROOVY-4497, GROOVY-11764: do not visit super class field if it is private or package-private
-                    if (fieldNode != null && (fieldNode.isPrivate() || !(fieldNode.isPublic() || fieldNode.isProtected() || inSamePackage(classNode, classNode.getSuperClass())))) {
+                    if (fieldNode != null && (fieldNode.isPrivate() || !(fieldNode.isPublic() || fieldNode.isProtected() || inSamePackage(classNode, classNode.getSuperClass())) || isDynamicAccessOfAnotherRuntimePackage(fieldNode))) {
                         fieldNode = null;
                     }
                 }
@@ -1606,7 +1607,7 @@ public class AsmClassGenerator extends ClassGenerator {
                 boolean generated = controller.isInGeneratedFunction();
                 ClassNode current = generated ? controller.getThisType() : classNode;
                 FieldNode fieldNode = getDeclaredFieldOfCurrentClassOrAccessibleFieldOfSuper(classNode, current, name, isSuperExpression(objectExpression));
-                if (fieldNode != null && (fieldNode.isStatic() || !isStatic(objectExpression))) {
+                if (fieldNode != null && (fieldNode.isStatic() || !isStatic(objectExpression)) && !isDynamicAccessOfAnotherRuntimePackage(fieldNode)) {
                     // A private field of a superclass is dropped from the subclass meta-class
                     // index, so the closure's runtime attribute lookup cannot see it. Direct
                     // access is legal for a nestmate (a nested subclass). Other fields stay on
@@ -1639,6 +1640,18 @@ public class AsmClassGenerator extends ClassGenerator {
         } else {
             controller.getAssertionWriter().record(expression.getProperty());
         }
+    }
+
+    /**
+     * Determines if dynamic code accesses a package-private field of another
+     * run-time package (see {@link #isInSameRuntimePackage}). The JVM refuses
+     * direct access to it, so such code uses the field through the meta-class.
+     * Static compilation does not select a member at run time.
+     */
+    private boolean isDynamicAccessOfAnotherRuntimePackage(final FieldNode field) {
+        return !field.isPublic() && !field.isProtected() && !field.isPrivate()
+            && !isInSameRuntimePackage(field.getDeclaringClass(), controller.getClassNode())
+            && !(controller.getInvocationWriter() instanceof StaticInvocationWriter);
     }
 
     /**
