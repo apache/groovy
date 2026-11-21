@@ -50,6 +50,7 @@ import groovy.lang.Binding;
 import groovy.lang.Closure;
 import groovy.lang.DelegatingMetaClass;
 import groovy.lang.GroovyClassLoader;
+import groovy.lang.GroovyCodeSource;
 import groovy.lang.MetaClass;
 import groovy.lang.MissingMethodException;
 import groovy.lang.MissingPropertyException;
@@ -497,7 +498,14 @@ public class GroovyScriptEngineImpl extends AbstractScriptEngine implements Comp
             return clazz;
         }
 
-        clazz = loader.parseClass(script, generateScriptName(context));
+        GeneratedScriptName generated = generatedScriptName(context);
+        GroovyCodeSource source = new GroovyCodeSource(script, generated.name, "/groovy/script");
+        source.setCachable(false);
+        // A FILENAME attribute is the caller's name. Only the counter name is generated.
+        if (generated.generated) {
+            source.setNameGenerated(true);
+        }
+        clazz = loader.parseClass(source);
         classMap.put(script, clazz);
         return clazz;
     }
@@ -580,15 +588,31 @@ public class GroovyScriptEngineImpl extends AbstractScriptEngine implements Comp
 
     // generate a unique name for top-level Script classes
     private static synchronized String generateScriptName(ScriptContext	context) {
-        // If context is available, and contains FILENAME,
-        // use it as script name
+        return generatedScriptName(context).name;
+    }
+
+    /**
+     * A file name taken from the script context is the caller's name.
+     * The counter name is one this engine generated.
+     */
+    private static synchronized GeneratedScriptName generatedScriptName(ScriptContext context) {
         if (context != null) {
             Object filename = context.getAttribute(ScriptEngine.FILENAME);
             if (filename != null) {
-                return filename.toString();
+                return new GeneratedScriptName(filename.toString(), false);
             }
         }
-        return "Script" + (++counter) + ".groovy";
+        return new GeneratedScriptName("Script" + (++counter) + ".groovy", true);
+    }
+
+    private static final class GeneratedScriptName {
+        private final String name;
+        private final boolean generated;
+
+        private GeneratedScriptName(final String name, final boolean generated) {
+            this.name = name;
+            this.generated = generated;
+        }
     }
 
     @SuppressWarnings("unchecked")

@@ -1354,24 +1354,51 @@ public class GenericsUtils {
         private ClassNode genericsClass;
         private ClassNode actualType;
 
+        /**
+         * Stores the two nodes used to look up a parameterized type.
+         * Equality is identity of both nodes.
+         *
+         * @param genericsClass generic class used as the cache key
+         * @param actualType actual type used as the cache key
+         */
         public ParameterizedTypeCacheKey(ClassNode genericsClass, ClassNode actualType) {
             this.genericsClass = genericsClass;
             this.actualType = actualType;
         }
 
+        /**
+         * Returns the generic class stored in this key.
+         *
+         * @return that class node
+         */
         public ClassNode getGenericsClass() {
             return genericsClass;
         }
 
+        /**
+         * Replaces the generic class stored in this key.
+         *
+         * @param genericsClass generic class to store
+         */
         @SuppressWarnings("unused")
         public void setGenericsClass(ClassNode genericsClass) {
             this.genericsClass = genericsClass;
         }
 
+        /**
+         * Returns the actual type stored in this key.
+         *
+         * @return that class node
+         */
         public ClassNode getActualType() {
             return actualType;
         }
 
+        /**
+         * Replaces the actual type stored in this key.
+         *
+         * @param actualType actual type to store
+         */
         @SuppressWarnings("unused")
         public void setActualType(ClassNode actualType) {
             this.actualType = actualType;

@@ -462,6 +462,10 @@ public final class GroovyCompiler implements AutoCloseable {
             extra = extra == null || extra.isEmpty() ? Map.of() : Map.copyOf(extra);
         }
 
+        /**
+         * Compares classpath lists, extra settings, and the grape and AST-test
+         * flags, and compares the parent loader by identity.
+         */
         @Override
             public boolean equals(final Object other) {
                 if (this == other) {
@@ -476,6 +480,10 @@ public final class GroovyCompiler implements AutoCloseable {
                     && Objects.equals(extra, key.extra) && parent == key.parent;
             }
 
+            /**
+             * Hashes the classpath lists, extra settings, and flags, using the parent
+             * loader's identity hash code.
+             */
             @Override
             public int hashCode() {
                 return Objects.hash(classpath, configuredClasspath, extra, grape, astTest,

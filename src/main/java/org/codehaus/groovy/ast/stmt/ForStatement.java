@@ -44,6 +44,12 @@ import static java.util.Objects.requireNonNull;
 public class ForStatement extends Statement implements LoopingStatement {
 
     private static final Parameter DUMMY_VALUE_VARIABLE = new Parameter(ClassHelper.OBJECT_TYPE, "forLoopDummyParameter");
+    /**
+     * Value parameter stored on a classic for loop. Its type is
+     * {@code Object} and its name is {@code forLoopDummyParameter}.
+     * {@link #getValueVariable} returns null for that loop instead of
+     * this parameter.
+     */
     @Deprecated(since = "6.0.0")
     public static final Parameter FOR_LOOP_DUMMY = DUMMY_VALUE_VARIABLE;
 
@@ -164,11 +170,24 @@ public class ForStatement extends Statement implements LoopingStatement {
         return valueVariable != DUMMY_VALUE_VARIABLE ? valueVariable : null;
     }
 
+    /**
+     * Returns the value parameter, including {@link #FOR_LOOP_DUMMY} for a
+     * classic for loop. {@link #getValueVariable} returns null for that
+     * loop.
+     *
+     * @return the value parameter held by this statement
+     */
     @Deprecated(since = "5.0.0")
     public Parameter getVariable() {
         return valueVariable;
     }
 
+    /**
+     * Returns the type of the value parameter. For a classic for loop that
+     * type is {@code Object}, the type of {@link #FOR_LOOP_DUMMY}.
+     *
+     * @return the value parameter's type
+     */
     @Deprecated(since = "5.0.0")
     public ClassNode getVariableType() {
         return valueVariable.getType();

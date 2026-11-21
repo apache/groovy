@@ -23,8 +23,8 @@
 
 The `groovy-servlet` module supports the following features:
 
-* A `GroovyServlet` class let you use Groovy scripts as Servlets (called _Groovylets_).
-* A `TemplateServlet` class which supports running Groovy's template engines to generate servlet content. A typical use case is to write Groovy Server Pages (GSPs) which are similar to Java Server Pages (JSPs) but embed Groovy code
+* A `GroovyServlet` class lets you use Groovy scripts as Servlets (called _Groovylets_).
+* A `TemplateServlet` class that supports running Groovy's template engines to generate servlet content. A typical use case is to write Groovy Server Pages (GSPs) which are similar to Java Server Pages (JSPs) but embed Groovy code
 rather than Java code.
 * An `AbstractHttpServlet` class for defining traditional Servlets.
 * Helper classes like `ServletBinding` and `ServletCategory` which let you access some of the features offered by the `groovy-servlet` module in additional contexts.
@@ -103,18 +103,25 @@ So for example using https://tomcat.apache.org/[Apache Tomcat] you could edit `t
 
 Then access it with http://localhost:8080/groovy/hello.groovy
 
-Some Servlet engines let you define Servlets programmatically, e.g. here is how you might use https://jetty.org/[Jetty] with Groovlets enabled:
+Some Servlet engines let you define Servlets programmatically. The following uses
+https://jetty.org/[Jetty] 12.1, whose `ee11` servlet module is the Jakarta EE 11
+environment this module targets. `ServletContextHandler` is created on its own and
+then installed as the server's handler. Jetty 12.0 accepted
+`new ServletContextHandler(server, contextPath, options)`; that constructor is not
+in Jetty 12.1.
 
 [source,groovy]
 ----
 import groovy.servlet.GroovyServlet
 import org.eclipse.jetty.server.Server
-import org.eclipse.jetty.ee9.servlet.ServletContextHandler
+import org.eclipse.jetty.ee11.servlet.ServletContextHandler
 
-var server = new Server(8080)
-var handler = new ServletContextHandler(server, '/', ServletContextHandler.SESSIONS)
+def server = new Server(8080)
+def handler = new ServletContextHandler(ServletContextHandler.SESSIONS)
+handler.contextPath = '/'
 handler.baseResourceAsString = 'path_to_servlet_base'
 handler.addServlet(GroovyServlet, '*.groovy')
+server.handler = handler
 server.start()
 server.join()
 ----

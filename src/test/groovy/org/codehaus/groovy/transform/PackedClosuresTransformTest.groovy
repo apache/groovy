@@ -1018,4 +1018,35 @@ final class PackedClosuresTransformTest {
             assertEquals(7, e.local(twice, 3))
         }
     }
+
+    // GROOVY-12654
+    @Test
+    void compileStaticPackedClosureInStaticMethodCallsClassMethodsOnTheClass() {
+        // a closure in a static method has the class as its owner, so toString(), getName() and
+        // the other methods of Class are called on it; the hoisted body is a static method, where
+        // the call loaded local slot 0 (a VerifyError, or a captured value) instead of the class
+        String src = '''import groovy.transform.CompileStatic
+            @CompileStatic
+            @groovy.transform.PackedClosures
+            class S {
+                String toString() { 'S' }
+                static Object string()               { { -> toString() }() }
+                static Object name()                 { { -> getName() }() }
+                static Object captured(String s)     { { -> getSimpleName() + s }() }
+                static Object parameter()            { { String p -> getSimpleName() + p }('!') }
+                static Object implicit(List<String> xs) { xs.collect { getSimpleName() + it } }
+                static Object objectMethods()        { { -> [getClass(), hashCode() == S.hashCode()] }() }
+                Object instance()                    { { -> toString() }() }
+            }'''
+        assertEquals(['S'], generatedClassNames(src))   // every closure packs, no class remains
+
+        def s = instance(src + '\n new S()')
+        assertEquals('class S', s.string())
+        assertEquals('S', s.name())
+        assertEquals('Sx', s.captured('x'))
+        assertEquals('S!', s.parameter())
+        assertEquals(['Sa', 'Sb'], s.implicit(['a', 'b']))
+        assertEquals([Class, true], s.objectMethods())
+        assertEquals('S', s.instance())
+    }
 }
