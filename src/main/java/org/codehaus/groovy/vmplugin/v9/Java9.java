@@ -21,6 +21,7 @@ package org.codehaus.groovy.vmplugin.v9;
 import groovy.lang.GroovyClassLoader;
 import groovy.lang.MetaClass;
 import groovy.lang.MetaMethod;
+import org.apache.groovy.vmplugin.internal.DefaultImportPackages;
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.reflection.CachedClass;
 import org.codehaus.groovy.reflection.CachedMethod;
@@ -123,16 +124,16 @@ public class Java9 extends Java8 {
             try {
                 // groovy-core (Java source)
                 URI gcjLocation = DefaultGroovyMethods.getLocation(gcl.loadClass("groovy.lang.GroovySystem")).toURI();
-                result.putAll(doFindClasses(gcjLocation, "groovy", groovyPackages));
+                DefaultImportPackages.merge(result, doFindClasses(gcjLocation, "groovy", groovyPackages), packageNames);
 
                 // in production environment, groovy-core classes, e.g. `GroovySystem`(java class) and `ListenerLister`(groovy class) are all packaged in the groovy-core jar file,
                 // but in Groovy development environment, groovy-core classes are distributed in different directories
                 URI gcgLocation = DefaultGroovyMethods.getLocation(gcl.loadClass("groovy.beans.ListenerList")).toURI();
                 if (!gcjLocation.equals(gcgLocation)) {
-                    result.putAll(doFindClasses(gcgLocation, "groovy", groovyPackages));
+                    DefaultImportPackages.merge(result, doFindClasses(gcgLocation, "groovy", groovyPackages), packageNames);
                 }
             } finally {
-                result.putAll(doFindClasses(URI.create("jrt:/modules/java.base/"), "java", javaPackages));
+                DefaultImportPackages.merge(result, doFindClasses(URI.create("jrt:/modules/java.base/"), "java", javaPackages), packageNames);
             }
         } catch (Throwable ignore) {
             Logger logger = Logger.getLogger(getClass().getName());
