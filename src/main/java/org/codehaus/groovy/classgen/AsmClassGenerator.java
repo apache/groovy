@@ -371,6 +371,7 @@ public class AsmClassGenerator extends ClassGenerator {
             controller = factory.makeController(controller);
         }
         controller.init(this, context, classVisitor, classNode);
+        RuntimePackageCheck.checkSuperTypes(controller);
         if (controller.shouldOptimizeForInt() || factory != null) {
             OptimizingStatementWriter.setNodeMeta(controller.getTypeChooser(), classNode);
         }
@@ -600,7 +601,7 @@ public class AsmClassGenerator extends ClassGenerator {
                 BytecodeHelper.getGenericsMethodSignature(node),
                 buildExceptions(node.getExceptions()));
 
-        controller.setMethodVisitor(mv);
+        controller.setMethodVisitor(RuntimePackageCheck.checkNamedClasses(controller, mv));
         controller.resetLineNumber();
 
         visitAnnotations(node, mv);
