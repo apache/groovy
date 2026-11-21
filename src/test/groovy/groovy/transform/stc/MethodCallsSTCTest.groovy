@@ -2008,6 +2008,29 @@ import static groovy.test.GroovyAssert.shouldFail
         '''
     }
 
+    // GROOVY-12654
+    @Test
+    void testStaticContext3() {
+        assertScript '''
+            class Foo {
+                static String p = getName() // instance method of Class
+                static String m() { getSimpleName() }
+                static String s() { toString() }
+                static boolean b(Object o) { isInstance(o) }
+                static String c(Class type) { getName() }
+                static class Bar {
+                    static String m() { getName() }
+                }
+            }
+            assert Foo.p == 'Foo'
+            assert Foo.m() == 'Foo'
+            assert Foo.s() == 'class Foo'
+            assert Foo.b(new Foo()) && !Foo.b('x')
+            assert Foo.c(String) == 'Foo'
+            assert Foo.Bar.m() == 'Foo$Bar'
+        '''
+    }
+
     // GROOVY-10720
     @Test
     void testOverloadedMethodWithArray() {
