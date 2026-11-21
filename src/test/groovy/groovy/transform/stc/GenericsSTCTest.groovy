@@ -4935,6 +4935,30 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-12757
+    @Test
+    void testLambdaResultNamingCallerTypeParameterOfReceiverName() {
+        assertScript '''
+            import java.util.concurrent.CompletableFuture
+            import java.util.function.Function
+
+            static <T> Optional<List<T>> wrap(Optional<String> value, T item) {
+                @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                    assert node.getNodeMetaData(INFERRED_TYPE).toString(false) == 'java.util.Optional<java.util.List<T>>'
+                })
+                def result = value.map((String s) -> [item] as List<T>)
+                result
+            }
+            static <T> CompletableFuture<List<T>> each(CompletableFuture<List<Object>> future, Function<Object, T> fn) {
+                CompletableFuture<List<T>> result = future.thenApply((List<Object> values) -> values.collect { fn.apply(it) } as List<T>)
+                result
+            }
+
+            assert wrap(Optional.of('x'), 3).get() == [3]
+            assert each(CompletableFuture.completedFuture([1, 2] as List<Object>), { Object o -> o.toString() } as Function<Object, String>).get() == ['1', '2']
+        '''
+    }
+
     // GROOVY-5885
     @Test
     void testMethodLevelGenericsForMethodCall2() {
