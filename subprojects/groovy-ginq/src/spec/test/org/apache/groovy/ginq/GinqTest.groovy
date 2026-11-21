@@ -36,7 +36,6 @@ import org.codehaus.groovy.syntax.Types
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.Test
 
-import static groovy.test.GroovyAssert.assertScript
 import static groovy.test.GroovyAssert.isAtLeastJdk
 import static org.junit.jupiter.api.Assumptions.assumeTrue
 
@@ -2924,7 +2923,7 @@ class GinqTest {
 // tag::ginq_grouping_03[]
                 from n in [1, 1, 3, 3, 6, 6, 6]
                 groupby n
-                select n, agg(_g.stream().map(r -> r.n).reduce(BigDecimal.ZERO, BigDecimal::add))
+                select n, agg(_g.stream().map(r -> BigDecimal.valueOf(r.n)).reduce(BigDecimal.ZERO, BigDecimal::add))
 // end::ginq_grouping_03[]
             }.toList()
         '''
@@ -3624,7 +3623,10 @@ class GinqTest {
 
     @Test
     void "testGinq - complex example transformed"() {
-        assertScript '''
+        // The maps mix strings and ints. Static checking resolves s.amount to
+        // that shared type and rejects comparing it with an int, and the group
+        // key is erased to Object. Dynamic execution is unchanged.
+        String script = '''
             import static org.apache.groovy.ginq.provider.collection.runtime.Queryable.from
             import org.apache.groovy.ginq.provider.collection.runtime.Queryable.Order
 
@@ -3648,6 +3650,9 @@ class GinqTest {
             assert result[0].toList() == ['Alice', 2, 1280]
             assert result[1].toList() == ['Bob', 2, 1950]
         '''
+        GinqScriptModes.expectUnchecked(script)
+        GinqScriptModes.expectCheckedRejection(script,
+                'compareTo', 'No such property: key', 'lambda expecting java.lang.Number')
     }
 
     @Test
@@ -3765,6 +3770,16 @@ class GinqTest {
                 select n
             }.toList()
 // end::ginq_customize_01[]
+        '''
+    }
+
+    @Test
+    void "testGinq - customize GINQ target - 1"() {
+        assertGinqScript '''
+            assert [0, 1, 2] == GQ(provider: 'collection') {
+                from n in [0, 1, 2]
+                select n
+            }.toList()
         '''
     }
 
@@ -3908,6 +3923,32 @@ class GinqTest {
     }
 
     @Test
+    void "testGinq - set operation trailing orderby and limit orders the last operand"() {
+        assertGinqScript '''
+            def employees = [
+                    [name: 'Alice', salary: 5000, deptId: 1],
+                    [name: 'Bob', salary: 3000, deptId: 1],
+                    [name: 'Carol', salary: 4000, deptId: 2],
+                    [name: 'Dave', salary: 2000, deptId: null],
+                    [name: 'Eve', salary: 5000, deptId: 2],
+                    [name: 'Frank', salary: 6000, deptId: 3]
+            ]
+            // the final operand is ordered and sliced, then combined with the first operand
+            assert [['Alice', 5000], ['Bob', 3000], ['Carol', 4000]] == GQ {
+                from a in employees
+                where a.deptId == 1
+                select a.name, a.salary
+                union
+                from b in employees
+                where b.deptId == 2
+                orderby b.salary in desc, b.name
+                limit 1, 2
+                select b.name, b.salary
+            }.toList()
+        '''
+    }
+
+    @Test
     void "testGinq - chained set operations"() {
         assertGinqScript '''
             // [1,2,3] union [3,4,5] = [1,2,3,4,5], then minus [4,5,6] = [1,2,3]
@@ -4011,6 +4052,33 @@ class GinqTest {
         assertGinqScript '''
             def stream = [1, 2, 3].stream()
             assert [1, 2, 3] == GQ {from n in stream select n}.toList()
+        '''
+    }
+
+    @Test
+    void "testGinq - stream source is consumed once"() {
+        assertGinqScript '''
+            import static groovy.test.GroovyAssert.shouldFail
+
+            def source = [1, 2, 3].stream()
+            def query = GQ { from n in source select n }
+            assert [1, 2, 3] == query.stream().toList()
+            // the query replays its buffer; the original stream does not restart
+            assert [1, 2, 3] == query.stream().toList()
+            def sourceAgain = shouldFail(IllegalStateException) { source.toList() }
+            assert sourceAgain.message.contains('stream has already been operated upon')
+
+            def held = [4, 5].stream()
+            def materialized = GQ { from n in held select n }
+            assert [4, 5] == materialized.toList()
+            assert [4, 5] == materialized.toList()
+            shouldFail(IllegalStateException) { held.toList() }
+
+            def reusable = GQ { from n in [1, 2, 3] select n }
+            assert [1, 2, 3] == reusable.toList()
+            assert [1, 2, 3] == reusable.toList()
+            assert [1, 2, 3] == reusable.stream().toList()
+            assert [1, 2, 3] == reusable.stream().toList()
         '''
     }
 
@@ -4453,7 +4521,7 @@ class GinqTest {
                 innerjoin m in [2, 3, 4] on m == n
                 where n > 1 && m < 5
                 groupby n, m
-                select n, m, agg(_g.stream().map(r -> r.n + r.m + cnt++).reduce(BigDecimal.ZERO, BigDecimal::add))
+                select n, m, agg(_g.stream().map(r -> BigDecimal.valueOf(r.n + r.m + cnt++)).reduce(BigDecimal.ZERO, BigDecimal::add))
             }
             assert 0 == cnt
             def stream = result.stream()
@@ -4473,7 +4541,7 @@ class GinqTest {
                 where n > 1 && m < 5
                 groupby n, m
                 orderby n in desc, m in asc
-                select n, m, agg(_g.stream().map(r -> r.n + r.m + cnt++).reduce(BigDecimal.ZERO, BigDecimal::add))
+                select n, m, agg(_g.stream().map(r -> BigDecimal.valueOf(r.n + r.m + cnt++)).reduce(BigDecimal.ZERO, BigDecimal::add))
             }
             assert 0 == cnt
             def stream = result.stream()
@@ -4498,7 +4566,7 @@ class GinqTest {
                 ).exists()
                 groupby n, m
                 orderby n in desc, m in asc
-                select n, m, agg(_g.stream().map(r -> r.n + r.m + cnt++).reduce(BigDecimal.ZERO, BigDecimal::add))
+                select n, m, agg(_g.stream().map(r -> BigDecimal.valueOf(r.n + r.m + cnt++)).reduce(BigDecimal.ZERO, BigDecimal::add))
             }
             assert 0 == cnt
             def stream = result.stream()
@@ -4524,7 +4592,7 @@ class GinqTest {
                 groupby n, m
                 orderby n in desc, m in asc
                 limit 0, 1
-                select n, m, agg(_g.stream().map(r -> r.n + r.m + cnt++).reduce(BigDecimal.ZERO, BigDecimal::add))
+                select n, m, agg(_g.stream().map(r -> BigDecimal.valueOf(r.n + r.m + cnt++)).reduce(BigDecimal.ZERO, BigDecimal::add))
             }
             assert 0 == cnt
             def stream = result.stream()
@@ -4621,7 +4689,7 @@ class GinqTest {
             assert [[1, 3, 2, 2, 6, 3, 3, 6]] == GQ {
                 from n in [1, 2, 3]
                 select min(n), max(n), avg(n), median(n), sum(n), count(n), count(),
-                        agg(_g.stream().map(r -> r.n).reduce(BigDecimal.ZERO, BigDecimal::add))
+                        agg(_g.stream().map(r -> BigDecimal.valueOf(r.n)).reduce(BigDecimal.ZERO, BigDecimal::add))
             }.toList()
 // end::ginq_aggfunction_01[]
         '''
@@ -4694,7 +4762,7 @@ class GinqTest {
         assertGinqScript '''
             assert [6] == GQ {
                 from n in [1, 2, 3]
-                select agg(_g.stream().map(r -> r.n).reduce(BigDecimal.ZERO, BigDecimal::add))
+                select agg(_g.stream().map(r -> BigDecimal.valueOf(r.n)).reduce(BigDecimal.ZERO, BigDecimal::add))
             }.toList()
         '''
     }
@@ -6779,7 +6847,7 @@ class GinqTest {
             assert [[1, 3], [2, 3]] == GQ {
                 from n in [1, 2]
                 select n,
-                    (agg(_g.stream().map(r -> r.n).reduce(BigDecimal.ZERO, BigDecimal::add)) over())
+                    (agg(_g.stream().map(r -> BigDecimal.valueOf(r.n)).reduce(BigDecimal.ZERO, BigDecimal::add)) over())
             }.toList()
         '''
     }
@@ -6791,7 +6859,7 @@ class GinqTest {
             assert [[1, 4], [2, 2], [3, 4]] == GQ {
                 from n in [1, 2, 3]
                 select n,
-                       (agg(_g.stream().map(r -> r.n).reduce(BigDecimal.ZERO, BigDecimal::add)) over(partitionby n % 2))
+                       (agg(_g.stream().map(r -> BigDecimal.valueOf(r.n)).reduce(BigDecimal.ZERO, BigDecimal::add)) over(partitionby n % 2))
             }.toList()
 // end::ginq_winfunction_42[]
         '''
@@ -6804,7 +6872,98 @@ class GinqTest {
                 from n in [1, 2, 3]
                 join m in [1, 2, 3] on m == n
                 select n,
-                       (agg(_g.stream().map(r -> r.n).reduce(BigDecimal.ZERO, BigDecimal::add)) over(partitionby n % 2))
+                       (agg(_g.stream().map(r -> BigDecimal.valueOf(r.n)).reduce(BigDecimal.ZERO, BigDecimal::add)) over(partitionby n % 2))
+            }.toList()
+        '''
+    }
+
+    @Test
+    void "testGinq - window - 92"() {
+        assertGinqScript '''
+            def employees = [
+                    [name: 'a', salary: 100],
+                    [name: 'b', salary: 300],
+                    [name: 'c', salary: 100],
+                    [name: 'd', salary: 200],
+                    [name: 'e', salary: null]
+            ]
+            // denseRank without partitionby, ordered by a property of the row
+            assert [['a', 1], ['b', 3], ['c', 1], ['d', 2], ['e', 4]] == GQ {
+                from e in employees
+                select e.name, (denseRank() over(orderby e.salary))
+            }.toList()
+
+            assert [[1, 'a', 1], [1, 'b', 2], [2, 'c', 1]] == GQ {
+                from e in [[dept: 1, name: 'a', salary: 10], [dept: 1, name: 'b', salary: 20], [dept: 2, name: 'c', salary: 10]]
+                select e.dept, e.name, (denseRank() over(partitionby e.dept orderby e.salary))
+            }.toList()
+        '''
+    }
+
+    @Test
+    void "testGinq - window - 93"() {
+        assertGinqScript '''
+            // range frame with a null order key (nulls last by default)
+            assert [[1, 2, 3], [2, 3, 6], [null, 1, 0], [3, 2, 5]] == GQ {
+                from n in [1, 2, null, 3]
+                select n,
+                       (count() over(orderby n range -1, 1)),
+                       (sum(n) over(orderby n range -1, 1))
+            }.toList()
+
+            assert [[1, 1, 1], [null, 2, 0], [null, 2, 0]] == GQ {
+                from n in [1, null, null]
+                select n,
+                       (count() over(orderby n range -1, 1)),
+                       (sum(n) over(orderby n range -1, 1))
+            }.toList()
+
+            // unbounded range still covers the whole partition, including null keys
+            assert [[1, 3, 4], [null, 3, 4], [3, 3, 4]] == GQ {
+                from n in [1, null, 3]
+                select n,
+                       (count() over(orderby n range null, null)),
+                       (sum(n) over(orderby n range null, null))
+            }.toList()
+
+            // nulls first: an unbounded preceding bound includes the leading null peers
+            assert [[1, 2, 1], [null, 1, 0], [2, 3, 3]] == GQ {
+                from n in [1, null, 2]
+                select n,
+                       (count() over(orderby n in asc(nullsfirst) range null, 0)),
+                       (sum(n) over(orderby n in asc(nullsfirst) range null, 0))
+            }.toList()
+
+            // a finite range does not pull in null keys on either side
+            assert [[1, 2, 3], [null, 1, 0], [2, 2, 3]] == GQ {
+                from n in [1, null, 2]
+                select n,
+                       (count() over(orderby n in asc(nullsfirst) range -1, 1)),
+                       (sum(n) over(orderby n in asc(nullsfirst) range -1, 1))
+            }.toList()
+
+            // descending order uses the same value interval; nulls stay out of it
+            assert [[1, 1, 1], [null, 1, 0], [3, 1, 3]] == GQ {
+                from n in [1, null, 3]
+                select n,
+                       (count() over(orderby n in desc range -1, 1)),
+                       (sum(n) over(orderby n in desc range -1, 1))
+            }.toList()
+
+            // unbounded following includes a trailing null peer group
+            assert [[1, 3, 4], [3, 2, 3], [null, 1, 0]] == GQ {
+                from n in [1, 3, null]
+                select n,
+                       (count() over(orderby n range 0, null)),
+                       (sum(n) over(orderby n range 0, null))
+            }.toList()
+
+            // the null key may be a property, not the row itself
+            assert [[1, 2, 3], [null, 1, 0], [2, 2, 3]] == GQ {
+                from e in [[v: 1], [v: null], [v: 2]]
+                select e.v,
+                       (count() over(orderby e.v range -1, 1)),
+                       (sum(e.v) over(orderby e.v range -1, 1))
             }.toList()
         '''
     }
@@ -7321,7 +7480,7 @@ class GinqTest {
                 shutdown
             }
 // end::ginq_tips_09[]
-            assert QueryableHelper.ThreadPoolHolder.THREAD_POOL.isShutdown() && QueryableHelper.ThreadPoolHolder.THREAD_POOL.isTerminated()
+            assert QueryableHelper.isShutdown() && QueryableHelper.isTerminated()
         '''
     }
 
@@ -7334,7 +7493,7 @@ class GinqTest {
                 shutdown immediate
             }
 // end::ginq_tips_10[]
-            assert QueryableHelper.ThreadPoolHolder.THREAD_POOL.isShutdown() && QueryableHelper.ThreadPoolHolder.THREAD_POOL.isTerminated()
+            assert QueryableHelper.isShutdown() && QueryableHelper.isTerminated()
         '''
     }
 
@@ -7347,7 +7506,7 @@ class GinqTest {
                 shutdown abort
             }
 // end::ginq_tips_11[]
-            assert QueryableHelper.ThreadPoolHolder.THREAD_POOL.isShutdown()
+            assert QueryableHelper.isShutdown()
         '''
     }
 
@@ -7387,5 +7546,14 @@ class GinqTest {
         scriptList.each { String c ->
             assertScript(c)
         }
+    }
+
+    /**
+     * Every script in this class, including the optimize and smart-join
+     * variants, runs under default dynamic, {@code @CompileDynamic},
+     * {@code @TypeChecked} and {@code @CompileStatic}.
+     */
+    private static void assertScript(String script) {
+        GinqScriptModes.runAll(script)
     }
 }

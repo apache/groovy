@@ -861,6 +861,64 @@ final class GenericsUtilsTest {
         return GenericsUtils.correctToGenericsSpecRecurse([T: carrier], listOfT)
     }
 
+    @Test
+    void legalTypeArgumentsMatchTheDeclarationAndWrapPrimitives() {
+        assert GenericsUtils.legalTypeArguments(ClassHelper.STRING_TYPE, null) == null
+        assert GenericsUtils.legalTypeArguments(null, null) == null
+
+        GenericsType[] oneString = [ClassHelper.STRING_TYPE.asGenericsType()] as GenericsType[]
+        assert GenericsUtils.legalTypeArguments(ClassHelper.STRING_TYPE, oneString) == null
+        assert GenericsUtils.legalTypeArguments(ClassHelper.STRING_TYPE.getPlainNodeReference(), oneString) == null
+        assert GenericsUtils.legalTypeArguments(ClassHelper.STRING_TYPE.makeArray(), oneString).is(oneString)
+
+        ClassNode placeholder = placeholder('T')
+        assert GenericsUtils.legalTypeArguments(placeholder, oneString).is(oneString)
+        GenericsType placeholderArgument = placeholder.asGenericsType()
+        assert GenericsUtils.asReferenceTypeArgument(placeholderArgument).is(placeholderArgument)
+        assert GenericsUtils.asReferenceTypeArgument(null) == null
+
+        GenericsType[] primitive = [ClassHelper.int_TYPE.asGenericsType()] as GenericsType[]
+        GenericsType[] wrapped = GenericsUtils.legalTypeArguments(ClassHelper.LIST_TYPE, primitive)
+        assert wrapped.length == 1
+        assert wrapped[0].type == ClassHelper.Integer_TYPE
+        assert GenericsUtils.legalTypeArguments(ClassHelper.LIST_TYPE, GenericsType.EMPTY_ARRAY).is(GenericsType.EMPTY_ARRAY)
+
+        GenericsType wildcard = wildcardType(ClassHelper.long_TYPE, ClassHelper.int_TYPE)
+        GenericsType corrected = GenericsUtils.asReferenceTypeArgument(wildcard)
+        assert corrected.wildcard
+        assert corrected.upperBounds[0] == ClassHelper.Long_TYPE
+        assert corrected.lowerBound == ClassHelper.Integer_TYPE
+
+        ClassNode nested = ClassHelper.LIST_TYPE.getPlainNodeReference()
+        nested.genericsTypes = primitive
+        GenericsType nestedArgument = GenericsUtils.asReferenceTypeArgument(nested.asGenericsType())
+        assert nestedArgument.type.genericsTypes[0].type == ClassHelper.Integer_TYPE
+
+        GenericsType voidArgument = ClassHelper.VOID_TYPE.asGenericsType()
+        assert GenericsUtils.asReferenceTypeArgument(voidArgument).is(voidArgument)
+
+        ClassNode raw = findClassNode('RawHolder', compile('class RawHolder {}'))
+        assert GenericsUtils.legalTypeArguments(raw, oneString) == null
+        ClassNode box = findClassNode('Box', compile('class Box<T> {}'))
+        assert GenericsUtils.legalTypeArguments(box, primitive)[0].type == ClassHelper.Integer_TYPE
+
+        ClassNode synthetic = new ClassNode('SyntheticCarrier', 0, ClassHelper.OBJECT_TYPE)
+        assert synthetic.module == null
+        assert GenericsUtils.legalTypeArguments(synthetic, oneString).is(oneString)
+
+        ClassNode ghost = ClassHelper.makeWithoutCaching('ghost.Unresolved')
+        ghost.genericsTypes = null
+        ClassNode use = ghost.getPlainNodeReference()
+        GenericsType[] onUse = GenericsUtils.legalTypeArguments(use, oneString)
+        // An unresolved name is not a declaration of zero parameters, so the
+        // arguments stay. A resolved class with none drops them.
+        if (ghost.redirect().resolved) {
+            assert onUse == null
+        } else {
+            assert onUse != null
+        }
+    }
+
     private static ClassNode placeholder(String name) {
         ClassNode placeholder = ClassHelper.makeWithoutCaching(name)
         placeholder.genericsPlaceHolder = true
