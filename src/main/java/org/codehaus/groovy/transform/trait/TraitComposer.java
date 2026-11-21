@@ -19,6 +19,7 @@
 package org.codehaus.groovy.transform.trait;
 
 import org.apache.groovy.ast.tools.MethodNodeUtils;
+import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.AnnotationNode;
 import org.codehaus.groovy.ast.ClassHelper;
@@ -34,7 +35,6 @@ import org.codehaus.groovy.ast.expr.ArrayExpression;
 import org.codehaus.groovy.ast.expr.ClassExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.MethodCallExpression;
-import org.codehaus.groovy.ast.expr.StaticMethodCallExpression;
 import org.codehaus.groovy.ast.stmt.EmptyStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
 import org.codehaus.groovy.ast.tools.GeneralUtils;
@@ -177,6 +177,7 @@ public abstract class TraitComposer {
                 Traits.STATIC_INIT_METHOD, Opcodes.ACC_STATIC | Opcodes.ACC_PUBLIC, ClassHelper.VOID_TYPE,
                 new Parameter[] {new Parameter(ClassHelper.CLASS_Type,"clazz")}, ClassNode.EMPTY_ARRAY, EmptyStatement.INSTANCE);
         staticInitMethod.setDeclaringClass(helperClassNode);
+        staticInitCall.setImplicitThis(false);
         staticInitCall.setMethodTarget(staticInitMethod);
         cNode.addStaticInitializerStatements(Collections.singletonList(stmt(staticInitCall)), false);
         if (fieldHelperClassNode != null && !cNode.declaresInterface(fieldHelperClassNode)) {
@@ -265,10 +266,17 @@ public abstract class TraitComposer {
                             // getInitialExpression above will be null if not in same source unit
                             // so instead set within (static) initializer
                             if (fieldNode.isFinal()) {
-                                String baseName = fieldNode.isStatic() ? Traits.STATIC_INIT_METHOD : Traits.INIT_METHOD;
-                                StaticMethodCallExpression mce = callX(helperClassNode, baseName + fieldNode.getName(), args(varX("this")));
-                                if (helperClassNode.hasPossibleStaticMethod(mce.getMethod(), mce.getArguments())) {
-                                    Statement stmt = stmt(assignX(varX(fieldNode.getName(), fieldNode.getType()), mce));
+                                // a final field with an initial value has its own initializer in the helper,
+                                // which takes the trait, or the trait's class for a static field
+                                String fieldInitName = (fieldNode.isStatic() ? Traits.STATIC_INIT_METHOD : Traits.INIT_METHOD) + fieldNode.getName();
+                                ClassNode selfType = fieldNode.isStatic() ? ClassHelper.CLASS_Type : trait;
+                                MethodNode fieldInitMethod = helperClassNode.getDeclaredMethod(fieldInitName, new Parameter[]{new Parameter(selfType, "self")});
+                                if (fieldInitMethod != null) {
+                                    MethodCallExpression fieldInitCall = callX(classX(helperClassNode), fieldInitName, varX("this"));
+                                    // call it directly instead of through the meta class of the helper
+                                    fieldInitCall.setImplicitThis(false);
+                                    fieldInitCall.setMethodTarget(fieldInitMethod);
+                                    Statement stmt = stmt(assignX(varX(fieldNode.getName(), fieldNode.getType()), fieldInitCall));
                                     if (isStatic == 0) {
                                         cNode.addObjectInitializerStatements(stmt);
                                     } else {
@@ -316,9 +324,20 @@ public abstract class TraitComposer {
                 }
             }
         }
-        cNode.addObjectInitializerStatements(stmt(
-                callX(classX(helperClassNode), Traits.INIT_METHOD, varX("this"))
-        ));
+        // TraitASTTransformation generates $init$(TraitType) for every trait, so a helper without it is a bug
+        MethodNode initMethod = helperClassNode.getDeclaredMethod(Traits.INIT_METHOD, new Parameter[]{new Parameter(trait, Traits.THIS_OBJECT)});
+        if (initMethod == null) {
+            throw new GroovyBugError("Trait helper " + helperClassNode.getName() + " does not declare "
+                    + Traits.INIT_METHOD + "(" + trait.getName() + ")");
+        }
+        MethodCallExpression initCall = callX(
+                classX(helperClassNode),
+                Traits.INIT_METHOD,
+                varX("this"));
+        // call the helper's $init$(TraitType) directly instead of through its meta class
+        initCall.setImplicitThis(false);
+        initCall.setMethodTarget(initMethod);
+        cNode.addObjectInitializerStatements(stmt(initCall));
     }
 
     private static void createForwarderMethod(
