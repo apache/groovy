@@ -69,6 +69,9 @@ final class PackedClosureBoundariesTest {
         ['composed in a list literal',   false, false, 'def m(Closure c) { [c >> { x -> x }] }'],           // GROOVY-12656
         ['composed and called locally',  true,  true,  'def m(Closure c) { (c >> { x -> x })(1) }'],        // GROOVY-12656
         ['stored to property',           false, false, 'def m(Map attrs) { attrs.handler = { x -> x } }'],
+        ['returned from a ternary',      false, false, 'Closure m(boolean b) { return b ? { x -> x } : null }'],  // GROOVY-12659
+        ['returned curried',             false, false, 'Closure m() { return { x, y -> x }.curry(1) }'],         // GROOVY-12659
+        ['curried and called locally',   true,  true,  'def m() { { x, y -> x }.curry(1)(2) }'],                 // GROOVY-12659
         ['in a collection literal',      false, false, 'def m() { [{ x -> x }] }'],
         ['stored to property by ?=',     false, false, 'Closure handler\ndef m(C other) { other.handler ?= { x -> x } }'],  // GROOVY-12651
         ['stored to field by ??=',       false, false, 'Closure handler\ndef m() { handler ??= { x -> x } }'],             // GROOVY-12651
