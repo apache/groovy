@@ -824,15 +824,14 @@ public class ClosureWriter {
     }
 
     /**
-     * True for the assignment operators whose stored value can hold the right operand: {@code =},
-     * {@code ?=} and {@code ??=} store it, {@code >>=} composes it into a closure (which keeps a
-     * clone of it) and {@code +=} adds it to a collection.
+     * True for the assignment operators whose stored value can hold the right operand: {@code =}
+     * and {@code ?=} store it, {@code >>=} composes it into a closure (which keeps a clone of it)
+     * and {@code +=} adds it to a collection.
      */
     private static boolean storesRightOperand(final int op) {
         switch (op) {
           case Types.EQUAL:
           case Types.ELVIS_EQUAL:
-          case Types.NULL_COALESCE_EQUAL:
           case Types.RIGHT_SHIFT_EQUAL:
           case Types.PLUS_EQUAL:
             return true;

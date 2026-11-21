@@ -93,6 +93,7 @@ class TraitReceiverTransformer extends ClassCodeExpressionTransformer {
 
     private boolean inClosure;
     private boolean inLambdaOnly; // in a lambda that is not in a closure
+    private boolean inLambda; // directly in a lambda, not in a closure within one
 
     /**
      * Creates a transformer that rewrites trait receiver access against the woven receiver.
@@ -238,12 +239,14 @@ class TraitReceiverTransformer extends ClassCodeExpressionTransformer {
             mce.setImplicitThis(false);
             mce.setMethodTarget(ClassHelper.CLOSURE_TYPE.getMethods("rehydrate").get(0));
             mce.setSourcePosition(exp);
-            boolean oldInClosure = inClosure, oldInLambdaOnly = inLambdaOnly;
+            boolean oldInClosure = inClosure, oldInLambdaOnly = inLambdaOnly, oldInLambda = inLambda;
             inLambdaOnly = exp instanceof LambdaExpression && (!inClosure || inLambdaOnly);
+            inLambda = exp instanceof LambdaExpression; // the innermost construct decides
             inClosure = true;
             ((ClosureExpression) exp).getCode().visit(this);
             inClosure = oldInClosure;
             inLambdaOnly = oldInLambdaOnly;
+            inLambda = oldInLambda;
             // The rewrite we do is causing some troubles with type checking, which will
             // not be able to perform closure parameter type inference
             // so we store the replacement, which will be done *after* type checking.

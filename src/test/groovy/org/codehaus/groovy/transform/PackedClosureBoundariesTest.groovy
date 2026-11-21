@@ -74,7 +74,7 @@ final class PackedClosureBoundariesTest {
         ['curried and called locally',   true,  true,  'def m() { { x, y -> x }.curry(1)(2) }'],                 // GROOVY-12659
         ['in a collection literal',      false, false, 'def m() { [{ x -> x }] }'],
         ['stored to property by ?=',     false, false, 'Closure handler\ndef m(C other) { other.handler ?= { x -> x } }'],  // GROOVY-12651
-        ['stored to field by ??=',       false, false, 'Closure handler\ndef m() { handler ??= { x -> x } }'],             // GROOVY-12651
+        ['stored to field by ?=',        false, false, 'Closure handler\ndef m() { handler ?= { x -> x } }'],              // GROOVY-12651
         // ---- serialization-bound: declines everywhere -------------------------------------------
         ['cast to Serializable',         false, false, 'def m() { ({ it } as Serializable) != null }'],
         ['local into writeObject',       false, false, '''def m() {

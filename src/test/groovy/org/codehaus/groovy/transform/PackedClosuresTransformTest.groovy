@@ -167,7 +167,7 @@ final class PackedClosuresTransformTest {
     // GROOVY-12651
     @Test
     void compoundAssignmentEscapesAreDeclined() {
-        // ?= and ??= store the literal, <<= and >>= compose it into a closure that keeps a clone of
+        // ?= stores the literal, <<= and >>= compose it into a closure that keeps a clone of
         // it, <<= appends it to a list and += adds it to a new one. Into a field/property/index each
         // escapes the method, so each is declined and a delegate set on the stored value works as it
         // does without packing. -= and a store into a local still pack.
@@ -177,7 +177,7 @@ final class PackedClosuresTransformTest {
                 class E {
                     Closure field = null
                     void elvis(Holder h)          { h.handler ?= { Integer x -> x * 2 } }     // property
-                    void nullCoalesce(Holder h)   { h.@handler ??= { Integer x -> x * 2 } }   // attribute
+                    void attribute(Holder h)      { h.@handler ?= { Integer x -> x * 2 } }    // attribute
                     void composeLeft(Closure[] a) { a[0] <<= { Integer x -> x + 1 } }         // index
                     void composeRight()           { field >>= { Integer x -> x + 1 } }        // field
                     void append(Holder h)         { h.handlers <<= { Integer x -> x - 1 } }   // appended
@@ -191,7 +191,7 @@ final class PackedClosuresTransformTest {
             def (e, h) = instance(src + '\n [new E(), new Holder()]')
             e.elvis(h); h.handler.delegate = 'd'
             assertEquals(42, h.handler(21))
-            h.handler = null; e.nullCoalesce(h); h.handler.delegate = 'd'
+            h.handler = null; e.attribute(h); h.handler.delegate = 'd'
             assertEquals(42, h.handler(21))
             Closure[] a = [{ x -> x * 10 }]; e.composeLeft(a); a[0].delegate = 'd'
             assertEquals(30, a[0](2))                    // a[0] << c: c runs first
@@ -207,16 +207,16 @@ final class PackedClosuresTransformTest {
     // GROOVY-12651
     @Test
     void compileStaticCompoundStoresAreDeclined() {
-        // ?= and ??= keep their assignment shape under @CompileStatic, so the escape gate sees them
+        // ?= keeps its assignment shape under @CompileStatic, so the escape gate sees it
         String src = '''class Holder { Closure handler }
             @groovy.transform.CompileStatic
             @groovy.transform.PackedClosures
             class S {
                 Closure field = null
                 void property(Holder h)  { h.handler ?= { Integer x -> x * 2 } }
-                void attribute(Holder h) { h.@handler ??= { Integer x -> x * 2 } }
+                void attribute(Holder h) { h.@handler ?= { Integer x -> x * 2 } }
                 void index(Closure[] a)  { a[0] ?= { Integer x -> x * 2 } }
-                void toField()           { field ??= { Integer x -> x * 2 } }
+                void toField()           { field ?= { Integer x -> x * 2 } }
                 int local(int n)         { Closure c = null; c ?= { Integer x -> x * 3 }; (int) c(n) }
             }'''
         def names = generatedClassNames(src)
