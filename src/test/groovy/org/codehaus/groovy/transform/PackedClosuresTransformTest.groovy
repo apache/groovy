@@ -945,6 +945,196 @@ final class PackedClosuresTransformTest {
         assertEquals(42, instance(src + '\n new C()').result)
     }
 
+    // GROOVY-12659
+    @Test
+    void conditionalAndWrappedClosuresEscapeWhereTheirValueDoes() {
+        // A literal that is a branch of a ternary or elvis is the value whenever that branch is taken.
+        // curry/rcurry/ncurry, asWritable, trampoline and the memoize family wrap it and may pass a
+        // delegate set on the wrapper on to it; clone, dehydrate and rehydrate copy it, and a copy of
+        // a packed closure is still packed. So the literal escapes wherever the conditional or the
+        // call result does. A coercion to a SAM type that Closure does not implement yields a proxy,
+        // not a closure, so it still packs, as does a conditional or curried literal that is only
+        // called in the method.
+        ['', '@groovy.transform.TypeChecked'].each { mode ->
+            String src = """class Holder { Closure handler; List<Closure> list = [] }
+                @groovy.transform.PackedClosures $mode
+                class E {
+                    Closure field
+                    Object any
+                    Comparator order
+                    void ternary(Holder h, boolean b) { h.handler = b ? { Integer x -> x + 1 } : null }           // property
+                    void elvis(Holder h, Closure c)   { h.handler = c ?: { Integer x -> x + 1 } }                 // property
+                    Closure returned(boolean b)       { return b ? { Integer x -> x + 1 } : null }               // returned
+                    Closure implicit(Closure c)       { c ?: { Integer x -> x + 1 } }                             // implicit return
+                    void nested(boolean b)            { field = b ? (b ? { Integer x -> x + 1 } : null) : null }  // nested, field
+                    void appended(Holder h, boolean b){ h.list << (b ? { Integer x -> x + 1 } : null) }           // appended
+                    List inList(boolean b)            { [b ? { Integer x -> x + 1 } : null] }                     // list literal
+                    Map inMap(Closure c)              { [k: c ?: { Integer x -> x + 1 }] }                        // map literal
+                    Closure curried()                 { return { Integer x, Integer y -> x + y }.curry(1) }      // returned
+                    void rcurried(Holder h)           { h.handler = { Integer x, Integer y -> x + y }.rcurry(1) } // property
+                    List ncurried()                   { [{ Integer x, Integer y -> x + y }.ncurry(0, 1)] }       // list literal
+                    Closure writable()                { { Integer x -> x + 1 }.asWritable() }                     // implicit return
+                    Closure cloned()                  { (Closure) { Integer x -> x + 1 }.clone() }                // cast of a copy
+                    Closure dehydrated()              { { Integer x -> x + 1 }.dehydrate() }
+                    Closure rehydrated()              { { Integer x -> x + 1 }.rehydrate(null, this, this) }
+                    void curriedBranch(boolean b)     { field = b ? { Integer x, Integer y -> x + y }.curry(1) : null } // branch, field
+                    void toObject()                   { any = (Object) { Integer x -> x + 1 } }                   // cast, field
+                    Closure trampolined()             { { Integer x -> x + 1 }.trampoline() }                     // implicit return
+                    Closure memoized()                { { Integer x -> x + 1 }.memoize() }
+                    Closure memoizedAtMost()          { { Integer x -> x + 1 }.memoizeAtMost(2) }
+                    void coerced()                    { order = { a, b -> 0 } as Comparator }                     // -> packs
+                    def local(boolean b)              { (b ? { Integer x -> x + 1 } : { Integer x -> x - 1 })(1) } // -> both pack
+                    def localCurry()                  { { Integer x, Integer y -> x + y }.curry(1)(2) }          // -> packs
+                }"""
+            def names = generatedClassNames(src)
+            assertEquals(20, closureClassCount(names), "[$mode] conditional and wrapped escapes should be declined: $names")
+
+            def (e, h) = instance(src + '\n [new E(), new Holder()]')
+            e.ternary(h, true); h.handler.delegate = 'd'
+            assertEquals(4, h.handler(3))
+            e.elvis(h, null); h.handler.delegate = 'd'
+            assertEquals(4, h.handler(3))
+            def r = e.returned(true); r.delegate = 'd'
+            assertEquals(4, r(3))
+            r = e.implicit(null); r.delegate = 'd'
+            assertEquals(4, r(3))
+            e.nested(true); e.field.delegate = 'd'
+            assertEquals(4, e.field(3))
+            e.appended(h, true); h.list*.delegate = 'd'
+            assertEquals([4], h.list*.call(3))
+            r = e.inList(true)[0]; r.delegate = 'd'
+            assertEquals(4, r(3))
+            r = e.inMap(null).k; r.delegate = 'd'
+            assertEquals(4, r(3))
+            r = e.curried(); r.delegate = 'd'
+            assertEquals(4, r(3))
+            e.rcurried(h); h.handler.delegate = 'd'
+            assertEquals(4, h.handler(3))
+            r = e.ncurried()[0]; r.delegate = 'd'
+            assertEquals(4, r(3))
+            [e.writable(), e.cloned(), e.dehydrated(), e.rehydrated()].each {
+                it.delegate = 'd'
+                assertEquals(4, it(3))
+            }
+            e.curriedBranch(true); e.field.delegate = 'd'
+            assertEquals(4, e.field(3))
+            e.toObject(); e.any.delegate = 'd'
+            assertEquals(4, e.any(3))
+            [e.trampolined(), e.memoized(), e.memoizedAtMost()].each {
+                it.delegate = 'd'
+                assertEquals(4, it(3))
+            }
+            assertEquals(2, e.local(true))
+            assertEquals(3, e.localCurry())
+        }
+    }
+
+    // GROOVY-12659
+    @Test
+    void compileStaticConditionalAndWrappedEscapesAreDeclined() {
+        String src = '''@groovy.transform.CompileStatic
+            @groovy.transform.PackedClosures
+            class S {
+                Closure field
+                Closure returned(boolean b)   { return b ? { Integer x -> x + 1 } : null }
+                Closure implicit(Closure c)   { c ?: { Integer x -> x + 1 } }
+                void toField(boolean b)       { field = b ? { Integer x -> x + 1 } : null }
+                List inList(Closure c)        { [c ?: { Integer x -> x + 1 }] }
+                Closure curried()             { return { Integer x, Integer y -> x + y }.curry(1) }
+                void writable()               { field = { Integer x -> x + 1 }.asWritable() }
+                Closure cloned()              { (Closure) { Integer x -> x + 1 }.clone() }
+                Closure memoized()            { { Integer x -> x + 1 }.memoize() }
+                int local(boolean b)          { (int) (b ? { Integer x -> x + 1 } : { Integer x -> x - 1 })(1) } // -> both pack
+                int localCurry()              { (int) { Integer x, Integer y -> x + y }.curry(1)(2) }    // -> packs
+            }'''
+        def names = generatedClassNames(src)
+        assertEquals(8, closureClassCount(names), "conditional and wrapped escapes should be declined: $names")
+
+        def s = instance(src + '\n new S()')
+        [s.returned(true), s.implicit(null), s.inList(null)[0], s.curried(), s.cloned(), s.memoized()].each {
+            it.delegate = 'd'
+            assertEquals(4, it(3))
+        }
+        s.toField(true); s.field.delegate = 'd'
+        assertEquals(4, s.field(3))
+        s.writable(); s.field.delegate = 'd'
+        assertEquals(4, s.field(3))
+        assertEquals(2, s.local(true))
+        assertEquals(3, s.localCurry())
+    }
+
+    // GROOVY-12656, GROOVY-12659
+    @Test
+    void conditionalAndWrappedOperandsOfAnEscapingCompositionAreDeclined() {
+        // A composition keeps its operands, and a ternary, cast or wrapping call in an operand keeps
+        // the literal in it, so the literal escapes wherever the composition does. The same
+        // composition only called in the method still packs.
+        ['', '@groovy.transform.TypeChecked', '@groovy.transform.CompileStatic'].each { mode ->
+            String src = """class Holder { Closure handler }
+                @groovy.transform.PackedClosures $mode
+                class E {
+                    void ternary(Holder h, Closure c, boolean b) { h.handler = c >> (b ? { Integer x -> x + 1 } : { Integer x -> x - 1 }) }
+                    Closure elvis(Closure c, Closure d)         { return (d ?: { Integer x -> x + 1 }) << c }
+                    Closure curried(Closure c)                 { c >> { Integer x, Integer y -> x + y }.curry(1) }
+                    Closure cast(Closure c)                    { c >> (Closure) { Integer x -> x + 1 } }
+                    int local(Closure c, boolean b)            { (int) (c >> (b ? { Integer x -> x + 1 } : { Integer x -> x - 1 }))(1) } // -> both pack
+                }"""
+            String name = mode ?: 'dynamic'
+            def names = generatedClassNames(src)
+            assertEquals(5, closureClassCount(names), "[$name] composed conditional and wrapped escapes should be declined: $names")
+
+            def (e, h) = instance(src + '\n [new E(), new Holder()]')
+            Closure twice = { x -> x * 2 }
+            e.ternary(h, twice, true)
+            [h.handler, e.elvis(twice, null), e.curried(twice), e.cast(twice)].each {
+                it.delegate = 'd'                        // no packed-adapter guard
+                assertEquals(7, it(3))
+            }
+            assertEquals(3, e.local(twice, true))
+        }
+    }
+
+    // GROOVY-12659
+    @Test
+    void closuresKeptByACoercionOrAnAssignmentValueEscapeWhereTheValueDoes() {
+        // as or a cast to a type the closure already is, such as Runnable or Callable (interfaces
+        // Closure implements), yields the closure itself, and the value of an assignment is its right
+        // operand. Either keeps the literal, so the literal escapes wherever the value does. A
+        // coercion to another SAM type wraps the closure in a proxy, which is not a closure, so it
+        // still packs, as does an assignment chained through locals only.
+        ['', '@groovy.transform.TypeChecked', '@groovy.transform.CompileStatic'].each { mode ->
+            String src = """import java.util.concurrent.Callable
+                class Holder { Closure handler }
+                @groovy.transform.PackedClosures $mode
+                class E {
+                    Runnable task
+                    Callable<Object> job
+                    Comparator<Integer> order
+                    void coerced()         { task = { -> 'ran' } as Runnable }                            // field
+                    void cast()            { job = (Callable<Object>) { -> 'done' } }                      // field
+                    void chained(Holder h) { Closure c; h.handler = c = { Integer x -> x + 1 } }           // property
+                    Closure returned()     { Closure c; return c = { Integer x -> x + 1 } }                // returned
+                    void sam()             { order = { Integer a, Integer b -> b <=> a } as Comparator<Integer> } // -> packs
+                    int locals(int n)      { Closure c; Closure d = c = { Integer x -> x + 1 }; (int) d(n) } // -> packs
+                }"""
+            String name = mode ?: 'dynamic'
+            def names = generatedClassNames(src)
+            assertEquals(4, closureClassCount(names), "[$name] kept closures should be declined: $names")
+
+            def (e, h) = instance(src + '\n [new E(), new Holder()]')
+            e.coerced(); e.cast(); e.chained(h); e.sam()
+            assertTrue(e.task instanceof Closure && e.job instanceof Closure, "[$name] the closure itself is stored")
+            [e.task, e.job].each { it.delegate = 'd' }   // no packed-adapter guard
+            assertEquals(['ran', 'done'], [e.task.call(), e.job.call()])
+            [h.handler, e.returned()].each {
+                it.delegate = 'd'
+                assertEquals(4, it(3))
+            }
+            assertEquals([3, 2, 1], [1, 2, 3].sort(false, e.order))
+            assertEquals(4, e.locals(3))
+        }
+    }
+
     // GROOVY-12653
     @Test
     void captureWrittenAfterTheLiteralInAConstructorOrInitializerIsShared() {
