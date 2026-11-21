@@ -65,7 +65,7 @@ public final class CompilerConfigurationTest {
         // GROOVY-9192: parser error recovery is opt-in
         assertFalse(config.isErrorRecoveryEnabled());
         assertEquals("errorRecovery", CompilerConfiguration.ERROR_RECOVERY);
-        // GROOVY-12555: the default-package lookup before the default imports is on unless set to false
+        // GROOVY-12555: both options are off unless set to true, so an unset entry leaves the 6.0.0 order
         assertNull(config.getOptimizationOptions().get(CompilerConfiguration.DEFAULT_PACKAGE_FIRST));
         assertNull(config.getOptimizationOptions().get(CompilerConfiguration.DEFAULT_PACKAGE_SOURCES));
     }

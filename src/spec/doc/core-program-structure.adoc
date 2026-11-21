@@ -81,17 +81,17 @@ import java.math.BigDecimal
 
 This is done because the classes from these packages are most commonly used. By importing these boilerplate code is reduced.
 
-NOTE: As in Java, a type of the same package shadows a default import, and that includes the default package:
-a default-package class on the class path, or a `.groovy` source on the source path of the class loader, with the
-simple name of a default-import type is used in place of that type by default-package code. The `groovy` command
-uses the current directory as the class path when none is given, so a `Timer.groovy` next to a script stands for
-`Timer` in that script, where `java.util.Timer` otherwise would. The same holds for a source in a root of a
-`GroovyScriptEngine`, and for a class compiled earlier by the class loader of a `GroovyShell` or a
-`GroovyScriptEngine` that is reused. Use the fully qualified name where the default import is meant. Setting the
-optimization option `defaultPackageSources` to `false` (system property `groovy.resolve.default.package.sources`)
-leaves only compiled `.class` files in place of a default import, and setting `defaultPackageFirst` to `false`
-(system property `groovy.resolve.default.package.first`) restores the order of versions before 7.0, where a default
-import came before a class of the default package found on the class path.
+NOTE: As in Java, a type of the same package shadows a default import. For the default package that lookup is
+opt-in. Set the optimization option `defaultPackageFirst` to `true` (system property
+`groovy.resolve.default.package.first`) and a compiled default-package class on the class path, with the simple
+name of a default-import type, is used in place of that type by default-package code. A `.groovy` source on the
+source path of the class loader, and a class compiled earlier by that class loader, are included only when
+`defaultPackageSources` is `true` as well (system property `groovy.resolve.default.package.sources`). Both options
+are off by default, so the resolution order is unchanged unless `defaultPackageFirst` is set. The `groovy` command
+uses the current directory as the class path when none is given, so with both options set a `Timer.groovy` next to
+a script stands for `Timer` in that script, where `java.util.Timer` otherwise would. The same holds for a source
+in a root of a `GroovyScriptEngine`, and for a class compiled earlier by the class loader of a `GroovyShell` or a
+`GroovyScriptEngine` that is reused. Use the fully qualified name where the default import is meant.
 
 === Simple import
 

@@ -117,12 +117,12 @@ final class Groovy12555 {
         assert !separate.contains('groovy/util/Factory')
     }
 
-    // the option is on unless it is set to false
+    // on 6.0.x the option is off unless it is set to true, so the 6.0.0 order is unchanged
     @Test
-    void testDefaultPackageFirstByDefault() {
+    void testDefaultPackageFirstOffByDefault() {
         def (together, separate) = compileCallerBothWays([:], true)
-        assert together == separate
-        assert !separate.contains('groovy/util/Factory')
+        assert !together.contains('groovy/util/Factory')
+        assert separate.contains('groovy/util/Factory')
     }
 
     // with the option off, the default import comes before a compiled class of the default package, as it used to
@@ -136,7 +136,7 @@ final class Groovy12555 {
     // a source of the default package on the class path is compiled and referred to rather than a default import
     @Test
     void testDefaultPackageSourceBeforeDefaultImports() {
-        def (together, separate) = compileCallerBothWays([(DEFAULT_PACKAGE_FIRST): true], false)
+        def (together, separate) = compileCallerBothWays([(DEFAULT_PACKAGE_FIRST): true, (DEFAULT_PACKAGE_SOURCES): true], false)
         assert together == separate
         assert !separate.contains('groovy/util/Factory')
     }
@@ -176,7 +176,7 @@ final class Groovy12555 {
     // with the sources left out, a compiled class of the default package still comes before a default import
     @Test
     void testCompiledDefaultPackageClassBeforeDefaultImportsWithoutSources() {
-        def (together, separate) = compileCallerBothWays([(DEFAULT_PACKAGE_SOURCES): false], true)
+        def (together, separate) = compileCallerBothWays([(DEFAULT_PACKAGE_FIRST): true, (DEFAULT_PACKAGE_SOURCES): false], true)
         assert together == separate
         assert !separate.contains('groovy/util/Factory')
     }
@@ -184,7 +184,7 @@ final class Groovy12555 {
     // with the sources left out, a source of the default package on the class path comes after a default import
     @Test
     void testDefaultPackageSourceAfterDefaultImportsWithoutSources() {
-        def (together, separate) = compileCallerBothWays([(DEFAULT_PACKAGE_SOURCES): false], false)
+        def (together, separate) = compileCallerBothWays([(DEFAULT_PACKAGE_FIRST): true, (DEFAULT_PACKAGE_SOURCES): false], false)
         assert !together.contains('groovy/util/Factory')
         assert separate.contains('groovy/util/Factory')
     }
@@ -192,18 +192,18 @@ final class Groovy12555 {
     // the lookup of a class file does not record a miss, so a source of the default package is still found after it
     @Test
     void testDefaultPackageSourceFoundWithoutSources() {
-        def (together, separate) = compileCallerBothWays([(DEFAULT_PACKAGE_SOURCES): false], false, HELPER_SOURCES)
+        def (together, separate) = compileCallerBothWays([(DEFAULT_PACKAGE_FIRST): true, (DEFAULT_PACKAGE_SOURCES): false], false, HELPER_SOURCES)
         assert together == separate
     }
 
     @Test
     void testCompiledDefaultPackageNestedClassBeforeDefaultImportsWithoutSources() {
-        def (together, separate) = compileCallerBothWays([(DEFAULT_PACKAGE_SOURCES): false], true, NESTED_SOURCES)
+        def (together, separate) = compileCallerBothWays([(DEFAULT_PACKAGE_FIRST): true, (DEFAULT_PACKAGE_SOURCES): false], true, NESTED_SOURCES)
         assert together == separate
         assert !separate.contains('java/net/Proxy$Type')
     }
 
-    // a source in a root of a GroovyScriptEngine comes before a default import, unless the sources are left out
+    // a source in a root of a GroovyScriptEngine comes before a default import only when both options are on
     @Test
     void testScriptEngineRootSource() {
         write(new File(dir, 'Date.groovy'), 'class Date { }')
@@ -211,21 +211,29 @@ final class Groovy12555 {
         URL[] roots = [dir.toURI().toURL()]
 
         def engine = new GroovyScriptEngine(roots, Groovy12555.classLoader)
+        assert engine.run('a.groovy', new Binding()) == 'java.util.Date'
+
+        engine = new GroovyScriptEngine(roots, Groovy12555.classLoader)
+        engine.config = config([(DEFAULT_PACKAGE_FIRST): true, (DEFAULT_PACKAGE_SOURCES): true])
         assert engine.run('a.groovy', new Binding()) == 'Date'
 
         engine = new GroovyScriptEngine(roots, Groovy12555.classLoader)
-        engine.config = config([(DEFAULT_PACKAGE_SOURCES): false])
+        engine.config = config([(DEFAULT_PACKAGE_FIRST): true, (DEFAULT_PACKAGE_SOURCES): false])
         assert engine.run('a.groovy', new Binding()) == 'java.util.Date'
     }
 
-    // a class that the class loader compiled earlier takes part only when the sources do
+    // a class that the class loader compiled earlier takes part only when both options are on
     @Test
     void testClassCompiledEarlierByTheClassLoader() {
         def shell = new GroovyShell(Groovy12555.classLoader, config([:]))
         shell.classLoader.parseClass('class Timer { }', 'Timer.groovy')
+        assert shell.evaluate('new Timer().getClass().name') == 'java.util.Timer'
+
+        shell = new GroovyShell(Groovy12555.classLoader, config([(DEFAULT_PACKAGE_FIRST): true, (DEFAULT_PACKAGE_SOURCES): true]))
+        shell.classLoader.parseClass('class Timer { }', 'Timer.groovy')
         assert shell.evaluate('new Timer().getClass().name') == 'Timer'
 
-        shell = new GroovyShell(Groovy12555.classLoader, config([(DEFAULT_PACKAGE_SOURCES): false]))
+        shell = new GroovyShell(Groovy12555.classLoader, config([(DEFAULT_PACKAGE_FIRST): true, (DEFAULT_PACKAGE_SOURCES): false]))
         shell.classLoader.parseClass('class Timer { }', 'Timer.groovy')
         assert shell.evaluate('new Timer().getClass().name') == 'java.util.Timer'
     }

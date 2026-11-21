@@ -1029,10 +1029,11 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
     /**
      * Looks up a class of the default package on the class path for a class of the default package. It takes
      * precedence over the default imports, as a class of a named package does for a class of the same package and
-     * as a class of the default package that is being compiled does, unless the
-     * {@link CompilerConfiguration#DEFAULT_PACKAGE_FIRST} option is {@code false}. A miss leaves {@code type}
+     * as a class of the default package that is being compiled does, when the
+     * {@link CompilerConfiguration#DEFAULT_PACKAGE_FIRST} option is {@code true}. On 6.0.x the option is off
+     * unless set, so the 6.0.0 order is unchanged. A miss leaves {@code type}
      * untouched and is cached by the {@link ClassNodeResolver}, so the later {@link #resolveToOuter} of the same
-     * lookup is a no-op. If the {@link CompilerConfiguration#DEFAULT_PACKAGE_SOURCES} option is {@code false}, only
+     * lookup is a no-op. Unless the {@link CompilerConfiguration#DEFAULT_PACKAGE_SOURCES} option is {@code true}, only
      * a {@code .class} file is looked up and a miss is not cached, so the later {@link #resolveToOuter} can still find
      * a source, after the default imports.
      *
@@ -1044,7 +1045,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
             return false;
         }
         Map<String, Boolean> options = compilationUnit.getConfiguration().getOptimizationOptions();
-        if (Boolean.FALSE.equals(options.get(CompilerConfiguration.DEFAULT_PACKAGE_FIRST))) {
+        if (!Boolean.TRUE.equals(options.get(CompilerConfiguration.DEFAULT_PACKAGE_FIRST))) {
             return false;
         }
         ModuleNode module = currentClass.getModule();
@@ -1052,7 +1053,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
                 || type instanceof ConstructedNestedClass || type instanceof LowerCaseClass) {
             return false;
         }
-        if (!Boolean.FALSE.equals(options.get(CompilerConfiguration.DEFAULT_PACKAGE_SOURCES))) {
+        if (Boolean.TRUE.equals(options.get(CompilerConfiguration.DEFAULT_PACKAGE_SOURCES))) {
             return resolveToOuter(type);
         }
         if (classNodeResolver == null)

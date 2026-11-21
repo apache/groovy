@@ -73,25 +73,29 @@ public class CompilerConfiguration {
      * Option for resolving a class of the default package that is on the class path, or on the source
      * path of the Groovy class loader, before the default imports in a compilation unit of the default
      * package, as a class of a named package is resolved for a compilation unit of the same package.
-     * Enabled by default. Disable it, or set the system property {@code groovy.resolve.default.package.first}
-     * to {@code false}, where a class or script next to a script, named like a default-import type such as
-     * {@code Node} or {@code Timer}, must not take the place of that type.
+     * Disabled by default, so the resolution order of 6.0.0 is unchanged. Enable it, or set the system
+     * property {@code groovy.resolve.default.package.first} to {@code true}, where a class or script next
+     * to a script, named like a default-import type such as {@code Node} or {@code Timer}, should take
+     * the place of that type. With this option alone, only compiled {@code .class} files are looked up
+     * before the default imports; sources are included only when {@link #DEFAULT_PACKAGE_SOURCES} is
+     * also {@code true}.
      * Stored in {@link #getOptimizationOptions()} for consistency with other compiler feature flags.
      *
-     * @since 7.0.0
+     * @since 6.0.1
      */
     public static final String DEFAULT_PACKAGE_FIRST = "defaultPackageFirst";
 
     /**
      * Option for including the {@code .groovy} sources on the source path of the Groovy class loader in the lookup
      * that {@link #DEFAULT_PACKAGE_FIRST} enables, which then also takes in the classes the class loader has
-     * already compiled or loaded. Enabled by default, and ignored when {@link #DEFAULT_PACKAGE_FIRST} is disabled.
-     * Disable it, or set the system property {@code groovy.resolve.default.package.sources} to {@code false}, to
-     * look up only the {@code .class} files of the default package before the default imports; a source of the
-     * default package is then still found, but only after them, as before 7.0.
+     * already compiled or loaded. Disabled by default, and ignored when {@link #DEFAULT_PACKAGE_FIRST} is not
+     * {@code true}. Enable it, or set the system property {@code groovy.resolve.default.package.sources} to
+     * {@code true}, to look those sources up before the default imports. When it is not {@code true}, only the
+     * {@code .class} files of the default package come before the default imports, and a source of the default
+     * package is still found after them.
      * Stored in {@link #getOptimizationOptions()} for consistency with other compiler feature flags.
      *
-     * @since 7.0.0
+     * @since 6.0.1
      */
     public static final String DEFAULT_PACKAGE_SOURCES = "defaultPackageSources";
 
@@ -1637,6 +1641,8 @@ public class CompilerConfiguration {
      * Sets the optimization options for this configuration.
      * No entry or a true for that entry means to enable that optimization,
      * a false means the optimization is disabled.
+     * {@link #DEFAULT_PACKAGE_FIRST} and {@link #DEFAULT_PACKAGE_SOURCES} are opt-in:
+     * no entry leaves them disabled, and only {@code true} enables them.
      * Valid keys include {@code "all"}, {@code "int"}, {@link #INVOKEDYNAMIC},
      * {@link #PARALLEL_PARSE}, {@link #GROOVYDOC}, {@link #RUNTIME_GROOVYDOC}, {@link #DEFAULT_PACKAGE_FIRST},
      * and {@link #DEFAULT_PACKAGE_SOURCES}.
