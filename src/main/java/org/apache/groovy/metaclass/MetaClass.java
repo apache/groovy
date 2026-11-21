@@ -35,6 +35,13 @@ public final class MetaClass<T> {
         this.implRef = implRef;
     }
 
+    /**
+     * Delegates to the current {@link MetaClassConstant}.
+     *
+     * @param name method name
+     * @param parameters parameter classes passed through to that constant
+     * @return the meta-method that constant selects for this name and these parameter types
+     */
     public MetaMethod getMethod(String name, Class[] parameters) {
         return implRef.getPayload().getMethod(name, parameters);
     }

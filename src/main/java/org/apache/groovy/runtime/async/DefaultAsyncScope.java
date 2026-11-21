@@ -32,7 +32,7 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
@@ -55,6 +55,11 @@ public final class DefaultAsyncScope implements AsyncScope {
 
     private static final int PRUNE_THRESHOLD = 64;
 
+    private static final int TIMER_PENDING = 0;
+    private static final int TIMER_STOPPED = 1;
+    private static final int TIMER_FIRING = 2;
+    private static final int TIMER_FIRED = 3;
+
     private final Object lock = new Object();
     private final List<CompletableFuture<?>> children = new ArrayList<>();
     private final List<DefaultAsyncScope> childScopes = new ArrayList<>();
@@ -63,6 +68,17 @@ public final class DefaultAsyncScope implements AsyncScope {
     private final boolean failFast;
     private final AsyncScope parent;
 
+    /**
+     * Creates a scope that runs children on {@code executor}.
+     * {@code executor} must be non-null. When {@code failFast} is true, a child that
+     * completes with an error cancels the other registered children with interrupt,
+     * unless the scope is already closed. The parent is {@link #current()}. When that
+     * parent is a {@code DefaultAsyncScope} and is not closed, this scope is registered
+     * as its child. No task is started here.
+     *
+     * @param executor the executor used for child tasks
+     * @param failFast whether a failed child cancels the other registered children
+     */
     public DefaultAsyncScope(Executor executor, boolean failFast) {
         Objects.requireNonNull(executor, "executor must not be null");
         this.executor = executor;
@@ -73,10 +89,22 @@ public final class DefaultAsyncScope implements AsyncScope {
         }
     }
 
+    /**
+     * Creates a scope on {@code executor} with fail-fast cancellation enabled.
+     * Equivalent to {@link #DefaultAsyncScope(Executor, boolean) DefaultAsyncScope(executor, true)}.
+     * <p>A null {@code executor} fails immediately.
+     *
+     * @param executor the executor used for child tasks
+     */
     public DefaultAsyncScope(Executor executor) {
         this(executor, true);
     }
 
+    /**
+     * Creates a fail-fast scope on {@link AsyncSupport#getExecutor()}.
+     * Equivalent to {@link #DefaultAsyncScope(Executor, boolean)
+     * DefaultAsyncScope(AsyncSupport.getExecutor(), true)}.
+     */
     public DefaultAsyncScope() {
         this(AsyncSupport.getExecutor(), true);
     }
@@ -157,13 +185,13 @@ public final class DefaultAsyncScope implements AsyncScope {
                 if (firstError == null) {
                     firstError = cause;
                 } else {
-                    firstError.addSuppressed(cause);
+                    AsyncSupport.addSuppressedOnce(firstError, cause);
                 }
             } catch (Exception e) {
                 if (firstError == null) {
                     firstError = e;
                 } else {
-                    firstError.addSuppressed(e);
+                    AsyncSupport.addSuppressedOnce(firstError, e);
                 }
             }
         }
@@ -172,9 +200,7 @@ public final class DefaultAsyncScope implements AsyncScope {
             parentScope.deregisterChildScope(this);
         }
         if (firstError != null) {
-            if (firstError instanceof RuntimeException re) throw re;
-            if (firstError instanceof Error err) throw err;
-            throw new RuntimeException(firstError);
+            throw AsyncSupport.rethrow(firstError);
         }
     }
 
@@ -266,30 +292,63 @@ public final class DefaultAsyncScope implements AsyncScope {
                                           Function<AsyncScope, T> body) throws TimeoutException {
         Objects.requireNonNull(timeout, "timeout must not be null");
         Objects.requireNonNull(body, "body must not be null");
-        var timedOut = new AtomicBoolean(false);
+        var timerState = new AtomicInteger(TIMER_PENDING);
         Thread bodyThread = Thread.currentThread();
-        try (DefaultAsyncScope scope = new DefaultAsyncScope(executor)) {
-            ScheduledFuture<?> timer = AsyncSupport.getScheduler().schedule(() -> {
-                timedOut.set(true);
-                scope.cancelAll();
-                bodyThread.interrupt();
-            }, timeout.toMillis(), TimeUnit.MILLISECONDS);
-            try {
-                return withCurrent(scope, () -> body.apply(scope));
-            } catch (Exception e) {
-                if (timedOut.get()) {
-                    // Clear the interrupt flag set by the timeout
-                    Thread.interrupted();
-                    TimeoutException te = new TimeoutException("Scope timed out after " + timeout);
-                    te.initCause(e);
-                    throw te;
+        DefaultAsyncScope scope = new DefaultAsyncScope(executor);
+        ScheduledFuture<?> timer = null;
+        T result;
+        // The scope is closed by hand, as in AsyncScope.withScope: try-with-resources
+        // would add a failure shared by the body and a child to its own suppressed list
+        try {
+            timer = AsyncSupport.getScheduler().schedule(() -> {
+                if (timerState.compareAndSet(TIMER_PENDING, TIMER_FIRING)) {
+                    try {
+                        scope.cancelAll();
+                    } finally {
+                        bodyThread.interrupt();
+                        timerState.set(TIMER_FIRED);
+                    }
                 }
-                throw e;
-            } finally {
-                // Always cancel the timer — even if the body threw an Error
-                timer.cancel(false);
+            }, timeout.toMillis(), TimeUnit.MILLISECONDS);
+            result = withCurrent(scope, () -> body.apply(scope));
+        } catch (Throwable thrown) {
+            // A checked exception from a Closure body arrives wrapped by its SAM coercion
+            Throwable bodyError = AsyncSupport.unwrapUndeclared(thrown);
+            if (stopTimer(timer, timerState) && !(bodyError instanceof Error)) {
+                TimeoutException te = new TimeoutException("Scope timed out after " + timeout);
+                te.initCause(bodyError);
+                bodyError = te;
             }
+            try {
+                scope.close();
+            } catch (Throwable closeError) {
+                AsyncSupport.addSuppressedOnce(bodyError, closeError);
+            }
+            throw AsyncSupport.rethrow(bodyError);
         }
+        stopTimer(timer, timerState);
+        scope.close();
+        return result;
+    }
+
+    /**
+     * Stops a scope timer once the body has finished.
+     *
+     * @return whether the timer fired first
+     */
+    private static boolean stopTimer(ScheduledFuture<?> timer, AtomicInteger timerState) {
+        if (timer != null) {
+            timer.cancel(false);
+        }
+        if (timerState.compareAndSet(TIMER_PENDING, TIMER_STOPPED)) {
+            return false;
+        }
+        // Wait for the timer's interrupt, then clear it, so it cannot reach the caller later
+        while (timerState.get() != TIMER_FIRED) {
+            Thread.onSpinWait();
+        }
+        Thread.interrupted();
+        return true;
     }
 
     @Override
