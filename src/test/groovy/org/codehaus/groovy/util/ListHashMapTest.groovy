@@ -213,4 +213,44 @@ final class ListHashMapTest {
             lhm.values().clear()
         }
     }
+
+    // GROOVY-12744
+    @Test
+    void testViewsSeeLaterChanges() {
+        def entries = lhm.entrySet()
+        def keys = lhm.keySet()
+        def values = lhm.values()
+
+        lhm.put('a', '1')
+        assert entries.collectEntries { [it.key, it.value] } == [a: '1']
+        assert keys == ['a'] as Set
+        assert values as List == ['1']
+
+        lhm.put('a', '2')
+        lhm.put('b', '3')
+        assert entries.collectEntries { [it.key, it.value] } == [a: '2', b: '3']
+
+        lhm.put('c', '4') // switch to inner map
+        assert entries.size() == 3
+        assert keys == ['a','b','c'] as Set
+        assert values as Set == ['2','3','4'] as Set
+
+        lhm.remove('a') // fall back to list
+        assert entries.collectEntries { [it.key, it.value] } == [b: '3', c: '4']
+        assert keys.contains('c') && !keys.contains('a')
+        assert values.contains('4') && !values.contains('2')
+    }
+
+    // GROOVY-12744
+    @Test
+    void testSynchronizedMapSeesLaterChanges() {
+        Map map = Collections.synchronizedMap(lhm)
+        map.put('a', '1')
+        assert new HashMap(map) == [a: '1']
+
+        map.put('b', '2')
+        map.put('a', '3')
+        assert new HashMap(map) == [a: '3', b: '2']
+        assert Map.copyOf(map) == [a: '3', b: '2']
+    }
 }

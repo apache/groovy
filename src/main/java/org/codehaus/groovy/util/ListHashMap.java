@@ -18,9 +18,12 @@
  */
 package org.codehaus.groovy.util;
 
+import java.util.AbstractCollection;
+import java.util.AbstractSet;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 
@@ -106,7 +109,17 @@ public class ListHashMap<K,V> implements Map<K,V> {
     /** {@inheritDoc} */
     @Override
     public Set<Entry<K,V>> entrySet() {
-        return (innerMap != null ? Collections.unmodifiableMap(innerMap) : toMap()).entrySet();
+        return new AbstractSet<>() {
+            @Override
+            public Iterator<Entry<K,V>> iterator() {
+                return currentMap().entrySet().iterator();
+            }
+
+            @Override
+            public int size() {
+                return ListHashMap.this.size();
+            }
+        };
     }
 
     /** {@inheritDoc} */
@@ -132,7 +145,22 @@ public class ListHashMap<K,V> implements Map<K,V> {
     /** {@inheritDoc} */
     @Override
     public Set<K> keySet() {
-        return (innerMap != null ? Collections.unmodifiableMap(innerMap) : toMap()).keySet();
+        return new AbstractSet<>() {
+            @Override
+            public Iterator<K> iterator() {
+                return currentMap().keySet().iterator();
+            }
+
+            @Override
+            public int size() {
+                return ListHashMap.this.size();
+            }
+
+            @Override
+            public boolean contains(Object key) {
+                return containsKey(key);
+            }
+        };
     }
 
     /** {@inheritDoc} */
@@ -231,6 +259,29 @@ public class ListHashMap<K,V> implements Map<K,V> {
     /** {@inheritDoc} */
     @Override
     public Collection<V> values() {
-        return (innerMap != null ? Collections.unmodifiableMap(innerMap) : toMap()).values();
+        return new AbstractCollection<>() {
+            @Override
+            public Iterator<V> iterator() {
+                return currentMap().values().iterator();
+            }
+
+            @Override
+            public int size() {
+                return ListHashMap.this.size();
+            }
+
+            @Override
+            public boolean contains(Object value) {
+                return containsValue(value);
+            }
+        };
+    }
+
+    /**
+     * Returns the current entries for the views to iterate: the backing map, read-only,
+     * or a copy of the arrays.
+     */
+    private Map<K,V> currentMap() {
+        return innerMap != null ? Collections.unmodifiableMap(innerMap) : toMap();
     }
 }
