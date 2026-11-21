@@ -877,6 +877,59 @@ final class FieldsAndPropertiesStaticCompileTest extends FieldsAndPropertiesSTCT
         '''
     }
 
+    // GROOVY-12626: an enum constant body extends the enum but has no enclosing instance of it; "z" is the field it inherits
+    @Test
+    void testPrivateFieldOfEnumByBareNameInConstantBody() {
+        assertScript '''
+            import java.util.function.Supplier
+
+            enum E {
+                A {
+                    List read() {
+                        Supplier<String> lambda = () -> z
+                        [z, this.z, { -> z }(), lambda.get(), new Object() { String v() { z } }.v(), m(), { -> m() }()]
+                    }
+                    String write() { z = 'a'; this.@z }
+                    String writeInClosure() { { -> z = 'b' }(); this.@z }
+                    String compound() { z += '1'; z++; { -> z += '3' }(); this.@z }
+                }
+                abstract List read()
+                abstract String write()
+                abstract String writeInClosure()
+                abstract String compound()
+                private String z = 'x'
+                private String m() { z }
+            }
+            assert E.A.read() == ['x', 'x', 'x', 'x', 'x', 'x', 'x']
+            assert E.A.write() == 'a'
+            assert E.A.writeInClosure() == 'b'
+            assert E.A.compound() == 'b23'
+        '''
+    }
+
+    // GROOVY-12626: an anonymous subclass created in a static method has no enclosing instance; "z" is the field it inherits
+    @Test
+    void testPrivateFieldOfOuterClassInAnonymousSubclassInStaticMethod() {
+        assertScript '''
+            import java.util.function.Supplier
+
+            class Base {
+                private String z = 'x'
+                static Base make() {
+                    new Base() {
+                        String toString() {
+                            Supplier<String> lambda = () -> z
+                            String r = [z, { -> z }(), lambda.get()].join()
+                            z += '1'; { -> z += '2' }()
+                            r + this.@z
+                        }
+                    }
+                }
+            }
+            assert Base.make().toString() == 'xxxx12'
+        '''
+    }
+
     // GROOVY-8369
     @Test
     void testPropertyAccessOnEnumClass() {
