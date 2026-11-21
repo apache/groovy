@@ -48,6 +48,10 @@ import static org.objectweb.asm.Opcodes.ACC_ABSTRACT;
 public class BaseScriptASTTransformation extends AbstractASTTransformation {
 
     private static final Class<BaseScript> MY_CLASS = BaseScript.class;
+    /**
+     * {@link ClassNode} for {@link BaseScript}. {@link #visit} returns immediately
+     * when the annotation is not this type.
+     */
     public static final ClassNode MY_TYPE = ClassHelper.make(MY_CLASS);
     private static final String MY_TYPE_NAME = "@" + MY_TYPE.getNameWithoutPackage();
 

@@ -53,10 +53,11 @@ community prior to official versions being released. We welcome any feedback.
 
 === Prerequisites
 
-Groovy {groovy-short-version} requires Java 17+ with support for up to Java 25.
-
-Various Groovy CI servers run the test suite (with more than 10000 tests) across numerous versions of Java.
-Those servers are also useful to look at to confirm supported Java versions for different Groovy releases.
+Groovy {groovy-short-version} requires Java 17 or newer. The primary CI matrix runs the
+test suite on Java 17, 21 and 25. Pushes to the main branch also test Java 18, 19, 20,
+22, 23, 24 and 26. The compiler can emit bytecode for Java 17 through 28; when the
+bytecode level is not set, it matches the JDK running the compiler if that release is
+in that range, and Java 17 otherwise.
 
 == Maven Repository
 

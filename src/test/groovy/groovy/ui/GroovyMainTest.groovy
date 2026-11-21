@@ -26,6 +26,11 @@ import java.lang.reflect.InvocationTargetException
 import java.nio.file.FileSystems
 import java.nio.file.Files
 import java.nio.file.attribute.PosixFilePermissions
+import java.util.logging.Handler
+import java.util.logging.Level
+import java.util.logging.LogRecord
+import java.util.logging.Logger
+import java.util.logging.SimpleFormatter
 
 import static groovy.test.GroovyAssert.shouldFail
 import static org.junit.jupiter.api.Assumptions.assumeTrue
@@ -215,6 +220,38 @@ assert new MyConcreteClass() != null"""
             dir.listFiles()?.each { it.delete() }
             dir.delete()
         }
+    }
+
+    // GROOVY-12732
+    @Test
+    void testUncaughtExceptionIsLoggedWithItsTextAndItsStackTracePrintedOnce() {
+        List<LogRecord> logged = []
+        Handler capture = new Handler() {
+            @Override void publish(LogRecord record) { logged << record }
+            @Override void flush() {}
+            @Override void close() {}
+        }
+        Logger logger = Logger.getLogger(GroovyMain.name)
+        boolean parentHandlers = logger.useParentHandlers
+        logger.useParentHandlers = false
+        logger.addHandler(capture)
+        def originalErr = System.err
+        System.setErr(ps)
+        try {
+            def main = new GroovyMain()
+            main.@script = "throw new IllegalStateException('boom')"
+            main.@args = []
+            assert !main.run()
+        } finally {
+            System.setErr(originalErr)
+            logger.removeHandler(capture)
+            logger.useParentHandlers = parentHandlers
+        }
+        assert logged.size() == 1
+        assert logged[0].level == Level.SEVERE
+        assert new SimpleFormatter().formatMessage(logged[0]) == 'Caught: java.lang.IllegalStateException: boom'
+        assert logged[0].thrown == null // the trace is printed once, by printStackTrace, after sanitizing
+        assert baos.toString().readLines().count { it.startsWith('java.lang.IllegalStateException: boom') } == 1
     }
 
     private static boolean posix() {

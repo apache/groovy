@@ -76,7 +76,7 @@ data = 'hippopotamus means river horse'
 def fields = unpack('A5 x8 A5 x1 A5 x1 A*', data)
 assert fields == ['hippo', 'means', 'river', 'horse']
 
-// On a Java 5 or 6 JVM, Groovy can also make use of Scanners:
+// A java.util.Scanner can split the same record:
 s = new Scanner(data)
 s.findInLine(/(.{5}).{8}(.{5}) (.{5}) (.*)/)
 m = s.match()

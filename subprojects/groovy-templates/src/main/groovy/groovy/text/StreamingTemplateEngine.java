@@ -633,7 +633,9 @@ public class StreamingTemplateEngine extends TemplateEngine {
                             : createClassLoader(parentLoader);
             final Class<?> groovyClass;
             try {
-                groovyClass = loader.parseClass(new GroovyCodeSource(target.toString(), TEMPLATE_SCRIPT_PREFIX + COUNTER.incrementAndGet() + ".groovy", "x"));
+                GroovyCodeSource codeSource = new GroovyCodeSource(target.toString(), TEMPLATE_SCRIPT_PREFIX + COUNTER.incrementAndGet() + ".groovy", "x");
+                codeSource.setNameGenerated(true);
+                groovyClass = loader.parseClass(codeSource);
             } catch (MultipleCompilationErrorsException e) {
                 throw mangleMultipleCompilationErrorsException(e, sections);
             } catch (Exception e) {

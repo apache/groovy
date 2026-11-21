@@ -18,6 +18,13 @@
  */
 package org.apache.groovy.internal.util;
 
+/**
+ * Unicode characters shared by internal parsers.
+ */
 public class UnicodeConst {
+    /**
+     * The NUL character, U+0000. The JSON character parser returns this
+     * when its input buffer is exhausted.
+     */
     public static char ZERO = '\u0000';
 }

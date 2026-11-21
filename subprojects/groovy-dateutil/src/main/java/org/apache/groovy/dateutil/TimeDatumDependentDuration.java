@@ -22,10 +22,17 @@ package org.apache.groovy.dateutil;
  * The result of mixing a {@link TimeDuration} with a {@link DatumDependentDuration}.
  */
 public class TimeDatumDependentDuration extends DatumDependentDuration {
+    /**
+     * Creates a mixed duration from the given calendar and time fields.
+     */
     public TimeDatumDependentDuration(int years, int months, int days, int hours, int minutes, int seconds, int millis) {
         super(years, months, days, hours, minutes, seconds, millis);
     }
 
+    /**
+     * Keeps this duration's years and months and adds {@code rhs}'s day and
+     * time fields, returning a {@link TimeDatumDependentDuration}.
+     */
     @Override
     public DatumDependentDuration plus(final Duration rhs) {
         return new TimeDatumDependentDuration(getYears(), getMonths(),
@@ -34,6 +41,10 @@ public class TimeDatumDependentDuration extends DatumDependentDuration {
                 getMillis() + rhs.getMillis());
     }
 
+    /**
+     * Adds every calendar and time field of {@code rhs}, returning a
+     * {@link TimeDatumDependentDuration}.
+     */
     @Override
     public DatumDependentDuration plus(final DatumDependentDuration rhs) {
         return new TimeDatumDependentDuration(getYears() + rhs.getYears(), getMonths() + rhs.getMonths(),
@@ -42,6 +53,10 @@ public class TimeDatumDependentDuration extends DatumDependentDuration {
                 getMillis() + rhs.getMillis());
     }
 
+    /**
+     * Keeps this duration's years and months and subtracts {@code rhs}'s day
+     * and time fields, returning a {@link TimeDatumDependentDuration}.
+     */
     @Override
     public DatumDependentDuration minus(final Duration rhs) {
         return new TimeDatumDependentDuration(getYears(), getMonths(),
@@ -50,6 +65,10 @@ public class TimeDatumDependentDuration extends DatumDependentDuration {
                 getMillis() - rhs.getMillis());
     }
 
+    /**
+     * Subtracts every calendar and time field of {@code rhs}, returning a
+     * {@link TimeDatumDependentDuration}.
+     */
     @Override
     public DatumDependentDuration minus(final DatumDependentDuration rhs) {
         return new TimeDatumDependentDuration(getYears() - rhs.getYears(), getMonths() - rhs.getMonths(),
