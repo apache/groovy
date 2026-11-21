@@ -20,6 +20,8 @@ package org.codehaus.groovy.tools.shell.util;
 
 import org.codehaus.groovy.tools.shell.IO;
 
+import java.io.PrintWriter;
+
 import static org.jline.jansi.Ansi.Attribute.INTENSITY_BOLD;
 import static org.jline.jansi.Ansi.Color;
 import static org.jline.jansi.Ansi.Color.GREEN;
@@ -64,8 +66,9 @@ public final class Logger {
             }
         }
 
-        if (io.ansiSupported) {
-            logWithAnsi(level, msg);
+        PrintWriter ansiOut = io.ansiSupported ? io.getAnsiOut() : null;
+        if (ansiOut != null) {
+            logWithAnsi(ansiOut, level, msg);
         } else {
             logDefault(level, msg);
         }
@@ -81,12 +84,12 @@ public final class Logger {
         io.out.println(level + " [" + name + "] " + msg);
     }
 
-    private void logWithAnsi(String level, Object msg) {
+    private void logWithAnsi(PrintWriter ansiOut, String level, Object msg) {
         Color color = GREEN;
         if (WARN.equals(level) || ERROR.equals(level)) {
             color = RED;
         }
-        io.out.println(ansi().a(INTENSITY_BOLD).fg(color).a(level).reset().a(" [").a(name).a("] ").a(msg));
+        ansiOut.println(ansi().a(INTENSITY_BOLD).fg(color).a(level).reset().a(" [").a(name).a("] ").a(msg));
     }
 
     //

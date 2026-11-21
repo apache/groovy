@@ -259,6 +259,11 @@ public class SimpleGroovyRootDoc extends SimpleGroovyDoc implements GroovyRootDo
             this.classDocs = classDocs;
         }
 
+        /**
+         * Resolves {@code name} relative to {@code groovyClassDoc}, remembering
+         * both hits and misses. A simple-name match is limited to the same
+         * directory when the starting class has a package path.
+         */
         public GroovyClassDoc search(GroovyClassDoc groovyClassDoc, String name) {
             Entry entry = new Entry(groovyClassDoc, name);
             GroovyClassDoc result = store.get(entry);
@@ -304,6 +309,10 @@ public class SimpleGroovyRootDoc extends SimpleGroovyDoc implements GroovyRootDo
                 this.hashCode = computeHash();
             }
 
+            /**
+             * Returns whether {@code o} is an entry for the same class documentation
+             * and the same name.
+             */
             @Override
             public boolean equals(final Object o) {
                 if (this == o) return true;
@@ -322,6 +331,10 @@ public class SimpleGroovyRootDoc extends SimpleGroovyDoc implements GroovyRootDo
                 return result;
             }
 
+            /**
+             * Returns the hash of the class documentation and name computed when the
+             * entry was created.
+             */
             @Override
             public int hashCode() {
                 return hashCode;

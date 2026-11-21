@@ -343,7 +343,7 @@ public class Groovy extends Java {
     }
 
     /**
-     * If true, generates metadata for reflection on method parameter names (jdk8+ only).  Defaults to false.
+     * If true, generates metadata for reflection on method parameter names. Defaults to false.
      *
      * @param parameters set to true to generate metadata.
      */

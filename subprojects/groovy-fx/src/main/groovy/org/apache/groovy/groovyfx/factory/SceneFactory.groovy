@@ -38,6 +38,9 @@ class SceneFactory extends NodeFactory {
 
     private static final String PLACEHOLDER_ROOT = 'groovyfx.placeholderRoot'
 
+    /**
+     * Creates a factory for {@link Scene}.
+     */
     SceneFactory() {
         super(Scene)
     }

@@ -43,6 +43,12 @@ public class BooleanClosureWrapper {
     private final Closure wrapped;
     private final int numberOfArguments;
 
+    /**
+     * Wraps {@code wrapped} and records how many parameters it accepts, so a
+     * later map call can pass the entry whole or split into key and value.
+     *
+     * @param wrapped closure invoked by later calls
+     */
     public BooleanClosureWrapper(Closure wrapped) {
         this.wrapped = wrapped;
         this.bmi = new BooleanReturningMethodInvoker("call");
