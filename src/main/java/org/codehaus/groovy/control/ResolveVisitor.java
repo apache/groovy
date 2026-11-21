@@ -615,6 +615,8 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
      * accessible. A package that no explicit module owns is left alone, so
      * language-runtime types on the classpath are not rejected. The module
      * declaration is resolved before source classes so this test sees the graph.
+     * Declared types go through {@code resolveOrFail}. A class expression and an
+     * import that binds a type do not, so those sites call this directly.
      *
      * @param type a type that was resolved
      * @param node the site to report, or {@code null} to use {@code type}
@@ -1673,6 +1675,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
         if (className != null) {
             ClassNode type = ClassHelper.make(className);
             if (resolve(type)) {
+                checkModuleAccessibility(type, pe);
                 return new ClassExpression(type);
             }
         }
@@ -1692,6 +1695,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
                         if (isParameterizedTypeUsage(owner) || owner.getOuterClassType() != null) {
                             type.setOuterClassType(owner);
                         }
+                        checkModuleAccessibility(type, pe);
                         return new ClassExpression(type);
                     }
                 }
@@ -1995,6 +1999,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
                 // as it is only a classvariable, it is only in
                 // referencedClassVariables, but must be removed
                 // for each parentscope too
+                checkModuleAccessibility(t, ve);
                 for (VariableScope scope = currentScope; scope != null && !scope.isRoot(); scope = scope.getParent()) {
                     if (scope.removeReferencedClassVariable(ve.getName()) == null) break;
                 }
@@ -2270,6 +2275,8 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
                 ClassNode type = importNode.getType();
                 if (!resolve(type, false, false, true)) {
                     addError("unable to resolve class " + type.getName(), type);
+                } else {
+                    checkModuleAccessibility(type, importNode);
                 }
             } finally {
                 currentImport = null;
@@ -2284,6 +2291,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
                     ClassNode type = ClassHelper.makeWithoutCaching(importName);
                     if (resolve(type, false, false, true)) {
                         importNode.setType(type);
+                        checkModuleAccessibility(type, importNode);
                     }
                 } finally {
                     currentImport = null;
@@ -2294,12 +2302,18 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
             ClassNode type = importNode.getType();
             if (!resolve(type, true, true, true)) {
                 addError("unable to resolve class " + type.getName(), type);
+            } else {
+                // A static member use rewrites the name and does not resolve the
+                // owner again, so the owner is tested here.
+                checkModuleAccessibility(type, importNode);
             }
         }
         for (ImportNode importNode : module.getStaticStarImports().values()) {
             ClassNode type = importNode.getType();
             if (!resolve(type, true, true, true)) {
                 addError("unable to resolve class " + type.getName(), type);
+            } else {
+                checkModuleAccessibility(type, importNode);
             }
         }
         module.setImportsResolved(true);

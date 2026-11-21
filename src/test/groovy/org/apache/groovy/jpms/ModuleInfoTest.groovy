@@ -2086,6 +2086,52 @@ final class ModuleInfoTest {
 
     // GROOVY-9273
     @Test
+    void testNamedModuleRejectsClassExpressionsAndStaticImports() {
+        // A field type is not the only reference. A class expression, a simple
+        // name, and a static import bind the type without resolveOrFail.
+        def expression = fail(dir('awt-expr'), [
+            'module-info.groovy': 'module demo.awt { exports demo.awt; }',
+            'A.groovy': 'package demo.awt; class A { def type = java.awt.Frame }'
+        ])
+        assert expression.contains('not accessible')
+        assert expression.contains('java.awt.Frame')
+
+        def simple = fail(dir('awt-simple'), [
+            'module-info.groovy': 'module demo.awt { exports demo.awt; }',
+            'A.groovy': '''
+                package demo.awt
+                import java.awt.Frame
+                class A { def type = Frame }
+            '''
+        ])
+        assert simple.contains('not accessible')
+        assert simple.contains('java.awt.Frame')
+
+        def member = fail(dir('awt-static'), [
+            'module-info.groovy': 'module demo.awt { exports demo.awt; }',
+            'A.groovy': '''
+                package demo.awt
+                import static java.awt.Color.RED
+                class A { def color = RED }
+            '''
+        ])
+        assert member.contains('not accessible')
+        assert member.contains('java.awt.Color')
+
+        def star = fail(dir('awt-static-star'), [
+            'module-info.groovy': 'module demo.awt { exports demo.awt; }',
+            'A.groovy': '''
+                package demo.awt
+                import static java.awt.Color.*
+                class A { def color = RED }
+            '''
+        ])
+        assert star.contains('not accessible')
+        assert star.contains('java.awt.Color')
+    }
+
+    // GROOVY-9273
+    @Test
     void testNamedModuleAllowsTypeFromRequiredModule() {
         def unit = compile(dir('awt-ok'), [
             'module-info.groovy': '''
@@ -2098,6 +2144,21 @@ final class ModuleInfoTest {
         ])
         assert unit.classes.any { it.name == 'demo.awt.A' }
         assert unit.classes.any { it.name == 'module-info' }
+
+        def staticImport = compile(dir('awt-static-ok'), [
+            'module-info.groovy': '''
+                module demo.awt {
+                    requires java.desktop;
+                    exports demo.awt;
+                }
+            ''',
+            'A.groovy': '''
+                package demo.awt
+                import static java.awt.Color.RED
+                class A { def color = RED }
+            '''
+        ])
+        assert staticImport.classes.any { it.name == 'demo.awt.A' }
     }
 
     // GROOVY-9273
@@ -2109,6 +2170,15 @@ final class ModuleInfoTest {
         assert unit.ast.moduleInfo == null
         assert unit.classes.any { it.name == 'A' }
         assert unit.classes.every { it.name != 'module-info' }
+
+        def staticImport = compile(dir('awt-unnamed-static'), [
+            'A.groovy': '''
+                import static java.awt.Color.RED
+                class A { def color = RED }
+            '''
+        ])
+        assert staticImport.ast.moduleInfo == null
+        assert staticImport.classes.any { it.name == 'A' }
     }
 
     private File dir(String name) {
