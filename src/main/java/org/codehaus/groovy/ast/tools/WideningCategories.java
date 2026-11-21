@@ -251,6 +251,7 @@ public class WideningCategories {
      *
      * For example, if LUB is Set&lt;T&gt; and a is Set&lt;String&gt; and b is Set&lt;StringBuffer&gt;, this
      * will return a LUB which parameterized type matches Set&lt;? extends CharSequence&gt;
+     *
      * @param ctx tracks (t1, t2) pairs whose LUB is currently being computed, so this method can detect recursive calls (GROOVY-11770)
      * @param lub the type to be parameterized
      * @param a parameterized type a
@@ -552,6 +553,7 @@ public class WideningCategories {
     /**
      * Given two class nodes supposedly at the upper common level, returns a class node which is able to represent
      * their lowest upper bound.
+     *
      * @param baseType1
      * @param baseType2
      * @param interfaces interfaces both class nodes share, which their lowest common super class do not implement.
@@ -602,6 +604,21 @@ public class WideningCategories {
         private final ClassNode[] interfaces;
         private final ClassNode compileTimeClassNode;
 
+        /**
+         * Builds a public final type named {@code name} whose superclass is
+         * {@code upper} and whose interfaces are {@code interfaces}. The
+         * interfaces are sorted by name. The printed form joins the upper
+         * type and the interfaces with {@code &}, omitting {@code Object}.
+         * When {@code upper} is {@code Object} and at least one interface
+         * is present, the compile-time stand-in is the first interface
+         * after that sort; otherwise it is {@code upper}. Generics from
+         * the upper type and the interfaces are copied here when this node
+         * uses generics.
+         *
+         * @param name internal name of the synthetic bound
+         * @param upper superclass of the bound
+         * @param interfaces interfaces of the bound
+         */
         public LowestUpperBoundClassNode(final String name, final ClassNode upper, final ClassNode... interfaces) {
             super(name, ACC_PUBLIC | ACC_FINAL, upper, interfaces, null);
             this.upper = upper;
@@ -630,6 +647,11 @@ public class WideningCategories {
             }
         }
 
+        /**
+         * Returns the internal name passed to the constructor.
+         *
+         * @return the unresolved name of this bound
+         */
         public String getLubName() {
             return getUnresolvedName();
         }
@@ -680,6 +702,7 @@ public class WideningCategories {
 
     /**
      * Compares two class nodes, but including their generics types.
+     *
      * @param a
      * @param b
      * @return true if the class nodes are equal, false otherwise

@@ -175,14 +175,23 @@ public final class MarkdownRenderer {
      * inline-tag-looking text inside code samples is preserved verbatim.
      */
     private static final class CodeBraceMasker extends AbstractVisitor {
+        /**
+         * Replaces braces in this inline code span with the mask characters.
+         */
         @Override
         public void visit(Code code) {
             code.setLiteral(mask(code.getLiteral()));
         }
+        /**
+         * Replaces braces in this fenced code block with the mask characters.
+         */
         @Override
         public void visit(FencedCodeBlock block) {
             block.setLiteral(mask(block.getLiteral()));
         }
+        /**
+         * Replaces braces in this indented code block with the mask characters.
+         */
         @Override
         public void visit(IndentedCodeBlock block) {
             block.setLiteral(mask(block.getLiteral()));

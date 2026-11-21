@@ -116,14 +116,6 @@ public class Dates {
     public static final int JSON_TIME_LENGTH = "2013-12-14T01:55:33.412Z".length();
 
     /**
-     * Parses a supported ISO-8601 timestamp without milliseconds.
-     *
-     * @param charArray source character buffer
-     * @param from inclusive start index
-     * @param to exclusive end index
-     * @return parsed date, or {@code null} when the slice is not a supported ISO-8601 value
-     */
-    /**
      * Reads an ISO-8601 form as an offset date-time, keeping the offset the text carried.
      * Reads the same fields as {@link #fromISO8601(char[], int, int)} rather than handing the
      * text to a formatter, so that the scan stays as cheap as the one the parsers already do.
@@ -181,6 +173,14 @@ public class Dates {
         }
     }
 
+    /**
+     * Parses a supported ISO-8601 timestamp without milliseconds.
+     *
+     * @param charArray source character buffer
+     * @param from inclusive start index
+     * @param to exclusive end index
+     * @return parsed date, or {@code null} when the slice is not a supported ISO-8601 value
+     */
     public static Date fromISO8601(char[] charArray, int from, int to) {
         try {
             if (isISO8601(charArray, from, to)) {

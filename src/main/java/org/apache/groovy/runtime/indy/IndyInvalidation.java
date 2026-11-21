@@ -50,7 +50,9 @@ import java.util.logging.Logger;
  * <em>object</em>, so exact-class invalidation still reaches installed guards
  * after a soft/weak MetaClass has been collected. Monomorphic indy sites
  * install a single {@code guardWithTest} on the class-level domain observed
- * at link time.
+ * at link time. A site whose receiver uses the MetaClass of another class (a
+ * proxy or mock subclass standing in for a type) installs a second one, on
+ * that class's domain: see {@link #foreignMetaClassSwitchPointFor}.
  *
  * <h2>Width policy (two axes only)</h2>
  * <ul>
@@ -456,6 +458,30 @@ public final class IndyInvalidation {
     public static SwitchPoint switchPointForMetaClass(final MetaClass mc) {
         Objects.requireNonNull(mc, "mc");
         return classSwitchPointFor(mc.getTheClass());
+    }
+
+    /**
+     * Returns the class-domain SwitchPoint of the class {@code mc} belongs to
+     * when that is not the class whose domain {@link #classSwitchPointFor(Object)}
+     * uses for {@code receiver}, as for a proxy or mock subclass whose
+     * metaclass is the one of the type it stands in for; {@code null}
+     * otherwise. A change to that metaclass retires its own class's domain,
+     * not the receiver class's, so a site selected through it is guarded by
+     * both.
+     *
+     * @param receiver the call receiver (may be {@code null})
+     * @param mc       the MetaClass the selection read (may be {@code null})
+     * @return the SwitchPoint of the metaclass's class, or {@code null}
+     */
+    public static SwitchPoint foreignMetaClassSwitchPointFor(final Object receiver, final MetaClass mc) {
+        if (mc == null) {
+            return null;
+        }
+        Class<?> owner = mc.getTheClass();
+        if (owner == null || owner == switchPointClassFor(receiver)) {
+            return null;
+        }
+        return classSwitchPointFor(owner);
     }
 
     /**

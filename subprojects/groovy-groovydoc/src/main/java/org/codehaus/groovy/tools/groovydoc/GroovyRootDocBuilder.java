@@ -30,6 +30,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
@@ -99,6 +100,15 @@ public class GroovyRootDocBuilder {
                 sourcepathFiles.add(new File(sourcepath).getAbsoluteFile());
             }
         }
+
+        // the files are sorted to be processed in a reproducible order: the classes first,
+        // so the package descriptions can link to them, then package.html, and package-info
+        // last to take precedence as with javadoc
+        filenames = new ArrayList<>(filenames);
+        filenames.sort(Comparator.comparing((String filename) -> filename.endsWith("package-info.java")
+                                                              || filename.endsWith("package-info.groovy"))
+                                 .thenComparing(filename -> filename.endsWith("package.html"))
+                                 .thenComparing(Comparator.naturalOrder()));
 
         for (String filename : filenames) {
             File srcFile = new File(filename);

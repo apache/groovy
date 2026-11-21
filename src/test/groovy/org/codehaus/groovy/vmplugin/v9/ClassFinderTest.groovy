@@ -19,12 +19,14 @@
 package org.codehaus.groovy.vmplugin.v9
 
 import org.antlr.v4.runtime.tree.ParseTree
+import org.codehaus.groovy.GroovyBugError
 import org.codehaus.groovy.control.ResolveVisitor
 import org.codehaus.groovy.vmplugin.VMPluginFactory
 import org.junit.jupiter.api.Test
 
 import java.util.stream.Collectors
 
+import static org.junit.jupiter.api.Assertions.assertEquals
 import static org.junit.jupiter.api.Assertions.assertThrows
 
 final class ClassFinderTest {
@@ -104,6 +106,19 @@ final class ClassFinderTest {
     void defaultImportClasses() {
         Map<String, Set<String>> r1 = VMPluginFactory.getPlugin().getDefaultImportClasses(ResolveVisitor.DEFAULT_IMPORTS) as TreeMap<String, Set<String>>
         assert (ResolveVisitor.DEFAULT_IMPORTS as List).sort() == r1.values().stream().flatMap(e -> e.stream()).collect(Collectors.toSet()).sort()
+        // Proxy exists in both java.net and groovy.util; both must be retained in DEFAULT_IMPORTS order
+        assertEquals(['java.net.', 'groovy.util.'], r1.get('Proxy')?.toList())
+        List<String> precedence = ResolveVisitor.DEFAULT_IMPORTS as List
+        r1.each { String name, Set<String> packages ->
+            List<String> actual = packages.toList()
+            assertEquals(precedence.findAll { actual.contains(it) }, actual, name)
+            assertThrows(UnsupportedOperationException) {
+                packages.add('custom.')
+            }
+        }
+        assertThrows(GroovyBugError) {
+            VMPluginFactory.getPlugin().getDefaultImportClasses(['com.example.'] as String[])
+        }
     }
 
     // GROOVY-9480

@@ -329,7 +329,8 @@ final class ClosurePackCapabilityTest {
     void syntacticallyPackedClosureTreatsDelegateAsHarmlessNoOp() {
         // the non-strict guard: a syntactically-packed closure has no free name, so a caller-set
         // delegate must be IGNORED, not rejected -- exactly as a normal closure behaves. (The
-        // annotation trust path, by contrast, throws, since it cannot prove independence.)
+        // annotation trust path, by contrast, throws for a body with a free name, since it cannot
+        // prove independence.)
         Object result = eval('', '''
             Closure c = { x -> x + 1 }
             assert c.getClass().name.startsWith('org.codehaus.groovy.runtime.PackedClosure')
@@ -338,6 +339,22 @@ final class ClosurePackCapabilityTest {
             c(41)
         ''', true)
         assertEquals(42, result)
+    }
+
+    // GROOVY-12661
+    @Test
+    void syntacticallyPackedClosureCanBeRehydratedElsewhere() {
+        // the rehydrate guard is the strict one only: a closure with no free name does not depend on
+        // its owner, so rehydrating it onto another delegate, owner and this object (the DSL
+        // builder idiom) keeps working
+        Object result = eval('', '''
+            Closure c = { x -> x + 1 }
+            assert c.getClass().name.startsWith('org.codehaus.groovy.runtime.PackedClosure')
+            def other = new Object()
+            Closure r = c.rehydrate(other, other, other)
+            [r.owner.is(other), r(41)]
+        ''', true)
+        assertEquals([true, 42], result)
     }
 
     @Test

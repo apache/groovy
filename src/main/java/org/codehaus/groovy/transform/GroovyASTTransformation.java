@@ -47,5 +47,10 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.TYPE)
 public @interface GroovyASTTransformation {
+    /**
+     * Returns the compilation phase in which the transform runs.
+     *
+     * @return the phase, {@link CompilePhase#CANONICALIZATION} when omitted
+     */
     CompilePhase phase() default CompilePhase.CANONICALIZATION;
 }

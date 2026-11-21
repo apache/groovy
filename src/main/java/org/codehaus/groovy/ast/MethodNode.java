@@ -58,6 +58,10 @@ public class MethodNode extends AnnotatedNode {
     // cached data
     private String typeDescriptor;
 
+    /**
+     * Leaves the method unset so a subclass can fill the declaration in
+     * later. The name stays null and no exceptions are recorded.
+     */
     protected MethodNode() {
         this.name = null;
         this.exceptions = ClassNode.EMPTY_ARRAY;
