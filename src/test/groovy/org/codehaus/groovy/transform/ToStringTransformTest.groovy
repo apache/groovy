@@ -559,4 +559,46 @@ class ToStringTransformTest extends GroovyShellTestCase {
         '''
     }
 
+    // GROOVY-12726
+    void testHandWrittenToStringAndHelperArePreserved() {
+        assertScript '''
+            import groovy.transform.ToString
+            @ToString
+            class Person {
+                String name
+                String toString() { 'custom' }
+                private String _toString() { 'helper' }
+            }
+            assert new Person(name: 'Ada').toString() == 'custom'
+        '''
+    }
+
+    // GROOVY-12726
+    void testHandWrittenToStringDelegatesToGeneratedHelper() {
+        assertScript '''
+            import groovy.transform.ToString
+            @ToString
+            class Person {
+                String name
+                String toString() { _toString() }
+            }
+            assert new Person(name: 'Ada').toString() == 'Person(Ada)'
+        '''
+    }
+
+    // GROOVY-12726
+    void testRepeatedAnnotationDoesNotDuplicateGeneratedToString() {
+        assertScript '''
+            import groovy.transform.ToString
+            @ToString
+            @ToString
+            class Person {
+                String name
+            }
+            assert new Person(name: 'Ada').toString() == 'Person(Ada)'
+            assert Person.declaredMethods.count { it.name == 'toString' } == 1
+            assert Person.declaredMethods.every { it.name != '_toString' }
+        '''
+    }
+
 }
