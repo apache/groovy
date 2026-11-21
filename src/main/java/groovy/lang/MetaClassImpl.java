@@ -583,9 +583,12 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
                         if (matchedMethod >= 0) {
                             methods.set(i, mopMethods[matchedMethod]);
                         } else if (!useThis && notSuperUseful(method, c)) {
-                            MetaMethod hidden = getHiddenExtensionMethod(method, c);
-                            if (hidden != null) {
-                                methods.set(i, hidden);
+                            MetaMethod replacement = superMethodOfAnotherRuntimePackage(method, c);
+                            if (replacement == null) {
+                                replacement = getHiddenExtensionMethod(method, c);
+                            }
+                            if (replacement != null) {
+                                methods.set(i, replacement);
                             } else {
                                 methods.remove(i--); // not fit for super usage
                             }
@@ -603,7 +606,10 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
                         if (useThis) e.methods = mopMethods[matchedMethod];
                         else e.methodsForSuper = mopMethods[matchedMethod];
                     } else if (!useThis && notSuperUseful(method, c)) {
-                        e.methodsForSuper = getHiddenExtensionMethod(method, c); // null: not fit for super usage
+                        e.methodsForSuper = superMethodOfAnotherRuntimePackage(method, c);
+                        if (e.methodsForSuper == null) {
+                            e.methodsForSuper = getHiddenExtensionMethod(method, c);
+                        }
                     }
                 }
             }
@@ -656,6 +662,29 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
                     }
                 }
                 return -1;
+            }
+
+            /**
+             * Finds the superclass method that a method declared by class c
+             * replaced in the index, if it is a package-private method of a
+             * class with the same package name but another class loader, so of
+             * another run-time package. The JVM does not let the method of c
+             * override it, and no super$ method can call it, but invoked
+             * reflectively it is the method a super call should reach.
+             */
+            private MetaMethod superMethodOfAnotherRuntimePackage(final MetaMethod method, final Class<?> c) {
+                if (c != method.getDeclaringClass().getTheClass()) return null;
+                for (Class<?> sc = c.getSuperclass(); sc != null; sc = sc.getSuperclass()) {
+                    for (CachedMethod cm : ReflectionCache.getCachedClass(sc).getMethods()) {
+                        if (cm.getName().equals(method.getName()) && !cm.isStatic()
+                                && MetaMethod.equal(cm.getParameterTypes(), method.getParameterTypes())) {
+                            // the nearest method decides; if it is not of another run-time package, it hides any deeper one
+                            return cm.isPackagePrivate() && sc.getClassLoader() != c.getClassLoader()
+                                    && sc.getPackageName().equals(c.getPackageName()) ? cm : null;
+                        }
+                    }
+                }
+                return null;
             }
 
             /**
