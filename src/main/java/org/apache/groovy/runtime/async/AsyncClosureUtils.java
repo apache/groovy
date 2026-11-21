@@ -113,7 +113,7 @@ public final class AsyncClosureUtils {
         }
 
         @Override
-        @SuppressWarnings("unchecked")
+        @SuppressWarnings({"unchecked", "java:S2975"}) // overrides Closure.clone() public contract so copies wrap an independent closure
         public Object clone() {
             WrappingClosure<V> result = (WrappingClosure<V>) super.clone();
             result.closure = (Closure<?>) closure.clone();

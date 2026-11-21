@@ -1613,6 +1613,129 @@ final class InnerClassTest {
         '''
     }
 
+    // GROOVY-12592: Outer neither overrides toString nor calls super.toString itself
+    @Test
+    void testUsageOfOuterSuperMethodInherited1() {
+        assertScript '''
+            class Root {
+                String toString() { 'root' }
+            }
+            class Outer extends Root {
+                class Inner {
+                    String test() { Outer.super.toString() }
+                }
+            }
+            def outer = new Outer()
+            assert new Outer.Inner(outer).test() == 'root'
+            assert outer.toString() == 'root'
+        '''
+    }
+
+    // GROOVY-12592: method declared by Base and overridden by Root, with and without arguments
+    @Test
+    void testUsageOfOuterSuperMethodInherited2() {
+        assertScript '''
+            class Base {
+                String m() { 'base' }
+                String m(x) { 'base:' + x }
+            }
+            class Root extends Base {
+                String m() { 'root' }
+                String m(x) { 'root:' + x }
+            }
+            class Outer extends Root {
+                class Inner {
+                    String test() { Outer.super.m() }
+                    String test(x) { Outer.super.m(x) }
+                }
+            }
+            def inner = new Outer.Inner(new Outer())
+            assert inner.test() == 'root'
+            assert inner.test(1) == 'root:1'
+        '''
+    }
+
+    // GROOVY-12592: anonymous inner class
+    @Test
+    void testUsageOfOuterSuperMethodInherited3() {
+        assertScript '''
+            class Root {
+                String toString() { 'root' }
+                String m(x) { 'root:' + x }
+            }
+            class Outer extends Root {
+                def test() {
+                    new Object() {
+                        @Override
+                        String toString() { Outer.super.toString() + ',' + Outer.super.m(2) }
+                    }.toString()
+                }
+            }
+            assert new Outer().test() == 'root,root:2'
+        '''
+    }
+
+    // GROOVY-12592: closure in an inner class
+    @Test
+    void testUsageOfOuterSuperMethodInherited4() {
+        assertScript '''
+            class Root {
+                String toString() { 'root' }
+            }
+            class Outer extends Root {
+                class Inner {
+                    String test() {
+                        def c = { -> Outer.super.toString() }
+                        c()
+                    }
+                }
+            }
+            assert new Outer.Inner(new Outer()).test() == 'root'
+        '''
+    }
+
+    // GROOVY-12592: method declared further up, called from an inner class of an inner class
+    @Test
+    void testUsageOfOuterSuperMethodInherited5() {
+        assertScript '''
+            class Root {
+                String toString() { 'root' }
+            }
+            class Middle extends Root {
+            }
+            class Outer extends Middle {
+                class Inner {
+                    class Nested {
+                        String test() { Outer.super.toString() }
+                    }
+                }
+            }
+            def inner = new Outer.Inner(new Outer())
+            assert new Outer.Inner.Nested(inner).test() == 'root'
+        '''
+    }
+
+    // GROOVY-12592: the override of a subclass of Outer is not called either
+    @ParameterizedTest
+    @ValueSource(strings=['', '@groovy.transform.CompileStatic'])
+    void testUsageOfOuterSuperMethodInherited6(String mode) {
+        assertScript """
+            class Root {
+                String toString() { 'root' }
+            }
+            class Outer extends Root {
+                class Inner {
+                    String test() { Outer.super.toString() }
+                }
+            }
+            $mode
+            class Sub extends Outer {
+                String toString() { 'sub' }
+            }
+            assert new Outer.Inner(new Sub()).test() == 'root'
+        """
+    }
+
     @Test
     void testUsageOfOuterType() {
         assertScript '''
@@ -2688,6 +2811,64 @@ final class InnerClassTest {
             new Other().m()
         '''
         assert err.message =~ /No such property: X for class: Other/
+    }
+
+    // GROOVY-12627
+    @Test
+    void testNestedPropertyHandling8() {
+        assertScript '''
+            class Base {
+                private String z = 'outer'
+                private int n = 1
+                class Sub extends Base {
+                    def write() { { -> Sub.this.z = 'w' }(); Base.this.z }
+                    def plusEq() { { -> Sub.this.z += 'w' }(); Base.this.z }
+                    def increment() { { -> Sub.this.n++ }(); Base.this.n }
+                    def nested() { { -> { -> Sub.this.z = 'w' }() }(); Base.this.z }
+                    def lambda() { (() -> Sub.this.z = 'w')(); Base.this.z }
+                    def spread() { { -> [Sub.this]*.z = 'w' }(); { -> [Sub.this]*.z }() }
+                    def read() { Base.this.z = 'enclosing'; { -> Sub.this.z }() }
+                }
+                class Inner {
+                    def write() { { -> Inner.this.z = 'w' }(); Base.this.z }
+                    def spread() { { -> [Inner.this]*.z }() }
+                    def local() { def i = this; { -> i.z = 'w' }(); Base.this.z }
+                }
+                def sub() { new Sub() }
+                def inner() { new Inner() }
+            }
+            assert new Base().sub().read() == 'enclosing'
+            assert new Base().sub().write() == 'w'
+            assert new Base().sub().plusEq() == 'outerw'
+            assert new Base().sub().increment() == 2
+            assert new Base().sub().nested() == 'w'
+            assert new Base().sub().lambda() == 'w'
+            assert new Base().sub().spread() == ['w']
+            assert new Base().inner().write() == 'w'
+            assert new Base().inner().spread() == ['outer']
+            assert new Base().inner().local() == 'w'
+        '''
+    }
+
+    // GROOVY-12627
+    @ParameterizedTest
+    @ValueSource(strings=['CompileDynamic','TypeChecked'])
+    void testNestedPropertyHandling9(String mode) {
+        assertScript """
+            import groovy.transform.*
+
+            class Base {
+                private String z = 'outer'
+                @$mode
+                class Sub extends Base {
+                    def write() { def s = this; { -> s.z = 'w' }(); Base.this.z }
+                    def read() { Base.this.z = 'enclosing'; def s = this; { -> s.z }() }
+                }
+                def sub() { new Sub() }
+            }
+            assert new Base().sub().read() == 'enclosing'
+            assert new Base().sub().write() == 'w'
+        """
     }
 
     // GROOVY-7312

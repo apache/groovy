@@ -64,7 +64,21 @@ final class MemClassFileObject extends SimpleJavaFileObject {
      * @return a file object whose input stream returns {@code bytes}
      */
     static MemClassFileObject forReading(final String binaryName, final byte[] bytes) {
-        MemClassFileObject file = new MemClassFileObject(binaryName, null);
+        return forReading(binaryName, InMemoryJavaFileManager.resourceName(binaryName), Kind.CLASS, bytes);
+    }
+
+    /**
+     * An in-memory file javac or an annotation processor can read and must not publish again.
+     * The bytes are copied.
+     *
+     * @param binaryName name returned by {@link #getBinaryName()}
+     * @param resourceName resource key used for the file URI
+     * @param kind the file kind
+     * @param bytes the file bytes; not empty
+     * @return a file object whose input stream returns {@code bytes}
+     */
+    static MemClassFileObject forReading(final String binaryName, final String resourceName, final Kind kind, final byte[] bytes) {
+        MemClassFileObject file = new MemClassFileObject(binaryName, resourceName, null, kind);
         file.buffer.writeBytes(bytes);
         return file;
     }

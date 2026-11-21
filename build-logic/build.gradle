@@ -36,8 +36,8 @@ dependencies {
     implementation 'org.cyclonedx:cyclonedx-gradle-plugin:3.0.2'
     implementation "com.fasterxml.jackson:jackson-bom:2.23.0" // later version for cyclonedx
     implementation "org.slf4j:slf4j-api:2.0.20" // later version for cyclonedx
-    implementation "org.apache.commons:commons-lang3:3.21.0" // later version for cyclonedx
-    implementation 'org.apache.maven:maven-core:3.10.0'
+    implementation "org.apache.commons:commons-lang3:3.22.0" // later version for cyclonedx
+    implementation 'org.apache.maven:maven-core:3.10.1'
     // Package relocation for published jars (com.gradleup.shadow)
     implementation 'com.gradleup.shadow:shadow-gradle-plugin:9.6.1'
     // ASM-based scanning of @GroovyABI annotations in compiled classes

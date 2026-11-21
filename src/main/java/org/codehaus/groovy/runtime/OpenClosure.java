@@ -92,7 +92,7 @@ public final class OpenClosure {
      * MOP ({@code InvokerHelper}), so metaclass magic on the owner or delegate applies as today.
      */
     public static final class ClassicResolver implements Resolver {
-        private Object owner;
+        private final Object owner;
         private Object delegate;
         private int strategy = Closure.OWNER_FIRST;
         private Object self; // the wrapping Closure, for TO_SELF

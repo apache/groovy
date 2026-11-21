@@ -132,6 +132,7 @@ public class GroovyClassLoader extends URLClassLoader {
      */
     public GroovyClassLoader(final GroovyClassLoader parent) {
         this(parent, parent.config, false);
+        this.runtimePackageCheck = false; // delegated constructor leaves default false; intentionally not copied from parent
     }
 
     /**

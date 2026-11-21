@@ -2997,6 +2997,28 @@ final class TraitASTTransformationTest {
 
     // GROOVY-12608
     @ParameterizedTest
+    @ValueSource(strings=['@TypeChecked','@CompileStatic'])
+    void testNonHelperInnerTypeInTraitDoesNotInheritSuperTraitStaticSetter(String mode) {
+        def err = shouldFail shell, """
+            $mode
+            trait T {
+                private static int count = 1
+                static int getCnt() { count }
+                static void setCnt(int n) { count = n }
+            }
+            $mode
+            trait U extends T {
+                $mode
+                interface I extends U {
+                    default void setIt() { cnt = 5 }
+                }
+            }
+        """
+        assert err.message.contains('Cannot set read-only property: cnt')
+    }
+
+    // GROOVY-12608
+    @ParameterizedTest
     @ValueSource(strings=['@CompileDynamic','@TypeChecked'])
     void testSuperTraitStaticAccessorAsPropertyInLambdaWithDelegate(String mode) {
         assertScript shell, """
@@ -6392,5 +6414,31 @@ final class TraitASTTransformationTest {
             assert new C().mn() == [2, 2]
             assert C.sm() == 8
         """
+    }
+
+    // GROOVY-12743: an annotation with a closure member on a trait method failed with
+    // UnsupportedOperationException: the forwarder's "not copied" list was an unmodifiable empty list
+    @Test
+    void testClosureMemberAnnotationOnTraitMethod() {
+        assertScript shell, '''
+            import java.lang.annotation.*
+
+            @Retention(RetentionPolicy.RUNTIME)
+            @Target(ElementType.METHOD)
+            @interface Check {
+                Class value()
+            }
+
+            trait T {
+                @Check({ it > 0 })
+                int m() { 1 }
+            }
+            class C implements T {
+            }
+
+            assert new C().m() == 1
+            def check = T.getMethod('m').getAnnotation(Check)
+            assert check != null && Closure.isAssignableFrom(check.value())
+        '''
     }
 }
