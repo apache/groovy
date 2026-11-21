@@ -297,7 +297,7 @@ final class Groovy10133 {
 
     // GROOVY-12520
     @ParameterizedTest
-    @ValueSource(strings=['', '@groovy.transform.TypeChecked'])
+    @ValueSource(strings=['', '@groovy.transform.TypeChecked', '@groovy.transform.CompileStatic'])
     void testGetterVersusIsser10(String mode) {
         assertScript """
             class C {
