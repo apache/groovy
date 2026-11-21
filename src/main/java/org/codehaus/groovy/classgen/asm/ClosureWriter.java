@@ -549,7 +549,21 @@ public class ClosureWriter {
         return true;
     }
 
-    /** The closure's inferred return type, normalised the same way {@code createClosureClass} does for doCall. */
+    /**
+     * Whether the hoisted body uses its receiver where a closure class would use its this object
+     * as an instance of the enclosing class, so the packed adapter's {@code rehydrate} hands the
+     * copy's body a new this object even when it is not such an instance, failing as the closure
+     * class does. A dynamic closure class dispatches against an untyped this
+     * object, so the dynamic writer answers {@code false}; the static writer overrides it.
+     */
+    protected boolean hoistedBodyUsesReceiver(final ClosureExpression expression) {
+        return false;
+    }
+
+    /**
+     * The closure's inferred return type, normalised for the declaration of its doCall method (or of the method a
+     * packed closure is hoisted to): a reference type without unresolved generics.
+     */
     private static ClassNode inferredClosureReturnType(final ClosureExpression expression) {
         ClassNode returnType = expression.getNodeMetaData(INFERRED_RETURN_TYPE);
         if (returnType == null) returnType = ClassHelper.OBJECT_TYPE;
@@ -1225,6 +1239,7 @@ public class ClosureWriter {
         // In a static method there is no `this`: the owner is the enclosing class and the hoisted
         // method must be static (loaded/dispatched against the class, not local slot 0).
         boolean staticContext = controller.isStaticMethod();
+        boolean usesReceiver = !staticContext && hoistedBodyUsesReceiver(expression);
         List<MethodNode> targets = packedTargets(enclosing);
         int id = targets.size(); // ids are dense per class: the dispatcher emits a tableswitch over them
         String name = PACKED_METHOD_PREFIX + id;
@@ -1345,13 +1360,15 @@ public class ClosureWriter {
         os.push(ClassHelper.boolean_TYPE);
         mv.visitInsn(varargShape ? Opcodes.ICONST_1 : Opcodes.ICONST_0);
         os.push(ClassHelper.boolean_TYPE);
+        mv.visitInsn(usesReceiver ? Opcodes.ICONST_1 : Opcodes.ICONST_0);
+        os.push(ClassHelper.boolean_TYPE);
         // one factory call on ScriptBytecodeAdapter, not a hard-wired NEW of the arity-specific
         // subclass (GROOVY-12151 review): the Fixed* family is chosen inside PackedClosure.create,
         // and routing through the central adapter class (bundle as Object, result as Closure)
         // keeps PackedClosure and the Bundle type out of the creation site too.
         mv.visitMethodInsn(INVOKESTATIC, SBA_TYPE, "packedClosure",
-                "(Ljava/lang/Object;Ljava/lang/Object;ILjava/lang/String;[Ljava/lang/Object;[Ljava/lang/Class;ZZZ)Lgroovy/lang/Closure;", false);
-        os.replace(ClassHelper.CLOSURE_TYPE, 9); // owner, dispatchers, id, name, captured[], paramTypes[], strict, implicit, vararg -> Closure
+                "(Ljava/lang/Object;Ljava/lang/Object;ILjava/lang/String;[Ljava/lang/Object;[Ljava/lang/Class;ZZZZ)Lgroovy/lang/Closure;", false);
+        os.replace(ClassHelper.CLOSURE_TYPE, 10); // owner, dispatchers, id, name, captured[], paramTypes[], strict, implicit, vararg, usesReceiver -> Closure
     }
 
     /**
