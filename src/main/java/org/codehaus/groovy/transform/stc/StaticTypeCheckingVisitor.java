@@ -2340,9 +2340,11 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
             return null;
         }
         ClassNode mapValueType = mapTypeArguments[1].getType();
-        // the value is accepted for a variable of the value type
+        // the value is accepted for a variable of the value type; a value that is not a Class
+        // is converted to a parameterized Class as to a raw one, so it has no type arguments to check
         if (!checkCompatibleAssignmentTypes(mapValueType, valueType, null, false)
                 || (mapValueType.isUsingGenerics() && !missesGenericsTypes(valueType)
+                    && !(isClassType(mapValueType) && !isClassType(valueType))
                     && !GenericsUtils.buildWildcardType(mapValueType).isCompatibleWith(wrapTypeIfNecessary(valueType)))) {
             return null;
         }
@@ -7392,12 +7394,16 @@ trying: for (ClassNode[] signature : signatures) {
                 }
 
                 // as anything can be assigned to a String, Class or [Bb]oolean, return the left type instead.
-                // A parameterized Class must keep the right-hand type: substituting the target
-                // would make Class<?> assignable to Class<? extends CharSequence>.
+                // A parameterized Class must keep the right-hand type when that is a Class: substituting
+                // the target would make Class<?> assignable to Class<? extends CharSequence>.
                 if (isWildcardLeftHandSide(initialType) && !isObjectType(initialType)
-                        && !(isClassType(initialType) && initialType.isUsingGenerics())) {
+                        && !(isClassType(initialType) && initialType.isUsingGenerics() && isClassType(right))) {
                     return initialType;
                 }
+            } else if (isClassType(left) && left.isUsingGenerics() && !isClassType(right)) {
+                // a target that is not a variable, such as a field initializer, a property, attribute or map
+                // entry write, or an array element: a value that is not a Class is converted as for a raw Class
+                return left;
             }
 
             if (!isObjectType(leftRedirect)) {
