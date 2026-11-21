@@ -370,10 +370,7 @@ class TraitReceiverTransformer extends ClassCodeExpressionTransformer {
             // GROOVY-12597: (Class) $static$self, so static compilation does not bind to the trait interface's accessor
             receiver = castX(ClassHelper.CLASS_Type.getPlainNodeReference(), varX(weaved));
         } else if (fn.isStatic()) {
-            var call = callX(varX(weaved), "getClass"); // $self.getClass()
-            call.setImplicitThis(false);
-            call.setMethodTarget(ClassHelper.OBJECT_TYPE.getGetterMethod("getClass", false));
-            receiver = call;
+            receiver = selfGetClass();
         } else {
             receiver = castX(fieldHelper, varX(weaved)); // (<trait class>$Trait$FieldHelper) $self
         }
@@ -400,6 +397,17 @@ class TraitReceiverTransformer extends ClassCodeExpressionTransformer {
         if (fn.isStatic()) mce.putNodeMetaData(TraitASTTransformation.DO_DYNAMIC, fn.getOriginType());
 
         return mce;
+    }
+
+    /**
+     * Returns {@code $self.getClass()} as an explicit call, so that inside a closure it
+     * is not resolved against the closure's delegate.
+     */
+    private MethodCallExpression selfGetClass() {
+        MethodCallExpression call = callX(varX(weaved), "getClass");
+        call.setImplicitThis(false);
+        call.setMethodTarget(ClassHelper.OBJECT_TYPE.getGetterMethod("getClass", false));
+        return call;
     }
 
     /**
@@ -624,7 +632,7 @@ class TraitReceiverTransformer extends ClassCodeExpressionTransformer {
 
                     // GROOVY-11985: this.m(x) --> ($static$self or (Class)$self.getClass()).m(x)
                     boolean staticSelf = ClassHelper.isClassType(weaved.getOriginType());
-                    Expression selfClass = staticSelf ? varX(weaved) : castX(ClassHelper.CLASS_Type.getPlainNodeReference(), callX(varX(weaved), "getClass"));
+                    Expression selfClass = staticSelf ? varX(weaved) : castX(ClassHelper.CLASS_Type.getPlainNodeReference(), selfGetClass());
                     Expression newArgs = transform(arguments);
                     newCall = callX(selfClass, method, newArgs);
                     newCall.setImplicitThis(false);
@@ -646,8 +654,9 @@ class TraitReceiverTransformer extends ClassCodeExpressionTransformer {
                     // instance method, or any call inside a closure.
 
                     // this.m(x) --> (this or T$Trait$Helper).m($self or $static$self or (Class)$self.getClass(), x)
-                    Expression selfClassOrObject = methodNode.isStatic() && !ClassHelper.isClassType(weaved.getOriginType()) ? castX(ClassHelper.CLASS_Type.getPlainNodeReference(), callX(weaved, "getClass")) : weaved;
+                    Expression selfClassOrObject = methodNode.isStatic() && !ClassHelper.isClassType(weaved.getOriginType()) ? castX(ClassHelper.CLASS_Type.getPlainNodeReference(), selfGetClass()) : weaved;
                     newCall = callX(!inClosure ? thisExpr : classX(traitHelper), method, createArgumentList(selfClassOrObject, arguments));
+                    if (inClosure) newCall.setImplicitThis(false); // not a call on the closure's delegate
                 }
                 newCall.setGenericsTypes(call.getGenericsTypes());
                 newCall.setSpreadSafe(call.isSpreadSafe());
