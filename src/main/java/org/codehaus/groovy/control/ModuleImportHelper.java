@@ -111,12 +111,11 @@ public final class ModuleImportHelper {
     }
 
     /**
-     * Builds a {@link ModuleFinder} that scans the compilation classpath
-     * for modular JARs (those containing {@code module-info.class}).
-     * Collects paths from both the compiler configuration classpath and
-     * any URLClassLoaders in the classloader hierarchy.
+     * Classpath and class-loader entries only, without the system module finder.
+     * Compose this after {@link ModuleFinder#ofSystem()} so platform modules
+     * remain observable and are not shadowed by a classpath JAR.
      */
-    private static ModuleFinder classpathModuleFinder(final SourceUnit source) {
+    public static ModuleFinder classpathModuleFinder(final SourceUnit source) {
         Set<Path> paths = new LinkedHashSet<>();
         for (String entry : source.getConfiguration().getClasspath()) {
             Path p = Path.of(entry);

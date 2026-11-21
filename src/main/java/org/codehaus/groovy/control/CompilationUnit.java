@@ -21,7 +21,12 @@ package org.codehaus.groovy.control;
 import groovy.lang.GroovyClassLoader;
 import groovy.lang.GroovyRuntimeException;
 import groovy.transform.CompilationUnitAware;
+import org.apache.groovy.ast.ModuleInfoNode;
 import org.apache.groovy.ast.pattern.PatternLowering;
+import org.apache.groovy.classgen.ModuleInfoAnnotations;
+import org.apache.groovy.classgen.ModuleInfoClassGenerator;
+import org.apache.groovy.classgen.ModuleInfoVerifier;
+import org.apache.groovy.control.ModuleInfoResolveVisitor;
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.ast.AnnotationNode;
 import org.codehaus.groovy.ast.ClassHelper;
@@ -142,6 +147,12 @@ public class CompilationUnit extends ProcessingUnit {
     private Set<JavaFileObject> javaCompilationUnitSet = new HashSet<>();
 
     /**
+     * Class files produced by an external Java compiler during this compilation.
+     * Empty unless joint compilation records them.
+     */
+    private final CompiledClassIndex compiledClasses = new CompiledClassIndex();
+
+    /**
      * Initializes the CompilationUnit with defaults.
      */
     public CompilationUnit() {
@@ -210,6 +221,14 @@ public class CompilationUnit extends ProcessingUnit {
             GroovyClassVisitor visitor = new EnumVisitor(this, source);
             visitor.visitClass(classNode);
         }, Phases.CONVERSION);
+
+        // The module declaration is resolved before any source class. Readability
+        // is known when those classes resolve their types, and a transform that
+        // walks classes never receives the declaration.
+        addModuleInfoPhaseOperation((final SourceUnit source, final GeneratorContext context, final ModuleInfoNode declaration) -> {
+            ModuleInfoVerifier.prepareReads(source, declaration);
+            ModuleInfoResolveVisitor.resolve(source, declaration, this);
+        }, Phases.SEMANTIC_ANALYSIS);
 
         addPhaseOperation(source -> {
             try {
@@ -320,6 +339,26 @@ public class CompilationUnit extends ProcessingUnit {
 
         addPhaseOperation(verification, Phases.CLASS_GENERATION);
 
+        // After Verifier has synthesized default-argument members, and before
+        // ordinary class files are written. The declaration is not a class, so
+        // this does not overlap AsmClassGenerator.visitClass. runsBeforeClasses
+        // is false so Verifier, which is a class operation, runs first.
+        addModuleInfoPhaseOperation(new IModuleInfoOperation() {
+            @Override
+            public boolean runsBeforeClasses() {
+                return false;
+            }
+
+            @Override
+            public void call(final SourceUnit source, final GeneratorContext context, final ModuleInfoNode declaration) {
+                new ExtendedVerifier(source).visitModuleAnnotations(declaration);
+                ModuleInfoVerifier.check(source, declaration, CompilationUnit.this);
+                getErrorCollector().failIfErrors();
+                byte[] bytes = ModuleInfoClassGenerator.generate(source, context, declaration);
+                getClasses().add(new GroovyClass(ModuleInfoNode.CLASS_FILE_NAME, bytes));
+            }
+        }, Phases.CLASS_GENERATION);
+
         addPhaseOperation(classgen, Phases.CLASS_GENERATION);
 
         addPhaseOperation((final SourceUnit source) -> {
@@ -340,6 +379,20 @@ public class CompilationUnit extends ProcessingUnit {
                 getErrorCollector().addError(Message.create(e.getMessage(), this));
             }
         });
+
+        // Collector expansion needs resolved classes, so it follows class resolution
+        // and precedes the per-class transform collection. runsBeforeClasses is false.
+        addModuleInfoPhaseOperation(new IModuleInfoOperation() {
+            @Override
+            public boolean runsBeforeClasses() {
+                return false;
+            }
+
+            @Override
+            public void call(final SourceUnit source, final GeneratorContext context, final ModuleInfoNode declaration) {
+                ModuleInfoAnnotations.expand(source, declaration, CompilationUnit.this);
+            }
+        }, Phases.SEMANTIC_ANALYSIS);
 
         ASTTransformationVisitor.addPhaseOperations(this);
 
@@ -430,6 +483,22 @@ public class CompilationUnit extends ProcessingUnit {
      * @param phase the phase in which to run it
      */
     public void addPhaseOperation(final IPrimaryClassNodeOperation op, final int phase) {
+        validatePhase(phase);
+        phaseOperations[phase].add(op);
+    }
+
+    /**
+     * Adds a module-declaration operation to the supplied phase.
+     * The operation runs before class operations in that phase unless
+     * {@link IModuleInfoOperation#runsBeforeClasses()} is false.
+     * This is not an overload of {@link #addPhaseOperation(IPrimaryClassNodeOperation, int)}:
+     * a Groovy closure cannot tell those two operations apart.
+     *
+     * @param op the operation to add
+     * @param phase the phase in which to run it
+     * @since 7.0.0
+     */
+    public void addModuleInfoPhaseOperation(final IModuleInfoOperation op, final int phase) {
         validatePhase(phase);
         phaseOperations[phase].add(op);
     }
@@ -554,6 +623,18 @@ public class CompilationUnit extends ProcessingUnit {
      */
     public void addJavaCompilationUnits(final Set<JavaFileObject> javaCompilationUnitSet) {
         this.javaCompilationUnitSet.addAll(javaCompilationUnitSet);
+    }
+
+    /**
+     * Class files produced by an external Java compiler during this compilation.
+     * A compilation that does not run javac leaves the index empty.
+     * Joint compilation fills it after javac.
+     *
+     * @return the index of classes compiled by javac, never {@code null}
+     * @since 7.0.0
+     */
+    public CompiledClassIndex getCompiledClasses() {
+        return compiledClasses;
     }
 
     /**
@@ -756,10 +837,13 @@ public class CompilationUnit extends ProcessingUnit {
     public void compile(int throughPhase) throws CompilationFailedException {
         // to support incremental compilation, always restart the compiler;
         // individual passes are responsible for not re-processing old code
+        compiledClasses.clear();
+        flushModuleInfoConflict();
         gotoPhase(Phases.INITIALIZATION);
         throughPhase = Math.min(throughPhase, Phases.ALL);
 
         while (throughPhase >= phase && phase <= Phases.ALL) {
+            flushModuleInfoConflict();
             if (phase == Phases.CONVERSION) {
                 if (sources.size() > 1 && Boolean.TRUE.equals(configuration.getOptimizationOptions().get(CompilerConfiguration.PARALLEL_PARSE))) {
                     buildASTsInParallel();
@@ -789,7 +873,18 @@ public class CompilationUnit extends ProcessingUnit {
             }
         }
 
+        flushModuleInfoConflict();
         getErrorCollector().failIfErrors();
+    }
+
+    /**
+     * Reports a module-declaration conflict that had no source unit to attach to.
+     */
+    private void flushModuleInfoConflict() {
+        String conflict = getAST().consumeModuleInfoConflict();
+        if (conflict != null) {
+            getErrorCollector().addErrorAndContinue(Message.create(conflict, this));
+        }
     }
 
     /**
@@ -814,8 +909,17 @@ public class CompilationUnit extends ProcessingUnit {
     }
 
     private void processPhaseOperations(final int phase) {
-        for (PhaseOperation op : phaseOperations[phase]) {
-            op.doPhaseOperation(this);
+        PhaseOperation[] operations = phaseOperations[phase].toArray(PhaseOperation[]::new);
+        for (PhaseOperation operation : operations) {
+            if (operation instanceof IModuleInfoOperation moduleOperation && moduleOperation.runsBeforeClasses()) {
+                moduleOperation.doPhaseOperation(this);
+            }
+        }
+        for (PhaseOperation operation : operations) {
+            if (operation instanceof IModuleInfoOperation moduleOperation && moduleOperation.runsBeforeClasses()) {
+                continue;
+            }
+            operation.doPhaseOperation(this);
         }
     }
 
@@ -1116,6 +1220,73 @@ public class CompilationUnit extends ProcessingUnit {
     // LOOP SIMPLIFICATION FOR PRIMARY ClassNode OPERATIONS
 
     /**
+     * Performs an operation on the compilation's module declaration, if it has one.
+     * Operations run before class operations in the same phase unless
+     * {@link #runsBeforeClasses()} returns false. The declaration is not a
+     * {@link ClassNode}, so class transforms do not see it.
+     *
+     * @since 7.0.0
+     */
+    @FunctionalInterface
+    public interface IModuleInfoOperation extends PhaseOperation {
+        /**
+         * Performs the operation for the module declaration.
+         *
+         * @param source the modular compilation unit
+         * @param context the current generator context
+         * @param declaration the module declaration
+         * @throws CompilationFailedException if processing fails
+         */
+        void call(SourceUnit source, GeneratorContext context, ModuleInfoNode declaration) throws CompilationFailedException;
+
+        /**
+         * Whether this operation runs before class operations in its phase.
+         * Resolution does. Annotation expansion does not: it needs the classes
+         * to have been resolved first.
+         *
+         * @return {@code true} to run before classes
+         */
+        default boolean runsBeforeClasses() {
+            return true;
+        }
+
+        /**
+         * Applies this operation to the compilation's module declaration.
+         * A compilation with no declaration, or a declaration with no source, is skipped.
+         * {@code ResolveVisitor.Interrupt} is rethrown so compilation can restart.
+         */
+        @Override
+        default void doPhaseOperation(final CompilationUnit unit) throws CompilationFailedException {
+            ModuleInfoNode declaration = unit.getAST().getModuleInfo();
+            if (declaration == null) {
+                return;
+            }
+            ModuleNode module = declaration.getSourceModule();
+            SourceUnit source = module != null ? module.getContext() : null;
+            if (source == null) {
+                return;
+            }
+            if (source.phase < unit.phase || (source.phase == unit.phase && !source.phaseComplete)) {
+                try {
+                    GeneratorContext generatorContext = new GeneratorContext(unit.getAST());
+                    generatorContext.setCompiledClasses(unit.getCompiledClasses());
+                    call(source, generatorContext, declaration);
+                } catch (CompilationFailedException e) {
+                    throw e;
+                } catch (Exception e) {
+                    GroovyBugError gbe = new GroovyBugError(e);
+                    unit.changeBugText(gbe, source);
+                    throw gbe;
+                } catch (GroovyBugError e) {
+                    unit.changeBugText(e, source);
+                    throw e;
+                }
+            }
+            unit.getErrorCollector().failIfErrors();
+        }
+    }
+
+    /**
      * Performs an operation for each primary class node in the compilation.
      */
     @FunctionalInterface
@@ -1152,7 +1323,9 @@ public class CompilationUnit extends ProcessingUnit {
                             it.next();
                             offset += 1;
                         }
-                        this.call(context, new GeneratorContext(unit.getAST(), offset), classNode);
+                        GeneratorContext generatorContext = new GeneratorContext(unit.getAST(), offset);
+                        generatorContext.setCompiledClasses(unit.getCompiledClasses());
+                        this.call(context, generatorContext, classNode);
                     }
                 } catch (CompilationFailedException e) {
                     // fall through

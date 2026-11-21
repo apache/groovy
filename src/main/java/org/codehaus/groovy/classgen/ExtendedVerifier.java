@@ -18,9 +18,11 @@
  */
 package org.codehaus.groovy.classgen;
 
+import org.apache.groovy.ast.ModuleInfoNode;
 import org.codehaus.groovy.ast.AnnotatedNode;
 import org.codehaus.groovy.ast.AnnotationNode;
 import org.codehaus.groovy.ast.ClassCodeVisitorSupport;
+import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.ConstructorNode;
 import org.codehaus.groovy.ast.FieldNode;
@@ -62,6 +64,7 @@ import static org.codehaus.groovy.ast.AnnotationNode.FIELD_TARGET;
 import static org.codehaus.groovy.ast.AnnotationNode.IMPORT_TARGET;
 import static org.codehaus.groovy.ast.AnnotationNode.LOCAL_VARIABLE_TARGET;
 import static org.codehaus.groovy.ast.AnnotationNode.METHOD_TARGET;
+import static org.codehaus.groovy.ast.AnnotationNode.MODULE_TARGET;
 import static org.codehaus.groovy.ast.AnnotationNode.PACKAGE_TARGET;
 import static org.codehaus.groovy.ast.AnnotationNode.PARAMETER_TARGET;
 import static org.codehaus.groovy.ast.AnnotationNode.RECORD_COMPONENT_TARGET;
@@ -104,6 +107,25 @@ public class ExtendedVerifier extends ClassCodeVisitorSupport {
      */
     public ExtendedVerifier(final SourceUnit sourceUnit) {
         this.source = sourceUnit;
+    }
+
+    /**
+     * Checks annotations on a module declaration against {@code ElementType.MODULE}.
+     * A temporary class is used only because annotation checking records that the
+     * current class is annotated. The class is not part of the AST.
+     *
+     * @param declaration the module declaration
+     */
+    public void visitModuleAnnotations(final ModuleInfoNode declaration) {
+        if (declaration == null || declaration.getAnnotations().isEmpty()) {
+            return;
+        }
+        this.currentClass = new ClassNode(ModuleInfoNode.CLASS_FILE_NAME, Opcodes.ACC_ABSTRACT | Opcodes.ACC_INTERFACE, ClassHelper.OBJECT_TYPE);
+        try {
+            visitAnnotations(declaration, MODULE_TARGET);
+        } finally {
+            this.currentClass = null;
+        }
     }
 
     /**

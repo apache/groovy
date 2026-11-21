@@ -94,11 +94,107 @@ options {
 
         return token.getCharPositionInLine() + 1 + token.getText().length();
     }
+
+    /**
+     * JPMS directive keywords ({@code requires}, {@code exports}, {@code to}, …)
+     * stay ordinary identifiers outside a module declaration. Inside one, the
+     * next token is that keyword only when it is an identifier spelling {@code text}.
+     */
+    private boolean contextualKeyword(final String text) {
+        org.antlr.v4.runtime.Token token = _input.LT(1);
+        return token != null && token.getType() == Identifier && text.equals(token.getText());
+    }
+
+    /**
+     * "transitive" is a requires modifier only when it is not the module name.
+     * "requires transitive;" names a module called transitive, matching javac.
+     * "requires transitive java.sql;" uses it as a modifier. A dotted name
+     * such as transitive.extra is never a modifier.
+     */
+    private boolean transitiveIsModifier() {
+        if (!contextualKeyword("transitive")) {
+            return false;
+        }
+        int index = 2;
+        org.antlr.v4.runtime.Token token = _input.LT(index);
+        while (token != null && token.getType() == NL) {
+            index++;
+            token = _input.LT(index);
+        }
+        return token != null && token.getType() != DOT && token.getType() != SEMI;
+    }
 }
 
 // starting point for parsing a groovy file
+// A separate start rule for module-info keeps this decision out of
+// compilationUnit, so a failed import (or other script syntax) still
+// reports the local unexpected token rather than a span from the start
+// of the compilation unit (for example, "import long" must stay
+// Unexpected input: 'long', not 'import long').
 compilationUnit
     :   NL* (packageDeclaration sep?)? scriptStatements? EOF
+    ;
+
+// starting point for a JPMS module descriptor (module-info.groovy / module-info.java)
+moduleCompilationUnit
+    :   NL* modularCompilationUnit EOF
+    ;
+
+// JLS 7.3 ModularCompilationUnit: {ImportDeclaration} ModuleDeclaration
+modularCompilationUnit
+    :   (importDeclaration sep)* moduleDeclaration sep?
+    ;
+
+// JLS 7.7 ModuleDeclaration
+moduleDeclaration
+    :   annotationsOpt moduleHeader NL* LBRACE NL* moduleDirectives? NL* RBRACE
+    ;
+
+moduleHeader
+    :   {contextualKeyword("open")}? identifier NL* MODULE NL* qualifiedName
+    |   MODULE NL* qualifiedName
+    ;
+
+moduleDirectives
+    :   moduleDirective (sep? moduleDirective)* sep?
+    ;
+
+moduleDirective
+    :   requiresDirective
+    |   exportsDirective
+    |   opensDirective
+    |   usesDirective
+    |   providesDirective
+    ;
+
+requiresDirective
+    :   {contextualKeyword("requires")}? identifier (NL* requiresModifier)* NL* qualifiedName NL* SEMI
+    ;
+
+requiresModifier
+    :   STATIC
+    |   {transitiveIsModifier()}? identifier
+    ;
+
+exportsDirective
+    :   {contextualKeyword("exports")}? identifier NL* qualifiedName toClause? NL* SEMI
+    ;
+
+opensDirective
+    :   {contextualKeyword("opens")}? identifier NL* qualifiedName toClause? NL* SEMI
+    ;
+
+toClause
+    :   NL* {contextualKeyword("to")}? identifier NL* qualifiedName (NL* COMMA NL* qualifiedName)*
+    ;
+
+usesDirective
+    :   {contextualKeyword("uses")}? identifier NL* qualifiedName NL* SEMI
+    ;
+
+providesDirective
+    :   {contextualKeyword("provides")}? identifier NL* service=qualifiedName NL*
+        {contextualKeyword("with")}? identifier NL* qualifiedName (NL* COMMA NL* qualifiedName)* NL* SEMI
     ;
 
 scriptStatements

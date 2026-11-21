@@ -97,10 +97,13 @@ public class AnnotationNode extends ASTNode {
     /** Groovy-only target for annotations on import statements. */
     public static final int IMPORT_TARGET           = 1 << 12;
     /**
-     * Mask for a type or module target. {@link ElementType#TYPE} and {@link ElementType#MODULE} both map
-     * here.
-     * The low bit keeps it distinct from {@link #ANNOTATION_TARGET}, and {@link #targetToName(int)}
-     * reports every value with that bit set as TYPE.
+     * Bit for {@link ElementType#MODULE}. Included in the mask used when the annotation type has
+     * no {@link Target}.
+     */
+    public static final int MODULE_TARGET           = 1 << 13;
+    /**
+     * Mask for a type target. The low bit keeps it distinct from {@link #ANNOTATION_TARGET}, and
+     * {@link #targetToName(int)} reports every value with that bit set as TYPE.
      */
     public static final int TYPE_TARGET             = ANNOTATION_TARGET | 1; // GROOVY-7151
 
@@ -262,7 +265,8 @@ public class AnnotationNode extends ASTNode {
      * that list contributes the bit for the {@link ElementType} it names; any other entry is skipped. If no
      * {@link Target} annotation has such a list, the mask is the JLS 9.6.4.1 default: declaration contexts
      * other than type parameters, and not type-use.
-     * {@link ElementType#TYPE} and {@link ElementType#MODULE} both contribute {@link #TYPE_TARGET}. An
+     * {@link ElementType#TYPE} contributes {@link #TYPE_TARGET} and {@link ElementType#MODULE}
+     * contributes {@link #MODULE_TARGET}. An
      * {@link ElementType} constant with no mapped bit fails with {@link GroovyBugError}. A property name
      * that is not an {@link ElementType} constant aborts the lookup.
      * {@link ExtendedTarget} is then OR-ed in. {@link ExtendedElementType#IMPORT} contributes
@@ -299,7 +303,7 @@ public class AnnotationNode extends ASTNode {
                                 case PACKAGE          -> PACKAGE_TARGET;
                                 case TYPE_PARAMETER   -> TYPE_PARAMETER_TARGET;
                                 case TYPE_USE         -> TYPE_USE_TARGET;
-                                case MODULE           -> TYPE_TARGET; //TODO
+                                case MODULE           -> MODULE_TARGET;
                                 case RECORD_COMPONENT -> RECORD_COMPONENT_TARGET;
                                 default -> throw new GroovyBugError("unsupported Target " + name);
                             };
@@ -308,7 +312,7 @@ public class AnnotationNode extends ASTNode {
                     return bits;
                 }
             }
-            return 0x4FF; // GROOVY-11838: JLS 9.6.4.1
+            return 0x4FF | MODULE_TARGET; // GROOVY-11838: JLS 9.6.4.1, including modules
         });
 
         // check @ExtendedTarget for Groovy-specific element types
@@ -461,6 +465,7 @@ public class AnnotationNode extends ASTNode {
             case RECORD_COMPONENT_TARGET -> "RECORD_COMPONENT";
             case STATEMENT_TARGET        -> "STATEMENT";
             case IMPORT_TARGET           -> "IMPORT";
+            case MODULE_TARGET           -> "MODULE";
             default -> "unknown target";
         };
     }
