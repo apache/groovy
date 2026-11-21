@@ -18,10 +18,12 @@
  */
 package org.codehaus.groovy.classgen.asm;
 
+import groovy.lang.Closure;
 import groovy.transform.Internal;
 import groovy.transform.PackedClosures.PackMode;
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.ast.AnnotationNode;
+import org.apache.groovy.util.BeanUtils;
 import org.apache.groovy.util.SystemUtil;
 import org.codehaus.groovy.ast.ClassCodeExpressionTransformer;
 import org.codehaus.groovy.ast.ClassHelper;
@@ -78,6 +80,7 @@ import org.codehaus.groovy.transform.trait.Traits;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.MethodVisitor;
 
+import java.lang.reflect.Method;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -444,7 +447,7 @@ public class ClosureWriter {
      * @param annotated whether a non-DISABLED {@code @PackedClosures} is in scope
      */
     protected boolean isPackTriggered(final ClosureExpression expression, final boolean annotated) {
-        if (annotated) return true;
+        if (annotated) return !callsClosureMethod(expression);
         // Dynamic compilation has no delegate-independence proof from the type checker, so the
         // annotation is normally the only trigger. But a closure with NO free names -- no
         // implicit-this call, no unqualified/dynamic variable -- cannot be affected by any
@@ -516,6 +519,56 @@ public class ClosureWriter {
     }
 
     /**
+     * Whether a name in the closure's body resolves against a closure object rather than the owner,
+     * which the dynamic trust path cannot see from the annotation alone. A hoisted body is a method of
+     * the owner class, and a closure nested in it gets the owner instance, not the packed closure, as
+     * its owner. Without types the check goes by name:
+     * <ul>
+     * <li>in the closure's own body, an implicit-this call to a method that {@code Closure} declares
+     * (or {@code doCall}), such as {@code memoize()} or {@code curry(1)}, or a read of
+     * {@code maximumNumberOfParameters} or {@code parameterTypes}: {@code ClosureMetaClass} resolves
+     * these against the closure itself, before the owner;</li>
+     * <li>in a closure nested directly in the body, an implicit-this call to an {@code Object} method
+     * or a GDK method a closure has, such as {@code toString()} or {@code with}: such a call tries the
+     * nested closure's owner, the enclosing closure, which answers it itself. {@code print},
+     * {@code println} and {@code printf} are kept: their {@code Closure} versions forward to the owner.</li>
+     * </ul>
+     * Methods that {@code Object} declares, called in the closure's own body, go to the owner first and
+     * so reach the same method in the hoisted body.
+     */
+    private boolean callsClosureMethod(final ClosureExpression expression) {
+        Statement code = expression.getCode();
+        if (code == null) return false;
+        ClassLoader loader = controller.getSourceUnit().getClassLoader();
+        boolean[] closureResolved = {false};
+        code.visit(new CodeVisitorSupport() {
+            private int depth;
+            @Override public void visitClosureExpression(final ClosureExpression nested) {
+                depth += 1;
+                super.visitClosureExpression(nested);
+                depth -= 1;
+            }
+            @Override public void visitMethodCallExpression(final MethodCallExpression call) {
+                String name = call.getMethodAsString();
+                if (call.isImplicitThis() && name != null) {
+                    if (depth == 0 && CLOSURE_METHOD_NAMES.contains(name)) {
+                        closureResolved[0] = true;
+                    } else if (depth == 1 && !CLOSURE_METHOD_NAMES.contains(name) && !OWNER_FORWARDING_GDK_METHODS.contains(name)
+                            && (OBJECT_METHOD_NAMES.contains(name)
+                                || !StaticTypeCheckingSupport.findDGMMethodsForClassNode(loader, ClassHelper.CLOSURE_TYPE, name).isEmpty())) {
+                        closureResolved[0] = true;
+                    }
+                }
+                super.visitMethodCallExpression(call);
+            }
+            @Override public void visitVariableExpression(final VariableExpression ve) {
+                if (depth == 0 && CLOSURE_PROPERTY_NAMES.contains(ve.getName())) closureResolved[0] = true;
+            }
+        });
+        return closureResolved[0];
+    }
+
+    /**
      * Whether a closure the ordinary trigger declined is packed open instead (GEP-27): open closures
      * are enabled and every free-name use in the body is rewritable into a resolver call. The static writer overrides this to {@code false} (it proves or declines).
      */
@@ -525,10 +578,14 @@ public class ClosureWriter {
 
     /**
      * A trigger-specific decline reason for {@link #declineReason}, or {@code null} if the trigger did
-     * not decline this closure. Only the static writer has one (a delegate-resolved body); the dynamic
-     * path trusts the annotation and never declines on trigger grounds.
+     * not decline this closure. The dynamic path trusts the annotation except for a body that calls a
+     * method on a closure object; the static writer overrides this for a delegate-resolved body.
      */
     protected String triggerDeclineReason(final ClosureExpression expression) {
+        if (callsClosureMethod(expression)) {
+            return "it calls a method on a closure object (a Closure method such as memoize(), or an Object or GDK "
+                    + "method such as toString() in a nested closure, whose owner is the closure)";
+        }
         return null;
     }
 
@@ -1056,6 +1113,31 @@ public class ClosureWriter {
             }
         });
         return written;
+    }
+
+    /** Public methods of {@code Closure} other than those of {@code Object}, plus {@code doCall}. */
+    private static final Set<String> CLOSURE_METHOD_NAMES = new HashSet<>();
+
+    /** Properties of {@code Closure}, named by its getters, e.g. {@code maximumNumberOfParameters}. */
+    private static final Set<String> CLOSURE_PROPERTY_NAMES = new HashSet<>();
+
+    private static final Set<String> OBJECT_METHOD_NAMES = new HashSet<>();
+
+    /** GDK methods whose {@code Closure} versions call the closure's owner, so the receiver does not matter. */
+    private static final Set<String> OWNER_FORWARDING_GDK_METHODS =
+            new HashSet<>(Arrays.asList("print", "println", "printf"));
+
+    static {
+        for (Method m : Object.class.getMethods()) OBJECT_METHOD_NAMES.add(m.getName());
+        for (Method m : Closure.class.getMethods()) {
+            String name = m.getName();
+            if (OBJECT_METHOD_NAMES.contains(name)) continue;
+            CLOSURE_METHOD_NAMES.add(name);
+            if (name.startsWith("get") && name.length() > 3 && m.getParameterCount() == 0) {
+                CLOSURE_PROPERTY_NAMES.add(BeanUtils.decapitalize(name.substring(3)));
+            }
+        }
+        CLOSURE_METHOD_NAMES.add("doCall");
     }
 
     private static final Set<String> WRAPPING_CALLS = new HashSet<>(Arrays.asList("curry", "rcurry", "ncurry",
