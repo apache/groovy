@@ -886,6 +886,335 @@ import static groovy.test.GroovyAssert.shouldFail
         'Wrong number of parameters for method target'
     }
 
+    // GROOVY-12599
+    @Test
+    void testCoerceClosureArgumentToFunctionalInterface() {
+        assertScript '''
+            String take(Supplier<String> s) { s.get().toLowerCase() }
+            static String give(Supplier<String> s) { s.get() }
+            Closure<String> c = { 'X' }
+            assert take(c) == 'x'
+            assert give(c) == 'X'
+
+            String x = 'Y'
+            Closure<GString> g = { "$x" }
+            assert take(g) == 'y'
+
+            Integer apply(Function<Integer,Integer> f) { f.apply(1) }
+            Closure<Integer> i = { int n -> n + 1 }
+            assert apply(i) == 2
+
+            def <T> T pick(Supplier<T> s) { s.get() }
+            Closure<Integer> one = { 1 }
+            Integer n = pick(one)
+            assert n == 1
+
+            int size(ToIntFunction<String> f) { f.applyAsInt('abc') }
+            Closure<Integer> len = { String s -> s.length() }
+            assert size(len) == 3
+
+            List<String> list(Supplier<List<String>> s) { s.get() }
+            Closure<ArrayList<String>> d = { ['z'] }
+            assert list(d) == ['z']
+
+            def supply(Supplier<String> s) { s.get() }
+            def runIt(Runnable r) { r.run(); 'ran' }
+            def fromRaw(Closure r) { supply(r) }
+            def fromObject(Closure<Object> o) { supply(o) }
+            assert fromRaw({ 'r' }) == 'r'
+            assert fromObject({ 'o' }) == 'o'
+            assert runIt(one) == 'ran'
+            assert take({ 'L' }) == 'l'
+            assert take({ "$x" }) == 'y'
+            assert take(() -> 'M') == 'm'
+
+            class K {
+                K(Supplier<String> s) { assert s.get() == 'k' }
+            }
+            Closure<String> k = { 'k' }
+            new K(k)
+
+            class D extends Closure<String> {
+                D() { super(null) }
+                String doCall() { 'D' }
+            }
+            assert take(new D()) == 'd'
+            assert give(new D()) == 'D'
+        '''
+    }
+
+    // GROOVY-12599
+    @Test
+    void testCoerceClosureArgumentToFunctionalInterface2() {
+        shouldFailWithMessages '''
+            class C {
+                def take(Supplier<String> s) { s.get() }
+            }
+            Closure<Integer> c = { 1 }
+            new C().take(c)
+        ''',
+        'Cannot call C#take(java.util.function.Supplier<java.lang.String>) with arguments [groovy.lang.Closure<java.lang.Integer>]'
+
+        shouldFailWithMessages '''
+            class C {
+                static take(Supplier<? extends CharSequence> s) { s.get() }
+            }
+            Closure<Integer> c = { 1 }
+            C.take(c)
+        ''',
+        'Cannot call C#take(java.util.function.Supplier<? extends java.lang.CharSequence>) with arguments [groovy.lang.Closure<java.lang.Integer>]'
+
+        shouldFailWithMessages '''
+            class C {
+                static take(Function<Integer,String> f) { f.apply(1) }
+            }
+            Closure<Integer> c = { int i -> i }
+            C.take(c)
+        ''',
+        'Cannot call C#take(java.util.function.Function<java.lang.Integer, java.lang.String>) with arguments [groovy.lang.Closure<java.lang.Integer>]'
+
+        shouldFailWithMessages '''
+            class C {
+                static take(Supplier<List<String>> s) { s.get() }
+            }
+            Closure<List<Integer>> c = { [1] }
+            C.take(c)
+        ''',
+        'Cannot call C#take(java.util.function.Supplier<java.util.List<java.lang.String>>) with arguments [groovy.lang.Closure<java.util.List<java.lang.Integer>>]'
+
+        shouldFailWithMessages '''
+            class C {
+                static take(ToIntFunction<String> f) { f.applyAsInt('') }
+            }
+            Closure<String> c = { String s -> s }
+            C.take(c)
+        ''',
+        'Cannot call C#take(java.util.function.ToIntFunction<java.lang.String>) with arguments [groovy.lang.Closure<java.lang.String>]'
+
+        shouldFailWithMessages '''
+            class K {
+                K(Supplier<String> s) { }
+            }
+            Closure<Integer> c = { 1 }
+            new K(c)
+        ''',
+        'Cannot call K#<init>(java.util.function.Supplier<java.lang.String>) with arguments [groovy.lang.Closure<java.lang.Integer>]'
+
+        shouldFailWithMessages '''
+            class D extends Closure<Integer> {
+                D() { super(null) }
+                Integer doCall() { 1 }
+            }
+            class C {
+                static take(Supplier<String> s) { s.get() }
+            }
+            C.take(new D())
+        ''',
+        'Cannot call C#take(java.util.function.Supplier<java.lang.String>) with arguments [D]'
+
+        shouldFailWithMessages '''
+            Optional<String> o = Optional.empty()
+            Closure<Integer> c = { 1 }
+            o.orElseGet(c)
+        ''',
+        'Cannot call java.util.Optional#orElseGet(java.util.function.Supplier<? extends java.lang.String>) with arguments [groovy.lang.Closure<java.lang.Integer>]'
+    }
+
+    // GROOVY-12599
+    @Test
+    void testCoerceClosureReturnToFunctionalInterface() {
+        assertScript '''
+            Supplier<String> one() {
+                Closure<String> c = { 'x' }
+                c
+            }
+            static Supplier<String> two() {
+                String x = 'Y'
+                Closure<GString> c = { "$x" }
+                return c
+            }
+            Function<Integer,Integer> three() {
+                Closure<Integer> c = { int n -> n + 1 }
+                c
+            }
+            Supplier<String> four(Closure c) { c }
+            Supplier<String> five(Closure<Object> c) { c }
+            Runnable six() {
+                Closure<Integer> c = { 1 }
+                c
+            }
+            Supplier<String> seven(boolean b) {
+                b ? { 'y' } : { 'n' }
+            }
+            Supplier<List<String>> eight() {
+                Closure<ArrayList<String>> c = { ['z'] }
+                c
+            }
+            abstract class A<T> { abstract T get() }
+            A<String> nine() {
+                Closure<String> c = { 'a' }
+                c
+            }
+            Function<Integer,Integer> ten() { Integer.&bitCount }
+
+            assert one().get() == 'x'
+            assert two().get().toLowerCase() == 'y'
+            assert three().apply(1) == 2
+            assert four({ 'r' }).get() == 'r'
+            assert five({ 'o' }).get() == 'o'
+            six().run()
+            assert seven(true).get() == 'y'
+            assert eight().get() == ['z']
+            assert nine().get() == 'a'
+            assert ten().apply(3) == 2
+        '''
+    }
+
+    // GROOVY-12599
+    @Test
+    void testCoerceClosureReturnToFunctionalInterface2() {
+        shouldFailWithMessages '''
+            Supplier<String> mk() {
+                Closure<Integer> c = { 1 }
+                c
+            }
+        ''',
+        'Cannot return value of type groovy.lang.Closure<java.lang.Integer> for method returning java.util.function.Supplier<java.lang.String>'
+
+        shouldFailWithMessages '''
+            static Supplier<String> mk() {
+                Closure<Integer> c = { 1 }
+                return c
+            }
+        ''',
+        'Cannot return value of type groovy.lang.Closure<java.lang.Integer> for method returning java.util.function.Supplier<java.lang.String>'
+
+        shouldFailWithMessages '''
+            Function<Integer,String> mk() {
+                Closure<Integer> c = { int i -> i }
+                c
+            }
+        ''',
+        'Cannot return value of type groovy.lang.Closure<java.lang.Integer> for method returning java.util.function.Function<java.lang.Integer, java.lang.String>'
+
+        shouldFailWithMessages '''
+            Supplier<List<String>> mk() {
+                Closure<List<Integer>> c = { [1] }
+                c
+            }
+        ''',
+        'Cannot return value of type groovy.lang.Closure<java.util.List<java.lang.Integer>> for method returning java.util.function.Supplier<java.util.List<java.lang.String>>'
+
+        shouldFailWithMessages '''
+            Supplier<String> mk(boolean b) {
+                Closure<Integer> c = { 1 }
+                b ? c : null
+            }
+        ''',
+        'Cannot return value of type groovy.lang.Closure<java.lang.Integer> for method returning java.util.function.Supplier<java.lang.String>'
+
+        shouldFailWithMessages '''
+            abstract class A<T> { abstract T get() }
+            A<String> mk() {
+                Closure<Integer> c = { 1 }
+                c
+            }
+        ''',
+        'Cannot return value of type groovy.lang.Closure<java.lang.Integer> for method returning A<java.lang.String>'
+
+        shouldFailWithMessages '''
+            class D extends Closure<Integer> {
+                D() { super(null) }
+                Integer doCall() { 1 }
+            }
+            Supplier<String> mk() {
+                new D()
+            }
+        ''',
+        'Cannot return value of type D for method returning java.util.function.Supplier<java.lang.String>'
+    }
+
+    // GROOVY-12599
+    @Test
+    void testCoerceClosureValueToFunctionalInterfaceWithPrimitiveReturn() {
+        assertScript '''
+            def nonEmpty = { String s -> s.size() }
+            assert ['a', ''].stream().filter(nonEmpty).toList() == ['a']
+            def len = { String s -> s.size() }
+            assert ['ab', 'c'].stream().mapToLong(len).sum() == 3L
+
+            Predicate<String> p(Closure<Integer> c) { c }
+            assert p({ String s -> s.size() }).test('x')
+            assert !p({ String s -> s.size() }).test('')
+
+            ToLongFunction<String> f(Closure<Integer> c) { c }
+            assert f({ String s -> s.size() }).applyAsLong('abc') == 3L
+
+            int get(IntSupplier s) { s.getAsInt() }
+            Closure<Short> s = { -> (short) 4 }
+            assert get(s) == 4
+        '''
+
+        shouldFailWithMessages '''
+            class C {
+                static take(ToIntFunction<String> f) { f.applyAsInt('') }
+            }
+            Closure<Long> c = { String s -> 1L }
+            C.take(c)
+        ''',
+        'Cannot call C#take(java.util.function.ToIntFunction<java.lang.String>) with arguments [groovy.lang.Closure<java.lang.Long>]'
+
+        shouldFailWithMessages '''
+            ToIntFunction<String> mk() {
+                Closure<Long> c = { String s -> 1L }
+                c
+            }
+        ''',
+        'Cannot return value of type groovy.lang.Closure<java.lang.Long> for method returning java.util.function.ToIntFunction<java.lang.String>'
+    }
+
+    // GROOVY-12599
+    @Test
+    void testCoerceClosureArgumentAndReturnToFunctionalInterface() {
+        assertScript '''
+            interface Size { int size(String s) }
+            int size(Size s) { s.size('abc') }
+            Size mk(Closure<Integer> c) { c }
+            Closure<Integer> c = { String s -> s.length() }
+            assert size(c) == 3
+            assert mk(c).size('ab') == 2
+        '''
+
+        assertScript '''
+            class D<T> extends Closure<T> {
+                T value
+                D(T value) { super(null); this.value = value }
+                T doCall() { value }
+            }
+            String take(Supplier<String> s) { s.get() }
+            Supplier<String> mk() { new D<String>('d') }
+            assert take(new D<String>('d')) == 'd'
+            assert mk().get() == 'd'
+        '''
+
+        shouldFailWithMessages '''
+            class C {
+                static take(IntSupplier s) { s.getAsInt() }
+            }
+            Closure<String> c = { -> 'x' }
+            C.take(c)
+        ''',
+        'Cannot call C#take(java.util.function.IntSupplier) with arguments [groovy.lang.Closure<java.lang.String>]'
+
+        shouldFailWithMessages '''
+            IntSupplier mk() {
+                Closure<String> c = { -> 'x' }
+                c
+            }
+        ''',
+        'Cannot return value of type groovy.lang.Closure<java.lang.String> for method returning java.util.function.IntSupplier'
+    }
+
     // GROOVY-11092, GROOVY-8499
     @Test
     void testCoerceToFunctionalInterface21() {
