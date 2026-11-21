@@ -659,8 +659,8 @@ class TraitReceiverTransformer extends ClassCodeExpressionTransformer {
                     newCall = callX(!inClosure ? thisExpr : classX(traitHelper), method, createArgumentList(selfClassOrObject, arguments));
                     // GROOVY-12611: T$Trait$Helper.m($self, x) is not checked against the closure's delegate
                     if (inClosure) newCall.setImplicitThis(false);
-                    if (inClosure && !inLambda && call.isImplicitThis() && methodNode.getDeclaringClass().equals(traitClass)) {
-                        // GROOVY-12611: m(x) in a closure may target the closure's delegate; the type
+                    if (inClosure && !inLambda && call.isImplicitThis()) {
+                        // GROOVY-12611, GROOVY-12618: m(x) in a closure may target the closure's delegate; the type
                         // checker of statically compiled code keeps T$Trait$Helper.m($self, x) or
                         // selects m(x) on the delegate, otherwise the closure resolves m(x) and its
                         // metaclass falls back to the trait helper for the owner
