@@ -163,6 +163,148 @@ final class PackedClosuresTransformTest {
         assertEquals([3, 6, 9], e.maps([1, 2, 3]))
     }
 
+    // GROOVY-12652
+    @Test
+    void escapingClosuresInConstructorsAndInitializersAreDeclined() {
+        // the escape gate also covers constructors and instance initializer blocks
+        // (inlined into every constructor); a declined closure keeps its class, so setting a
+        // delegate on it works instead of failing the packed adapter's runtime guard
+        String src = '''@groovy.transform.PackedClosures
+            class K {
+                Closure fromCtor, fromInit;
+                { fromInit = { x -> x + 1 } }                                              // field store
+                K(List<Closure> sink) { sink << { x -> x * 2 }; fromCtor = { x -> x - 1 } } // appended, field store
+                K(Map attrs) { attrs.handler = { x -> x * 3 } }                             // property store
+                K(List<Integer> xs, int n) { xs.each { x -> n += x } }                      // local -> packs
+            }'''
+        def names = generatedClassNames(src)
+        assertEquals(4, closureClassCount(names), "escaping closures should be declined: $names")
+
+        def (sink, attrs) = [[], [:]]
+        def k = instance(src + '\n return { s, a -> new K(a); new K(s) }')(sink, attrs)
+        [k.fromCtor, k.fromInit, sink[0], attrs.handler].each { it.delegate = 'd' } // no packed-adapter guard
+        assertEquals([9, 11, 10, 30], [k.fromCtor(10), k.fromInit(10), sink[0](5), attrs.handler(10)])
+    }
+
+    // GROOVY-12650, GROOVY-12652
+    @Test
+    void compileStaticConstructorAndInitializerEscapesHiddenByARewriteAreDeclined() {
+        // under @CompileStatic an append and a setter-backed store in a
+        // constructor or an instance initializer block are rewritten to method calls before class
+        // generation; the escape walk runs ahead of that rewrite there too, whether the scope comes
+        // from the class or from a constructor
+        String src = '''import groovy.transform.CompileStatic
+            import groovy.transform.PackedClosures
+            @CompileStatic @PackedClosures
+            class K {
+                Holder held = new Holder();
+                { held.handler = { Integer x -> x + 1 } }                                     // setter store
+                K(List<Closure> sink, Holder h) { sink << { Integer x -> x * 2 }; h.handler = { Integer x -> x * 3 } }
+                K(List<Integer> xs) { xs.each { Integer x -> x } }                             // local -> packs
+            }
+            @CompileStatic
+            class L {
+                List<Closure> sink = [];
+                { sink << { Integer x -> x - 1 } }                                             // appended
+                @PackedClosures L() { }
+            }
+            class Holder { Closure handler }'''
+        def names = generatedClassNames(src)
+        assertEquals(4, closureClassCount(names), "escaping closures should be declined: $names")
+
+        def (sink, h) = [[], null]
+        def made = instance(src + '\n return { s -> def h = new Holder(); [new K(s, h), h, new L()] }')(sink)
+        def (k, holder, l) = made
+        [k.held.handler, sink[0], holder.handler, l.sink[0]].each { it.delegate = 'd' } // no packed-adapter guard
+        assertEquals([11, 10, 30, 9], [k.held.handler(10), sink[0](5), holder.handler(10), l.sink[0](10)])
+    }
+
+    // GROOVY-12650
+    @Test
+    void escapingClosuresAreDeclinedTheSameUnderCompileStatic() {
+        // Static compilation rewrites `<<`, subscript stores and setter-backed property stores into
+        // method calls before class generation; the closures they store still escape and must be
+        // declined exactly as in dynamic code. An explicit leftShift(...) call is not an escape site
+        // in either mode, so that closure packs, as does the owner-local one.
+        String src = '''@groovy.transform.PackedClosures
+            ANNOTATION
+            class E {
+                Closure prop
+                static Closure sprop
+                void appended(List<Closure> sink)          { sink << { x -> x } }
+                void toSetter(E other)                     { other.prop = { x -> x } }
+                void toBeanSetter(Holder h)                { h.g = { x -> x } }
+                void toThisSetter()                        { this.prop = { x -> x } }
+                void toImplicitSetter()                    { prop = { x -> x } }
+                static void toStaticSetter()               { sprop = { x -> x } }
+                void toListIndex(List<Closure> sink)       { sink[0] = { x -> x } }
+                void toArrayIndex(Closure[] sink)          { sink[0] = { x -> x } }
+                void toMapKey(Map<String, Closure> sink)   { sink.k = { x -> x } }
+                void toMapIndex(Map<String, Closure> sink) { sink['k'] = { x -> x } }
+                void toField(Holder h)                     { h.@f = { x -> x } }
+                Holder named()                             { new Holder(g: { x -> x }) }
+                void called(List<Closure> sink)            { sink.leftShift({ x -> x }) } // a call: packs
+                List<Integer> maps(List<Integer> xs)       { xs.collect { x -> x * 3 } }  // owner-local: packs
+            }
+            class Holder { public Closure f; Closure g }'''
+        ['', '@groovy.transform.TypeChecked', '@groovy.transform.CompileStatic'].each { ann ->
+            String mode = ann ?: 'dynamic'
+            String code = src.replace('ANNOTATION', ann)
+            def names = generatedClassNames(code)
+            assertEquals(12, closureClassCount(names), "[$mode] escaping closures should be declined: $names")
+
+            def e = instance(code + '\n new E()')
+            def list = []; e.appended(list); e.called(list)
+            assertEquals(1, list[0](1))
+            assertEquals(2, list[1](2))
+            e.toImplicitSetter(); assertEquals(4, e.prop(4))
+            def h = e.named(); e.toBeanSetter(h); assertEquals(3, h.g(3))
+            def map = [:]; e.toMapKey(map); assertEquals(5, map.k(5))
+            assertEquals(6, e.named().g(6))
+            assertEquals([3, 6], e.maps([1, 2]))
+        }
+    }
+
+    // GROOVY-12650
+    @Test
+    void compileStaticReportsAnEscapeHiddenByARewrite() {
+        String src = '''import groovy.transform.CompileStatic
+            import groovy.transform.PackedClosures
+            import groovy.transform.PackedClosures.PackMode
+            @CompileStatic @PackedClosures(mode = PackMode.WARN)
+            class W {
+                void appended(List<Closure> sink) { sink << { String s -> s } }
+                void toSetter(Bean b)             { b.prop = { String s -> s } }
+            }
+            class Bean { Closure prop }'''
+        def ws = warnings(src)
+        assertEquals(2, ws.size(), "expected one warning per escaping closure, got: ${ws*.message}")
+        ws.each { assertTrue(it.message.contains('escapes its method'), "warning should name the escape: $it.message") }
+    }
+
+    // GROOVY-12650
+    @Test
+    void compileStaticFlagPathDeclinesAnEscapeHiddenByARewrite() {
+        String src = '''import groovy.transform.CompileStatic
+            @CompileStatic
+            class F {
+                void appended(List<Closure> sink) { sink << { String s -> s } }
+                void toSetter(Bean b)             { b.prop = { String s -> s } }
+                List<String> local(List<String> xs) { xs.collect { String s -> s.toUpperCase() } }
+            }
+            class Bean { Closure prop }'''
+        String prev = System.getProperty(CompilerConfiguration.CLOSURE_PACKING)
+        System.setProperty(CompilerConfiguration.CLOSURE_PACKING, 'true')
+        try {
+            def names = generatedClassNames(src)
+            assertEquals(['F$_appended_closure1', 'F$_toSetter_closure2'], names.findAll { it.contains('_closure') },
+                    'the escaping closures stay classes; the owner-local one packs')
+        } finally {
+            if (prev != null) System.setProperty(CompilerConfiguration.CLOSURE_PACKING, prev)
+            else System.clearProperty(CompilerConfiguration.CLOSURE_PACKING)
+        }
+    }
+
     /**
      * Under {@code @CompileStatic} the transform applies a cast-to-context heuristic: the hoisted
      * method is marked {@code @CompileStatic(SKIP)} (so its Object-typed body is checked dynamically),
@@ -359,6 +501,49 @@ final class PackedClosuresTransformTest {
         }
     }
 
+    // GROOVY-12652
+    @Test
+    void modeOnAConstructorGovernsItsBodyAndInitializers() {
+        // a constructor is a scope of its own, like a method (most specific wins),
+        // and its scope includes the instance initializer blocks inlined into it
+        ['', '@groovy.transform.TypeChecked', '@groovy.transform.CompileStatic'].each { annotation ->
+            String src = """import groovy.transform.PackedClosures
+                import groovy.transform.PackedClosures.PackMode
+                $annotation
+                class A {
+                    List<Integer> r
+                    @PackedClosures A(List<Integer> xs) { r = xs.collect { Integer x -> x * 2 } } // packs
+                    A() { r = [1].collect { Integer x -> x } }                                    // not in scope
+                }
+                $annotation
+                @PackedClosures
+                class D {
+                    List<Integer> r
+                    @PackedClosures(mode = PackMode.DISABLED) D(List<Integer> xs) { r = xs.collect { Integer x -> x } }
+                }"""
+            assertEquals(['A$_closure1', 'D$_closure1'], generatedClassNames(src).findAll { it.contains('_closure') },
+                    "[$annotation] only the out-of-scope and DISABLED constructors' closures keep a class")
+            assertEquals([2, 4], instance(src + '\n new A([1, 2])').r)
+        }
+
+        String strict = '''import groovy.transform.PackedClosures
+            import groovy.transform.PackedClosures.PackMode
+            class S { @PackedClosures(mode = PackMode.STRICT) S(List<Closure> sink) { sink << { x -> x } } }'''
+        def e = assertThrows(MultipleCompilationErrorsException) { generatedClassNames(strict) }
+        assertTrue(e.message.contains('not packed') && e.message.contains('escapes'), e.message)
+
+        def ws = warnings('''import groovy.transform.PackedClosures
+            import groovy.transform.PackedClosures.PackMode
+            @PackedClosures(mode = PackMode.WARN)
+            class W {
+                Closure f, g = { x -> x };
+                { f = { x -> x } }
+            }''')*.message
+        assertEquals(2, ws.size(), "expected the initializer block and field initializer declines: $ws")
+        assertTrue(ws.any { it.contains('escapes its method') }, "the block's field store escapes: $ws")
+        assertTrue(ws.any { it.contains('initialises a field') }, "the field initializer keeps its reason: $ws")
+    }
+
     @Test
     void dispatchLaneRouting() {
         // One shape per dispatch lane: the array-free per-arity tables (dispatch1 for one value
@@ -521,6 +706,25 @@ final class PackedClosuresTransformTest {
         assertTrue(closureClassCount(generatedClassNames(src)) >= 1,
                 'a closure in a this(...) call must stay a class')
         assertEquals(42, instance(src + '\n new C()').result)
+    }
+
+    // GROOVY-12653
+    @Test
+    void captureWrittenAfterTheLiteralInAConstructorOrInitializerIsShared() {
+        // a capture written anywhere in the constructor -- here after the literal --
+        // is threaded as the shared Reference, not copied by value when the literal is created
+        ['', '@groovy.transform.TypeChecked', '@groovy.transform.CompileStatic'].each { annotation ->
+            def r = instance("""$annotation
+                @groovy.transform.PackedClosures
+                class H {
+                    Object fromCtor, fromInit;
+                    { Closure c; c = { x -> c == null ? 'stale' : 'set' }; fromInit = c(0) }
+                    H() { Closure c; c = { x -> c == null ? 'stale' : 'set' }; fromCtor = c(0) }
+                }
+                def h = new H()
+                [h.fromCtor, h.fromInit]""")
+            assertEquals(['set', 'set'], r, "[$annotation]")
+        }
     }
 
     @Test
