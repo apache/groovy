@@ -72,6 +72,12 @@ public class MethodVariantASTTransformation implements ASTTransformation {
 
     private static final AtomicLong COUNTER = new AtomicLong();
 
+    /**
+     * Instruments a method annotated with {@link Decreases}. The closure must
+     * contain a single measure expression; an empty closure is reported and
+     * left unchanged. Anything other than that annotation placed on a method
+     * is ignored.
+     */
     @Override
     public void visit(final ASTNode[] nodes, final SourceUnit source) {
         if (nodes.length != 2) return;
@@ -79,8 +85,12 @@ public class MethodVariantASTTransformation implements ASTTransformation {
         // Only the method case here; the loop case is LoopVariantASTTransformation.
         if (!(nodes[1] instanceof MethodNode method)) return;
 
-        Expression value = annotation.getMember("value");
-        if (!(value instanceof ClosureExpression closureExpression)) return;
+        ClosureExpression closureExpression = LoopContractSupport.contractClosure(annotation, source);
+        if (closureExpression == null) return;
+        if (closureExpression.getCode().isEmpty()) {
+            LoopContractSupport.warn(annotation, source, "({}) on a method has no measure, so nothing is checked");
+            return;
+        }
 
         weaveMeasure(method, extractExpression(closureExpression), source);
     }

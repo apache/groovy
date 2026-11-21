@@ -24,6 +24,7 @@ import org.junit.jupiter.params.provider.ValueSource
 
 import static groovy.test.GroovyAssert.assertScript
 import static groovy.test.GroovyAssert.shouldFail
+import static java.lang.reflect.Modifier.isPrivate
 import static java.lang.reflect.Modifier.isPublic
 import static java.lang.reflect.Modifier.isStatic
 
@@ -224,6 +225,18 @@ final class ClosureTest {
         }
     }
 
+    // GROOVY-12675
+    @Test
+    void testGetPropertiesExcludesPrivateMembersOfClosure() {
+        Closure closure = { -> }
+        def properties = closure.metaClass.properties
+
+        assert properties.every { !isPrivate(it.modifiers) }
+        assert properties*.name.containsAll(['class', 'delegate', 'directive', 'maximumNumberOfParameters',
+                'owner', 'parameterTypes', 'resolveStrategy', 'thisObject', 'DONE', 'IDENTITY'])
+        assert properties*.name.disjoint(['bcw', 'serialVersionUID', 'thisType'])
+    }
+
     @Test
     void testSetProperties() {
         def c = { println it }
@@ -239,6 +252,21 @@ final class ClosureTest {
         assert c.directive == Closure.DONE
 
         // like in testGetProperties(), don't know how to test metaClass property
+    }
+
+    // GROOVY-12673
+    @Test
+    void testWritableClosureThisObject() {
+        def w = { x -> x }.asWritable()
+
+        assert w.thisObject === this
+        assert w.getThisObject() === this
+        assert w.curry(1).getThisObject() === this
+        assertScript '''
+            @groovy.transform.CompileStatic
+            def thisObjectOf(Closure c) { c.asWritable().thisObject }
+            assert thisObjectOf { -> } === this
+        '''
     }
 
     // GROOVY-2150: list items spread over closure parameters
@@ -315,6 +343,36 @@ final class ClosureTest {
         assert rehydrate.owner === closure.owner
         assert rehydrate.thisObject === closure.thisObject
         assert rehydrate() == 'Hello'
+    }
+
+    // GROOVY-12665
+    @Test
+    void testDehydrateAndRehydrateWritableClosure() {
+        assertScript '''
+            class O { def foo() { 'o' } }
+            class D { def foo() { 'd' } }
+            def o = new O(), d = new D()
+            def w = { x -> foo() + x }.asWritable()
+
+            def r = w.rehydrate(d, o, o)
+            assert r !== w
+            assert r instanceof Writable
+            assert r.delegate === d
+            assert r.owner === o
+            assert r.thisObject === o
+            assert r(1) == 'o1'
+            assert w.curry(1).rehydrate(d, o, o)() == 'o1'
+            assert w.delegate === this
+            assert w.owner === this
+
+            def k = { x -> x + 1 }.asWritable().dehydrate()
+            assert k instanceof Writable
+            assert k.delegate === null
+            assert k.owner === null
+            assert k.thisObject === null
+            assert k(1) == 2
+            assert k.rehydrate(d, o, o)(1) == 2
+        '''
     }
 
     // GROOVY-5151
@@ -498,6 +556,179 @@ final class ClosureTest {
         '''
     }
 
+    // GROOVY-12680
+    @Test
+    void testMetaClassDoesNotExposePrivateMembersOfClosure() {
+        Closure c = { -> 1 }
+        def mc = c.metaClass
+
+        for (name in ['bcw', 'mopPerturbed', 'serialVersionUID', 'thisType', 'ThisType', 'PROPERTY_GETTERS']) {
+            def err = shouldFail(MissingPropertyException) {
+                mc.getProperty(c, name)
+            }
+            assert err.property == name
+            assert err.type == c.getClass()
+
+            err = shouldFail(MissingPropertyException) {
+                mc.setProperty(c, name, null)
+            }
+            assert err.property == name
+            assert err.type == c.getClass()
+
+            assert mc.getMetaProperty(name) == null
+            assert mc.hasProperty(c, name) == null
+        }
+
+        // access from within Closure itself, like any other private member
+        assert mc.getProperty(Closure, c, 'serialVersionUID', false, true) instanceof Long
+    }
+
+    // GROOVY-12680
+    @Test
+    void testMetaClassCannotOverwritePrivateMembersOfClosure() {
+        assertScript '''
+            import static groovy.test.GroovyAssert.shouldFail
+
+            class C {
+                private secret = 'C'
+                def read() {
+                    Closure c = { -> secret }
+                    def err = shouldFail(MissingPropertyException) {
+                        c.metaClass.setProperty(c, 'thisType', Object)
+                    }
+                    assert err.property == 'thisType'
+                    c()
+                }
+            }
+            class D extends C {
+            }
+
+            assert new D().read() == 'C'
+
+            Closure c = { -> 1 }
+            def err = shouldFail(MissingPropertyException) {
+                c.metaClass.setProperty(c, 'mopPerturbed', true)
+            }
+            assert err.property == 'mopPerturbed'
+        '''
+    }
+
+    // GROOVY-12680
+    @Test
+    void testToSelfDoesNotResolvePrivateMembersOfClosure() {
+        Closure c = { -> 1 }
+        c.resolveStrategy = Closure.TO_SELF
+
+        for (name in ['bcw', 'mopPerturbed', 'serialVersionUID', 'thisType']) {
+            def err = shouldFail(MissingPropertyException) {
+                c."$name"
+            }
+            assert err.property == name
+
+            err = shouldFail(MissingPropertyException) {
+                c."$name" = null
+            }
+            assert err.property == name
+        }
+
+        assert c.DONE == Closure.DONE
+        assert c.owner === this
+        assert c.resolveStrategy == Closure.TO_SELF
+        assert c() == 1
+    }
+
+    // GROOVY-12675, GROOVY-12680: the property list and the property lookups of a closure's
+    // metaclass agree, for every private field of Closure that has no public accessor
+    @Test
+    void testMetaClassPropertyListAndLookupsAgree() {
+        Closure c = { -> 1 }
+        def mc = c.metaClass
+        def listed = mc.properties*.name as Set
+
+        for (name in listed) {
+            assert mc.getMetaProperty(name) != null
+            assert mc.hasProperty(c, name) != null
+        }
+
+        def hasAccessor = { String name ->
+            Closure.methods.any { it.parameterCount == 0 && it.name in ['get' + name.capitalize(), 'is' + name.capitalize()] }
+        }
+        def privateFields = Closure.declaredFields.findAll { isPrivate(it.modifiers) && !it.synthetic && !hasAccessor(it.name) }*.name
+        assert privateFields.containsAll(['bcw', 'mopPerturbed', 'serialVersionUID', 'thisType'])
+
+        for (name in privateFields) {
+            assert !(name in listed)
+            assert mc.getMetaProperty(name) == null
+            assert mc.hasProperty(c, name) == null
+            def err = shouldFail(MissingPropertyException) {
+                mc.getProperty(c, name)
+            }
+            assert err.property == name
+            err = shouldFail(MissingPropertyException) {
+                mc.setProperty(c, name, null)
+            }
+            assert err.property == name
+        }
+    }
+
+    // GROOVY-12680
+    @Test
+    void testMetaClassStillExposesPublicMembersOfClosure() {
+        Closure c = { String s, int i -> }
+        def mc = c.metaClass
+
+        assert mc.getProperty(c, 'delegate') === this
+        assert mc.getProperty(c, 'owner') === this
+        assert mc.getProperty(c, 'thisObject') === this
+        assert mc.getProperty(c, 'resolveStrategy') == Closure.OWNER_FIRST
+        assert mc.getProperty(c, 'directive') == 0
+        assert mc.getProperty(c, 'maximumNumberOfParameters') == 2
+        assert mc.getProperty(c, 'parameterTypes') == [String, int] as Class[]
+        assert mc.getProperty(c, 'class') == c.getClass()
+        assert mc.getProperty(c, 'metaClass') != null
+        assert mc.getProperty(c, 'DONE') == Closure.DONE
+        assert mc.getProperty(c, 'OWNER_FIRST') == Closure.OWNER_FIRST
+        assert mc.getProperty(c, 'Owner') === this
+
+        for (name in ['class', 'delegate', 'directive', 'maximumNumberOfParameters', 'metaClass',
+                'owner', 'parameterTypes', 'resolveStrategy', 'thisObject', 'DONE', 'IDENTITY']) {
+            assert mc.getMetaProperty(name)?.name == name
+            assert mc.hasProperty(c, name)?.name == name
+        }
+
+        def object = new Object()
+        mc.setProperty(c, 'delegate', object)
+        mc.setProperty(c, 'resolveStrategy', Closure.DELEGATE_FIRST)
+        mc.setProperty(c, 'directive', Closure.DONE)
+        assert c.delegate === object
+        assert c.resolveStrategy == Closure.DELEGATE_FIRST
+        assert c.directive == Closure.DONE
+    }
+
+    // GROOVY-12680
+    @Test
+    void testOwnerAndDelegatePropertiesNamedLikePrivateMembersOfClosure() {
+        assertScript '''
+            class C {
+                private String thisType = 'owner'
+                def bcw = 'owner'
+
+                def run() {
+                    Closure c = { -> thisType + ':' + bcw + ':' + mopPerturbed }
+                    c.delegate = [mopPerturbed: 'delegate']
+                    def result = c()
+                    Closure d = { -> bcw = 'set'; mopPerturbed = 'set' }
+                    d.delegate = [:]
+                    d.resolveStrategy = Closure.DELEGATE_FIRST
+                    d()
+                    [result, bcw, d.delegate.mopPerturbed]
+                }
+            }
+
+            assert new C().run() == ['owner:owner:delegate', 'owner', 'set']
+        '''
+    }
+
     // GROOVY-2433, GROOVY-3073, GROOVY-9987, GROOVY-11128
     @ParameterizedTest
     @ValueSource(strings=['this.', 'owner.', 'thisObject.', ''])
@@ -642,5 +873,116 @@ final class ClosureTest {
 
             new D().test()
         """
+    }
+
+    // GROOVY-12671
+    @Test
+    void testOwnerFirstWithNullOwnerProperty() {
+        assertScript '''
+            class D {
+                def bar = 'delegate'
+            }
+            class C {
+                def test() {
+                    def d = new D()
+                    def c = { -> [bar, bar = 'set', bar += '!'] }.rehydrate(d, null, null)
+                    assert c.resolveStrategy == Closure.OWNER_FIRST
+                    [c(), d.bar]
+                }
+            }
+
+            assert new C().test() == [['delegate', 'set', 'set!'], 'set!']
+        '''
+    }
+
+    // GROOVY-12671
+    @Test
+    void testOwnerFirstWithNullOwnerPropertyTypeChecked() {
+        assertScript '''
+            class D {
+                def bar = 'delegate'
+            }
+            @groovy.transform.TypeChecked
+            class C {
+                String bar = 'owner'
+                def test() {
+                    def d = new D()
+                    def c = { -> bar = bar + '!' }.rehydrate(d, null, null)
+                    c()
+                    [d.bar, bar]
+                }
+            }
+
+            assert new C().test() == ['delegate!', 'owner']
+        '''
+    }
+
+    // GROOVY-12671
+    @Test
+    void testDehydratedClosureWithDelegateProperty() {
+        assertScript '''
+            class D {
+                def bar = 'delegate'
+            }
+            class C {
+                def test() {
+                    def c = { -> bar }.dehydrate()
+                    c.delegate = new D()
+                    c()
+                }
+            }
+
+            assert new C().test() == 'delegate'
+        '''
+    }
+
+    // GROOVY-12671
+    @ParameterizedTest
+    @ValueSource(strings=['OWNER_FIRST', 'DELEGATE_FIRST', 'OWNER_ONLY', 'DELEGATE_ONLY'])
+    void testMissingPropertyWithNullOwnerAndDelegate(String strategy) {
+        for (body in ['bar', 'bar = 1']) {
+            def err = shouldFail MissingPropertyException, """
+                def c = { -> $body }.dehydrate()
+                c.resolveStrategy = Closure.$strategy
+                c()
+            """
+            assert err.property == 'bar'
+        }
+    }
+
+    // GROOVY-12671
+    @ParameterizedTest
+    @ValueSource(strings=['OWNER_ONLY', 'DELEGATE_ONLY'])
+    void testMissingPropertyWithNullOnlyCandidate(String strategy) {
+        def args = strategy == 'OWNER_ONLY' ? 'new D(), null, null' : 'null, new D(), null'
+        for (body in ['bar', 'bar = 1']) {
+            def err = shouldFail MissingPropertyException, """
+                class D {
+                    def bar = 'not the target'
+                }
+                def c = { -> $body }.rehydrate($args)
+                c.resolveStrategy = Closure.$strategy
+                c()
+            """
+            assert err.property == 'bar'
+        }
+    }
+
+    // GROOVY-12671
+    @ParameterizedTest
+    @ValueSource(strings=['OWNER_FIRST', 'DELEGATE_FIRST'])
+    void testMissingPropertyWithNullSecondCandidate(String strategy) {
+        def args = strategy == 'OWNER_FIRST' ? 'null, new D(), null' : 'new D(), null, null'
+        for (body in ['nope', 'nope = 1']) {
+            def err = shouldFail MissingPropertyException, """
+                class D {
+                }
+                def c = { -> $body }.rehydrate($args)
+                c.resolveStrategy = Closure.$strategy
+                c()
+            """
+            assert err.property == 'nope'
+            assert err.type.name == 'D'
+        }
     }
 }

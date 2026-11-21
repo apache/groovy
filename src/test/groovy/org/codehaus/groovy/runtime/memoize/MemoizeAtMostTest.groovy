@@ -75,6 +75,26 @@ class MemoizeAtMostTest extends AbstractMemoizeTestCase {
         assert flag
     }
 
+    // GROOVY-12669
+    @Test
+    void testRehydratedCopyKeepsTheMaximumCacheSize() {
+        def o = new Named('o')
+        def p = new Named('p')
+        Closure mem = o.closure().memoizeAtMost(3)
+        [1, 2, 3].each { mem(it) }
+
+        Closure copy = mem.rehydrate(null, p, p)
+        [1, 2, 3].each { assert copy(it) == "p$it" }
+        [1, 2, 3].each { assert copy(it) == "p$it" }
+        assert p.calls == 3
+        assert copy(4) == 'p4'
+        assert copy(1) == 'p1'
+        assert p.calls == 5
+
+        [1, 2, 3].each { assert mem(it) == "o$it" }
+        assert o.calls == 3
+    }
+
     @Test
     void testMemoizeAtMostConcurrently() {
         AtomicInteger cnt = new AtomicInteger(0)
@@ -88,5 +108,23 @@ class MemoizeAtMostTest extends AbstractMemoizeTestCase {
         int c = cnt.get()
         assert 3 <= c && c <= 12
         // cached result may be GCed due to SoftReference, so `c` may be greater than 3(in most cases, its value is 3)
+    }
+
+    // GROOVY-12674
+    @Test
+    void testSerializedCopyKeepsCachedValuesAndMaxCacheSize() {
+        Closure mem = new Counting().closure().memoizeAtMost(2)
+        assert mem(1) == 2
+        assert mem(2) == 4
+
+        Closure copy = roundTrip(mem)
+        Counting owner = copy.owner
+        assert copy(1) == 2
+        assert copy(2) == 4
+        assert owner.calls == 2
+        assert copy(3) == 6
+        assert owner.calls == 3
+        assert copy(1) == 2
+        assert owner.calls == 4
     }
 }

@@ -35,8 +35,10 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Pluggable lookup of class names to a {@link ClassNode} or a {@link SourceUnit}.
@@ -129,6 +131,10 @@ public class ClassNodeResolver {
         }
     };
 
+    // Names that resolveClassFile found no class file for; kept apart from cachedClasses, where a miss means that
+    // no class and no source exists
+    private final Set<String> classFileMisses = new HashSet<>();
+
     // Map to store the package-info of resolved packages (GROOVY-12207)
     private final Map<String, PackageNode> cachedPackages = new HashMap<>();
     /**
@@ -172,6 +178,36 @@ public class ClassNodeResolver {
             cacheClass(name, NO_CLASS);
             return null;
         }
+    }
+
+    /**
+     * Resolves a class name to a compiled class only, decompiled from its {@code .class} resource on the class loader
+     * of the compilation unit. Unlike {@link #resolveName(String, CompilationUnit)}, it does not call
+     * {@link #findClassNode(String, CompilationUnit)}, load a class or look for a groovy source, so neither a source
+     * nor a class the class loader has compiled or loaded before is found. A hit is cached as by
+     * {@link #resolveName(String, CompilationUnit)}. A miss is not cached as {@link #NO_CLASS}, so a later
+     * {@link #resolveName(String, CompilationUnit)} of the same name can still find a source.
+     *
+     * @param name the fully qualified class name
+     * @param compilationUnit the current compilation unit
+     * @return the class node, or {@code null} if there is no such class file
+     */
+    ClassNode resolveClassFile(final String name, final CompilationUnit compilationUnit) {
+        ClassNode type = getFromClassCache(name);
+        if (type != null) {
+            return type == NO_CLASS ? null : type;
+        }
+        if (classFileMisses.contains(name)) {
+            return null;
+        }
+        GroovyClassLoader loader = compilationUnit.getClassLoader();
+        ClassNode node = loader == null ? null : readClassFile(name, compilationUnit, loader, false).node;
+        if (node != null) {
+            cacheClass(name, node);
+        } else {
+            classFileMisses.add(name);
+        }
+        return node;
     }
 
     /**

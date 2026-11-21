@@ -77,5 +77,11 @@ import static java.lang.annotation.RetentionPolicy.CLASS;
 @Target({TYPE, METHOD, CONSTRUCTOR, FIELD})
 @Retention(CLASS)
 public @interface GroovyABI {
+    /**
+     * Returns the first Groovy release in which the annotated element was part
+     * of the binary ABI, as a three-part version such as {@code "1.0.0"}.
+     *
+     * @return that version
+     */
     String since();
 }

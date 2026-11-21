@@ -32,6 +32,7 @@ class WriteExtensionDescriptorTask extends DefaultTask {
     String description = 'Generates the org.codehaus.groovy.runtime.ExtensionModule descriptor file of a module'
     @Input String extensionClasses = ''
     @Input String staticExtensionClasses = ''
+    @Input String requiredClasses = ''
     @OutputFile File descriptor = computeDescriptorFile()
     @Input String moduleName = project.name
     @Input String moduleVersion = project.version
@@ -49,6 +50,9 @@ class WriteExtensionDescriptorTask extends DefaultTask {
 moduleVersion=$moduleVersion
 extensionClasses=${extensionClasses}
 staticExtensionClasses=${staticExtensionClasses}"""
+            if (requiredClasses) {
+                it << "\nrequiredClasses=${requiredClasses}"
+            }
         }
     }
 

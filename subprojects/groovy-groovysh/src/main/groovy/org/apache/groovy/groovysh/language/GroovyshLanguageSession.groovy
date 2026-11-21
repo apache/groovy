@@ -83,6 +83,11 @@ final class GroovyshLanguageSession implements AutoCloseable, Completer {
     private CompilerConfiguration boundConfiguration
     private boolean closed
 
+    /**
+     * Opens a language client for {@code groovy} and publishes the engine's loader.
+     *
+     * @param groovy the shell engine this session reads
+     */
     GroovyshLanguageSession(GroovyEngine groovy) {
         this.groovy = groovy
         this.language = GroovyLanguageClient.open(BUFFER_URI, '', true)
@@ -138,6 +143,7 @@ final class GroovyshLanguageSession implements AutoCloseable, Completer {
      * @param line JLine command line
      * @return description, or {@code null}
      */
+    @SuppressWarnings('deprecation') // org.jline.console command-description API
     CmdDesc scriptDescription(CmdLine line) {
         if (line != null && line.descriptionType == CmdLine.DescriptionType.SYNTAX) {
             def hits = query({ diagnosticsFor(line.line ?: '') } as Callable<List<Diagnostic>>, Collections.<Diagnostic>emptyList())
@@ -217,6 +223,7 @@ final class GroovyshLanguageSession implements AutoCloseable, Completer {
      * @return description, or {@code null} when there are none
      */
     @PackageScope
+    @SuppressWarnings('deprecation') // org.jline.console command-description API
     static CmdDesc describeSignatures(List<SignatureInformation> signatures) {
         if (!signatures) {
             return null
@@ -360,6 +367,14 @@ final class GroovyshLanguageSession implements AutoCloseable, Completer {
         lines.join('\n')
     }
 
+    /**
+     * Returns a type name the language compile can resolve for {@code value}.
+     * An array keeps its rank. A primitive uses its canonical name. A class
+     * the compile cannot resolve becomes {@code java.lang.Object}.
+     *
+     * @param value a non-null shell variable
+     * @return the type name, with {@code []} repeated for each array rank
+     */
     @PackageScope
     static String typeLiteral(Object value) {
         Class type = value.getClass()

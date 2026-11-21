@@ -66,7 +66,6 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -75,8 +74,6 @@ import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Random;
 import java.util.Set;
-import java.util.SortedSet;
-import java.util.TreeSet;
 import java.util.function.BiFunction;
 import java.util.function.BiPredicate;
 import java.util.function.BinaryOperator;
@@ -566,25 +563,22 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     // asType
 
     /**
-     * Converts the given array to either a List, Set, or SortedSet. If the given class is
-     * something else, the call is deferred to {@link DefaultGroovyMethods#asType(Object,Class)}.
+     * Converts the given array to another type, such as a List, Set or SortedSet,
+     * the same way as when it is cast to that type.
+     * The call is deferred to {@link DefaultGroovyMethods#asType(Object,Class)}.
+     * <pre class="language-groovy groovyTestCase">
+     * Integer[] nums = [3, 1, 2, 1]
+     * assert (nums as Set).toList() == [3, 1, 2]
+     * assert (nums as SortedSet).toList() == [1, 2, 3]
+     * assert (nums as Deque).peekLast() == 1
+     * </pre>
      *
      * @param self an array
      * @param type the desired class
      * @return the object resulting from this type conversion
      * @since 1.5.1
      */
-    @SuppressWarnings("unchecked")
     public static <T> T asType(Object[] self, Class<T> type) {
-        if (type == List.class) {
-            return (T) new ArrayList<>(Arrays.asList(self));
-        }
-        if (type == Set.class) {
-            return (T) new HashSet<>(Arrays.asList(self));
-        }
-        if (type == SortedSet.class) {
-            return (T) new TreeSet<>(Arrays.asList(self));
-        }
         return DefaultGroovyMethods.asType((Object) self, type);
     }
 
@@ -1387,21 +1381,57 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     //--------------------------------------------------------------------------
     // columns
 
+    /**
+     * Iterates the columns of {@code self}. Each element is a new {@code double[]}
+     * holding one column, and iteration stops at the shortest row.
+     * <p>A null matrix fails immediately.
+     *
+     * @param self the matrix to read by column
+     * @return an iterator of one column array per column
+     * @deprecated retained; the body still returns a column iterator
+     */
     @Deprecated
     public static Iterator<double[]> columns(double[][] self) {
         return new DoubleDoubleArrayColumnIterator(self);
     }
 
+    /**
+     * Iterates the columns of {@code self}. Each element is a new {@code float[]}
+     * holding one column, and iteration stops at the shortest row.
+     * <p>A null matrix fails immediately.
+     *
+     * @param self the matrix to read by column
+     * @return an iterator of one column array per column
+     * @deprecated retained; the body still returns a column iterator
+     */
     @Deprecated
     public static Iterator<float[]> columns(float[][] self) {
         return new FloatFloatArrayColumnIterator(self);
     }
 
+    /**
+     * Iterates the columns of {@code self}. Each element is a new {@code int[]}
+     * holding one column, and iteration stops at the shortest row.
+     * <p>A null matrix fails immediately.
+     *
+     * @param self the matrix to read by column
+     * @return an iterator of one column array per column
+     * @deprecated retained; the body still returns a column iterator
+     */
     @Deprecated
     public static Iterator<int[]> columns(int[][] self) {
         return new IntIntArrayColumnIterator(self);
     }
 
+    /**
+     * Iterates the columns of {@code self}. Each element is a new {@code long[]}
+     * holding one column, and iteration stops at the shortest row.
+     * <p>A null matrix fails immediately.
+     *
+     * @param self the matrix to read by column
+     * @return an iterator of one column array per column
+     * @deprecated retained; the body still returns a column iterator
+     */
     @Deprecated
     public static Iterator<long[]> columns(long[][] self) {
         return new LongLongArrayColumnIterator(self);
@@ -11381,6 +11411,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Creates a spreadable map from this array.
      * <p>
+     *
      * @param self an object array
      * @return a newly created SpreadMap
      * @see groovy.lang.SpreadMap#SpreadMap(java.lang.Object[])

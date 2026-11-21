@@ -75,6 +75,9 @@ public class FieldNode extends AnnotatedNode implements Variable {
         this.initialValueExpression = initialValueExpression;
     }
 
+    /**
+     * For a subclass that fills in the field itself, such as a lazy decompiled field.
+     */
     protected FieldNode() {}
 
     /**

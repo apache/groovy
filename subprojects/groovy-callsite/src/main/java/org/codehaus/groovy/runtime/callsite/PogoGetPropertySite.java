@@ -22,14 +22,29 @@ import groovy.lang.GroovyObject;
 import groovy.lang.GroovyRuntimeException;
 import org.codehaus.groovy.runtime.ScriptBytecodeAdapter;
 
+/**
+ * Call site that reads a property from a {@link GroovyObject} whose runtime
+ * class is the class captured when the site was built.
+ */
 public class PogoGetPropertySite extends AbstractCallSite {
     private final Class aClass;
 
+    /**
+     * Copies the parent site and remembers the receiver class it handles.
+     *
+     * @param parent the site whose name and index are copied
+     * @param aClass the runtime class this site accepts
+     */
     public PogoGetPropertySite(CallSite parent, Class aClass) {
         super(parent);
         this.aClass = aClass;
     }
 
+    /**
+     * Returns a newly created get-property site when {@code receiver} is
+     * null or its runtime class is not the class captured here. Otherwise
+     * returns this site.
+     */
     @Override
     public CallSite acceptGetProperty(Object receiver) {
         if (receiver== null || receiver.getClass() != aClass)
@@ -38,6 +53,11 @@ public class PogoGetPropertySite extends AbstractCallSite {
           return this;
     }
 
+    /**
+     * Returns a site created for a Groovy object property read when
+     * {@code receiver} is null or its runtime class is not the class
+     * captured here. Otherwise returns this site.
+     */
     @Override
     public CallSite acceptGroovyObjectGetProperty(Object receiver) {
         if (receiver == null || receiver.getClass() != aClass)
@@ -46,6 +66,10 @@ public class PogoGetPropertySite extends AbstractCallSite {
           return this;
     }
 
+    /**
+     * Reads this site's property name through {@link GroovyObject#getProperty(String)}.
+     * A {@link GroovyRuntimeException} is unwrapped.
+     */
     @Override
     public Object getProperty(Object receiver) throws Throwable {
         try{

@@ -758,14 +758,23 @@ class AstBrowserUiPreferences {
  */
 @CompileStatic
 enum CompilePhaseAdapter {
+    /** Phase {@link Phases#INITIALIZATION}, shown as {@code Initialization}. */
     INITIALIZATION(Phases.INITIALIZATION, 'Initialization'),
+    /** Phase {@link Phases#PARSING}, shown as {@code Parsing}. */
     PARSING(Phases.PARSING, 'Parsing'),
+    /** Phase {@link Phases#CONVERSION}, shown as {@code Conversion}. */
     CONVERSION(Phases.CONVERSION, 'Conversion'),
+    /** Phase {@link Phases#SEMANTIC_ANALYSIS}, shown as {@code Semantic Analysis}. */
     SEMANTIC_ANALYSIS(Phases.SEMANTIC_ANALYSIS, 'Semantic Analysis'),
+    /** Phase {@link Phases#CANONICALIZATION}, shown as {@code Canonicalization}. */
     CANONICALIZATION(Phases.CANONICALIZATION, 'Canonicalization'),
+    /** Phase {@link Phases#INSTRUCTION_SELECTION}, shown as {@code Instruction Selection}. */
     INSTRUCTION_SELECTION(Phases.INSTRUCTION_SELECTION, 'Instruction Selection'),
+    /** Phase {@link Phases#CLASS_GENERATION}, shown as {@code Class Generation}. */
     CLASS_GENERATION(Phases.CLASS_GENERATION, 'Class Generation'),
+    /** Phase {@link Phases#OUTPUT}, shown as {@code Output}. */
     OUTPUT(Phases.OUTPUT, 'Output'),
+    /** Phase {@link Phases#FINALIZATION}, shown as {@code Finalization}. */
     FINALIZATION(Phases.FINALIZATION, 'Finalization')
 
     /** Compile phase identifier from {@link Phases}. */

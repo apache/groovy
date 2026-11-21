@@ -88,14 +88,31 @@ public final class CompiledDocument {
         return new CompiledDocument(this, extra);
     }
 
+    /**
+     * Returns the URI of the source that was compiled. May be {@code null}.
+     *
+     * @return the source URI
+     */
     public URI getUri() {
         return uri;
     }
 
+    /**
+     * Returns the LSP document version stored for this compile, or {@code -1}
+     * when the source was compiled from disk.
+     *
+     * @return the document version
+     */
     public int getVersion() {
         return version;
     }
 
+    /**
+     * Returns the source text used for this compile. A {@code null} text
+     * argument is stored as an empty string.
+     *
+     * @return the source text, never {@code null}
+     */
     public String getText() {
         return text;
     }
@@ -119,18 +136,40 @@ public final class CompiledDocument {
         return javaMessages;
     }
 
+    /**
+     * Returns the parsed module, or {@code null} when compilation did not produce one.
+     *
+     * @return the AST module
+     */
     public ModuleNode getModule() {
         return module;
     }
 
+    /**
+     * Returns the source unit that produced this compile.
+     *
+     * @return the compiler source unit
+     */
     public SourceUnit getSourceUnit() {
         return sourceUnit;
     }
 
+    /**
+     * Returns the error messages copied from the collector. The list is empty
+     * when the collector or its error list was {@code null}.
+     *
+     * @return the error messages, never {@code null}
+     */
     public List<Message> getErrors() {
         return errors;
     }
 
+    /**
+     * Returns the warning messages copied from the collector. The list is empty
+     * when the collector or its warning list was {@code null}.
+     *
+     * @return the warning messages, never {@code null}
+     */
     public List<WarningMessage> getWarnings() {
         return warnings;
     }

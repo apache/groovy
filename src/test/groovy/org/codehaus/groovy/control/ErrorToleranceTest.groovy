@@ -18,9 +18,13 @@
  */
 package org.codehaus.groovy.control
 
+import org.codehaus.groovy.ast.MethodNode
+import org.codehaus.groovy.control.messages.SyntaxErrorMessage
+import org.codehaus.groovy.transform.stc.GroovyTypeCheckingExtensionSupport
 import org.junit.jupiter.api.Test
 
 import static org.junit.jupiter.api.Assertions.assertEquals
+import static org.junit.jupiter.api.Assertions.assertTrue
 
 /**
  * Tests {@link CompilerConfiguration#setTolerance(int)}, the number of non-fatal
@@ -50,17 +54,40 @@ final class ErrorToleranceTest {
         "class Subject {\n${fields.join('\n')}\n}\n"
     }
 
-    private static int errorCount(String source, Integer tolerance = null) {
+    /**
+     * Errors reported by a precompiled type-checking extension, one per method. These are
+     * raised from the extension's {@code afterVisitMethod} handler, so the exception thrown
+     * when the tolerance is reached passes back through the extension support.
+     */
+    private static String extensionErrors(int count) {
+        def methods = (0..<count).collect { "    void m$it() {}" }
+        "@groovy.transform.TypeChecked(extensions='${ErrorPerMethod.name}')\nclass Subject {\n${methods.join('\n')}\n}\n"
+    }
+
+    static class ErrorPerMethod extends GroovyTypeCheckingExtensionSupport.TypeCheckingDSL {
+        @Override
+        Object run() {
+            afterVisitMethod { MethodNode node ->
+                addStaticTypeError("extension error in $node.name", node)
+            }
+        }
+    }
+
+    private static MultipleCompilationErrorsException compilationFailure(String source, Integer tolerance = null) {
         def config = new CompilerConfiguration()
         if (tolerance != null) config.tolerance = tolerance
         def unit = new CompilationUnit(config, null, new GroovyClassLoader(ErrorToleranceTest.class.classLoader))
         unit.addSource('Subject.groovy', source)
         try {
             unit.compile()
-            0
+            null
         } catch (MultipleCompilationErrorsException e) {
-            e.errorCollector.errorCount
+            e
         }
+    }
+
+    private static int errorCount(String source, Integer tolerance = null) {
+        compilationFailure(source, tolerance)?.errorCollector?.errorCount ?: 0
     }
 
     // GROOVY-12306: tolerance was ignored for type-checking errors, which reported in full
@@ -76,6 +103,19 @@ final class ErrorToleranceTest {
     void testResolutionErrorsHonourTolerance() {
         assertEquals(1, errorCount(resolutionErrors(MANY), 1))
         assertEquals(3, errorCount(resolutionErrors(MANY), 3))
+    }
+
+    // GROOVY-12687: when an extension reported the error that reached the tolerance, the exception
+    // thrown for it was recorded as one more error in the collector it carries, so rendering the
+    // errors rendered that exception, which rendered the errors again until the stack overflowed
+    @Test
+    void testExtensionErrorsHonourTolerance() {
+        def failure = compilationFailure(extensionErrors(MANY))
+        String report = failure.message
+        assertEquals(CompilerConfiguration.DEFAULT_TOLERANCE, failure.errorCollector.errorCount)
+        assertTrue(failure.errorCollector.errors.every { it instanceof SyntaxErrorMessage })
+        assertTrue(report.contains('extension error in m0'))
+        assertEquals(MANY, errorCount(extensionErrors(MANY), 0))
     }
 
     // GROOVY-12306: zero means unlimited, the setting to reach for when every error is wanted
