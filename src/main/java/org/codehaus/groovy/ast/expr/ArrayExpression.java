@@ -195,6 +195,12 @@ public class ArrayExpression extends Expression {
         }
     }
 
+    /**
+     * Reports this array expression as statically typed. This implementation always
+     * returns {@code false}; the element type is fixed by {@link #getElementType()}.
+     *
+     * @return {@code false}
+     */
     public boolean isDynamic() {
         return false;
     }

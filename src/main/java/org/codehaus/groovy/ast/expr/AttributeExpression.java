@@ -25,10 +25,27 @@ import org.codehaus.groovy.ast.GroovyCodeVisitor;
  */
 public class AttributeExpression extends PropertyExpression {
 
+    /**
+     * Creates an attribute access that is not null-safe.
+     * Equivalent to {@link #AttributeExpression(Expression, Expression, boolean)
+     * AttributeExpression(objectExpression, property, false)}.
+     *
+     * @param objectExpression the receiver, as in {@code foo} of {@code foo.@bar}
+     * @param property the attribute, as in {@code bar} of {@code foo.@bar}
+     */
     public AttributeExpression(final Expression objectExpression, final Expression property) {
         super(objectExpression, property, false);
     }
 
+    /**
+     * Creates an attribute access and records whether it is null-safe.
+     * When {@code safe} is true the access is the {@code ?.} form, which yields
+     * null when the receiver is null.
+     *
+     * @param objectExpression the receiver, as in {@code foo} of {@code foo.@bar}
+     * @param property the attribute, as in {@code bar} of {@code foo.@bar}
+     * @param safe {@code true} for a null-safe {@code ?.} access
+     */
     public AttributeExpression(final Expression objectExpression, final Expression property, final boolean safe) {
         super(objectExpression, property, safe);
     }

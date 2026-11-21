@@ -45,6 +45,7 @@ import org.codehaus.groovy.runtime.ArrayTypeUtils;
 import org.codehaus.groovy.runtime.GeneratedClosure;
 import org.codehaus.groovy.runtime.GroovyCategorySupport;
 import org.codehaus.groovy.runtime.MetaClassHelper;
+import org.codehaus.groovy.runtime.MethodClosure;
 import org.codehaus.groovy.runtime.NullObject;
 import org.codehaus.groovy.runtime.dgmimpl.NumberNumberMetaMethod;
 import org.codehaus.groovy.runtime.metaclass.ClosureMetaClass;
@@ -55,6 +56,7 @@ import org.codehaus.groovy.runtime.metaclass.NewStaticMetaMethod;
 import org.codehaus.groovy.runtime.metaclass.ReflectionMetaMethod;
 import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 import org.codehaus.groovy.runtime.wrappers.Wrapper;
+import org.codehaus.groovy.util.FastArray;
 import org.codehaus.groovy.vmplugin.VMPlugin;
 import org.codehaus.groovy.vmplugin.VMPluginFactory;
 
@@ -67,6 +69,7 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.function.Predicate;
@@ -181,6 +184,13 @@ public abstract class Selector {
      * {@code null} until then.
      */
     SwitchPoint mopSwitchPoint;
+
+    /**
+     * Class-domain SwitchPoint of the selected metaclass's class, when that is
+     * not the receiver's class (a proxy or mock whose metaclass is the one of
+     * the type it stands in for); {@code null} otherwise.
+     */
+    SwitchPoint metaClassSwitchPoint;
 
     /**
      * Cache values for read-only access
@@ -499,6 +509,24 @@ public abstract class Selector {
 
         private static final Class<?>[] SET_PROPERTY_PARAMS = {String.class, Object.class};
 
+        /**
+         * Forwards the arguments to {@link MethodSelector}.
+         * {@code propertyName} is stored as the selected name. The original
+         * {@code safeNavigation} flag is kept, and null-safe dispatch is enabled
+         * only when that flag is true and {@code arguments[0]} is null. When {@code spreadCall} is true,
+         * {@code arguments[1]} is expanded after the receiver and a primitive array
+         * in that expansion is boxed.
+         *
+         * @param callSite the call site being linked
+         * @param sender the class that contains the call
+         * @param propertyName the property being written
+         * @param callType the call kind
+         * @param safeNavigation whether the call was written with {@code ?.}
+         * @param thisCall whether the receiver is {@code this}
+         * @param spreadCall whether the argument list is spread
+         * @param arguments receiver at index 0 and the assigned value at index 1,
+         *                  or the spread array at index 1 when {@code spreadCall} is true
+         */
         public SetPropertySelector(CacheableCallSite callSite, Class<?> sender, String propertyName, CallType callType, boolean safeNavigation, boolean thisCall, boolean spreadCall, Object[] arguments) {
             super(callSite, sender, propertyName, callType, safeNavigation, thisCall, spreadCall, arguments);
         }
@@ -691,7 +719,11 @@ public abstract class Selector {
                     handle = this.callSite.getLookup().unreflectConstructor(con);
                     if (LOG_ENABLED) LOG.info("successfully unreflected constructor");
                 } catch (IllegalAccessException e) {
-                    throw new GroovyBugError(e);
+                    // refusal is an access-control outcome, not an internal error, for example a protected
+                    // constructor of an encapsulated JDK class called by new in a subclass: leave the handle
+                    // unset so that the meta-class creates the object, as without invokedynamic
+                    if (LOG_ENABLED) LOG.info("constructor refused, using meta class path");
+                    return;
                 }
             } else {
                 super.setHandleForMetaMethod();
@@ -923,7 +955,9 @@ public abstract class Selector {
             for (int attempt = 0; attempt < 3; attempt++) {
                 mopSwitchPoint = IndyInvalidation.classSwitchPointFor(args[0]);
                 getMetaClass();
-                if (!mopSwitchPoint.hasBeenInvalidated()) return;
+                metaClassSwitchPoint = IndyInvalidation.foreignMetaClassSwitchPointFor(args[0], mc);
+                if (!mopSwitchPoint.hasBeenInvalidated()
+                        && (metaClassSwitchPoint == null || !metaClassSwitchPoint.hasBeenInvalidated())) return;
             }
             cache = false;
         }
@@ -948,6 +982,15 @@ public abstract class Selector {
                     name = "doCall";
                 }
                 method = mci.getMethodWithCaching(selectionBase, name, newArgs, false);
+            }
+            // a method reference picks among functional-interface overloads by its arity,
+            // which its class does not tell, so such a choice is not cached by class
+            if (cache && method != null && containsMethodClosure(newArgs)) {
+                List<MetaMethod> named = mci.respondsTo(receiver, name);
+                if (named.size() > 1 && MetaClassHelper.dependsOnMethodClosureArity(
+                        new FastArray(named), MetaClassHelper.convertToTypeArray(newArgs), newArgs)) {
+                    cache = false;
+                }
             }
             if (LOG_ENABLED) LOG.info("retrieved method from meta class: " + method);
         }
@@ -1381,6 +1424,11 @@ public abstract class Selector {
             handle = applyMopSwitchPoints(handle, fallback,
                     mopSwitchPoint != null ? mopSwitchPoint : IndyInvalidation.classSwitchPointFor(receiver));
             if (LOG_ENABLED) LOG.info("added class switch point guard");
+            if (metaClassSwitchPoint != null) {
+                // the metaclass belongs to another class, whose changes retire that class's domain
+                handle = applyMopSwitchPoints(handle, fallback, metaClassSwitchPoint);
+                if (LOG_ENABLED) LOG.info("added metaclass owner switch point guard");
+            }
 
             Predicate<Class<?>> nonFinalOrNullUnsafe = (t) -> {
                 return !Modifier.isFinal(t.getModifiers())
@@ -1668,5 +1716,12 @@ public abstract class Selector {
             classes[i] = args[i].getClass();
         }
         return SAME_CLASSES.bindTo(classes).asCollector(Object[].class, n).asType(booleanType);
+    }
+
+    private static boolean containsMethodClosure(final Object[] arguments) {
+        for (Object argument : arguments) {
+            if (argument instanceof MethodClosure) return true;
+        }
+        return false;
     }
 }

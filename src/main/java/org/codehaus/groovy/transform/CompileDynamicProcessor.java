@@ -31,6 +31,10 @@ import org.codehaus.groovy.control.SourceUnit;
 import java.util.Collections;
 import java.util.List;
 
+/**
+ * Annotation-collector processor for {@code CompileDynamic}.
+ * Replaces the alias with {@link CompileStatic}{@code (TypeCheckingMode.SKIP)}.
+ */
 public class CompileDynamicProcessor extends AnnotationCollectorTransform {
 
     private static final ClassNode COMPILESTATIC_NODE = ClassHelper.make(CompileStatic.class);

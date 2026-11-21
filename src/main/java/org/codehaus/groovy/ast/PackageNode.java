@@ -24,10 +24,20 @@ package org.codehaus.groovy.ast;
 public class PackageNode extends AnnotatedNode {
     private final String name;
 
+    /**
+     * Creates a package node for {@code name}.
+     *
+     * @param name the package name, as written in the source
+     */
     public PackageNode(String name) {
         this.name = name;
     }
 
+    /**
+     * The package name, without the {@code package} keyword.
+     *
+     * @return the name passed to the constructor
+     */
     public String getName() {
         return name;
     }

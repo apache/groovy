@@ -195,5 +195,11 @@ public interface NodeMetaDataHandler {
         return Collections.synchronizedMap(new ListHashMap());
     }
 
+    /**
+     * Replaces the map returned by {@link #getMetaDataMap()}.
+     * The default metadata methods call this when they first create the map.
+     *
+     * @param metaDataMap the map to store
+     */
     void setMetaDataMap(Map<?, ?> metaDataMap);
 }
