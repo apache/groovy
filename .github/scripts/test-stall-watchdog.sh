@@ -59,8 +59,8 @@ any_results() {
 tool() { # first usable JDK tool: the test target's, then the Gradle JVM's, then PATH
     local name="$1" home
     for home in "$target_java_home" "$JAVA_HOME"; do
-        [ -n "$home" ] || continue
-        if [ -x "$home/bin/$name" ] || [ -x "$home/bin/$name.exe" ]; then
+        [[ -n "$home" ]] || continue
+        if [[ -x "$home/bin/$name" || -x "$home/bin/$name.exe" ]]; then
             echo "$home/bin/$name"; return
         fi
     done
@@ -98,7 +98,7 @@ dump_all() {
 }
 
 # Arm on the first result, so build-logic and compilation never look like a stall.
-until [ -n "$(any_results)" ]; do sleep "$POLL_SECONDS"; done
+until [[ -n "$(any_results)" ]]; do sleep "$POLL_SECONDS"; done
 touch "$marker"
 last_progress=$(date +%s)
 rounds=0
@@ -107,13 +107,13 @@ next_dump=$(( last_progress + STALL_SECONDS ))
 while :; do
     sleep "$POLL_SECONDS"
     now=$(date +%s)
-    if [ -n "$(newest_results_since "$marker")" ]; then
+    if [[ -n "$(newest_results_since "$marker")" ]]; then
         touch "$marker"
         last_progress=$now
         next_dump=$(( now + STALL_SECONDS ))
         continue
     fi
-    if [ "$rounds" -lt "$MAX_DUMPS" ] && [ "$now" -ge "$next_dump" ]; then
+    if [[ "$rounds" -lt "$MAX_DUMPS" && "$now" -ge "$next_dump" ]]; then
         rounds=$(( rounds + 1 ))
         dump_all "$rounds"
         next_dump=$(( now + REPEAT_SECONDS ))

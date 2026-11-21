@@ -264,6 +264,25 @@ final class AsyncSupportInternalsTest {
         assert scheduler != null
     }
 
+    @Test
+    void testAddSuppressedOnceDeduplicatesAndSkipsSelfOrCause() {
+        def root = new IllegalStateException('root')
+        def primary = new RuntimeException('primary', root)
+        def secondary = new IOException('secondary')
+        def tertiary = new IOException('tertiary')
+
+        AsyncSupport.addSuppressedOnce(primary, primary)
+        AsyncSupport.addSuppressedOnce(primary, new CompletionException(primary))
+        AsyncSupport.addSuppressedOnce(primary, root)
+        AsyncSupport.addSuppressedOnce(primary, new CompletionException(root))
+        assert primary.suppressed.length == 0
+
+        AsyncSupport.addSuppressedOnce(primary, secondary)
+        AsyncSupport.addSuppressedOnce(primary, secondary)
+        AsyncSupport.addSuppressedOnce(primary, tertiary)
+        assert primary.suppressed == [secondary, tertiary] as Throwable[]
+    }
+
     private static Awaitable asyncSleep(long millis, Object value) {
         AsyncSupport.async {
             Thread.sleep(millis)

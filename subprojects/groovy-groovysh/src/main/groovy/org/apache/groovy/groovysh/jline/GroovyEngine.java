@@ -558,6 +558,38 @@ public class GroovyEngine implements ScriptEngine {
         return s.run();
     }
 
+    /**
+     * The directory under {@code root} that can hold the sources of package {@code domain}, or of the
+     * packages whose name starts with it: the one its complete segments name, as the last segment may
+     * be partial. Only that directory is walked for sources, instead of the whole tree under the
+     * working directory, which took seconds for each Tab in a large directory.
+     *
+     * @param root the directory the sources are looked up in
+     * @param domain a package name, or the start of one
+     * @return the directory to walk, or {@code null} when a complete segment is not a Java identifier
+     * (as in {@code [1..2].}) or the directory does not exist
+     */
+    static Path packageDirectory(Path root, String domain) {
+        Path dir = root;
+        int last = domain.lastIndexOf('.');
+        if (last >= 0) {
+            for (String segment : domain.substring(0, last).split("\\.", -1)) {
+                if (!isJavaIdentifier(segment)) {
+                    return null;
+                }
+                dir = dir.resolve(segment);
+            }
+        }
+        return Files.isDirectory(dir) ? dir : null;
+    }
+
+    private static boolean isJavaIdentifier(String name) {
+        if (name.isEmpty() || !Character.isJavaIdentifierStart(name.codePointAt(0))) {
+            return false;
+        }
+        return name.codePoints().skip(1).allMatch(Character::isJavaIdentifierPart);
+    }
+
     private static Set<Object> classesForPackage(String pckgname, GroovyShell shell) throws ClassNotFoundException {
         String name = pckgname;
         Matcher matcher = PATTERN_CLASS.matcher(name);
@@ -1561,7 +1593,14 @@ public class GroovyEngine implements ScriptEngine {
                 }
                 dom = "regex:\\." + dom + "[A-Z]+[a-zA-Z]*\\.groovy";
                 PathMatcher matcher = FileSystems.getDefault().getPathMatcher(dom);
-                try (Stream<Path> pathStream = Files.walk(Paths.get("."))) {
+                Path start = Paths.get(".");
+                if (domain != null && !domain.isEmpty()) {
+                    start = packageDirectory(start, domain);
+                    if (start == null) {
+                        return out;
+                    }
+                }
+                try (Stream<Path> pathStream = Files.walk(start)) {
                     Stream<String> classes = pathStream
                         .filter(matcher::matches)
                         .filter(p -> p.getFileName().toString().matches("[A-Z]+[a-zA-Z]*\\.groovy"))

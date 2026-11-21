@@ -177,6 +177,7 @@ public class MethodClosure extends Closure {
      * changes class (as {@link #rehydrate} may do), and not serialized, so the serial form
      * is unchanged and a deserialized method closure works them out afresh.
      */
+    @SuppressWarnings("java:S3077") // ArgumentCounts is an immutable snapshot; volatile publishes replacement without per-instance AtomicReference allocation
     private transient volatile ArgumentCounts argumentCounts;
 
     private record ArgumentCounts(Class<?> ownerClass, BitSet counts, int varargsFrom) {

@@ -34,6 +34,7 @@ import org.apache.groovy.ast.pattern.MatchPattern.BindingPattern;
 import org.apache.groovy.ast.pattern.MatchPattern.ListPattern;
 import org.apache.groovy.ast.pattern.MatchPattern.MapPattern;
 import org.apache.groovy.ast.pattern.MatchPattern.RecordPattern;
+import org.apache.groovy.runtime.async.AsyncSupport;
 import org.apache.groovy.util.SystemUtil;
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.ast.ASTNode;
@@ -167,6 +168,7 @@ import java.util.TreeSet;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.Flow;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.BiPredicate;
@@ -492,6 +494,8 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     protected static final ClassNode MAP_ENTRY_TYPE = ClassHelper.make(Map.Entry.class);
     /** Cached {@link Iterable} type. */
     protected static final ClassNode ITERABLE_TYPE = ClassHelper.ITERABLE_TYPE;
+    private static final ClassNode ASYNC_SUPPORT_TYPE = ClassHelper.make(AsyncSupport.class);
+    private static final ClassNode FLOW_PUBLISHER_TYPE = ClassHelper.make(Flow.Publisher.class);
 
     private static final List<ClassNode> TUPLE_TYPES = Arrays.stream(ClassHelper.TUPLE_CLASSES).map(ClassHelper::makeWithoutCaching).collect(Collectors.toList());
 
@@ -2686,7 +2690,7 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
                 PropertyNode property = current.getProperty(propertyName);
                 property = allowStaticAccessToMember(property, staticOnly);
                 ClassNode setterReceiverType = receiverType;
-                if (!readMode && setters.isEmpty() && current != receiverType && isInTraitCode() && Traits.isTrait(current) && hasTraitCodeReceiver(pexp)) {
+                if (!readMode && setters.isEmpty() && current != receiverType && isTraitHelper(enclosingTypes.iterator().next()) && Traits.isTrait(current) && hasTraitCodeReceiver(pexp)) {
                     // GROOVY-12608: trait code inherits the static setter of a super trait
                     for (MethodNode method : current.getDeclaredMethods(setterName)) {
                         if (method.isStatic() && method.isPublic() && method.getParameters().length == 1) {
@@ -3441,6 +3445,36 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
     }
 
     /**
+     * Returns {@code Iterable<E>} for the call a {@code for await} loop makes to
+     * convert its source, {@code AsyncSupport.toIterable(source)}, where {@code E}
+     * is the element type of a non-primitive array, {@code Iterable}, {@code Iterator} or
+     * {@code Flow.Publisher} source. The method declares {@code <T> Iterable<T>}
+     * and takes an {@code Object}, so nothing else gives {@code T} a type.
+     *
+     * @return the type, or {@code null} for another method or kind of source
+     */
+    private static ClassNode forAwaitIterableType(final MethodNode method, final ClassNode[] argumentTypes) {
+        if (argumentTypes.length != 1 || !"toIterable".equals(method.getName())
+                || !ASYNC_SUPPORT_TYPE.equals(method.getDeclaringClass())) {
+            return null;
+        }
+        ClassNode sourceType = argumentTypes[0];
+        ClassNode elementType;
+        if (sourceType.isArray()) {
+            elementType = sourceType.getComponentType();
+            if (isPrimitiveType(elementType)) return null; // not a source the conversion accepts
+        } else if (isOrImplements(sourceType, ITERABLE_TYPE) || isOrImplements(sourceType, Iterator_TYPE)) {
+            elementType = inferLoopElementType(sourceType);
+        } else if (isOrImplements(sourceType, FLOW_PUBLISHER_TYPE)) {
+            ClassNode publisher = GenericsUtils.parameterizeType(sourceType, FLOW_PUBLISHER_TYPE);
+            elementType = getCombinedBoundType(publisher.getGenericsTypes()[0]);
+        } else {
+            return null;
+        }
+        return GenericsUtils.makeClassSafe0(ITERABLE_TYPE, wrapTypeIfNecessary(elementType).asGenericsType());
+    }
+
+    /**
      * Indicates whether a second pass is needed after visiting a control structure.
      */
     protected boolean isSecondPassNeededForControlStructure(final Map<VariableExpression, ClassNode> startTypes, final Map<VariableExpression, List<ClassNode>> oldTracker) {
@@ -4021,7 +4055,10 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
         if (!enclosingClosure.getReturnTypes().isEmpty()) { // populated by ReturnAdder
             ClassNode returnType = lowestUpperBound(enclosingClosure.getReturnTypes());
             storeInferredReturnType(expression, wrapTypeIfNecessary(returnType));
-            storeType(expression, wrapClosureType(returnType));
+            ClassNode closureType = wrapClosureType(returnType);
+            // keep the parameter count for overload selection when the closure is checked again
+            closureType.putNodeMetaData(CLOSURE_ARGUMENTS, closureParameterCount(expression));
+            storeType(expression, closureType);
         }
 
         // check types of closure shared variables for change
@@ -4196,6 +4233,15 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
             return nullX(); // GROOVY-10971: unknown argument type
         }
         return castX(type, defaultValueX(type));
+    }
+
+    /**
+     * Returns the number of parameters a closure declares: 0 for "{ -> }" and -1 for
+     * an implicit parameter, which can be called with none or one.
+     */
+    private static int closureParameterCount(final ClosureExpression closure) {
+        Parameter[] parameters = closure.getParameters();
+        return parameters == null ? 0 : parameters.length == 0 ? -1 : parameters.length;
     }
 
     private static ClassNode wrapClosureType(final ClassNode returnType) {
@@ -4776,6 +4822,10 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
                                 if (rt != null && implementsInterfaceOrIsSubclassOf(rt, returnType)) {
                                     returnType = rt;
                                 }
+                            }
+                            ClassNode forAwaitType = forAwaitIterableType(targetMethod, args);
+                            if (forAwaitType != null) {
+                                returnType = forAwaitType;
                             }
                             storeType(call, returnType);
                         }
@@ -5938,12 +5988,11 @@ out:                if (mn.size() != 1) {
     }
 
     /**
-     * Indicates whether the code being checked is trait code, which is moved to the
-     * trait's helper class before it is checked.
+     * Indicates whether {@code type} is a trait's helper class, where trait code is moved
+     * before static type checking.
      */
-    private boolean isInTraitCode() {
-        ClassNode enclosingType = typeCheckingContext.getEnclosingClassNode();
-        return Traits.isTrait(enclosingType.getOuterClass()) && enclosingType.getName().endsWith("$Helper");
+    private static boolean isTraitHelper(final ClassNode type) {
+        return Traits.isTrait(type.getOuterClass()) && type.getName().endsWith("$Helper");
     }
 
     /**
@@ -5956,7 +6005,7 @@ out:                if (mn.size() != 1) {
     }
 
     private static void addTraitType(final ClassNode receiver, final List<Receiver<String>> owners) {
-        if (Traits.isTrait(receiver.getOuterClass()) && receiver.getName().endsWith("$Helper")) {
+        if (isTraitHelper(receiver)) {
             ClassNode traitType = receiver.getOuterClass();
             owners.add(Receiver.make(traitType));
             addSelfTypes(traitType, owners);
@@ -8154,10 +8203,7 @@ trying: for (ClassNode[] signature : signatures) {
                     new GenericsType(wrapTypeIfNecessary(returnType))
                 });
             }
-            Parameter[] parameters = ((ClosureExpression) node).getParameters();
-            int nParameters = parameters == null ? 0
-               : parameters.length == 0 ? -1 : parameters.length;
-            type.putNodeMetaData(CLOSURE_ARGUMENTS, nParameters);
+            type.putNodeMetaData(CLOSURE_ARGUMENTS, closureParameterCount((ClosureExpression) node));
             return type;
         }
 
@@ -9059,7 +9105,6 @@ out:    for (ClassNode type : todo) {
         if (!receiver.equals(declaring) && !implementsInterfaceOrIsSubclassOf(receiver, declaring)) return null;
 
         Map<GenericsTypeName, GenericsType> spec = extractPlaceHoldersVisibleToDeclaration(receiver, target, null);
-        if (spec == null) return null;
         GenericsType witness = spec.get(new GenericsTypeName(declaredReturn.getUnresolvedName()));
         if (witness == null || !witness.isWildcard()) return null;
         return prettyPrintCapture(witness);

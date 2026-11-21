@@ -70,6 +70,32 @@ public class CompilerConfiguration {
     public static final String PARALLEL_PARSE = "parallelParse";
 
     /**
+     * Option for resolving a class of the default package that is on the class path, or on the source
+     * path of the Groovy class loader, before the default imports in a compilation unit of the default
+     * package, as a class of a named package is resolved for a compilation unit of the same package.
+     * Enabled by default. Disable it, or set the system property {@code groovy.resolve.default.package.first}
+     * to {@code false}, where a class or script next to a script, named like a default-import type such as
+     * {@code Node} or {@code Timer}, must not take the place of that type.
+     * Stored in {@link #getOptimizationOptions()} for consistency with other compiler feature flags.
+     *
+     * @since 7.0.0
+     */
+    public static final String DEFAULT_PACKAGE_FIRST = "defaultPackageFirst";
+
+    /**
+     * Option for including the {@code .groovy} sources on the source path of the Groovy class loader in the lookup
+     * that {@link #DEFAULT_PACKAGE_FIRST} enables, which then also takes in the classes the class loader has
+     * already compiled or loaded. Enabled by default, and ignored when {@link #DEFAULT_PACKAGE_FIRST} is disabled.
+     * Disable it, or set the system property {@code groovy.resolve.default.package.sources} to {@code false}, to
+     * look up only the {@code .class} files of the default package before the default imports; a source of the
+     * default package is then still found, but only after them, as before 7.0.
+     * Stored in {@link #getOptimizationOptions()} for consistency with other compiler feature flags.
+     *
+     * @since 7.0.0
+     */
+    public static final String DEFAULT_PACKAGE_SOURCES = "defaultPackageSources";
+
+    /**
      * Option for enabling ANTLR parser error recovery on the Parrot parser.
      * <p>
      * Disabled by default. When enabled (typically for IDE editing), the parser
@@ -168,6 +194,25 @@ public class CompilerConfiguration {
      */
     @Incubating
     public static final String LAMBDA_HOISTING = "groovy.target.lambda.hoist";
+
+    /**
+     * System-property name for the incubating option that converts a {@code @CompileStatic} closure literal
+     * to the functional interface it is passed, assigned, returned or cast to with a class generated at
+     * compile time, instead of a {@code java.lang.reflect.Proxy} created at run time. The generated class
+     * behaves as the proxy does, apart from the differences the invokedynamic chapter of the Groovy
+     * documentation lists, along with the conversions that still happen at run time. Among them: where the
+     * generated class calls the {@code doCall} method of the closure directly, a metaclass that intercepts
+     * {@code doCall} is not consulted; and a converted value serializes as an instance of the generated
+     * class, so values serialized with this option may not deserialize once the generated class changes.
+     * <p>
+     * Like {@link #CLOSURE_PACKING}, the option is read from the system properties of the compiling JVM
+     * whenever a closure is compiled; there is no {@code CompilerConfiguration} setting for it.
+     * Incubating: this switch may change or be removed until the feature graduates.
+     *
+     * @since 7.0.0
+     */
+    @Incubating
+    public static final String CLOSURE_SAM_CONVERSION = "groovy.target.closure.sam";
 
     /** Historical bytecode level {@code "1.4"}. Not an accepted compilation target; accepted levels are 17 through 28. */
     @Deprecated public static final String JDK4 = "1.4";
@@ -669,6 +714,8 @@ public class CompilerConfiguration {
      *   <tr><td><code>groovy.attach.runtime.groovydoc</code></td><td>{@link #getOptimizationOptions}</td></tr>
      *   <tr><td><code>groovy.parser.error.recovery</code></td><td>{@link #getOptimizationOptions} / {@link #isErrorRecoveryEnabled}</td></tr>
      *   <tr><td><code>groovy.runtime.package.check</code></td><td>{@link #getOptimizationOptions}</td></tr>
+     *   <tr><td><code>groovy.resolve.default.package.first</code></td><td>{@link #getOptimizationOptions}</td></tr>
+     *   <tr><td><code>groovy.resolve.default.package.sources</code></td><td>{@link #getOptimizationOptions}</td></tr>
      * </table>
      * </blockquote>
      * Additional language-compatibility system properties (not optimization options):
@@ -707,6 +754,8 @@ public class CompilerConfiguration {
         handleOptimizationOption(PARALLEL_PARSE, getSystemPropertySafe("groovy.parallel.parse", "true"));
         handleOptimizationOption(ERROR_RECOVERY, getSystemPropertySafe("groovy.parser.error.recovery"));
         handleOptimizationOption(RUNTIME_PACKAGE_CHECK, getSystemPropertySafe("groovy.runtime.package.check"));
+        handleOptimizationOption(DEFAULT_PACKAGE_FIRST, getSystemPropertySafe("groovy.resolve.default.package.first"));
+        handleOptimizationOption(DEFAULT_PACKAGE_SOURCES, getSystemPropertySafe("groovy.resolve.default.package.sources"));
 
         if (getBooleanSafe("groovy.mem.stub")) {
             jointCompilationOptions = new HashMap<>(2);
@@ -1661,7 +1710,8 @@ public class CompilerConfiguration {
      * No entry or a true for that entry means to enable that optimization,
      * a false means the optimization is disabled.
      * Valid keys include {@code "all"}, {@code "int"}, {@link #INVOKEDYNAMIC},
-     * {@link #PARALLEL_PARSE}, {@link #GROOVYDOC}, and {@link #RUNTIME_GROOVYDOC}.
+     * {@link #PARALLEL_PARSE}, {@link #GROOVYDOC}, {@link #RUNTIME_GROOVYDOC}, {@link #DEFAULT_PACKAGE_FIRST},
+     * and {@link #DEFAULT_PACKAGE_SOURCES}.
      * For-in per-iteration capture (GROOVY-11792) is not an optimization option; use
      * {@link #setForInPerIterationCaptureEnabled(boolean)} instead.
      *
