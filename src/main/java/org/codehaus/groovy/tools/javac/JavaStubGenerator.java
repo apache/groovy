@@ -23,13 +23,11 @@ import groovy.transform.PackageScope;
 import groovy.transform.PackageScopeTarget;
 import groovy.transform.Sealed;
 import groovy.transform.SealedOptions;
-import org.apache.groovy.ast.ModuleInfoNode;
 import org.apache.groovy.ast.tools.ExpressionUtils;
 import org.apache.groovy.io.StringBuilderWriter;
 import org.codehaus.groovy.ast.AnnotatedNode;
 import org.codehaus.groovy.ast.AnnotationNode;
 import org.codehaus.groovy.ast.ClassNode;
-import org.codehaus.groovy.ast.CompileUnit;
 import org.codehaus.groovy.ast.ConstructorNode;
 import org.codehaus.groovy.ast.DynamicVariable;
 import org.codehaus.groovy.ast.FieldNode;
@@ -184,32 +182,6 @@ public class JavaStubGenerator {
      * @throws FileNotFoundException if a file-based stub cannot be created
      */
     public void generateClass(final ClassNode classNode) throws FileNotFoundException {
-        generateClass(classNode, null);
-    }
-
-    /**
-     * Generates a Java stub for the supplied class when it is eligible for
-     * stub generation.
-     * <p>
-     * {@code fallback} is used when the class no longer points at its module,
-     * so a module-info carrier is still not emitted as a type stub. A type
-     * declaration in {@code module-info.java} is not a modular compilation unit.
-     *
-     * @param classNode the class to generate a stub for
-     * @param fallback compile unit known to the caller, or {@code null}
-     * @throws FileNotFoundException if a file-based stub cannot be created
-     * @since 7.0.0
-     */
-    public void generateClass(final ClassNode classNode, final CompileUnit fallback) throws FileNotFoundException {
-        // GROOVY-9273: the module declaration is not a type (JLS §7.7). It lives
-        // on the compile unit; this carrier is only what the pipeline visits.
-        // Joint compilation puts stubs on javac's source path, and a type
-        // declaration in module-info.java is not a modular compilation unit.
-        // Sibling .java files are compiled from the classpath, so they do not
-        // need a stub. Class generation still writes module-info.class.
-        if (ModuleInfoNode.of(classNode, fallback) != null) {
-            return;
-        }
         // only attempt to render if super-class is resolved; else wait for it
         if (requireSuperResolved && !classNode.getSuperClass().isResolved()) {
             return;

@@ -20,27 +20,51 @@ package org.apache.groovy.ast;
 
 import org.codehaus.groovy.ast.AnnotatedNode;
 import org.codehaus.groovy.ast.ASTNode;
+import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.CompileUnit;
+import org.codehaus.groovy.ast.InnerClassNode;
 import org.codehaus.groovy.ast.ModuleNode;
 
+import java.lang.module.ModuleDescriptor;
+import java.lang.module.ModuleFinder;
+import java.lang.module.ModuleReference;
+import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Optional;
+import java.util.Set;
 
 /**
  * AST for a JPMS module declaration (JLS §7.7), produced from
  * {@code module-info.groovy} (or {@code module-info.java} fed to the Groovy parser).
- * The declaration is a member of the {@link CompileUnit}, not a class.
- * {@link #getClassNode()} is the carrier the existing pipeline visits for
- * resolution, annotation checking, and class writing.
+ * The declaration is a member of the {@link CompileUnit}, not a class. The
+ * compilation pipeline visits it through its own phase operation. It is never
+ * entered in a module's class list, so a transform that walks classes does not
+ * see it.
  */
 public final class ModuleInfoNode extends AnnotatedNode {
+
+    /**
+     * Binary name of the class file that carries this declaration (JVMS §4.7.25).
+     */
+    public static final String CLASS_FILE_NAME = "module-info";
 
     private final String name;
     private final boolean open;
     private final List<Directive> directives;
-    private ClassNode classNode;
+    private ModuleNode sourceModule;
+    private Set<String> reads = Set.of();
+    private boolean readsReady;
+    private boolean resolutionFailed;
+    private boolean typesResolved;
+    private transient ModuleFinder accessibilityFinder;
+    // Packages of explicit modules the finder can observe. Automatic modules are
+    // omitted: the compilation classpath is observed that way, and the language
+    // runtime lives there. Built once per resolution.
+    private transient Set<String> explicitPackages;
 
     public ModuleInfoNode(final String name, final boolean open, final List<Directive> directives) {
         this.name = name;
@@ -62,104 +86,248 @@ public final class ModuleInfoNode extends AnnotatedNode {
     }
 
     /**
-     * The class node the pipeline visits for this declaration, or {@code null}
-     * when the declaration has not been given one. The class does not own the
-     * declaration.
+     * The source module this declaration was parsed from, or {@code null} when
+     * the declaration was built without a source.
      *
-     * @return the emission carrier, or {@code null}
+     * @return the owning source module, or {@code null}
      * @since 7.0.0
      */
-    public ClassNode getClassNode() {
-        return classNode;
+    public ModuleNode getSourceModule() {
+        return sourceModule;
     }
 
     /**
-     * Records the class node the pipeline visits for this declaration.
+     * Records the source module that parsed this declaration.
+     * The module is not asked to adopt the declaration; that link is
+     * {@link ModuleNode#setModuleDeclaration}.
      *
-     * @param classNode the emission carrier, or {@code null}
+     * @param sourceModule the owning source module, or {@code null}
      * @since 7.0.0
      */
-    public void setClassNode(final ClassNode classNode) {
-        this.classNode = classNode;
+    public void setSourceModule(final ModuleNode sourceModule) {
+        this.sourceModule = sourceModule;
     }
 
     /**
-     * Whether {@code candidate} is the class the pipeline should treat as this
-     * declaration. The carrier matches by identity, including a redirect to it.
-     * A {@code module-info} class in the source that holds this declaration
-     * matches as well, so replacing the carrier in that source does not drop
-     * the declaration. Another class that is merely named {@code module-info}
-     * does not match.
+     * Modules readable from this one after the module graph has been resolved.
+     * Empty until {@link #isReadsReady()} is true.
      *
-     * @param candidate the class being visited
-     * @return {@code true} when the visitor should treat {@code candidate} as this declaration
+     * @return the readable module names
      * @since 7.0.0
      */
-    public boolean isEmittedAs(final ClassNode candidate) {
-        if (candidate == null) {
-            return false;
-        }
-        if (classNode != null && classNode.redirect() == candidate.redirect()) {
+    public Set<String> getReads() {
+        return reads;
+    }
+
+    /**
+     * Whether {@link #getReads()} may be used to test accessibility.
+     * False when resolution failed or has not run. Callers then skip the
+     * accessibility test instead of reporting a cascade of errors.
+     *
+     * @return {@code true} when a resolved readability set is available
+     * @since 7.0.0
+     */
+    public boolean isReadsReady() {
+        return readsReady;
+    }
+
+    /**
+     * Whether resolving the module graph failed.
+     *
+     * @return {@code true} when the graph could not be resolved
+     * @since 7.0.0
+     */
+    public boolean isResolutionFailed() {
+        return resolutionFailed;
+    }
+
+    /**
+     * Whether {@code uses} and {@code provides} types have already been resolved.
+     * A later pass must not resolve them again.
+     *
+     * @return {@code true} after directive types have been resolved
+     * @since 7.0.0
+     */
+    public boolean hasResolvedTypes() {
+        return typesResolved;
+    }
+
+    /**
+     * Records that directive types have been resolved.
+     * Unresolved directives stay {@code null}; the error was already reported.
+     *
+     * @since 7.0.0
+     */
+    public void markTypesResolved() {
+        this.typesResolved = true;
+    }
+
+    /**
+     * Stores the compile-time readability set. {@code failed} clears
+     * {@link #isReadsReady()} so later type resolution does not cascade.
+     *
+     * @param reads modules readable from this one, or {@code null}
+     * @param finder finder used to test exports, or {@code null} when resolution failed
+     * @param failed whether resolution failed
+     * @since 7.0.0
+     */
+    public void adoptResolution(final Set<String> reads, final ModuleFinder finder, final boolean failed) {
+        this.reads = reads == null || reads.isEmpty() ? Set.of() : Set.copyOf(reads);
+        this.accessibilityFinder = finder;
+        this.explicitPackages = null;
+        this.resolutionFailed = failed;
+        this.readsReady = !failed;
+    }
+
+    /**
+     * Whether a public type from another module is accessible from this one
+     * (JLS §6.6 / §7.7). Types declared in this compilation are accessible
+     * even when their package is not exported. A package owned by an explicit
+     * module is accessible only when a module this one reads exports that
+     * package to it. A package that no explicit module owns stays accessible:
+     * the compilation classpath is observed as automatic modules, and that is
+     * where the language runtime is found. Returns {@code true} when the
+     * readability set is not ready, so a failed module graph does not cascade
+     * into type errors.
+     *
+     * @param type the resolved type, or {@code null}
+     * @return {@code true} when the type may be referenced
+     * @since 7.0.0
+     */
+    public boolean canAccess(final ClassNode type) {
+        if (type == null) {
             return true;
         }
-        if (!"module-info".equals(candidate.getName())) {
+        ClassNode resolved = type.redirect();
+        while (resolved.isArray()) {
+            resolved = resolved.getComponentType();
+        }
+        if (resolved.isGenericsPlaceHolder() || ClassHelper.isPrimitiveType(resolved)) {
+            return true;
+        }
+        if (declaredInThisCompilation(resolved)) {
+            return true;
+        }
+        if (!readsReady || accessibilityFinder == null) {
+            return true;
+        }
+        if (!isPublicIncludingEnclosing(resolved)) {
             return false;
         }
-        if (classNode != null && !"module-info".equals(classNode.getName())) {
+        String pkg = resolved.getPackageName();
+        if (pkg == null || pkg.isEmpty()) {
             return false;
         }
-        ModuleNode module = candidate.getModule();
-        return module != null && module.getModuleDeclaration() == this;
+        for (String dependency : reads) {
+            Optional<ModuleReference> reference;
+            try {
+                reference = accessibilityFinder.find(dependency);
+            } catch (RuntimeException ignored) {
+                continue;
+            }
+            if (reference.isEmpty()) {
+                continue;
+            }
+            ModuleDescriptor descriptor = reference.get().descriptor();
+            if (descriptor.isAutomatic()) {
+                if (descriptor.packages().contains(pkg)) {
+                    return true;
+                }
+                continue;
+            }
+            for (ModuleDescriptor.Exports exports : descriptor.exports()) {
+                if (exports.source().equals(pkg)
+                        && (exports.targets().isEmpty() || exports.targets().contains(name))) {
+                    return true;
+                }
+            }
+        }
+        return !ownedByExplicitModule(pkg);
     }
 
     /**
-     * The module declaration for which {@code classNode} is the emission carrier,
-     * or {@code null}. Reads {@link CompileUnit#getModuleInfo()} when the class
-     * belongs to a compile unit, and otherwise the declaration parsed from the
-     * class's source. Node metadata is not consulted.
-     *
-     * @param classNode the class being visited
-     * @return the declaration, or {@code null} when {@code classNode} is not the carrier
+     * Whether an explicit module observable to this compilation owns {@code pkg}.
+     * Automatic modules are not a boundary for ordinary type references.
      */
-    public static ModuleInfoNode of(final ClassNode classNode) {
-        return of(classNode, null);
+    private boolean ownedByExplicitModule(final String pkg) {
+        Set<String> packages = explicitPackages;
+        if (packages == null) {
+            packages = explicitPackages(accessibilityFinder);
+            explicitPackages = packages;
+        }
+        return packages.contains(pkg);
     }
 
-    /**
-     * The module declaration for which {@code classNode} is the emission carrier,
-     * or {@code null}. The class's own compile unit is used when it has one.
-     * {@code fallback} is used only when the class no longer points at its module,
-     * which is how a visitor still finds the declaration after that link is cleared.
-     * A class that belongs to a compile unit is not bound to a different unit's
-     * declaration. Node metadata is not consulted.
-     *
-     * @param classNode the class being visited
-     * @param fallback compile unit known to the caller, or {@code null}
-     * @return the declaration, or {@code null} when {@code classNode} is not the carrier
-     * @since 7.0.0
-     */
-    public static ModuleInfoNode of(final ClassNode classNode, final CompileUnit fallback) {
-        if (classNode == null) {
-            return null;
+    private static Set<String> explicitPackages(final ModuleFinder finder) {
+        Set<ModuleReference> observed;
+        try {
+            observed = finder.findAll();
+        } catch (RuntimeException ignored) {
+            return Set.of();
         }
-        CompileUnit own = classNode.getCompileUnit();
-        if (own != null) {
-            return emittedBy(own, classNode);
+        Set<String> packages = new LinkedHashSet<>();
+        for (ModuleReference reference : observed) {
+            ModuleDescriptor descriptor = reference.descriptor();
+            if (!descriptor.isAutomatic()) {
+                packages.addAll(descriptor.packages());
+            }
         }
-        if (fallback != null && fallback.getModuleInfo() != null) {
-            return emittedBy(fallback, classNode);
-        }
-        ModuleNode module = classNode.getModule();
-        if (module == null) {
-            return null;
-        }
-        ModuleInfoNode declaration = module.getModuleDeclaration();
-        return declaration != null && declaration.isEmittedAs(classNode) ? declaration : null;
+        return Set.copyOf(packages);
     }
 
-    private static ModuleInfoNode emittedBy(final CompileUnit unit, final ClassNode classNode) {
-        ModuleInfoNode declaration = unit.getModuleInfo();
-        return declaration != null && declaration.isEmittedAs(classNode) ? declaration : null;
+    private boolean declaredInThisCompilation(final ClassNode type) {
+        CompileUnit unit = sourceModule != null ? sourceModule.getUnit() : null;
+        if (unit == null) {
+            return false;
+        }
+        if (type.getCompileUnit() == unit || unit.getClass(type.getName()) != null) {
+            return true;
+        }
+        ModuleNode owner = type.getModule();
+        return owner != null && owner.getUnit() == unit;
+    }
+
+    private static boolean isPublicIncludingEnclosing(final ClassNode type) {
+        if (!Modifier.isPublic(type.getModifiers())) {
+            return false;
+        }
+        if (type instanceof InnerClassNode inner) {
+            for (ClassNode outer = inner.getOuterClass(); outer != null; outer = outer.getOuterClass()) {
+                if (!Modifier.isPublic(outer.getModifiers())) {
+                    return false;
+                }
+            }
+            return true;
+        }
+        Class<?> loaded = resolvedClass(type);
+        if (loaded != null) {
+            if (!Modifier.isPublic(loaded.getModifiers())) {
+                return false;
+            }
+            for (Class<?> outer = loaded.getDeclaringClass(); outer != null; outer = outer.getDeclaringClass()) {
+                if (!Modifier.isPublic(outer.getModifiers())) {
+                    return false;
+                }
+            }
+            return true;
+        }
+        for (ClassNode outer = type.getOuterClass(); outer != null; outer = outer.getOuterClass()) {
+            if (!Modifier.isPublic(outer.getModifiers())) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private static Class<?> resolvedClass(final ClassNode type) {
+        if (!type.isResolved()) {
+            return null;
+        }
+        try {
+            return type.getTypeClass();
+        } catch (RuntimeException ignored) {
+            return null;
+        }
     }
 
     public String getName() {

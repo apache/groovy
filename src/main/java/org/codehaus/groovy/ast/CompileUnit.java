@@ -286,11 +286,6 @@ public class CompileUnit implements NodeMetaDataHandler {
         String name = node.getName();
         ClassNode stored = classes.get(name);
         if (stored != null && stored != node) {
-            if ("module-info".equals(name) && (moduleInfoCarrier(stored) || moduleInfoCarrier(node))) {
-                // The second modular compilation unit is rejected by adoptModuleInfo.
-                // Keep the carrier that was accepted first.
-                return;
-            }
             // we have a duplicate class!
             // One possibility for this is, that we declared a script and a
             // class in the same file and named the class like the file
@@ -398,11 +393,6 @@ public class CompileUnit implements NodeMetaDataHandler {
             ModuleInfoNode restored = moduleOwning(moduleInfo) == owner ? moduleInfo : null;
             owner.replaceModuleDeclaration(restored);
         }
-        ClassNode carrier = declaration.getClassNode();
-        ClassNode accepted = moduleInfo == null ? null : moduleInfo.getClassNode();
-        if (owner != null && carrier != null && carrier != accepted) {
-            owner.removeClass(carrier);
-        }
     }
 
     private void reportModuleInfoConflict(final ModuleInfoNode declaration) {
@@ -436,9 +426,9 @@ public class CompileUnit implements NodeMetaDataHandler {
         if (declaration == null) {
             return null;
         }
-        ClassNode carrier = declaration.getClassNode();
-        if (carrier != null && carrier.getModule() != null) {
-            return carrier.getModule();
+        ModuleNode source = declaration.getSourceModule();
+        if (source != null) {
+            return source;
         }
         for (ModuleNode module : modules) {
             if (module.getModuleDeclaration() == declaration) {
@@ -446,13 +436,5 @@ public class CompileUnit implements NodeMetaDataHandler {
             }
         }
         return null;
-    }
-
-    private static boolean moduleInfoCarrier(final ClassNode node) {
-        if (node == null || !"module-info".equals(node.getName())) {
-            return false;
-        }
-        ModuleNode module = node.getModule();
-        return module != null && module.getModuleDeclaration() != null;
     }
 }
