@@ -132,9 +132,11 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
             Class<String> c = 'java.lang.String'
             assert c == String
 
-            Object o = Integer
-            Class<? extends Number> n = o
-            assert n == Integer
+            Class<? extends Number> go(Object o) {
+                Class<? extends Number> n = o
+                n
+            }
+            assert go(Integer) == Integer
         '''
 
         shouldFailWithMessages '''
