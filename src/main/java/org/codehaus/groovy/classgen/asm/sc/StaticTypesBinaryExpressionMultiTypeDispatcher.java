@@ -71,6 +71,7 @@ import static org.codehaus.groovy.transform.stc.StaticTypeCheckingVisitor.inferL
 import static org.codehaus.groovy.transform.stc.StaticTypesMarker.COMPOUND_ASSIGN_TARGET;
 import static org.codehaus.groovy.transform.stc.StaticTypesMarker.DIRECT_METHOD_CALL_TARGET;
 import static org.codehaus.groovy.transform.stc.StaticTypesMarker.INFERRED_TYPE;
+import static org.codehaus.groovy.transform.stc.StaticTypesMarker.SUPER_MOP_METHOD_REQUIRED;
 import static org.objectweb.asm.Opcodes.ACC_PUBLIC;
 import static org.objectweb.asm.Opcodes.DADD;
 import static org.objectweb.asm.Opcodes.DCONST_1;
@@ -175,7 +176,9 @@ public class StaticTypesBinaryExpressionMultiTypeDispatcher extends BinaryExpres
         }
         Expression leftExpression = expression.getLeftExpression();
         if (leftExpression instanceof PropertyExpression pexp
-                && !(leftExpression instanceof AttributeExpression)) {
+                && !(leftExpression instanceof AttributeExpression)
+                // "super.name op= value" in a closure or "Outer.super.name op= value" reads and writes through super$ helpers
+                && pexp.getNodeMetaData(SUPER_MOP_METHOD_REQUIRED) == null) {
 
             BinaryExpression expressionWithoutAssignment = binX(
                     leftExpression,
@@ -233,7 +236,7 @@ public class StaticTypesBinaryExpressionMultiTypeDispatcher extends BinaryExpres
                 && !(leftExpression instanceof AttributeExpression)) {
             // GROOVY-12649: a spread assignment writes each element; the setters of the
             // collection itself do not apply, so the spread is rewritten as a loop below
-            if (!defineVariable && !pexp.isSpreadSafe() && makeSetProperty(
+            if (!defineVariable && !pexp.isSpreadSafe() && pexp.getNodeMetaData(SUPER_MOP_METHOD_REQUIRED) == null && makeSetProperty(
                     pexp.getObjectExpression(),
                     pexp.getProperty(),
                     expression.getRightExpression(),
