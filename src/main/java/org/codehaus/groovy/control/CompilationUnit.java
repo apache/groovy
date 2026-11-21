@@ -21,6 +21,7 @@ package org.codehaus.groovy.control;
 import groovy.lang.GroovyClassLoader;
 import groovy.lang.GroovyRuntimeException;
 import groovy.transform.CompilationUnitAware;
+import org.apache.groovy.ast.pattern.PatternLowering;
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.ast.AnnotationNode;
 import org.codehaus.groovy.ast.ClassHelper;
@@ -93,6 +94,10 @@ public class CompilationUnit extends ProcessingUnit {
 
     /** The source units from which this unit is built. */
     protected Map<String, SourceUnit> sources = new LinkedHashMap<>();
+    /**
+     * Sources passed to {@link #addSource(SourceUnit)} that have not yet been
+     * copied into {@link #sources}. {@link #dequeued()} polls this queue.
+     */
     protected Queue<SourceUnit> queuedSources = new LinkedList<>();
 
     /** The classes generated during classgen. */
@@ -120,7 +125,15 @@ public class CompilationUnit extends ProcessingUnit {
     /** A callback for use during {@link #compile()} */
     protected ProgressCallback progressCallback;
 
+    /**
+     * Resolver handed to {@link #resolveVisitor} for on-demand class lookup.
+     * Replaced through {@link #setClassNodeResolver(ClassNodeResolver)}.
+     */
     protected ClassNodeResolver classNodeResolver = new ClassNodeResolver();
+    /**
+     * Visitor that resolves types. The unit runs it once over class headers
+     * and once over class bodies.
+     */
     protected ResolveVisitor resolveVisitor = new ResolveVisitor(this);
 
     /** The AST transformations state data. */
@@ -280,6 +293,10 @@ public class CompilationUnit extends ProcessingUnit {
             }
         }, Phases.CANONICALIZATION);
 
+        // GEP-19: derive the matching code of every pattern, once the phases that
+        // transform the AST are over and before the type checker and classgen see it
+        addPhaseOperation(PatternLowering::lower, Phases.INSTRUCTION_SELECTION);
+
         addPhaseOperation(source -> {
             for (ClassNode cn : source.getAST().getClasses()) {
                 // GROOVY-10540: add GroovyObject before STC and classgen
@@ -317,18 +334,8 @@ public class CompilationUnit extends ProcessingUnit {
         }, Phases.CLASS_GENERATION);
 
         addPhaseOperation(groovyClass -> {
-            String name = groovyClass.getName().replace('.', File.separatorChar) + ".class";
-            File path = new File(getConfiguration().getTargetDirectory(), name);
-
-            // ensure the path is ready for the file
-            File directory = path.getParentFile();
-            if (directory != null && !directory.exists()) {
-                directory.mkdirs();
-            }
-
-            // create the file and write out the data
-            try (FileOutputStream stream = new FileOutputStream(path)) {
-                stream.write(groovyClass.getBytes());
+            try {
+                writeClassFile(groovyClass);
             } catch (IOException e) {
                 getErrorCollector().addError(Message.create(e.getMessage(), this));
             }
@@ -358,6 +365,33 @@ public class CompilationUnit extends ProcessingUnit {
                 classNode.removeNodeMetaData(DYNAMIC_OUTER_NODE_CALLBACK);
             }
         }, Phases.INSTRUCTION_SELECTION);
+    }
+
+    /**
+     * Writes one generated class file to {@link CompilerConfiguration#getTargetDirectory()}.
+     * Called during {@link Phases#OUTPUT} for each generated class.
+     * Joint compilation overrides this when class files are kept in memory.
+     * An override that keeps the bytes itself should not call this method,
+     * or the class file is written into the target directory as well.
+     *
+     * @param groovyClass the generated class
+     * @throws IOException if the class file cannot be written
+     * @since 7.0.0
+     */
+    protected void writeClassFile(final GroovyClass groovyClass) throws IOException {
+        String name = groovyClass.getName().replace('.', File.separatorChar) + ".class";
+        File path = new File(getConfiguration().getTargetDirectory(), name);
+
+        // ensure the path is ready for the file
+        File directory = path.getParentFile();
+        if (directory != null && !directory.exists()) {
+            directory.mkdirs();
+        }
+
+        // create the file and write out the data
+        try (FileOutputStream stream = new FileOutputStream(path)) {
+            stream.write(groovyClass.getBytes());
+        }
     }
 
     private void applyCompilationCustomizers() {

@@ -1332,7 +1332,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
                 cd.p.f.toLowerCase()
             }
         ''',
-            'Incompatible generic argument types. Cannot assign C<? extends java.lang.Object> to: C<D>'
+            'Incompatible generic argument types. Cannot assign C<?> to: C<D>'
     }
 
     // GROOVY-9963
@@ -1455,9 +1455,9 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
             C.m(true ? new A<>(new B()) : new A<>(new Object()))
         ''',
             'Cannot assign A<java.lang.Object> to: A<B>',
-            'Cannot assign A<? extends java.lang.Object> to: A<B>',
+            'Cannot assign A<?> to: A<B>',
             'Cannot call C#m(A<B>) with arguments [A<java.lang.Object>]',
-            'Cannot call C#m(A<B>) with arguments [A<? extends java.lang.Object>]'
+            'Cannot call C#m(A<B>) with arguments [A<?>]'
     }
 
     // GROOVY-10114
@@ -2732,7 +2732,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         }
         new ClassB()
         ''',
-            'Cannot call <X> groovy.transform.stc.GenericsSTCTest$ClassA#bar(java.lang.Class<java.lang.Long>) with arguments [java.lang.Class<? extends java.lang.Object>]'
+            'Cannot call <X> groovy.transform.stc.GenericsSTCTest$ClassA#bar(java.lang.Class<java.lang.Long>) with arguments [java.lang.Class<?>]'
     }
 
     // GROOVY-8961, GROOVY-9915
@@ -4171,7 +4171,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
             def one_plus_two = one + two // <K,V> Map<K,V> plus(Map<K,V> left, Map<K,V> right)
         ''',
             'Cannot call <K,V> org.codehaus.groovy.runtime.DefaultGroovyMethods#plus(java.util.Map<K, V>, java.util.Map<K, V>)' +
-                ' with arguments [java.util.LinkedHashMap<java.lang.String, ?>, java.util.Map<java.lang.String, ? extends java.lang.Object>]'
+                ' with arguments [java.util.LinkedHashMap<java.lang.String, ?>, java.util.Map<java.lang.String, ?>]'
     }
 
     @Test

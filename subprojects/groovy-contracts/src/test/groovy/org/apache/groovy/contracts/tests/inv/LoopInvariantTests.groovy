@@ -18,7 +18,11 @@
  */
 package org.apache.groovy.contracts.tests.inv
 
+import org.apache.groovy.contracts.LoopInvariantViolation
 import org.apache.groovy.contracts.tests.basic.BaseTestClass
+import org.codehaus.groovy.control.CompilationUnit
+import org.codehaus.groovy.control.MultipleCompilationErrorsException
+import org.codehaus.groovy.control.Phases
 import org.junit.jupiter.api.Test
 
 import static groovy.test.GroovyAssert.assertScript
@@ -489,6 +493,84 @@ class LoopInvariantTests extends BaseTestClass {
 
             assert new F().loop(2) == 2
         '''
+    }
+
+    // GROOVY-12729: the value is declared as a Class, so a class literal passed the annotation checks
+    // and the invariant was silently not checked
+    @Test
+    void classLiteralIsRejected() {
+        def message = shouldFail(MultipleCompilationErrorsException) {
+            assertScript '''
+                import groovy.contracts.Invariant
+
+                int i = 0
+                @Invariant(java.lang.Object)
+                while (i < 3) { i++ }
+            '''
+        }.message
+        assert message.contains('@Invariant requires a closure containing the condition, e.g. @Invariant({ ... }); found a class java.lang.Object')
+    }
+
+    // GROOVY-12729
+    @Test
+    void emptyInvariantIsReportedAsNotChecked() {
+        def warnings = compileWarnings '''
+            import groovy.contracts.Invariant
+
+            int i = 0
+            @Invariant({})
+            while (i < 3) { i++ }
+        '''
+        assert warnings == ['@Invariant({}) on a loop has no condition, so nothing is checked']
+    }
+
+    // GROOVY-12729: an empty @Invariant beside a real one is skipped on its own; the real one still applies
+    @Test
+    void emptyInvariantBesideAnotherLeavesItApplied() {
+        ['@Invariant({ i < 2 }) @Invariant({})', '@Invariant({}) @Invariant({ i < 2 })'].each { annotations ->
+            def message = shouldFail(LoopInvariantViolation) {
+                assertScript """
+                    import groovy.contracts.Invariant
+
+                    int i = 0
+                    $annotations
+                    while (i < 3) { i++ }
+                """
+            }.message
+            assert message.contains('i < 2')
+
+            def warnings = compileWarnings """
+                import groovy.contracts.Invariant
+
+                int i = 0
+                $annotations
+                while (i < 3) { i++ }
+            """
+            assert warnings == ['@Invariant({}) on a loop has no condition, so nothing is checked']
+        }
+    }
+
+    // GROOVY-12740: a statement that is not an expression, e.g. 'assert i >= 0', crashed the compiler with an
+    // internal error instead of being reported
+    @Test
+    void statementThatIsNotAnExpressionIsRejected() {
+        def message = shouldFail(MultipleCompilationErrorsException) {
+            assertScript '''
+                import groovy.contracts.Invariant
+
+                int i = 0
+                @Invariant({ assert i >= 0 })
+                while (i < 3) { i++ }
+            '''
+        }.message
+        assert message.contains('@Invariant on a loop may only contain boolean expressions; assert statements are not supported')
+    }
+
+    private static List<String> compileWarnings(String source) {
+        def unit = new CompilationUnit()
+        unit.addSource('Script1.groovy', source)
+        unit.compile(Phases.CLASS_GENERATION)
+        unit.errorCollector.warnings*.message
     }
 }
 

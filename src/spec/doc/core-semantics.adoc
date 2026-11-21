@@ -118,6 +118,30 @@ The syntax works for arrays as well as lists, as well as methods that return eit
 include::../test/SemanticsTest.groovy[tags=multiple_assignment_with_arrays_and_lists,indent=0]
 ----
 
+The right-hand side is evaluated completely, from left to right, before any variable
+is assigned, so each value is computed from the variables as they were before the
+statement. This makes swaps and rotations safe:
+
+[source,groovy]
+----
+include::../test/SemanticsTest.groovy[tags=multiple_assignment_swap,indent=0]
+----
+
+Likewise, in a declaration, a name on the right-hand side means what it meant before
+the statement, not a variable that the same statement declares:
+
+[source,groovy]
+----
+include::../test/SemanticsTest.groovy[tags=multiple_assignment_declaration_scope,indent=0]
+----
+
+The value of a multiple assignment is its right-hand side:
+
+[source,groovy]
+----
+include::../test/SemanticsTest.groovy[tags=multiple_assignment_value,indent=0]
+----
+
 ==== Overflow and Underflow
 
 If the left hand side has too many variables, excess ones are filled with null's:
@@ -127,7 +151,15 @@ If the left hand side has too many variables, excess ones are filled with null's
 include::../test/SemanticsTest.groovy[tags=multiple_assignment_overflow,indent=0]
 ----
 
-If the right hand side has too many variables, the extra ones are ignored:
+With `@TypeChecked` or `@CompileStatic`, a list literal with too few values is
+reported when the code is compiled:
+
+[source,groovy]
+----
+include::../test/SemanticsTest.groovy[tags=multiple_assignment_overflow_type_checked,indent=0]
+----
+
+If the right-hand side has too many values for the variables on the left, the extra values are ignored:
 
 [source,groovy]
 ----
@@ -184,6 +216,7 @@ if ( ... ) {
 }
 ----
 
+[[switch_case]]
 ===== switch / case
 
 The switch statement in Groovy is backwards compatible with Java code; so you can fall through cases sharing the same code for multiple matches.
@@ -214,7 +247,15 @@ A switch expression produces a value. Arms may use arrow labels
 yielding a value or by throwing; unlike a switch statement, an unmatched
 selector throws `IllegalStateException`. Under `@TypeChecked` /
 `@CompileStatic` a non-exhaustive switch expression (no `default`, and not a
-complete enum) is a compile-time error.
+complete enum) is a compile-time error. A switch expression the type checker
+accepted without a `default` can match nothing only when an enum constant or
+sealed subtype was added after it was compiled; that throws
+`java.lang.MatchException` when compiling for Java 21 or later, as in Java,
+and `IncompatibleClassChangeError` (enum) or `IllegalStateException`
+otherwise. Neither is meant to be caught: add a `default` arm that throws
+when a defined exception is wanted. A `null` selector is matched only by an
+explicit `case null` arm; without one it throws `IllegalStateException` on
+every target.
 
 As in Java, the arrow only decides fall-through; whether a `switch` is a
 statement or an expression is decided by its position
@@ -247,7 +288,9 @@ Multiple constants may share an arm, and Groovy's usual `isCase` matching
 (Class, regex, Collection, Closure) is available in both the statement and
 the expression forms. Under static compilation, when every case label is an
 `int`, `String` or enum constant, the compiler emits `tableswitch` /
-`lookupswitch` bytecode in the same style as `javac`.
+`lookupswitch` bytecode in the same style as `javac`. Arrow labels may also
+be patterns that destructure the switch value; see
+<<pattern-matching-switch>>.
 
 ==== Looping structures
 ===== Classic for loop
@@ -567,6 +610,157 @@ This is a **breaking change** from earlier Groovy releases that left pattern
 locals visible more widely in dynamic mode. See
 link:https://issues.apache.org/jira/browse/GROOVY-12242[GROOVY-12242] and
 `COMPATIBILITY.md`.
+
+[[pattern-matching-switch]]
+=== Pattern matching in `switch` and `instanceof` (GEP-19)
+
+Since Groovy 7, a `case` label may be a *pattern* that tests the shape of the
+switch value and binds parts of it to new local variables, as specified by
+https://groovy.apache.org/wiki/GEP-19.html[GEP-19]. Patterns use the arrow
+form of label only; a pattern with a colon label is a compile-time error.
+Pattern labels and Groovy's existing `isCase` labels may be mixed freely in
+one `switch`, each keeping its own meaning.
+
+==== Type patterns
+
+A type pattern `case T name ->` matches when the value is an instance of `T`
+and binds `name` to it, typed as `T`, for the arm and for an optional `when`
+guard. A guard is evaluated once the pattern has matched; when it is false
+the arm is skipped and matching continues with the next label.
+
+[source,groovy]
+----
+include::../test/semantics/SwitchPatternsTest.groovy[tags=type_patterns,indent=0]
+----
+
+==== Record patterns
+
+A record pattern `case T(p1, p2, ...) ->` deconstructs a value of record type
+`T` positionally. Each component position takes a nested pattern: a type
+pattern, a `var`/`def` binding, another record pattern, or `_`, which
+discards the component. A record without components is matched by empty
+parentheses after its name, such as `case None()`. The value may be a native or emulated Groovy record,
+a Java record, or any class providing a `toList()` method. A native record's
+components are read through its accessor methods, in order and only as far as
+the match proceeds; any other value is deconstructed through its `toList()`
+method, which is called once per match attempt. A pattern whose
+component count differs from the record's never matches, and is a compile
+error under `@TypeChecked` / `@CompileStatic`. There, a `var`/`def` component
+binding takes the type of its record component, and the type arguments of a
+generic record pattern written without them are inferred from the value it
+deconstructs, as in Java: matching `Box(var s)` against a `Box<String>` binds
+`s` as a `String`.
+
+[source,groovy]
+----
+include::../test/semantics/SwitchPatternsTest.groovy[tags=record_patterns,indent=0]
+----
+
+Record patterns are also available on `instanceof`, with the same binding
+and scoping rules as the type patterns of the previous section:
+
+[source,groovy]
+----
+include::../test/semantics/SwitchPatternsTest.groovy[tags=instanceof_record_pattern,indent=0]
+----
+
+==== List patterns
+
+A list pattern `case [e1, e2, ...] ->` destructures a `List`, an array or any
+re-iterable `Iterable`. Elements may be literals, which match by `==`, type
+patterns, `var`/`def` bindings, nested patterns, and at most one rest binding
+`var... name` (or the shortcut `... name`, or bare `...` to discard the rest)
+in any position. Without a rest binding the pattern matches exactly as many
+elements as it names; with one it matches at least that many, and the rest
+binding receives a new list of the others. The empty literal `[]` matches an
+empty list.
+
+[source,groovy]
+----
+include::../test/semantics/SwitchPatternsTest.groovy[tags=list_patterns,indent=0]
+----
+
+==== Map patterns
+
+A map pattern `case [k1: p1, k2: p2, ...] ->` matches a `Map` when every
+named key is present and its value matches the nested pattern; keys must be
+constants. Matching is open: keys the pattern does not name are ignored
+unless a rest binding `var... name` collects them into a new map. The empty
+literal `[:]` matches an empty map.
+
+[source,groovy]
+----
+include::../test/semantics/SwitchPatternsTest.groovy[tags=map_patterns,indent=0]
+----
+
+==== Patterns and `isCase` labels
+
+A `[...]` or `[k: v]` label is read as a pattern only when it is empty or
+contains a binding form (`var x`, `def x`, `Type x`, `_`, a rest binding).
+Any other list or map label keeps its `isCase` meaning, so `case [1, 2, 3]`
+still tests containment and `case [a: 1]` still looks up the value. A guard
+is allowed on pattern labels only. Likewise a call-shaped label such as
+`case foo(bar)` or `case foo()` keeps calling `foo`; only a capitalised name
+with pattern-shaped arguments, such as `case Point(var x, _)`, or with empty
+parentheses, such as `case None()`, is a record pattern. Since pattern labels
+use the arrow form, `case None():` with a colon is still a call. To call a
+method with a capitalised name from an arrow label, quote the name, as in
+`case 'Evens'() ->`, or qualify it, as in `case this.Evens() ->`.
+
+[source,groovy]
+----
+include::../test/semantics/SwitchPatternsTest.groovy[tags=legacy_labels,indent=0]
+----
+
+A pattern never matches `null`: a `null` value falls through to the next
+label or to `default`, where Java's pattern switch would throw
+`NullPointerException`. A `case null` label matches it as before. Within a
+pattern, a typed element does not match a `null` component, while a
+`var`/`def` binding and `_` do.
+
+[source,groovy]
+----
+include::../test/semantics/SwitchPatternsTest.groovy[tags=null_subject,indent=0]
+----
+
+==== Exhaustiveness
+
+A switch expression must always be exhaustive, as described above. A switch
+*statement* must be exhaustive only when one of its labels is a pattern,
+which is where Java draws the line as well (JEP 441); a statement with only
+constant, class-literal or range labels never needs a `default`, so nothing
+written before patterns existed is affected. Under `@TypeChecked` /
+`@CompileStatic` the check is satisfied by a `default`, by all constants of
+an enum, by a pattern that covers the selector's type (such as
+`case Object o`), or by type patterns, class-literal labels and record
+patterns that together cover a native sealed hierarchy. A record pattern
+counts only when each component is a `var`/`def` binding, `_`, or a typed
+component whose record component is a primitive of that type, since such a
+component can never be `null`; a typed component on a reference-typed record
+component (which does not match `null`), a nested pattern, a guard and a map
+pattern can all fail at run time and so never count. A list pattern counts
+only in its total form, `[...]` or `[var... rest]`, and only when the
+selector is statically a list, array or `Iterable`.
+
+[source,groovy]
+----
+include::../test/semantics/SwitchPatternsTest.groovy[tags=sealed_exhaustiveness,indent=0]
+----
+
+[source,groovy]
+----
+include::../test/semantics/SwitchPatternsTest.groovy[tags=statement_exhaustiveness,indent=0]
+----
+
+The type checker also reports an error for a pattern that can never match
+the selector's static type, and a warning for a pattern dominated by an
+earlier label, which could never be reached. In dynamic Groovy, patterns are
+matched at run time and bindings are dynamically typed. An exhaustive switch
+expression that nevertheless matches nothing at run time, because a sealed
+subtype was added after it was compiled, throws as described under
+<<switch_case,switch / case>> above: `MatchException` on a Java 21+ target,
+`IllegalStateException` otherwise. An exhaustive switch statement simply
+does nothing in that case.
 
 == Expressions
 
@@ -1377,6 +1571,10 @@ include::../test/typing/TypeCheckingTest.groovy[tags=stc_assign_equals,indent=0]
 include::../test/typing/TypeCheckingTest.groovy[tags=stc_assign_specialcase,indent=0]
 ----
 ====
++
+The value is converted when the assignment runs: to its `toString()` for a `String`, by <<the-groovy-truth,Groovy truth>>
+for a `boolean`, and to the class it names for a `Class`. This rule is for assignments and `return` statements;
+it does not apply to the arguments of a method call.
 
 * _or_ `o` is null and `T` is not a primitive type
 
@@ -1528,8 +1726,15 @@ include::../test/typing/TypeCheckingTest.groovy[tags=stc_assign_to_byte,indent=0
 In addition to the assignment rules above, if an assignment is deemed invalid, in type checked mode, a _list_ literal or a _map_ literal `A` can be assigned
 to a variable of type `T` if:
 
-* the assignment is a variable declaration and `A` is a list literal and `T` has a constructor whose parameters match the types of the elements in the list literal
+* the assignment is a variable declaration and `A` is a list literal and `T` has a constructor whose parameters match the types of the elements in the list literal.
+If `T` is a collection class with a constructor taking a collection, or a no-arg constructor, the variable instead holds a copy of the elements,
+so `Vector v = [5]` holds `5` rather than having a capacity of 5
+
+The same rules apply to a list or map literal returned from a method with a declared return type, so `Set m() { [3, 1] }` and `java.awt.Point m() { [1, 2] }` type check
+as `Set s = [3, 1]` and `java.awt.Point p = [1, 2]` do. A closure or lambda result is not converted, so for a closure or lambda the literal's own type must suit the expected return type.
 * the assignment is a variable declaration and `A` is a map literal and `T` has a no-arg constructor and a property for each of the map keys
+* `A` is a list literal and `T` is `SortedSet` or `NavigableSet` (giving a `TreeSet`), `Queue` or `Deque` (giving a `LinkedList`) or `BlockingQueue` (giving a `LinkedBlockingQueue`),
+or `A` is a map literal and `T` is `SortedMap` or `NavigableMap` (giving a `TreeMap`) or `ConcurrentMap` (giving a `ConcurrentHashMap`); the elements must suit the type arguments of `T`
 
 For example, instead of writing:
 
@@ -1591,6 +1796,11 @@ include::../test/typing/TypeCheckingTest.groovy[tags=stc_argparam_equals,indent=
 include::../test/typing/TypeCheckingTest.groovy[tags=stc_argparam_specialcase,indent=0]
 ----
 ====
+
+NOTE: This applies to a declared `String`: a variable, field, parameter or return type, which the runtime
+converts to. A `String` type argument gets no such conversion, so `List<String> list = ["$name"]` is an error
+(call `toString()`). Since Groovy 7, a write to a map whose value type is `String`, by property or subscript,
+converts the value instead: see <<classtag-annotation,`@ClassTag`>>.
 
 * _or_ `o` is null and `T` is not a primitive type
 
@@ -1714,6 +1924,130 @@ but you loose some features of the language. Hopefully, Groovy introduces some f
 type-checked and non type-checked Groovy.
 ====
 
+[[stc-generics]]
+==== Generic types
+
+The rules above compare classes. When a type has type arguments, as `List<String>` does, the type arguments are
+compared too, in the same way for an assignment, a `return` statement and a method argument. The rules are
+close to Java's. The deliberate differences from Java are <<stc-java-differences,listed at the end of this chapter>>.
+
+*Type arguments must be the same.* A `List<Integer>` is not a `List<Number>`, even though an `Integer` is a `Number`.
+If it were, a `Double` could be added to the list through the second type:
+
+[source,groovy]
+----
+include::../test/typing/TypeCheckingTest.groovy[tags=stc_generics_invariant,indent=0]
+----
+
+*A wildcard accepts a range of type arguments.* `? extends Number` accepts `Number` and its subtypes,
+`? super Integer` accepts `Integer` and its supertypes, and `?` accepts every type argument.
+`?` and `? extends Object` are the same wildcard.
+
+[source,groovy]
+----
+include::../test/typing/TypeCheckingTest.groovy[tags=stc_generics_wildcards,indent=0]
+----
+<1> `Integer` is within `? extends Number`
+<2> `Number` is within `? super Integer`
+<3> every type argument is within `?`
+<4> a wildcard is within another wildcard when everything it accepts is accepted by the other
+
+A wildcard that accepts more than the target does is rejected, and so is `?` for a target with a bound:
+
+[source,groovy]
+----
+include::../test/typing/TypeCheckingTest.groovy[tags=stc_generics_wildcard_range_fail,indent=0]
+include::../test/typing/TypeCheckingTest.groovy[tags=stc_generics_wildcard_unbounded_fail,indent=0]
+----
+
+A wildcard stands for one type that is not known, so it is not accepted where a particular type argument is required:
+
+[source,groovy]
+----
+include::../test/typing/TypeCheckingTest.groovy[tags=stc_generics_wildcard_exact_fail,indent=0]
+----
+
+*What can be read and written through a wildcard follows from its bound.* A value read through `? extends Number` is a
+`Number`. A value written through `? super Integer` must be an `Integer`.
+
+[source,groovy]
+----
+include::../test/typing/TypeCheckingTest.groovy[tags=stc_generics_read_write,indent=0]
+----
+<1> whatever the element type is, it is a `Number`
+<2> whatever the element type is, it can hold an `Integer`
+
+Nothing can be written through `? extends`, because the element type might be any subtype, and through `? super`
+only the bound and its subtypes can be written:
+
+[source,groovy]
+----
+include::../test/typing/TypeCheckingTest.groovy[tags=stc_generics_write_extends_fail,indent=0]
+include::../test/typing/TypeCheckingTest.groovy[tags=stc_generics_write_super_fail,indent=0]
+----
+
+*A raw type is not checked.* A raw type is a generic type used without type arguments, such as `List`. It is accepted
+for the same type with any type arguments, and the other way round. Java gives an "unchecked" warning for the first
+of these; Groovy has no such warning. The elements of a raw type are of type `Object`.
+
+[source,groovy]
+----
+include::../test/typing/TypeCheckingTest.groovy[tags=stc_generics_raw,indent=0]
+----
+<1> a raw `List` is accepted for a `List<String>`; nothing checks that it holds strings
+<2> a `List<String>` is accepted for a raw `List`
+<3> the same holds for an argument
+
+[source,groovy]
+----
+include::../test/typing/TypeCheckingTest.groovy[tags=stc_generics_raw_element_fail,indent=0]
+----
+
+A cast to a type with type arguments, such as `(List<String>) value`, is not checked against the type arguments either.
+
+*A literal or a diamond takes its type arguments from the target.* A list or map literal and a constructor call
+written with `<>` have no type arguments of their own, so the elements are checked against the type arguments
+of the variable they are assigned to:
+
+[source,groovy]
+----
+include::../test/typing/TypeCheckingTest.groovy[tags=stc_generics_literal,indent=0]
+----
+<1> each element must be a `Number`
+<2> an `ArrayList<Number>`
+
+Without a declared type, the type arguments of a literal are <<section-lub,inferred from its elements>>.
+
+*The type arguments of a generic method are inferred from the arguments of the call.* The inferred type arguments
+must be within the bounds that the method declares:
+
+[source,groovy]
+----
+include::../test/typing/TypeCheckingTest.groovy[tags=stc_generics_method,indent=0]
+----
+<1> `T` is `Integer`, so the call returns an `Integer`
+
+[source,groovy]
+----
+include::../test/typing/TypeCheckingTest.groovy[tags=stc_generics_method_fail,indent=0]
+----
+
+[[stc-generics-class]]
+===== `Class` and its type argument
+
+A `Class` value is compared by its type argument like a value of any other generic type:
+
+[source,groovy]
+----
+include::../test/typing/TypeCheckingTest.groovy[tags=stc_generics_class,indent=0]
+----
+<1> `Integer` is within `? extends Number`
+
+[source,groovy]
+----
+include::../test/typing/TypeCheckingTest.groovy[tags=stc_generics_class_fail,indent=0]
+----
+
 [[type-inference]]
 ==== Type inference
 
@@ -1738,9 +2072,9 @@ The reason the call to `toUpperCase` works is because the type of `message` was 
 
 ===== Variables vs fields in type inference
 
-It is worth noting that although the compiler performs type inference on local variables, it does *not* perform any kind
-of type inference on fields, always falling back to the *declared type* of a field. To illustrate this, let's take a
-look at this example:
+It is worth noting that although the compiler performs type inference on local variables, it does *not* perform type
+inference on a field that can be reassigned, always falling back to the *declared type* of the field. To illustrate
+this, let's take a look at this example:
 
 [source,groovy]
 ----
@@ -1759,8 +2093,25 @@ Why such a difference? The reason is _thread safety_. At compile time, we can't 
 a field. Any thread can access any field at any time and between the moment a field is assigned a variable of some
 type in a method and the time is used the line after, another thread may have changed the contents of the field. This
 is not the case for local variables: we know if they "escape" or not, so we can make sure that the type of a variable is
-constant (or not) over time. Note that even if a field is final, the JVM makes no guarantee about it, so the type checker
-doesn't behave differently if a field is final or not.
+constant (or not) over time.
+
+A `final` field declared without a type is the exception, because it holds one value for its lifetime. Within the class
+that declares it, a read of the field has the type of the value assigned by its initializer, its initializer blocks and
+its constructors, as a local variable would:
+
+[source,groovy]
+----
+include::../test/typing/TypeCheckingTest.groovy[tags=typeinference_final_field,indent=0]
+----
+<1> `someUntypedField` is `final` and assigned a `String`
+<2> so calling `toUpperCase` in a method of the class is allowed
+<3> but a closure or lambda reads the property through its getter, which a subclass may override, so there the field
+has its declared type and only the methods of `Object` are available
+
+The inferred type is used only where the field itself is read: in the methods, constructors and initializers of the
+declaring class, and in a closure or lambda there for a private field, a static property, or a property of a `final`
+class. A read through the getter, from a closure or lambda, an inner class, a subclass or another class, keeps the
+declared type. Constructors that assign values of unrelated types give no inferred type either.
 
 TIP: This is one of the reasons why we recommend to use *typed* fields. While using `def` for local variables is perfectly
 fine thanks to type inference, this is not the case for fields, which also belong to the public API of a class, hence the
@@ -2433,6 +2784,14 @@ include::../test/typing/ClassTagSpecTest.groovy[tags=classtag_preempt,indent=0]
 `String.class` and `Integer.class` injected; the returned map rejects ill-typed keys and values
 <2> reads behave as before for well-typed keys
 
+Since Groovy 7, a write to a map by property or subscript, or by `putAt`, is upgraded the same way when the value
+is accepted for the map's value type but is not of it: `putAt(Map<K,V>, K, Object, Class<V>)` converts the value
+to the value type, as an assignment to a variable of that type would, so the map holds what its declaration
+promises (link:https://issues.apache.org/jira/browse/GROOVY-12535[GROOVY-12535]). A `GString` written to a
+`Map<String,String>` is stored as a `String`, and an `Integer` written to a `Map<String,Long>` as a `Long`. A
+value of the value type is stored as it is, and a map whose value type is not known (`def`, raw or a wildcard)
+is written as before.
+
 Preemption is deliberately constrained by three independent controls:
 
 * _intent_: only an overload explicitly marked `@ClassTag(preempt=true)` may displace a token-less one;
@@ -2458,6 +2817,87 @@ and only the erased class is reified (`List<List<String>>` yields `List.class`);
 * when every token would erase to `Object` (for example a `List<Object>` receiver), no token is synthesised:
 a checked `Object` view could never reject anything;
 * passing the `Class` explicitly always works, in every mode.
+
+[[stc-java-differences]]
+==== Differences from Java
+
+Type-checked Groovy accepts most Java code and gives it the same meaning. The deliberate differences are listed in
+the table below: each one removes a cast, a conversion or a declaration that Java requires. Where the types alone do not
+guarantee the result, Groovy converts or casts the value when the code runs, so a wrong value fails at that point.
+
+[cols="2,3,3" options="header"]
+|===
+|Difference
+|Java
+|Type-checked Groovy
+
+|<<section-flow-typing,Flow typing>>
+|A variable has its declared type everywhere.
+|A variable has the type of the value last assigned to it, so its members can be used without a cast.
+With `@CompileStatic` that type also selects among overloaded methods.
+
+|<<_instanceof_inference,`instanceof` inference>>
+|After `o instanceof String`, using `o` as a `String` needs a cast or a pattern variable.
+|`o` is a `String` where the test holds.
+
+|<<section-lub,Least upper bound>>
+|The type of a conditional expression is found by Java's own rules, and there are no collection literals.
+|A list literal, a conditional expression or a variable assigned in several branches has the least upper bound
+of the types involved, which can be an intersection such as `Serializable & Comparable`.
+
+|<<_type_checking_assignments,Assignment to `String`, `boolean` and `Class`>>
+|Only a value of the type is accepted.
+|Any value is accepted and converted when the code runs.
+
+|`GString` to `String`
+|Not applicable.
+|A `GString` is accepted for a `String`, as an assigned value and as an argument.
+
+|<<number-assignment,Number conversions>>
+|Widening between primitive types, and boxing to the matching wrapper only: `Double d = 1` is an error.
+|As in the <<number-assignment,table of number types>>, for primitive and wrapper types alike.
+
+|<<the-groovy-truth,Groovy truth>>
+|A condition must be a `boolean`.
+|A condition can be any value.
+
+|<<_list_and_map_constructors,List and map constructors>>, arrays from lists
+|Not applicable.
+|A list or map literal can be assigned to a type that it can construct, and a list to an array.
+
+|<<closure-coercion,Closure to SAM type>>
+|A lambda or a method reference is accepted for a functional interface.
+|So is a closure, for any type with a single abstract method, including an abstract class.
+
+|Raw types and casts
+|Using a raw type for a parameterized type, or a cast to a parameterized type, gives an "unchecked" warning.
+|No warning. See <<stc-generics,raw types>>.
+
+|Checked exceptions
+|A checked exception must be caught or declared.
+|Not checked.
+
+|Method selection
+|An overloaded method is selected at compile time from the declared types of the arguments.
+|With `@TypeChecked` the method is selected when the code runs, from the classes of the argument values.
+With `@CompileStatic` it is selected at compile time, from the types that flow typing gives the arguments.
+
+|Closures
+|A lambda sees only its enclosing scope.
+|A closure can resolve names against a delegate, declared to the type checker with
+link:core-domain-specific-languages.html#section-delegatesto[`@DelegatesTo`]; its parameter types can be declared with
+`@ClosureParams`.
+|===
+
+[source,groovy]
+----
+include::../test/typing/TypeCheckingTest.groovy[tags=stc_checked_exceptions,indent=0]
+----
+<1> `withReader` and `readLine` throw `IOException`, which is neither caught nor declared
+<2> nor is the exception thrown here
+
+A <<type-checking-extensions,type checking extension>> can accept more or reject more than these
+rules do for the code it is applied to.
 
 === Static compilation
 
@@ -2534,11 +2974,10 @@ statically compiled code and dynamic code is barely noticeable. On highly CPU in
 is generated is very close, if not equal, to the one that Java would produce for an equivalent program, the performance
 is greatly improved.
 
-TIP: Using the _invokedynamic_ version of Groovy, which is accessible to people using JDK 7 and above, the performance
-of the dynamic code should be very close to the performance of statically compiled code. Sometimes, it can even be faster!
-There is only one way to determine which version you should choose: measuring. The reason is that depending on your program
-*and* the JVM that you use, the performance can be significantly different. In particular, the _invokedynamic_ version of
-Groovy is very sensitive to the JVM version in use.
+TIP: Dynamic call sites use `invokedynamic` by default (since Groovy 4). On CPU-intensive code the gap between that
+and `@CompileStatic` depends on the program and on the JVM, so the only reliable comparison is a measurement.
+Classic call-site compilation is optional and needs the `groovy-callsite` module; see
+link:invokedynamic-support.html[InvokeDynamic support].
 
 include::_type-checking-extensions.adoc[leveloffset=+1]
 

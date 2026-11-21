@@ -21,6 +21,7 @@ package org.apache.groovy.parser.antlr4.internal
 import org.antlr.v4.runtime.CharStreams
 import org.antlr.v4.runtime.CommonToken
 import org.antlr.v4.runtime.CommonTokenStream
+import org.antlr.v4.runtime.NoViableAltException
 import org.antlr.v4.runtime.RecognitionException
 import org.antlr.v4.runtime.RuleContext
 import org.antlr.v4.runtime.Token
@@ -386,6 +387,52 @@ final class MissingDelimiterDiagnosticTest {
         assertEquals "Missing ')'", hit.message
     }
 
+    // GROOVY-12694
+    @Test
+    void 'cast-like group closed before the failure is accepted input'() {
+        // `(double radius)` is a record header the parser had already
+        // accepted when it failed at EOF; the stack names the real
+        // unclosed delimiter instead
+        def tokens = tokenStream('record R(double radius) {}\n[1')
+        def hit = MissingDelimiterDiagnostic.locate(tokens, stubException(setOf(COMMA), lastToken(tokens)))
+        assertNotNull hit
+        assertEquals "Missing ']'", hit.message
+    }
+
+    @Test
+    void 'cast-like group closed before the failure with nothing else unclosed'() {
+        def tokens = tokenStream('def f(int x) { x }\ndef y = 1 +')
+        assertNull MissingDelimiterDiagnostic.locate(tokens, stubException(setOf(COMMA), lastToken(tokens)))
+    }
+
+    @Test
+    void 'cast-like group holding the offending token still reports the paren'() {
+        def tokens = tokenStream('(int 1)\n[1')
+        def one = findFirst(tokens) { it.type == IntegerLiteral }
+        def hit = MissingDelimiterDiagnostic.locate(tokens, stubException(setOf(COMMA), one))
+        assertNotNull hit
+        assertEquals "Missing ')'", hit.message
+        assertEquals one.line, hit.at.line
+        assertEquals one.charPositionInLine, hit.at.charPositionInLine
+    }
+
+    @Test
+    void 'no-viable-alternative start token keeps the group its decision began in'() {
+        def tokens = tokenStream('(int 1)\n[1')
+        def lparen = findFirst(tokens) { it.type == LPAREN }
+        def nvae = new NoViableAltException(null, tokens, lparen, lastToken(tokens), null, null)
+        def hit = MissingDelimiterDiagnostic.locate(tokens, nvae)
+        assertNotNull hit
+        assertEquals "Missing ')'", hit.message
+    }
+
+    @Test
+    void 'closed cast-like group is still scanned when the failure has no position'() {
+        def hit = MissingDelimiterDiagnostic.locate(tokenStream('(int 1)\n[1'), null)
+        assertNotNull hit
+        assertEquals "Missing ')'", hit.message
+    }
+
     //--------------------------------------------------------------------------
     // Strategy 3 — delimiter stack
     //--------------------------------------------------------------------------
@@ -617,12 +664,12 @@ final class MissingDelimiterDiagnosticTest {
         // LPAREN + bare AT (no annotation name) → skipAnnotations returns -1 → continue
         def tokens = [tok(LPAREN, '('), tok(AT, '@')]
         assertEquals (-1), invoke('skipAnnotations', tokens, 1)
-        assertNull invoke('fromCastPattern', tokens)
+        assertNull invoke('fromCastPattern', tokens, Integer.MAX_VALUE)
 
         // also with EOF sentinel
         def withEof = [tok(LPAREN, '('), tok(AT, '@'), tok(Token.EOF, null)]
         assertEquals (-1), invoke('skipAnnotations', withEof, 1)
-        assertNull invoke('fromCastPattern', withEof)
+        assertNull invoke('fromCastPattern', withEof, Integer.MAX_VALUE)
     }
 
     @Test
@@ -630,14 +677,14 @@ final class MissingDelimiterDiagnosticTest {
         // skipAnnotations returns index == n (empty type region)
         def tokens = [tok(LPAREN, '(')]
         assertEquals 1, invoke('skipAnnotations', tokens, 1) // start==n
-        assertNull invoke('fromCastPattern', tokens)
+        assertNull invoke('fromCastPattern', tokens, Integer.MAX_VALUE)
     }
 
     @Test
     void 'fromCastPattern afterType at end of list without EOF sentinel'() {
         // No room for operand token → afterType >= n
         def tokens = [tok(LPAREN, '('), tok(BuiltInPrimitiveType, 'int')]
-        def hit = (MissingDelimiterDiagnostic.Hit) invoke('fromCastPattern', tokens)
+        def hit = (MissingDelimiterDiagnostic.Hit) invoke('fromCastPattern', tokens, Integer.MAX_VALUE)
         assertNotNull hit
         assertEquals "Missing ')'", hit.message
     }
@@ -650,7 +697,7 @@ final class MissingDelimiterDiagnosticTest {
                          [tok(LBRACK, '['), tok(IntegerLiteral, '0')]]) {
             def tokens = base + next
             // continues cast loop; no high-confidence hit → null from cast alone
-            assertNull invoke('fromCastPattern', tokens)
+            assertNull invoke('fromCastPattern', tokens, Integer.MAX_VALUE)
         }
     }
 
@@ -658,11 +705,11 @@ final class MissingDelimiterDiagnosticTest {
     void 'fromCastPattern well-formed cast and intersection continue'() {
         assertNull invoke('fromCastPattern', [
             tok(LPAREN, '('), tok(BuiltInPrimitiveType, 'int'), tok(RPAREN, ')'), tok(IntegerLiteral, '1')
-        ])
+        ], Integer.MAX_VALUE)
         assertNull invoke('fromCastPattern', [
             tok(LPAREN, '('), tok(CapitalizedIdentifier, 'A'), tok(BITAND, '&'), tok(CapitalizedIdentifier, 'B'),
             tok(RPAREN, ')'), tok(IntegerLiteral, '1')
-        ])
+        ], Integer.MAX_VALUE)
     }
 
     @Test

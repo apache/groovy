@@ -40,6 +40,45 @@ class MemoizeAtLeastTest extends AbstractMemoizeTestCase {
         assert flag
     }
 
+    // GROOVY-12669
+    @Test
+    void testRehydratedCopyKeepsTheProtectedCacheSize() {
+        def o = new Named('o')
+        def p = new Named('p')
+        Closure mem = o.closure().memoizeAtLeast(2)
+        [1, 2, 3].each { mem(it) }
+
+        Closure copy = mem.rehydrate(null, p, p)
+        assert copy.@cache instanceof ConcurrentSoftCache
+        assert !copy.@cache.is(mem.@cache)
+        assert copy.@protectedCacheSize == 2
+        assert copy.@lruProtectionStorage.@maxSize == 2
+        assert !copy.@lruProtectionStorage.is(mem.@lruProtectionStorage)
+        assert !copy.@queue.is(mem.@queue)
+        [1, 2, 3].each { assert copy(it) == "p$it" }
+        assert p.calls == 3
+
+        Closure unprotected = new Named('o').closure().memoizeAtLeast(0).dehydrate()
+        assert unprotected.@protectedCacheSize == 0
+        assert unprotected.@lruProtectionStorage instanceof NullProtectionStorage
+    }
+
+    // GROOVY-12669
+    @Test
+    void testCopyOfClosureMemoizedWithSuppliedCacheSharesTheCache() {
+        def o = new Named('o')
+        def p = new Named('p')
+        Closure mem = Memoize.buildSoftReferenceMemoizeFunction(2, new ConcurrentSoftCache<Object, Object>(), o.closure())
+        assert mem(1) == 'o1'
+
+        Closure copy = mem.rehydrate(null, p, p)
+        assert copy.@cache.is(mem.@cache)
+        assert copy.@lruProtectionStorage.is(mem.@lruProtectionStorage)
+        assert copy.@queue.is(mem.@queue)
+        assert copy(2) == 'p2'
+        assert p.calls == 1
+    }
+
     @Test
     void testMemoizeAtLeastConcurrently() {
         AtomicInteger cnt = new AtomicInteger(0)
@@ -51,5 +90,35 @@ class MemoizeAtLeastTest extends AbstractMemoizeTestCase {
         [4, 5, 6, 4, 5, 6, 4, 5, 6].collect { num -> Thread.start { mem(num) } }*.join()
 
         assert 3 == cnt.get()
+    }
+
+    // GROOVY-12674
+    @Test
+    void testSerializedCopyDropsCachedValues() {
+        [0, 2].each { protectedCacheSize ->
+            Closure mem = new Counting().closure().memoizeAtLeast(protectedCacheSize)
+            assert mem(1) == 2
+            assert mem(null) == null
+
+            Closure copy = roundTrip(mem)
+            Counting owner = copy.owner
+            assert owner.calls == 2
+            assert copy(1) == 2
+            assert copy(null) == null
+            assert owner.calls == 4
+            assert copy(1) == 2
+            assert copy(null) == null
+            assert owner.calls == 4
+            assert mem(1) == 2
+            assert mem.owner.calls == 2
+        }
+    }
+
+    // GROOVY-12674
+    @Test
+    void testSerializedCopyKeepsProtectedCacheSize() {
+        Closure copy = roundTrip(new Counting().closure().memoizeAtLeast(2))
+        [1, 2, 3].each { copy(it) }
+        assert copy.@lruProtectionStorage.size() == 2
     }
 }

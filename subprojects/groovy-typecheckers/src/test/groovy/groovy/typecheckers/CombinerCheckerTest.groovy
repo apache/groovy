@@ -53,18 +53,29 @@ final class CombinerCheckerTest {
 
     // === lenient mode: only high-confidence problems are flagged ===
 
-    // NB: closure params are explicitly typed. Under @TypeChecked the param
-    // types of an inline combiner are not reliably inferred from the
-    // BinaryOperator SAM, so untyped params produce unrelated STC errors
-    // (Object#plus/#div) before this checker runs. Typing them isolates the
-    // checker's behaviour. (Spike finding: the annotated-method-reference
-    // path is the robust one; inline analysis is best-effort.)
+    // NB: most closures below type their parameters, but untyped ones work too:
+    // under @TypeChecked their types are inferred from the receiver (sumParallel)
+    // or the seed (injectParallel), so the checker sees the same closure either
+    // way (untyped_inline_closure_is_checked_like_a_typed_one). The
+    // annotated-method-reference path remains the robust one; inline analysis
+    // is best-effort.
 
     @Test
     void associative_inline_closure_passes() {
         assertScript lenientShell, '''
             assert [1, 2, 3, 4].sumParallel { int a, int b -> a + b } == 10
             assert [1, 2, 3, 4].injectParallel(0) { int a, int b -> a + b } == 10
+        '''
+    }
+
+    @Test
+    void untyped_inline_closure_is_checked_like_a_typed_one() {
+        def err = shouldFail lenientShell, '''
+            [1, 2, 3, 4].sumParallel { a, b -> a - b }
+        '''
+        assert err.message.contains('non-associative')
+        assertScript lenientShell, '''
+            assert [1, 2, 3, 4].sumParallel { a, b -> a + b } == 10
         '''
     }
 
@@ -140,12 +151,32 @@ final class CombinerCheckerTest {
 
     @Test
     void strict_unannotated_inline_closure_fails_even_when_associative() {
-        // params typed: untyped inline combiner params can trigger unrelated
-        // STC errors before this checker runs (see header note).
         def err = shouldFail strictShell, '''
             [1, 2, 3].injectParallel(0) { int a, int b -> a + b }
         '''
         assert err.message.contains('strict')
+    }
+
+    @Test
+    void strict_sumParallel_with_a_transform_has_no_combiner_to_check() {
+        // sumParallel(transform) adds the transformed values with plus, so strict mode asks for no contract
+        assertScript strictShell, '''
+            List<String> words = ['a', 'bb', 'ccc']
+            assert words.sumParallel { it.size() } == 6
+            assert words.sumParallel { String w -> w.size() } == 6
+            assert words.sumParallel((String w) -> w.size()) == 6
+            assert words.sumParallel(String::length) == 6
+            java.util.function.Function<String, Integer> size = String::length
+            assert words.sumParallel(size) == 6
+        '''
+    }
+
+    @Test
+    void sumParallel_combiner_beside_the_transform_form_is_still_checked() {
+        def err = shouldFail lenientShell, '''
+            [1, 2, 3, 4].sumParallel { int a, int b -> a - b }
+        '''
+        assert err.message.contains('non-associative')
     }
 
     @Test
