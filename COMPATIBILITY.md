@@ -1190,6 +1190,55 @@ and catch the failure passed to `close(failure)` instead.
 still throws `ChannelClosedException`, and subscribers attached before the
 close receive the same signals as before.
 
+### Groovy 6.0.1 — static type checking applies the wildcard containment rules of JLS 4.5.1 (GROOVY-12714)
+
+Static type checking (`@TypeChecked` and `@CompileStatic`) was more permissive
+than `javac` about wildcard type arguments. It accepted code that can pollute
+a collection or that `javac` rejects, and it now rejects it:
+
+```groovy
+void add(List<? super Integer> l)    { l.add(1.5d) }          // was accepted
+void narrow(List<? extends Number> n) { List<? extends Integer> i = n }
+void widen(List<? super Integer> n)   { List<? super Number> s = n }
+void copy(List<? extends Number> src) { List<Number> dst = src }
+void take(Collection<CharSequence> c) { }
+void pass(Collection<? extends CharSequence> s) { take(s) }
+```
+
+A `? extends` type argument is contained only in a `? extends` of a supertype,
+a `? super` only in a `? super` of a subtype, and an invariant type argument
+only in itself. A value of a capture type is typed as `javac` types it, and
+the messages now name the capture (`capture-of ? super java.lang.Integer`).
+
+**Who is affected (source).** Statically typed code that compiled with 6.0.0
+and relied on the looser rules fails with `Incompatible generic argument types`
+or `Cannot call ... with arguments`. The code was unsound, so the fix is in the
+declaration: take the wildcard type (`Collection<? extends CharSequence>`),
+declare the consumer with the supertype (`List<? super Number>`), or copy
+(`new ArrayList<Number>(src)`). If a declaration cannot change, the code can be
+compiled dynamically: leave the class without `@CompileStatic` or
+`@TypeChecked`, or annotate the affected methods, the caller included, with
+`@CompileDynamic`. The checks are then not made at all, so a value of the wrong
+type is stored without complaint. Compiled classes are not affected.
+
+**What 6.0.1 still accepts, as 6.0.0 did (GROOVY-12755, GROOVY-12756,
+GROOVY-12757).** These are not rules of GROOVY-12714 and are kept so that a
+program 6.0.0 compiled keeps compiling:
+
+- A value that is not a `Class` may be assigned to a parameterized `Class`
+  variable: `Class<String> c = 'java.lang.String'`, or `targetType = types[0]`
+  for a `java.lang.reflect.Type`.
+- `x.getClass()` and `x.class` are accepted for a `Class<? extends T>` when the
+  type of `x` is within `T`, including a type given by `instanceof` without a
+  binding. They keep the type `Class<?>`. `javac` rejects
+  `Class<String> c = s.getClass()`; Groovy 6.0.1 does not.
+- A type variable that a generic call leaves open, and that no enclosing method
+  or class declares, is not checked against the target and takes its type from
+  it: `Consumer<Integer> c = toConsumer(C::takeNumber)`.
+
+A `Class<?>` that is not the class of a receiver is still rejected for a
+bounded `Class`, as is `o.getClass()` for an `Object o`.
+
 ## The binary-compatibility check
 
 The [`subprojects/binary-compatibility/`](subprojects/binary-compatibility)
