@@ -236,6 +236,100 @@ final class PackedClosuresTransformTest {
         assertEquals(36, d.total([1, 2, 3], 10))
     }
 
+    // GROOVY-12661
+    @Test
+    void rehydrateGoesThroughTheDelegateGuard() {
+        // Closure.rehydrate writes delegate, owner and thisObject on the copy directly, past
+        // setDelegate's guard, and the hoisted body kept calling the original owner: the new
+        // delegate or owner was silently ignored. On the dynamic trust path it now fails fast like
+        // setDelegate. null and the original owner stay allowed (dehydrate, and the round trip).
+        String src = '''
+            class Del { String foo() { 'delegate' } }
+            @groovy.transform.PackedClosures
+            class O {
+                String name
+                String foo() { 'owner ' + name }
+                static String attempt(Closure c, d, o, t) {
+                    try { c.rehydrate(d, o, t)() } catch (UnsupportedOperationException e) { e.message }
+                }
+                List run(Del d, O other) {
+                    def c = { -> foo() }
+                    assert c instanceof org.codehaus.groovy.runtime.PackedClosure
+                    [attempt(c, d, this, this), attempt(c, null, other, other), attempt(c, null, this, other),
+                     attempt(c, null, other, this), attempt(c, d, d, d),
+                     attempt(c, null, this, this), attempt(c, this, this, this), attempt(c, null, this, null),
+                     attempt(c.dehydrate(), null, this, this), c.dehydrate()()]
+                }
+                @groovy.transform.PackedClosures(mode = groovy.transform.PackedClosures.PackMode.DISABLED)
+                List unpacked(Del d, O other) {
+                    def c = { -> foo() }
+                    [attempt(c, d, this, this), attempt(c, null, other, other), attempt(c, d, d, d)]
+                }
+                static List check() {
+                    def a = new O(name: 'a')
+                    [a.run(new Del(), new O(name: 'b')), a.unpacked(new Del(), new O(name: 'b'))]
+                }
+            }
+            O.check()
+        '''
+        def (packed, unpacked) = instance(src)
+        [packed[0], packed[4]].each {
+            assertTrue(it.startsWith('Cannot set a delegate on a @PackedClosures closure'), it)
+        }
+        packed[1..3].each {
+            assertTrue(it.startsWith('Cannot rehydrate a @PackedClosures closure') && it.contains('different owner'), it)
+        }
+        assertEquals(['owner a'] * 5, packed[5..9])
+        // the class-based closure honours the new owner, which the packed body cannot
+        assertEquals(['owner a', 'owner b', 'delegate'], unpacked)
+    }
+
+    // GROOVY-12661
+    @Test
+    void compileStaticRehydrateStoresAndIgnoresADelegate() {
+        // a @CompileStatic packed closure is proven owner-resolved, so, as with a @CompileStatic
+        // closure class, a delegate passed to rehydrate is stored and ignored rather than refused
+        String src = '''
+            class Del { String foo() { 'delegate' } }
+            @groovy.transform.CompileStatic
+            @groovy.transform.PackedClosures
+            class O {
+                String foo() { 'owner' }
+                List run(Del d) {
+                    Closure c = { -> foo() }
+                    assert c instanceof org.codehaus.groovy.runtime.PackedClosure
+                    Closure r = c.rehydrate(d, this, this)
+                    [r.delegate.is(d), r()]
+                }
+            }
+            new O().run(new Del())
+        '''
+        assertEquals([true, 'owner'], instance(src))
+    }
+
+    // GROOVY-12661
+    @Test
+    void closureWithNoFreeNameCanBeRehydratedElsewhere() {
+        // a body with no free name cannot observe a new delegate, owner or this object, so on the
+        // dynamic trust path, as on the flag's syntactic path, rehydrating it onto another object
+        // (the DSL builder idiom) keeps working and a set delegate is stored and ignored
+        String src = '''
+            @groovy.transform.PackedClosures
+            class O {
+                List run() {
+                    def c = { x -> x + 1 }
+                    assert c instanceof org.codehaus.groovy.runtime.PackedClosure
+                    def other = new Object()
+                    Closure r = c.rehydrate(other, other, other)
+                    c.delegate = other
+                    [r(41), r.owner.is(other), r.thisObject.is(other), c(1), c.delegate.is(other)]
+                }
+            }
+            new O().run()
+        '''
+        assertEquals([42, true, true, 2, true], instance(src))
+    }
+
     @Test
     void inheritedPackedClosureResolvesToItsOwnDeclaringClass() {
         // A superclass's packed closure must not dispatch to a same-named hoisted method that a
