@@ -3424,7 +3424,7 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
     /**
      * Returns {@code Iterable<E>} for the call a {@code for await} loop makes to
      * convert its source, {@code AsyncSupport.toIterable(source)}, where {@code E}
-     * is the element type of an array, {@code Iterable}, {@code Iterator} or
+     * is the element type of a non-primitive array, {@code Iterable}, {@code Iterator} or
      * {@code Flow.Publisher} source. The method declares {@code <T> Iterable<T>}
      * and takes an {@code Object}, so nothing else gives {@code T} a type.
      *
