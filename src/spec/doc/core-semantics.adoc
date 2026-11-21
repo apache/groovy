@@ -990,6 +990,29 @@ include::../test/CoercionTest.groovy[tags=method_call_with_implicit_coercion,ind
 As you can see, this has the advantage of letting you use the closure syntax for method calls, that is to say put the
 closure outside the parenthesis, improving the readability of your code.
 
+==== Lambdas and method references for a type parameter
+
+A method may declare the parameter a lambda or method reference is passed for with a type parameter, such as `E` of
+`List.add(E)` or `V` of `Map.put(K, V)`, whose erasure is `Object`. When statically compiled code binds that type
+parameter to a SAM interface, for instance `Function<String, String>` for a `Map<String, Function<String, String>>`,
+the lambda or method reference is compiled for the interface:
+
+[source,groovy]
+----
+include::../test/CoercionTest.groovy[tags=functional_literal_for_type_parameter,indent=0]
+----
+
+The stored value is an instance of the interface, as when it is assigned to a variable of the interface type, and not
+a closure: dynamically compiled code calls it through the interface's method.
+
+[source,groovy]
+----
+include::../test/CoercionTest.groovy[tags=functional_literal_for_type_parameter_assertions,indent=0]
+----
+
+Dynamically compiled and type-checked (`@TypeChecked`) code are unchanged: there a lambda for such a parameter is
+compiled as a closure, and type-checked code rejects a method reference for it.
+
 ==== Closure to arbitrary type coercion
 
 In addition to SAM types, a closure can be coerced to any type and in particular interfaces. Let's define the

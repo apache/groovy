@@ -252,6 +252,30 @@ final class CoercionTest {
     }
 
     @Test
+    void testFunctionalLiteralForATypeParameter() {
+        assertScript '''
+            import groovy.transform.CompileStatic
+            import java.util.function.Function
+
+            // tag::functional_literal_for_type_parameter[]
+            @CompileStatic
+            Map<String, Function<String, String>> commands() {
+                Map<String, Function<String, String>> commands = [:]
+                commands.put('shout', (String s) -> s.toUpperCase()) // V of put(K, V)
+                commands.put('trim', String::trim)
+                commands
+            }
+            // end::functional_literal_for_type_parameter[]
+
+            // tag::functional_literal_for_type_parameter_assertions[]
+            def commands = commands()
+            assert commands.shout.apply('Hi') == 'HI'     // the lambda is a Function
+            assert commands.trim.apply(' Hi ') == 'Hi'    // and so is the method reference
+            // end::functional_literal_for_type_parameter_assertions[]
+        '''
+    }
+
+    @Test
     void testClosureCoercionToInterface() {
         assertScript '''
             // tag::foobar_interface[]
