@@ -192,8 +192,10 @@ import static groovy.test.GroovyAssert.shouldFail
         shouldFail GroovyCastException, '''
             EnumMap m = [:] // constructor fails on empty map
         '''
-        shouldFail GroovyCastException, '''
-            SortedMap m = [:] // no constructor for interface
+        // GROOVY-12643
+        assertScript '''
+            SortedMap m = [:]
+            assert m instanceof TreeMap
         '''
     }
 

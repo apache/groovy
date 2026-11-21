@@ -24,7 +24,7 @@ dependencies {
     api project(':')
     implementation projects.groovyJson
     implementation projects.groovyXml
-    testRuntimeOnly "org.jsoup:jsoup:1.23.2"
+    testRuntimeOnly "org.jsoup:jsoup:1.24.1"
     testImplementation projects.groovyTest
 }
 

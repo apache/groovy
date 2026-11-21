@@ -89,8 +89,8 @@ Groovy contracts supports the following feature set:
 
 == The Stack Example
 
-Currently, Groovy contracts supports 3 annotations: @Invariant, @Requires and @Ensures – all of them work
-as annotations with closures, where closures allow you to specify arbitrary code pieces as annotation parameters:
+The stack example uses `@Invariant`, `@Requires` and `@Ensures`. Each is an annotation whose parameter is a closure, so the condition can be any Groovy expression.
+`@Modifies` and `@Decreases`, listed above, are further contract annotations and are not used in this example:
 
 [source,groovy]
 ----

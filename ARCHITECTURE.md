@@ -78,7 +78,7 @@ enum that AST transformations and customizers attach to:
 | 3 | `CONVERSION` | CST → AST (`ModuleNode` / `ClassNode` / `MethodNode` / ...)                             | `AstBuilder` |
 | 4 | `SEMANTIC_ANALYSIS` | Class resolution, import handling, validity checks the grammar can't catch              | `ResolveVisitor`, `ClassNodeResolver`, `StaticImportVisitor`, `AnnotationConstantsVisitor` |
 | 5 | `CANONICALIZATION` | Fill in the AST: synthesized members, generic types, most local AST transforms run here | `ASTTransformationVisitor`, `GenericsVisitor` |
-| 6 | `INSTRUCTION_SELECTION` | Optimisations and instruction-set selection; `@CompileStatic` / `@TypeChecked` run here | `OptimizerVisitor`, `StaticTypeCheckingVisitor` |
+| 6 | `INSTRUCTION_SELECTION` | Pattern matching lowered to ordinary code first (GEP-19); optimisations and instruction-set selection; `@CompileStatic` / `@TypeChecked` run here | `PatternLowering`, `OptimizerVisitor`, `StaticTypeCheckingVisitor` |
 | 7 | `CLASS_GENERATION` | AST → bytecode in memory                                                                | `AsmClassGenerator`, `Verifier`, classes under `classgen/asm/` |
 | 8 | `OUTPUT` | Write generated `.class` files                                                          | `CompilationUnit` output stage |
 | 9 | `FINALIZATION` | Cleanup, `Janitor` callbacks                                                            | `CompilationUnit`, `Janitor` |

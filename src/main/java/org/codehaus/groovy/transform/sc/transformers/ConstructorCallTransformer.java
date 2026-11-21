@@ -35,6 +35,7 @@ import org.codehaus.groovy.classgen.BytecodeExpression;
 import org.codehaus.groovy.classgen.asm.BytecodeHelper;
 import org.codehaus.groovy.classgen.asm.CompileStack;
 import org.codehaus.groovy.classgen.asm.OperandStack;
+import org.codehaus.groovy.classgen.asm.sc.RuntimePackageCheck;
 import org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport;
 import org.codehaus.groovy.transform.stc.StaticTypeCheckingVisitor;
 import org.objectweb.asm.Label;
@@ -185,11 +186,14 @@ public class ConstructorCallTransformer {
             mv.visitTypeInsn(NEW, ctorTypeName);
             mv.visitInsn(DUP);
             String signature = "()V";
+            Parameter[] params = Parameter.EMPTY_ARRAY;
             if (innerClassCall && ctorType.getOuterClass() != null) {
                 acg.visitVariableExpression(varX("this")); // GROOVY-11122
-                Parameter[] params = {new Parameter(ctorType.getOuterClass(),"$p$")};
+                params = new Parameter[]{new Parameter(ctorType.getOuterClass(),"$p$")};
                 signature = BytecodeHelper.getMethodDescriptor(ClassHelper.VOID_TYPE, params);
             }
+            ConstructorNode ctor = ctorType.getDeclaredConstructor(params);
+            if (ctor != null) RuntimePackageCheck.checkConstructor(acg.getController(), ctor, false, originalCall);
             mv.visitMethodInsn(INVOKESPECIAL, ctorTypeName, "<init>", signature, false);
             mv.visitVarInsn(ASTORE, tmpObj);
 

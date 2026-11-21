@@ -51,6 +51,7 @@ import org.codehaus.groovy.classgen.asm.WriterControllerFactory;
 import org.codehaus.groovy.classgen.asm.sc.StaticCompilationMopWriter;
 import org.codehaus.groovy.control.CompilationUnit.IPrimaryClassNodeOperation;
 import org.codehaus.groovy.control.SourceUnit;
+import org.codehaus.groovy.transform.stc.ExtensionMethodNode;
 import org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport;
 import org.codehaus.groovy.transform.stc.StaticTypeCheckingVisitor;
 import org.codehaus.groovy.transform.trait.Traits;
@@ -68,6 +69,7 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.args;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.callX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.classX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.ctorThisS;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.getSetterName;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
 import static org.codehaus.groovy.ast.tools.GenericsUtils.addMethodGenerics;
 import static org.codehaus.groovy.ast.tools.GenericsUtils.applyGenericsContextToPlaceHolders;
@@ -405,8 +407,12 @@ public class StaticCompilationVisitor extends StaticTypeCheckingVisitor {
                 ClassNode declaringClass = node.getDeclaringClass();
                 if (declaringClass != null) {
                     if (StaticTypeCheckingSupport.implementsInterfaceOrIsSubclassOf(declaringClass, ClassHelper.LIST_TYPE)) {
-                        boolean spread = declaringClass.getDeclaredField(node.getName()) != node;
-                        pexp.setSpreadSafe(spread);
+                        boolean declaredField = declaringClass.getDeclaredField(node.getName()) == node;
+                        // GROOVY-12534: the virtual field for an extension setter is not an element
+                        // property. A declared field, or a real one-argument setter, is unchanged.
+                        if (declaredField || declaresUnarySetter(declaringClass, node.getName())) {
+                            pexp.setSpreadSafe(!declaredField);
+                        }
                     }
                     rType.set(declaringClass);
                 }
@@ -417,7 +423,10 @@ public class StaticCompilationVisitor extends StaticTypeCheckingVisitor {
                 if (visitor != null) visitor.visitMethod(node);
                 ClassNode declaringClass = node.getDeclaringClass();
                 if (declaringClass != null) {
-                    if (StaticTypeCheckingSupport.implementsInterfaceOrIsSubclassOf(declaringClass, ClassHelper.LIST_TYPE)) {
+                    if (StaticTypeCheckingSupport.implementsInterfaceOrIsSubclassOf(declaringClass, ClassHelper.LIST_TYPE)
+                            // GROOVY-12534: an extension getter's declaring class is its receiver,
+                            // which never declares the method. That is not an element property.
+                            && !(node instanceof ExtensionMethodNode)) {
                         List<MethodNode> properties = declaringClass.getDeclaredMethods(node.getName());
                         boolean spread = true;
                         for (MethodNode mn : properties) {
@@ -466,6 +475,19 @@ public class StaticCompilationVisitor extends StaticTypeCheckingVisitor {
             }
         }
         return exists;
+    }
+
+    /**
+     * True when {@code declaringClass} itself declares a one-argument setter for
+     * the property. Extension setters are not declared on the receiver.
+     */
+    private static boolean declaresUnarySetter(final ClassNode declaringClass, final String propertyName) {
+        for (MethodNode method : declaringClass.getDeclaredMethods(getSetterName(propertyName))) {
+            if (method.getParameters().length == 1) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**

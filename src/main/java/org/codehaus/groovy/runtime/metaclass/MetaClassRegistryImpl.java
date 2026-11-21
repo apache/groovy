@@ -223,12 +223,6 @@ public class MetaClassRegistryImpl implements MetaClassRegistry {
     }
 
     /**
-     * Looks for a class called 'groovy.runtime.metaclass.CustomMetaClassCreationHandle' and if it exists uses it as the MetaClassCreationHandle
-     * otherwise uses the default
-     *
-     * @see groovy.lang.MetaClassRegistry.MetaClassCreationHandle
-     */
-    /**
      * Detects when the concurrent API classes appear in more than one
      * classpath location — typically when both Groovy core and the
      * standalone groovy-concurrent-java jar are present. Logs a warning
@@ -256,6 +250,13 @@ public class MetaClassRegistryImpl implements MetaClassRegistry {
         }
     }
 
+    /**
+     * Looks for a class called {@code groovy.runtime.metaclass.CustomMetaClassCreationHandle}
+     * and, if it exists, uses it as the meta-class creation handle.
+     * Otherwise uses the default.
+     *
+     * @see groovy.lang.MetaClassRegistry.MetaClassCreationHandle
+     */
     private void installMetaClassCreationHandle() {
            try {
                final Class customMetaClassHandle = Class.forName("groovy.runtime.metaclass.CustomMetaClassCreationHandle");
@@ -374,7 +375,7 @@ public class MetaClassRegistryImpl implements MetaClassRegistry {
      * @return the metaclass for the object
      */
     public MetaClass getMetaClass(Object obj) {
-        Class theClass = obj instanceof Class ? (Class) obj : obj.getClass();
+        Class theClass = obj instanceof Class c ? c : obj.getClass();
         return ClassInfo.getClassInfo(theClass).getMetaClass(obj);
     }
 
@@ -427,7 +428,7 @@ public class MetaClassRegistryImpl implements MetaClassRegistry {
      * @param theMetaClass the new metaclass for this instance
      */
     public void setMetaClass(Object obj, MetaClass theMetaClass) {
-        Class theClass = obj instanceof Class ? (Class)obj : obj.getClass();
+        Class theClass = obj instanceof Class c ? c : obj.getClass();
         ClassInfo info = ClassInfo.getClassInfo(theClass);
         MetaClass mc;
         info.lock();
@@ -457,6 +458,7 @@ public class MetaClassRegistryImpl implements MetaClassRegistry {
     /**
      * Gets a handle internally used to create MetaClass implementations
      * WARNING: experimental code, likely to change soon
+     *
      * @return the handle
      */
     @Override
@@ -470,6 +472,7 @@ public class MetaClassRegistryImpl implements MetaClassRegistry {
      * reuse the old handle to keep custom logic and to use the
      * default logic as fall back.
      * WARNING: experimental code, likely to change soon
+     *
      * @param handle the handle
      */
     @Override
@@ -482,6 +485,7 @@ public class MetaClassRegistryImpl implements MetaClassRegistry {
 
     /**
      * Adds a listener for constant metaclasses.
+     *
      * @param listener the listener
      */
     @Override
@@ -494,6 +498,7 @@ public class MetaClassRegistryImpl implements MetaClassRegistry {
 
     /**
      * Adds a listener for constant metaclasses. This listener cannot be removed!
+     *
      * @param listener the listener
      */
     @Override
@@ -505,6 +510,7 @@ public class MetaClassRegistryImpl implements MetaClassRegistry {
 
     /**
      * Removes a constant metaclass listener.
+     *
      * @param listener the listener
      */
     @Override
@@ -648,6 +654,13 @@ public class MetaClassRegistryImpl implements MetaClassRegistry {
     private class DefaultModuleListener implements ExtensionModuleScanner.ExtensionModuleListener {
         private final Map<CachedClass, List<MetaMethod>> map;
 
+        /**
+         * Retains {@code map} for meta methods discovered from extension modules.
+         * The map is not copied. Registration appends each method to the list for
+         * its declaring class and creates that list when the class is absent.
+         *
+         * @param map declaring class to the meta methods registered for it
+         */
         public DefaultModuleListener(final Map<CachedClass, List<MetaMethod>> map) {
             this.map = map;
         }

@@ -67,16 +67,28 @@ class GroovyPrinter extends DefaultPrinter {
     private final ConfigurationPath configPath
     private Names names // cached resolved syntax names; built lazily, cleared on refresh
 
+    /**
+     * Keeps {@code configPath} for nanorc lookup and passes the engine and
+     * path through to {@link DefaultPrinter}.
+     */
     GroovyPrinter(ScriptEngine engine, ConfigurationPath configPath) {
         super(engine, configPath)
         this.configPath = configPath
     }
 
+    /**
+     * Rewrites style names in {@code options} to the configured nanorc
+     * spelling, then prints {@code object}.
+     */
     @Override
     void println(Map<String, Object> options, Object object) {
         super.println(normalizeStyles(options), object)
     }
 
+    /**
+     * Rewrites style names in {@code options} to the configured nanorc
+     * spelling, then highlights {@code exception}.
+     */
     @Override
     protected void highlightAndPrint(Map<String, Object> options, Throwable exception) {
         super.highlightAndPrint(normalizeStyles(options), exception)
@@ -252,6 +264,10 @@ class GroovyPrinter extends DefaultPrinter {
         /** Lower-cased name -&gt; actual spelling, only where unambiguous. */
         final Map<String, String> uniqueByLower
 
+        /**
+         * Stores the exact syntax spellings and the lower-case map of spellings
+         * that were seen only once.
+         */
         Names(Set<String> actual, Map<String, String> uniqueByLower) {
             this.actual = actual
             this.uniqueByLower = uniqueByLower

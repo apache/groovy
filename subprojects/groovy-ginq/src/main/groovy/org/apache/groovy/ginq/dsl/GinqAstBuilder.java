@@ -152,6 +152,13 @@ public class GinqAstBuilder extends CodeVisitorSupport implements SyntaxErrorRep
         }
 
         GinqAstBaseVisitor cleanupVisitor = new GinqAstBaseVisitor() {
+            /**
+             * Removes {@code call} from the unrecognized-clause list, then continues
+             * the visit. A call that appears in the built expression is therefore
+             * not reported as an unknown clause.
+             *
+             * @param call the method call being visited
+             */
             @Override
             public void visitMethodCallExpression(MethodCallExpression call) {
                 ignoredMethodCallExpressionList.remove(call);
