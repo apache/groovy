@@ -674,6 +674,16 @@ public class StaticTypesMethodReferenceExpressionWriter extends MethodReferenceE
         }).thenComparing(StaticTypesMethodReferenceExpressionWriter::isExtensionMethod)).orElse(null);
     }
 
+    /**
+     * Returns the methods named {@code name} that a method reference on {@code type} may use: its methods,
+     * the default methods of its interfaces and, for an abstract type, their public instance methods, and the
+     * extension methods, that are visible from the current class.
+     * <p>
+     * A private method of a superclass is left out, since it is not a member of the type (JLS 8.2), unless it
+     * is declared by the declared type of the variable {@code typeOrTargetRef}, whose type flow typing narrowed
+     * to a subclass: the reference is then made through the declared type. Unlike a call, a static method or a
+     * reference made in the declaring class is no exception, because dynamic Groovy fails on those.
+     */
     private List<MethodNode> findVisibleMethods(final String name, final ClassNode type, final Expression typeOrTargetRef) {
         List<MethodNode> methods = type.getMethods(name);
         // GROOVY-10791, GROOVY-11467: include non-static interface methods
@@ -689,13 +699,15 @@ public class StaticTypesMethodReferenceExpressionWriter extends MethodReferenceE
         methods.addAll(findDGMMethodsForClassNode(controller.getSourceUnit().getClassLoader(), type, name));
         methods = filterMethodsByVisibility(methods, controller.getClassNode());
 
-        // a private method of a superclass is not a member of the type (JLS 8.2),
-        // but it is one of the declared type of a variable whose type is narrower
         ClassNode declaredType = getDeclaredType(typeOrTargetRef);
         methods.removeIf(method -> isInheritedPrivateMethod(method, type) && !method.getDeclaringClass().equals(declaredType));
         return methods;
     }
 
+    /**
+     * Returns the declared type of a variable, which flow typing may have narrowed: the origin type of a
+     * variable that is not {@code this} or {@code super} and not a dynamic variable, or else {@code null}.
+     */
     private static ClassNode getDeclaredType(final Expression expression) {
         if (expression instanceof VariableExpression variable && !variable.isThisExpression() && !variable.isSuperExpression()) {
             Variable target = variable;

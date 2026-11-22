@@ -3350,14 +3350,18 @@ out:    for (ClassNode type : todo) {
     }
 
     /**
-     * Determines if a method is a private method that a receiver of the given type
-     * would only inherit from a superclass. Private members are not inherited
-     * (JLS 8.2), so such a method is not a member of the receiver type, and dynamic
-     * Groovy does not find it there either.
+     * Determines if a method is private, is not an extension method, and is declared
+     * by a class other than the given receiver type. For a method found on that type
+     * or its superclasses, that is a private method the receiver would only inherit
+     * from a superclass. Private members are not inherited (JLS 8.2), so such a
+     * method is not a member of the receiver type, and dynamic Groovy does not find
+     * it there either. An extension method is never one: it is not a method of a
+     * superclass but one that an extension class adds to the type.
      *
      * @param method the candidate method
      * @param receiverType the type that the method is looked up on
-     * @return {@code true} if the method is private and declared by another class
+     * @return {@code true} if the method is private, is not an {@code ExtensionMethodNode},
+     *         and is declared by a class other than {@code receiverType}
      * @since 7.0.0
      */
     @Internal

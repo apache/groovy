@@ -262,6 +262,10 @@ public class StaticInvocationWriter extends InvocationWriter {
         return objectMethod != null && objectMethod.isPublic() && !objectMethod.isStatic() ? objectMethod : null;
     }
 
+    /**
+     * Returns the expression for the instance of {@code target} that code in {@code source} uses, which
+     * may be an enclosing instance of a subclass of {@code target}, see {@link #thisObjectExpression(ClassNode, ClassNode, boolean)}.
+     */
     private Expression thisObjectExpression(final ClassNode source, final ClassNode target) {
         return thisObjectExpression(source, target, false);
     }

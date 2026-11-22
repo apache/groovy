@@ -9193,6 +9193,28 @@ trying: for (ClassNode[] signature : signatures) {
 
     /**
      * Finds candidate methods matching the supplied receiver, name, and argument types.
+     * <p>
+     * A private method that the receiver only inherits from a superclass is not a
+     * candidate, as it is not a member of the receiver (JLS 8.2) and dynamic Groovy
+     * does not find it there either. It stays one when it is declared by the declared
+     * type of the receiver variable, which flow typing may have narrowed to a subclass
+     * (this type is known only under static compilation, where the call is made
+     * through it), when it is static, when the call is made in its declaring class,
+     * and when the receiver is an enum constant body or an anonymous class created in
+     * a static context nested in its declaring class, which calls it on itself, see
+     * {@link #removeInheritedPrivateMethods}.
+     * <p>
+     * When the receiver is a class whose code this is, or an inner class that is a
+     * subclass of one, and none of its own methods accepts the argument types (or
+     * none are given), the methods of its outer classes are candidates too, only the
+     * static ones beyond a class that has no enclosing instance: dynamic Groovy calls
+     * such a method on the enclosing instance, and static compilation does too, see
+     * {@link StaticTypesMarker#ENCLOSING_INSTANCE_OF_RECEIVER}.
+     * <p>
+     * These rules are for calls. A method pointer or reference ({@code x.&m},
+     * {@code x::m}) is resolved elsewhere, without the exceptions for a static method,
+     * the declaring class and an instance with no enclosing instance, because dynamic
+     * Groovy fails on those.
      */
     protected List<MethodNode> findMethod(ClassNode receiver, final String name, final ClassNode... args) {
         if (isPrimitiveType(receiver)) receiver = getWrapper(receiver);
@@ -9464,7 +9486,9 @@ trying: for (ClassNode[] signature : signatures) {
     }
 
     /**
-     * Returns the declared type of a variable, which flow typing may have narrowed.
+     * Returns the declared type of a variable, which flow typing may have narrowed:
+     * the origin type of a variable that is not {@code this} or {@code super} and
+     * not a dynamic variable, or else {@code null}.
      */
     private static ClassNode getDeclaredType(final Expression expression) {
         if (expression instanceof VariableExpression variable && !variable.isThisExpression() && !variable.isSuperExpression()) {
