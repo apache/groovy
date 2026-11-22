@@ -25,6 +25,7 @@ import org.codehaus.groovy.runtime.FormatHelper;
 
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -57,6 +58,12 @@ public class XmlNodePrinter {
     private boolean namespaceAware = true;
     private boolean preserveWhitespace = false;
     private boolean expandEmptyElements = false;
+    /**
+     * Prefix bindings in scope for the node currently being printed, taken from
+     * declarations recorded on the node and its ancestors. Distinct from
+     * {@link NamespaceContext}, which tracks declarations already written.
+     */
+    private Map<String, String> inScopeSourceNamespaces = Map.of();
 
     /**
      * Creates a printer that writes to the supplied writer using two-space indentation and double quotes.
@@ -124,7 +131,15 @@ public class XmlNodePrinter {
      * @param node the root node to serialize
      */
     public void print(Node node) {
-        print(node, new NamespaceContext());
+        Map<String, String> previousScopes = inScopeSourceNamespaces;
+        try {
+            if (node != null) {
+                inScopeSourceNamespaces = namespacesFromAncestors(node);
+            }
+            print(node, new NamespaceContext());
+        } finally {
+            inScopeSourceNamespaces = previousScopes;
+        }
     }
 
     /**
@@ -213,54 +228,63 @@ public class XmlNodePrinter {
      * @param ctx the namespace context active for this node
      */
     protected void print(Node node, NamespaceContext ctx) {
-        /*
-         * Handle empty elements like '<br/>', '<img/> or '<hr noshade="noshade"/>.
-         */
-        if (isEmptyElement(node)) {
-            printLineBegin();
-            out.print("<");
-            out.print(getName(node));
-            if (ctx != null) {
-                printNamespace(node, ctx);
-            }
-            printNameAttributes(node.attributes(), ctx);
-            if (expandEmptyElements) {
-                out.print("></");
+        Map<String, String> previousScopes = inScopeSourceNamespaces;
+        try {
+            /*
+             * Handle empty elements like '<br/>', '<img/> or '<hr noshade="noshade"/>.
+             */
+            if (isEmptyElement(node)) {
+                inScopeSourceNamespaces = copyAndApplyLocal(previousScopes, node);
+                printLineBegin();
+                out.print("<");
                 out.print(getName(node));
-                out.print(">");
-            } else {
-                out.print("/>");
+                if (ctx != null) {
+                    printNamespace(node, ctx);
+                }
+                printNameAttributes(node.attributes(), ctx);
+                printAttributeValueNamespaces(node, ctx);
+                if (expandEmptyElements) {
+                    out.print("></");
+                    out.print(getName(node));
+                    out.print(">");
+                } else {
+                    out.print("/>");
+                }
+                printLineEnd();
+                out.flush();
+                return;
             }
-            printLineEnd();
-            out.flush();
-            return;
-        }
 
-        /*
-         * Hook for extra processing, e.g. GSP tag element!
-         */
-        if (printSpecialNode(node)) {
-            out.flush();
-            return;
-        }
+            inScopeSourceNamespaces = copyAndApplyLocal(previousScopes, node);
 
-        /*
-         * Handle normal element like <html> ... </html>.
-         */
-        Object value = node.value();
-        if (value instanceof List) {
-            printName(node, ctx, true, isListOfSimple((List) value));
-            printList((List) value, ctx);
-            printName(node, ctx, false, isListOfSimple((List) value));
-            out.flush();
-            return;
-        }
+            /*
+             * Hook for extra processing, e.g. GSP tag element!
+             */
+            if (printSpecialNode(node)) {
+                out.flush();
+                return;
+            }
 
-        // treat as simple type - probably a String
-        printName(node, ctx, true, preserveWhitespace);
-        printSimpleItemWithIndent(value);
-        printName(node, ctx, false, preserveWhitespace);
-        out.flush();
+            /*
+             * Handle normal element like <html> ... </html>.
+             */
+            Object value = node.value();
+            if (value instanceof List) {
+                printName(node, ctx, true, isListOfSimple((List) value));
+                printList((List) value, ctx);
+                printName(node, ctx, false, isListOfSimple((List) value));
+                out.flush();
+                return;
+            }
+
+            // treat as simple type - probably a String
+            printName(node, ctx, true, preserveWhitespace);
+            printSimpleItemWithIndent(value);
+            printName(node, ctx, false, preserveWhitespace);
+            out.flush();
+        } finally {
+            inScopeSourceNamespaces = previousScopes;
+        }
     }
 
     private boolean isListOfSimple(List value) {
@@ -358,6 +382,7 @@ public class XmlNodePrinter {
         }
         if (begin) {
             printNameAttributes(node.attributes(), ctx);
+            printAttributeValueNamespaces(node, ctx);
         }
         out.print(">");
         if (!preserve || !begin) printLineEnd();
@@ -428,6 +453,185 @@ public class XmlNodePrinter {
             }
             out.print(quote);
             printNamespace(entry.getKey(), ctx);
+        }
+    }
+
+    /**
+     * Emits prefix bindings required by namespace-qualified values of attributes on this node.
+     * A value token is treated as a qualified name when it contains one colon and both halves
+     * are NCNames. {@link CharSequence} values, including Groovy strings, are scanned.
+     * Bindings already written for an element or attribute name are left in place.
+     * Prefixes reserved by XML ({@code xml} and {@code xmlns}, any case) are not redeclared.
+     *
+     * @param node the element whose attribute values should be examined
+     * @param ctx the namespace context tracking declarations already emitted; ignored when {@code null}
+     */
+    private void printAttributeValueNamespaces(Node node, NamespaceContext ctx) {
+        if (!namespaceAware || ctx == null) {
+            return;
+        }
+        Map attributes = node.attributes();
+        if (attributes == null || attributes.isEmpty()) {
+            return;
+        }
+        for (Object value : attributes.values()) {
+            if (!(value instanceof CharSequence sequence)) {
+                continue;
+            }
+            String text = sequence.toString();
+            if (text.indexOf(':') < 0) {
+                continue;
+            }
+            declarePrefixesReferencedBy(text, ctx);
+        }
+    }
+
+    private void declarePrefixesReferencedBy(String text, NamespaceContext ctx) {
+        int length = text.length();
+        int index = 0;
+        while (index < length) {
+            while (index < length && isXmlSpace(text.charAt(index))) {
+                index++;
+            }
+            if (index >= length) {
+                return;
+            }
+            int start = index;
+            while (index < length && !isXmlSpace(text.charAt(index))) {
+                index++;
+            }
+            declarePrefixIfQName(text, start, index, ctx);
+        }
+    }
+
+    private void declarePrefixIfQName(String text, int start, int end, NamespaceContext ctx) {
+        int colon = -1;
+        for (int i = start; i < end; i++) {
+            if (text.charAt(i) == ':') {
+                if (colon >= 0) {
+                    return;
+                }
+                colon = i;
+            }
+        }
+        if (colon <= start || colon >= end - 1) {
+            return;
+        }
+        if (!isNcName(text, start, colon) || !isNcName(text, colon + 1, end)) {
+            return;
+        }
+        String prefix = text.substring(start, colon);
+        if (isReservedNamespacePrefix(prefix)) {
+            return;
+        }
+        String uri = inScopeSourceNamespaces.get(prefix);
+        if (uri == null) {
+            return;
+        }
+        printNamespace(new QName(uri, text.substring(colon + 1, end), prefix), ctx);
+    }
+
+    private static boolean isXmlSpace(char c) {
+        return c == ' ' || c == '\t' || c == '\n' || c == '\r';
+    }
+
+    /**
+     * Prefixes beginning with {@code xml} in any case are reserved by the XML namespaces specification.
+     */
+    private static boolean isReservedNamespacePrefix(String prefix) {
+        return prefix.regionMatches(true, 0, "xml", 0, 3);
+    }
+
+    /**
+     * XML 1.0 NCName over {@code value[start, end)}.
+     */
+    private static boolean isNcName(String value, int start, int end) {
+        int first = value.codePointAt(start);
+        if (!isNameStartChar(first)) {
+            return false;
+        }
+        for (int i = start + Character.charCount(first); i < end; ) {
+            int codePoint = value.codePointAt(i);
+            if (!isNameChar(codePoint)) {
+                return false;
+            }
+            i += Character.charCount(codePoint);
+        }
+        return true;
+    }
+
+    /** XML 1.0 {@code NameStartChar} excluding the colon, which NCName forbids. */
+    private static boolean isNameStartChar(int codePoint) {
+        return codePoint == '_'
+                || (codePoint >= 'A' && codePoint <= 'Z')
+                || (codePoint >= 'a' && codePoint <= 'z')
+                || (codePoint >= 0xC0 && codePoint <= 0xD6)
+                || (codePoint >= 0xD8 && codePoint <= 0xF6)
+                || (codePoint >= 0xF8 && codePoint <= 0x2FF)
+                || (codePoint >= 0x370 && codePoint <= 0x37D)
+                || (codePoint >= 0x37F && codePoint <= 0x1FFF)
+                || (codePoint >= 0x200C && codePoint <= 0x200D)
+                || (codePoint >= 0x2070 && codePoint <= 0x218F)
+                || (codePoint >= 0x2C00 && codePoint <= 0x2FEF)
+                || (codePoint >= 0x3001 && codePoint <= 0xD7FF)
+                || (codePoint >= 0xF900 && codePoint <= 0xFDCF)
+                || (codePoint >= 0xFDF0 && codePoint <= 0xFFFD)
+                || (codePoint >= 0x10000 && codePoint <= 0xEFFFF);
+    }
+
+    /** XML 1.0 {@code NameChar} excluding the colon. */
+    private static boolean isNameChar(int codePoint) {
+        return isNameStartChar(codePoint)
+                || codePoint == '-'
+                || codePoint == '.'
+                || (codePoint >= '0' && codePoint <= '9')
+                || codePoint == 0xB7
+                || (codePoint >= 0x0300 && codePoint <= 0x036F)
+                || (codePoint >= 0x203F && codePoint <= 0x2040);
+    }
+
+    private Map<String, String> copyAndApplyLocal(Map<String, String> inherited, Node node) {
+        Map<String, String> local = node.localNamespaceDeclarations();
+        if (local.isEmpty()) {
+            return inherited;
+        }
+        Map<String, String> inScope = new HashMap<>(inherited.size() + local.size());
+        inScope.putAll(inherited);
+        applyLocalNamespaces(inScope, local);
+        return inScope;
+    }
+
+    private static Map<String, String> namespacesFromAncestors(Node node) {
+        Node parent = node.parent();
+        if (parent == null) {
+            return Map.of();
+        }
+        List<Node> ancestors = new ArrayList<>();
+        for (Node current = parent; current != null; current = current.parent()) {
+            ancestors.add(current);
+        }
+        Map<String, String> inScope = null;
+        for (int i = ancestors.size() - 1; i >= 0; i--) {
+            Map<String, String> local = ancestors.get(i).localNamespaceDeclarations();
+            if (local.isEmpty()) {
+                continue;
+            }
+            if (inScope == null) {
+                inScope = new HashMap<>();
+            }
+            applyLocalNamespaces(inScope, local);
+        }
+        return inScope == null ? Map.of() : inScope;
+    }
+
+    private static void applyLocalNamespaces(Map<String, String> inScope, Map<String, String> local) {
+        for (Map.Entry<String, String> entry : local.entrySet()) {
+            String prefix = entry.getKey();
+            String uri = entry.getValue();
+            if (prefix.isEmpty() || uri.isEmpty()) {
+                continue;
+            }
+            inScope.put(prefix, uri);
         }
     }
 

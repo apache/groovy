@@ -24,6 +24,7 @@ import groovy.lang.GroovySystem;
 import groovy.lang.MetaClass;
 import groovy.lang.Tuple2;
 import groovy.namespace.QName;
+import groovy.transform.Internal;
 import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.runtime.StringGroovyMethods;
@@ -73,6 +74,13 @@ public class Node implements Serializable, Cloneable {
     private Object value;
 
     /**
+     * Prefix bindings declared on this node by a namespace-aware XML parse.
+     * Not part of {@link #attributes()}. Transient so the field does not change
+     * the serialized form of a node.
+     */
+    private transient Map<String, String> localNamespaceDeclarations;
+
+    /**
      * Creates a new Node with the same name, no parent, shallow cloned attributes
      * and if the value is a NodeList, a (deep) clone of those nodes.
      *
@@ -84,7 +92,9 @@ public class Node implements Serializable, Cloneable {
         if (value instanceof NodeList nodes) {
             newValue = nodes.clone();
         }
-        return new Node(null, name, new HashMap(attributes), newValue);
+        Node cloned = new Node(null, name, new HashMap(attributes), newValue);
+        cloned.localNamespaceDeclarations = localNamespaceDeclarations;
+        return cloned;
     }
 
     /**
@@ -250,7 +260,8 @@ public class Node implements Serializable, Cloneable {
             throw new UnsupportedOperationException("Replacing the root node is not supported");
         }
         List tail = getTail();
-        parent().appendNode(n.name(), n.attributes(), n.value());
+        Node replacement = parent().appendNode(n.name(), n.attributes(), n.value());
+        replacement.localNamespaceDeclarations = n.localNamespaceDeclarations;
         parent().children().addAll(tail);
         getParentList(parent()).remove(this);
         this.setParent(null);
@@ -450,6 +461,33 @@ public class Node implements Serializable, Cloneable {
      */
     public Map attributes() {
         return attributes;
+    }
+
+    /**
+     * Prefix-to-URI bindings declared directly on this node, not inherited from its parent.
+     * Empty when the node declares none. Bindings are not exposed through {@link #attributes()}.
+     *
+     * @return an unmodifiable map of prefixes to namespace URIs; never {@code null}
+     */
+    @Internal
+    public Map<String, String> localNamespaceDeclarations() {
+        return localNamespaceDeclarations == null ? Map.of() : localNamespaceDeclarations;
+    }
+
+    /**
+     * Replaces the prefix bindings declared directly on this node.
+     * Null and empty maps clear any bindings previously recorded.
+     *
+     * @param declarations prefix-to-URI bindings, or {@code null} to clear them.
+     *                     Keys and values must be non-null when the map is non-empty.
+     */
+    @Internal
+    public void setLocalNamespaceDeclarations(Map<String, String> declarations) {
+        if (declarations == null || declarations.isEmpty()) {
+            localNamespaceDeclarations = null;
+        } else {
+            localNamespaceDeclarations = Map.copyOf(declarations);
+        }
     }
 
     /**
