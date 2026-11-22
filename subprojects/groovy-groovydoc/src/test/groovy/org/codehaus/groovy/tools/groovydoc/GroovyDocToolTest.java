@@ -226,6 +226,29 @@ public class GroovyDocToolTest extends GroovyTestCase {
                 sqlDoc.contains("java/util/Date.html"));
     }
 
+    // The {@link} tags of a package description are resolved when the package.html
+    // or package-info file is processed. The link to a class of the package must be
+    // rendered even if the package description comes first in the list of files, and
+    // when a package has both a package.html and a package-info file, the package-info
+    // description takes precedence, as with javadoc, whatever the order of the files.
+    public void testPackageDescriptionIndependentOfFileOrder() throws Exception {
+        String base = "org/codehaus/groovy/tools/groovydoc/testfiles/packagelink";
+        htmlTool.add(List.of(
+                base + "/package-info.java",
+                base + "/package.html",
+                base + "/LinkedClass.groovy"));
+
+        MockOutputTool output = new MockOutputTool();
+        htmlTool.renderToOutput(output, MOCK_DIR);
+
+        String packageDoc = output.getText(MOCK_DIR + "/" + base + "/package-summary.html");
+        assertNotNull("Expected package-summary.html in output", packageDoc);
+        assertTrue("The package-info description should be used and link LinkedClass, got:\n" + packageDoc,
+                Pattern.compile("Package info linking to <a href=[^>]*LinkedClass\\.html").matcher(packageDoc).find());
+        assertFalse("The package.html description should be ignored, got:\n" + packageDoc,
+                packageDoc.contains("Package description linking to"));
+    }
+
     // GROOVY-11941: additionalStylesheets property causes templates to emit
     // extra <link rel="stylesheet"> tags at the appropriate relative-root path.
     public void testAdditionalStylesheetsInTemplates() throws Exception {

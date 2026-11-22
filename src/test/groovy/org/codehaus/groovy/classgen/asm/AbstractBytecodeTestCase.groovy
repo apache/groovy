@@ -111,6 +111,8 @@ abstract class AbstractBytecodeTestCase {
 
     /**
      * Compiles a script into bytecode and returns the instructions for a class.
+     * Options include {@code method}, {@code classNamePattern}, and {@code indy}
+     * ({@code true} or {@code false} selects that backend; omitted keeps the default).
      *
      * @param scriptText the script to compile
      * @return the decompiled <code>InstructionSequence</code>
@@ -120,7 +122,14 @@ abstract class AbstractBytecodeTestCase {
         sequence = null
         clazz = null
         classBytes = null
-        def cu = new CompilationUnit()
+        def cu
+        if (options.containsKey('indy')) {
+            def configuration = new CompilerConfiguration()
+            configuration.optimizationOptions.indy = options.indy
+            cu = new CompilationUnit(configuration)
+        } else {
+            cu = new CompilationUnit()
+        }
         def su = cu.addSource('script', scriptText)
         cu.compile(Phases.CONVERSION)
         if (options.conversionAction != null) {

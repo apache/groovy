@@ -37,6 +37,12 @@ import org.codehaus.groovy.ast.stmt.Statement;
  */
 public class LambdaExpression extends ClosureExpression {
     private boolean serializable;
+    /**
+     * Creates a lambda with the given parameters and body.
+     *
+     * @param parameters the lambda parameters
+     * @param code the lambda body
+     */
     public LambdaExpression(Parameter[] parameters, Statement code) {
         super(parameters, code);
     }
@@ -56,10 +62,24 @@ public class LambdaExpression extends ClosureExpression {
         }
     }
 
+    /**
+     * Whether code generation should treat this lambda as serializable.
+     * When set, the generated class receives a {@code serialVersionUID} and
+     * deserialization support. The type checker sets this when a target type
+     * implements {@code Serializable}.
+     *
+     * @return {@code true} when the lambda is marked serializable
+     */
     public boolean isSerializable() {
         return serializable;
     }
 
+    /**
+     * Records whether the generated lambda class should be serializable.
+     *
+     * @param serializable {@code true} to emit serialization support
+     * @see #isSerializable()
+     */
     public void setSerializable(boolean serializable) {
         this.serializable = serializable;
     }

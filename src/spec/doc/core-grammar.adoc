@@ -1624,6 +1624,11 @@ expression ::=
 
 castOperandExpression ::=              /* restricted form of expression */
       castParExpression castOperandExpression
+    | 'async' NL* closureOrLambdaExpression            /* R20 enters */
+    | 'await' NL*
+          ( '(' expression (',' NL* expression)* ')'
+          | expression (',' NL* expression)*
+          )
     | postfixExpression
     | ('~' | '!') NL* castOperandExpression
     | ('++' | '--' | '+' | '-') castOperandExpression
@@ -1657,7 +1662,10 @@ expressionListElement ::=
 here because that character also opens slashy strings (R1).
 
 `castOperandExpression` exists so `(int) a + b` is `((int) a) + b` and
-`(int) ++x` is a cast of a prefix.
+`(int) ++x` is a cast of a prefix. Its `async` and `await` alternatives
+let a cast apply to them, as in `(Awaitable<Integer>) async { 7 }` and
+`(BigDecimal) await(price)`; otherwise `async` and `await` would be read
+as the names of called methods.
 
 `await` takes a full `expression` (or a parenthesised list). So
 `await a + b` is `await (a + b)`.
@@ -2151,7 +2159,7 @@ Each is still a distinct production and is listed above:
 
 | `castOperandExpression`
 | `expression`
-| only cast, postfix, unary not, unary add/sub
+| only cast, `async`, `await`, postfix, unary not, unary add/sub
 
 | `commandPrimary`
 | `primary`

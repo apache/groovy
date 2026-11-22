@@ -842,6 +842,53 @@ final class MethodReferenceTest {
         assert err.message =~ /Possible loss of precision from java.lang.Long to int/
     }
 
+    // GROOVY-12716: only the overloads that the parameter types can select are checked
+    @Test
+    void testMethodPointerToOverloadsSelectedByParameterTypes() {
+        assertScript shell, '''
+            @CompileStatic
+            class C {
+                Function<Integer,Integer> returned() { Math.&abs }
+                static void test() {
+                    Function<Integer,Integer> f = Math.&abs
+                    assert f.apply(-3) == 3
+                    Function<Long,Long> g = Math.&abs
+                    assert g.apply(-4L) == 4L
+                    ToIntFunction<Integer> h = Math.&abs
+                    assert h.applyAsInt(-5) == 5
+                    BiFunction<Integer,Integer,Integer> i = Math.&max
+                    assert i.apply(1, 2) == 2
+                    Function<Number,Number> j = Math.&abs
+                    assert j.apply(-6) == 6
+                    assert j.apply(-7.5d) == 7.5d
+                }
+            }
+            C.test()
+            assert new C().returned().apply(-8) == 8
+        '''
+
+        // a Number may be a Double, which selects abs(double)
+        def err = shouldFail shell, '''
+            @CompileStatic
+            class C {
+                static void test() {
+                    ToIntFunction<Number> f = Math.&abs
+                }
+            }
+        '''
+        assert err.message =~ /Possible loss of precision from double to int/
+
+        err = shouldFail shell, '''
+            @CompileStatic
+            class C {
+                static void test() {
+                    ToIntFunction<Long> f = Math.&abs
+                }
+            }
+        '''
+        assert err.message =~ /Possible loss of precision from long to int/
+    }
+
     // GROOVY-12623: a method pointer still selects its method at run time
     @Test
     void testMethodPointerFromTypeParameterReturnType() {
@@ -2453,6 +2500,71 @@ final class MethodReferenceTest {
         assert err.message =~ /Invalid return type: java.lang.String is not convertible to java.lang.Number/
     }
 
+    // GROOVY-12607
+    @ParameterizedTest
+    @ValueSource(strings=['@TypeChecked','@CompileStatic'])
+    void testIncompatibleReturnType2(String tag) {
+        for (op in ['::','.&']) {
+            for (spec in [['String','int','1'], ['Long','int','1'], ['Boolean','String',"'x'"], ['String','Object',"'x'"]]) {
+                def (type, returnType, value) = spec
+                for (use in ["Supplier<$type> f() { this${op}m }",
+                             "def g() { take(this${op}m) }",
+                             "def g() { Supplier<$type> x = this${op}m }",
+                             "Supplier<$type> x = this${op}m"]) {
+                    def err = shouldFail shell, """
+                        $tag
+                        class C {
+                            $returnType m() { $value }
+                            def take(Supplier<$type> x) { }
+                            $use
+                        }
+                    """
+                    assert err.message =~ /Invalid return type: (java.lang.)?$returnType is not convertible to java.lang.$type/
+                }
+            }
+
+            def err = shouldFail shell, """
+                $tag
+                void test() {
+                    Function<String,Long> f = String${op}length
+                }
+            """
+            assert err.message.contains('Invalid return type: int is not convertible to java.lang.Long')
+        }
+    }
+
+    // GROOVY-12607
+    @ParameterizedTest
+    @ValueSource(strings=['@TypeChecked','@CompileStatic'])
+    void testCompatibleReturnType(String tag) {
+        for (op in ['::','.&']) {
+            assertScript shell, """
+                $tag
+                class C {
+                    int m() { 1 }
+                    static int len(String s) { s.length() }
+                    Supplier<Number> f() { this${op}m }
+                    Supplier<Object> g() { this${op}m }
+                    Function<Integer,Integer> h() { Math${op}abs } // overloads return int, long, float and double
+                    def take(Function<Integer,Integer> x) { x.apply(-2) }
+                    def test() {
+                        assert f().get() == 1
+                        assert g().get() == 1
+                        assert h().apply(-2) == 2
+                        assert take(Math${op}abs) == 2
+                        Function<Integer,Integer> abs = Math${op}abs
+                        assert abs.apply(-3) == 3
+                        ToLongFunction<String> length = C${op}len // int widened to long
+                        assert length.applyAsLong('abc') == 3L
+                        Supplier<String> s = 'x'${op}toString
+                        assert s.get() == 'x'
+                    }
+                }
+                new C().test()
+            """
+        }
+    }
+
     // GROOVY-10269
     @Test
     void testNotFunctionalInterface() {
@@ -2489,25 +2601,44 @@ final class MethodReferenceTest {
         assert err.message =~ /Argument is a method reference, but parameter type 'java.lang.Object' is not a functional interface/
     }
 
-    // GROOVY-10979
+    // GROOVY-10979, GROOVY-12492
     @Test
     void testNotFunctionalInterface3() {
+        assertScript shell, '''
+            Integer m(String x) {
+                return x.length()
+            }
+            @CompileStatic
+            void test() {
+                BiFunction<Function<String, Integer>, Number, Function<String, Integer>> y = { Function<String, Integer> f, Number n ->
+                    { String s -> f.apply(s) + n.intValue() } as Function<String, Integer>
+                }
+                BinaryOperator<Function<String, Integer>> z = { Function<String, Integer> f, Function<String, Integer> g -> f }
+                // reduce number(s) to string-to-integer functions: U is bound to a functional interface
+                Function<String, Integer> f = [1, 2].stream().<Function<String, Integer>>reduce(this::m, y, z)
+                assert f.apply('abc') == 6
+                f = (Function<String, Integer>) [1, 2].stream().reduce(this::m, y, z)
+                assert f.apply('abc') == 6
+                f = (Function<String, Integer>) [1, 2].stream().reduce((String s) -> 1, y, z)
+                assert f.apply('abc') == 4
+            }
+
+            test()
+        '''
+
         def err = shouldFail shell, '''
             Integer m(String x) {
                 return 1
             }
+            static <T> T id(T t) {
+                return t
+            }
             @CompileStatic
             void test() {
-                java.util.stream.Stream<Number>                                          x = null
-                BiFunction<Function<String, Integer>, Number, Function<String, Integer>> y = null
-                BinaryOperator<Function<String, Integer>>                                z = null
-                // reduce number(s) to string-to-integer functions
-                x.<Function<String, Integer>>reduce(this::m, y, z)
-                x.reduce(this::m, y, z)
-                x.reduce((s) -> 1, y, z)
+                id(this::m)
             }
         '''
-        assert err.message =~ /Argument is a method reference, but parameter type 'U' is not a functional interface/
+        assert err.message =~ /Argument is a method reference, but parameter type 'T' is not a functional interface/
     }
 
     // GROOVY-11254
@@ -3521,6 +3652,173 @@ final class MethodReferenceTest {
             }
         '''
         assert err.message.contains("Failed to find class method 'inst()' for the type: C")
+    }
+
+
+    // GROOVY-11010: a method reference fits only a functional interface whose abstract method it can be called with
+    @Test
+    void testOverloadSelectedByMethodReferenceArity1() {
+        assertScript shell, '''
+            class Ext {
+                static <T> String red(Collection<T> c, BinaryOperator<T> op) { 'combiner:' + c.stream().reduce(op).get() }
+                static <T, R> String red(Collection<T> c, Function<T, R> f) { 'transform:' + c.collect { f.apply(it) } }
+            }
+            class Calc {
+                Integer add(Integer a, Integer b) { a + b }
+                Integer twice(Integer a) { a * 2 }
+            }
+            @CompileStatic
+            void test() {
+                List<Integer> numbers = [1, 2, 3]
+                List<String> strings = ['a ', ' b']
+                def calc = new Calc()
+                assert Ext.red(numbers, Integer::sum) == 'combiner:6'                  // static method, two parameters
+                assert Ext.red(numbers, Math::negateExact) == 'transform:[-1, -2, -3]' // static method, one parameter
+                assert Ext.red(strings, String::concat) == 'combiner:a  b'             // receiver and one parameter
+                assert Ext.red(strings, String::trim) == 'transform:[a, b]'            // receiver only
+                assert Ext.red(numbers, calc::add) == 'combiner:6'                     // bound receiver, two parameters
+                assert Ext.red(numbers, calc::twice) == 'transform:[2, 4, 6]'          // bound receiver, one parameter
+                assert Ext.red(['1', '2'], Integer::new) == 'transform:[1, 2]'         // constructor
+            }
+
+            test()
+        '''
+    }
+
+    // GROOVY-11010: the same for a method pointer
+    @Test
+    void testOverloadSelectedByMethodReferenceArity2() {
+        assertScript shell, '''
+            class Ext {
+                static <T> String red(Collection<T> c, BinaryOperator<T> op) { 'combiner:' + c.stream().reduce(op).get() }
+                static <T, R> String red(Collection<T> c, Function<T, R> f) { 'transform:' + c.collect { f.apply(it) } }
+            }
+            class Calc {
+                Integer add(Integer a, Integer b) { a + b }
+                Integer twice(Integer a) { a * 2 }
+            }
+            @CompileStatic
+            void test() {
+                List<Integer> numbers = [1, 2, 3]
+                def calc = new Calc()
+                assert Ext.red(numbers, calc.&add) == 'combiner:6'
+                assert Ext.red(numbers, calc.&twice) == 'transform:[2, 4, 6]'
+            }
+
+            test()
+        '''
+    }
+
+    // GROOVY-11010
+    @Test
+    void testOverloadSelectedByMethodReferenceArity3() {
+        assertScript shell, '''
+            class Main {
+                static <K, V> String from(Function<K, V> f) { 'Function' }
+                static <V> String from(Supplier<V> f) { 'Supplier' }
+                static int m(String x) { 1 }
+                static int n() { 2 }
+
+                @CompileStatic
+                static void test() {
+                    assert from(Main::m) == 'Function'
+                    assert from(Main::n) == 'Supplier'
+                }
+            }
+
+            Main.test()
+        '''
+    }
+
+    // GROOVY-10714: Closure implements Runnable, which therefore otherwise wins
+    @Test
+    void testOverloadSelectedByMethodReferenceArity4() {
+        assertScript shell, '''
+            class Req<T> {
+            }
+            class Table<T> {
+                String last
+                void putItem(Req<T> request) { last = 'Req' }
+                void putItem(Consumer<Object> consumer) { last = 'Consumer' }
+                void putItem(T item) { last = 'T' }
+            }
+            class Try<T> {
+                final T value
+                Try(T value) { this.value = value }
+                String andThenTry(Consumer<? super T> consumer) { consumer.accept(value); 'Consumer' }
+                String andThenTry(Runnable runnable) { runnable.run(); 'Runnable' }
+            }
+            class Steps {
+                static void noop() {}
+            }
+
+            @CompileStatic
+            void test() {
+                def table = new Table<Req<String>>()
+                assert new Try<Req<String>>(new Req<String>()).andThenTry(table::putItem) == 'Consumer'
+                assert table.last == 'Req'
+                assert new Try<Req<String>>(new Req<String>()).andThenTry(table.&putItem) == 'Consumer'
+                assert new Try<String>('x').andThenTry(Steps::noop) == 'Runnable'
+            }
+
+            test()
+        '''
+    }
+
+    // GROOVY-10714: interfaces that Closure does not implement
+    @Test
+    void testOverloadSelectedByMethodReferenceArity5() {
+        assertScript shell, '''
+            interface CheckedConsumer<T> { void accept(T t) throws Throwable }
+            interface CheckedRunnable { void run() throws Throwable }
+            class Steps {
+                static String tryIt(CheckedConsumer<String> consumer) { 'CheckedConsumer' }
+                static String tryIt(CheckedRunnable runnable) { 'CheckedRunnable' }
+                static void sink(String s) {}
+                static void noop() {}
+            }
+
+            @CompileStatic
+            void test() {
+                assert Steps.tryIt(Steps::sink) == 'CheckedConsumer'
+                assert Steps.tryIt(Steps::noop) == 'CheckedRunnable'
+            }
+
+            test()
+        '''
+    }
+
+    // GROOVY-11010: interfaces of the same arity are still chosen between as before
+    @Test
+    void testOverloadSelectedByMethodReferenceArity6() {
+        assertScript shell, '''
+            import java.util.concurrent.Callable
+            class Steps {
+                static String pick(Runnable runnable) { 'Runnable' }
+                static String pick(Callable<?> callable) { 'Callable' }
+                static String value() { 'v' }
+            }
+
+            @CompileStatic
+            void test() {
+                assert Steps.pick(Steps::value) == 'Runnable'
+            }
+
+            test()
+        '''
+
+        def err = shouldFail shell, '''
+            class Ext {
+                static <T> String red(Collection<T> c, BinaryOperator<T> op) { 'combiner' }
+                static <T, R> String red(Collection<T> c, Function<T, R> f) { 'transform' }
+            }
+
+            @CompileStatic
+            void test() {
+                Ext.red(['1', '2'], Integer::valueOf) // valueOf(String) and valueOf(String, int)
+            }
+        '''
+        assert err.message.contains('Reference to method is ambiguous')
     }
 
     @Nested

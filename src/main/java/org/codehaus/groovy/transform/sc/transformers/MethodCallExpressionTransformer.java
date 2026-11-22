@@ -24,15 +24,12 @@ import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.MethodCallExpression;
 import org.codehaus.groovy.ast.expr.TupleExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
-import org.codehaus.groovy.ast.stmt.EmptyStatement;
-import org.codehaus.groovy.classgen.asm.MopWriter;
+import org.codehaus.groovy.classgen.asm.sc.StaticCompilationMopWriter;
 import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 import org.codehaus.groovy.transform.stc.ExtensionMethodNode;
 import org.codehaus.groovy.transform.stc.StaticTypesMarker;
 
 import static org.codehaus.groovy.classgen.AsmClassGenerator.argumentSize;
-import static org.objectweb.asm.Opcodes.ACC_PUBLIC;
-import static org.objectweb.asm.Opcodes.ACC_SYNTHETIC;
 
 /**
  * Rewrites method-call expressions that have dedicated static-compilation forms.
@@ -98,21 +95,11 @@ class MethodCallExpressionTransformer {
     }
 
     private static MethodCallExpression transformToMopSuperCall(final ClassNode superType, final MethodCallExpression expr) {
-        MethodNode mn = expr.getNodeMetaData(StaticTypesMarker.DIRECT_METHOD_CALL_TARGET);
-        String mopName = MopWriter.getMopMethodName(mn, false);
-        MethodNode direct = new MethodNode(
-                mopName,
-                ACC_PUBLIC | ACC_SYNTHETIC,
-                mn.getReturnType(),
-                mn.getParameters(),
-                mn.getExceptions(),
-                EmptyStatement.INSTANCE
-        );
-        direct.setDeclaringClass(superType);
+        MethodNode direct = StaticCompilationMopWriter.getSuperMopMethod(superType, expr.getNodeMetaData(StaticTypesMarker.DIRECT_METHOD_CALL_TARGET));
 
         MethodCallExpression result = new MethodCallExpression(
                 new VariableExpression("this"),
-                mopName,
+                direct.getName(),
                 expr.getArguments()
         );
         result.setImplicitThis(true);

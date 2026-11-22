@@ -391,6 +391,24 @@ x.
                 ['List', null, null] as Object[]) == null
     }
 
+    @Test
+    void implicitReceiverCompletionUsesScriptAndSkipsEmptyPrefix() {
+        def service = new CompletionService()
+        assert 'println' in labels(service, 'pri\n', 'pri')
+
+        def emptyDoc = new TextDocument(fileUri('file:///tmp/cov-empty-prefix.groovy'), 'groovy', 1, '\n')
+        def emptyLabels = service.complete(emptyDoc, compileOf(emptyDoc), new Position(0, 0), UTF16).items*.label
+        assert !('println' in emptyLabels)
+
+        def classDoc = new TextDocument(fileUri('file:///tmp/cov-class-only.groovy'), 'groovy', 1, 'class Only {\n    void m() {\n        toS\n    }\n}\n')
+        def methodLabels = labels(service, classDoc.text, 'toS')
+        assert 'toString' in methodLabels
+
+        def fieldAreaDoc = new TextDocument(fileUri('file:///tmp/cov-class-body.groovy'), 'groovy', 1, 'class Only {\n    String pri\n}\n')
+        def bodyLabels = service.complete(fieldAreaDoc, compileOf(fieldAreaDoc), positionOf(fieldAreaDoc.text, 'pri'), UTF16).items*.label
+        assert !('println' in bodyLabels)
+    }
+
     /** A class the extension cache has not seen, so both skips and a missing cached method occur. */
     static class FreshMembers {
         static int zoom(String value) { value.length() }
