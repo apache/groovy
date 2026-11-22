@@ -74,6 +74,6 @@ public enum StaticTypesMarker {
     METHOD_REFERENCE_TYPE,
     /** on a {@code SwitchExpression} without a {@code default}: {@code Boolean.TRUE} when its labels were proven to cover every non-null selector value (a complete enum, an unconditional pattern, or a covered sealed hierarchy), so that matching nothing at run time means a constant or subtype was added after compilation */
     SWITCH_EXHAUSTIVE,
-    /** GROOVY-12511: on a method call whose receiver, not {@code this}, only inherits the private method of an outer class that the call selects, that outer class: the method is called on the receiver's enclosing instance, as dynamic Groovy calls it */
+    /** GROOVY-12511: on a method call or an operator whose selected method is not a member of the receiver but one of an enclosing instance of it, the receiver type that the method was selected for: the method is called on that enclosing instance, as dynamic Groovy calls it */
     ENCLOSING_INSTANCE_OF_RECEIVER
 }
