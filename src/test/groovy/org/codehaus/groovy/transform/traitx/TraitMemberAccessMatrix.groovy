@@ -68,23 +68,19 @@ final class TraitMemberAccessMatrix {
     @Test // instance rules 1 and 2
     void instanceAccessorOnlyProperty() {
         check "String getLabel() { 'trait' }", "String getLabel() { 'class' }", false,
-            rule { 'class' },
-            // a statically compiled lambda in a trait method does not get the trait instance
-            ['lambda getLabel()': [null, null, 'ClassCastException']]
+            rule { 'class' }, [:]
     }
 
     @Test // instance rules 1, 3, 4 and 5
     void declaredInstanceProperty() {
         check "String label = 'trait'", "String getLabel() { 'class' }", false,
-            rule { it in ['label', 'this.label', 'lambda label', 'lambda this.label'] ? 'trait' : 'class' },
-            ['lambda getLabel()': [null, null, 'ClassCastException']]
+            rule { it in ['label', 'this.label', 'lambda label', 'lambda this.label'] ? 'trait' : 'class' }, [:]
     }
 
     @Test // as above, when the implementing class redeclares the property
     void declaredInstancePropertyRedeclaredByClass() {
         check "String label = 'trait'", "String label = 'class'", false,
-            rule { it in ['label', 'this.label', 'lambda label', 'lambda this.label'] ? 'trait' : 'class' },
-            ['lambda getLabel()': [null, null, 'ClassCastException']]
+            rule { it in ['label', 'this.label', 'lambda label', 'lambda this.label'] ? 'trait' : 'class' }, [:]
     }
 
     //--------------------------------------------------------------------------
