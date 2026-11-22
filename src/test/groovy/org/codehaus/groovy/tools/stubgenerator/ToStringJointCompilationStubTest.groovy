@@ -42,6 +42,12 @@ final class ToStringJointCompilationStubTest extends StringSourcesStubTestCase {
                     String name
                     int age
                 }
+
+                @groovy.transform.ToString
+                class PersonWithUnderToString {
+                    String name
+                    private String _toString() { 'unused' }
+                }
             ''',
             'foo/JavaUser.java': '''
                 package foo;
@@ -86,5 +92,9 @@ final class ToStringJointCompilationStubTest extends StringSourcesStubTestCase {
         // but the stubber metadata key was cleared by the full transform.
         def toStringMethod = personClass.declaredMethods.find { it.name == 'toString' && it.parameterCount == 0 }
         assert toStringMethod != null
+
+        Class underClass = loader.loadClass('foo.PersonWithUnderToString')
+        def up = underClass.newInstance(name: 'Bob')
+        assert up.toString() == 'foo.PersonWithUnderToString(Bob)'
     }
 }
