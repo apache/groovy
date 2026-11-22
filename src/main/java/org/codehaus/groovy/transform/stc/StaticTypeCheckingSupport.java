@@ -81,6 +81,7 @@ import java.util.stream.BaseStream;
 
 import static org.apache.groovy.ast.tools.ClassNodeUtils.addGeneratedMethod;
 import static org.apache.groovy.ast.tools.ClassNodeUtils.getNestHost;
+import static org.apache.groovy.ast.tools.ClassNodeUtils.hasNoEnclosingInstance;
 import static org.apache.groovy.ast.tools.ClassNodeUtils.samePackageName;
 import static org.apache.groovy.ast.tools.ExpressionUtils.isNullConstant;
 import static org.codehaus.groovy.ast.ClassHelper.BigInteger_TYPE;
@@ -3363,6 +3364,27 @@ out:    for (ClassNode type : todo) {
     public static boolean isInheritedPrivateMethod(final MethodNode method, final ClassNode receiverType) {
         return method.isPrivate() && !(method instanceof ExtensionMethodNode)
                 && !method.getDeclaringClass().equals(receiverType);
+    }
+
+    /**
+     * Finds the outer class of {@code type}, reached through its chain of
+     * enclosing instances, whose instance has the given method: the class that
+     * declares it, if it is private, or else a class that inherits it. Dynamic
+     * Groovy calls a method that an inner class instance lacks on its enclosing
+     * instance.
+     *
+     * @param type the type of the receiver, an inner class
+     * @param method the method of an outer class
+     * @return the outer class, or {@code null} if no enclosing instance has the method
+     * @since 7.0.0
+     */
+    @Internal
+    public static ClassNode findEnclosingInstanceTypeWithMethod(final ClassNode type, final MethodNode method) {
+        ClassNode declaringClass = method.getDeclaringClass();
+        for (ClassNode cn = type; !hasNoEnclosingInstance(cn) && (cn = cn.getOuterClass()) != null; ) {
+            if (method.isPrivate() ? cn.equals(declaringClass) : implementsInterfaceOrIsSubclassOf(cn, declaringClass)) return cn;
+        }
+        return null;
     }
 
     /**

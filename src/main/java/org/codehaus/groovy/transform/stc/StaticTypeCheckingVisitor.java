@@ -354,6 +354,7 @@ import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.extrac
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.extractPlaceHolders;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.filterMethodsByVisibility;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.findDGMMethodsForClassNode;
+import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.findEnclosingInstanceTypeWithMethod;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.findTargetVariable;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.fullyResolve;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.fullyResolveType;
@@ -1360,6 +1361,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                         && !isOrImplements(rType, MAP_TYPE)
                         && !isOrImplements(rType, CHAR_SEQUENCE_TYPE)) {
                     storeTargetMethod(expression, inTarget);
+                    expression.putNodeMetaData(ENCLOSING_INSTANCE_OF_RECEIVER, reverseExpression.getNodeMetaData(ENCLOSING_INSTANCE_OF_RECEIVER));
                 }
             } else {
                 resultType = getResultType(lType, op, rType, expression);
@@ -7062,7 +7064,7 @@ out:                if (mn.size() != 1) {
                             // so store the delegation information for the static compiler
                             storeReceiverData(call, chosenReceiver);
                             call.putNodeMetaData(ENCLOSING_INSTANCE_OF_RECEIVER, // not kept from an earlier visit
-                                    isPrivateMethodOfEnclosingInstanceOfReceiver(targetMethod, objectExpression, chosenReceiver.getType()) ? targetMethod.getDeclaringClass() : null);
+                                    isMethodOfEnclosingInstanceOfReceiver(targetMethod, objectExpression, chosenReceiver.getType()) ? chosenReceiver.getType() : null);
 
                             receiver = chosenReceiver.getType();
                             if (mergeType || call.getNodeMetaData(INFERRED_TYPE) == null)
@@ -8770,6 +8772,10 @@ trying: for (ClassNode[] signature : signatures) {
             Expression copy = binX(leftExpression, expr.getOperation(), rightExpression);
             copy.setSourcePosition(expr); // do not propagate BINARY_EXP_TARGET, etc.
             MethodNode method = findMethodOrFail(copy, left, "getAt", rightRedirect);
+            if (method != null && copy.getNodeMetaData(ENCLOSING_INSTANCE_OF_RECEIVER) != null && !isTargetOfAssignment(expr)) {
+                // GROOVY-12511: the getAt of an enclosing instance of the left operand is written as that call
+                method = findMethodOrFail(expr, left, "getAt", rightRedirect);
+            }
             if (method != null && !isNumberCategory(getWrapper(rightRedirect))) {
                 return inferReturnTypeGenerics(left, method, rightExpression);
             }
@@ -9056,7 +9062,11 @@ trying: for (ClassNode[] signature : signatures) {
             }
             methods = disambiguateMethods(methods, receiver, args, expr);
             if (methods.size() == 1) {
-                return methods.get(0);
+                MethodNode method = methods.get(0);
+                if (expr instanceof BinaryExpression be) { // GROOVY-12511: an operator of an enclosing instance of the left operand
+                    expr.putNodeMetaData(ENCLOSING_INSTANCE_OF_RECEIVER, isMethodOfEnclosingInstanceOfReceiver(method, be.getLeftExpression(), receiver) ? receiver : null);
+                }
+                return method;
             } else {
                 addAmbiguousErrorMessage(methods, name, args, expr);
             }
@@ -9201,7 +9211,9 @@ trying: for (ClassNode[] signature : signatures) {
                     methods.add(callMethod);
                 }
             }
-            if (typeCheckingContext.getEnclosingClassNodes().contains(receiver)) {
+            if (isTypeOfEnclosingClass(receiver)
+                    // dynamic Groovy turns to the enclosing instance only for a method the receiver lacks, and javac to the innermost class
+                    && (args == null || chooseBestMethod(receiver, filterMethodsByVisibility(methods, typeCheckingContext.getEnclosingClassNode()), args).isEmpty())) {
                 boolean staticOnly = hasNoEnclosingInstance(receiver);
                 for (ClassNode outer = receiver; (outer = outer.getOuterClass()) != null;
                         staticOnly = staticOnly || hasNoEnclosingInstance(outer)) {
@@ -9332,24 +9344,35 @@ trying: for (ClassNode[] signature : signatures) {
     }
 
     /**
-     * Determines if a call through {@code objectExpression}, other than "this",
-     * selects a private method of an outer class that the receiver type only
-     * inherits (JLS 8.2): {@link #findMethod} offers the methods of the outer
-     * classes in code of the receiver's own class. The receiver itself has no
-     * such method, so dynamic Groovy calls it on the receiver's enclosing
-     * instance. It stays a member of the receiver in its declaring class, and
-     * through a variable declared with the declaring class under static
-     * compilation, see {@link #removeInheritedPrivateMethods}.
+     * Determines if the selected method is not a member of the receiver type
+     * but one of an enclosing instance of the receiver, as {@link #findMethod}
+     * offers the methods of the outer classes for a receiver of the class whose
+     * code this is: dynamic Groovy calls such a method on that enclosing
+     * instance. A private method of a superclass is not a member of the
+     * receiver (JLS 8.2), unless it is called in its declaring class or through
+     * a variable declared with it under static compilation, see
+     * {@link #removeInheritedPrivateMethods}.
      */
-    private boolean isPrivateMethodOfEnclosingInstanceOfReceiver(final MethodNode method, final Expression objectExpression, final ClassNode receiverType) {
-        if (!method.isPrivate() || method.isStatic() || isThisExpression(objectExpression)
+    private boolean isMethodOfEnclosingInstanceOfReceiver(final MethodNode method, final Expression objectExpression, final ClassNode receiverType) {
+        if (method.isStatic() || method instanceof ExtensionMethodNode
                 || isSuperExpression(objectExpression) || objectExpression instanceof ClassExpression) {
             return false;
         }
-        ClassNode declaringClass = method.getDeclaringClass();
-        return !receiverType.equals(declaringClass) && receiverType.isDerivedFrom(declaringClass)
-                && receiverType.getOuterClasses().contains(declaringClass)
-                && removeInheritedPrivateMethods(List.of(method), receiverType, getDeclaredReceiverType(objectExpression), true).isEmpty();
+        if (implementsInterfaceOrIsSubclassOf(receiverType, method.getDeclaringClass())
+                && !(method.isPrivate() && removeInheritedPrivateMethods(List.of(method), receiverType, getDeclaredReceiverType(objectExpression), true).isEmpty())) {
+            return false; // a member of the receiver
+        }
+        return findEnclosingInstanceTypeWithMethod(receiverType, method) != null;
+    }
+
+    /**
+     * Determines if {@code type} is a class whose code this is, or a subclass
+     * of one that is an inner class itself, so that a method of an outer class
+     * may be one of its enclosing instance.
+     */
+    private boolean isTypeOfEnclosingClass(final ClassNode type) {
+        List<ClassNode> enclosingClasses = typeCheckingContext.getEnclosingClassNodes();
+        return enclosingClasses.contains(type) || (type.getOuterClass() != null && enclosingClasses.stream().anyMatch(type::isDerivedFrom));
     }
 
     /**
@@ -9395,6 +9418,18 @@ trying: for (ClassNode[] signature : signatures) {
         } finally {
             if (enclosingClass != null) typeCheckingContext.popEnclosingClassNode();
         }
+    }
+
+    /**
+     * Determines if {@code expr}, a binary expression being checked, is the
+     * left-hand side of the assignment that encloses it, as {@code x[i]} is in
+     * {@code x[i] = v}, {@code x[i] += v} and {@code x[i]++}.
+     */
+    private boolean isTargetOfAssignment(final BinaryExpression expr) {
+        for (BinaryExpression be : typeCheckingContext.getEnclosingBinaryExpressionStack()) {
+            if (be != expr) return be.getLeftExpression() == expr && isAssignment(be.getOperation().getType());
+        }
+        return false;
     }
 
     /**

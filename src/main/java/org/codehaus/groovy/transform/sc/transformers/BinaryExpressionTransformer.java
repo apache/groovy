@@ -461,6 +461,7 @@ public class BinaryExpressionTransformer {
             MethodCallExpression opCall = callX(getterCall, (String) target[1], args(rhs));
             opCall.setImplicitThis(false);
             opCall.setMethodTarget((MethodNode) target[0]);
+            opCall.putNodeMetaData(StaticTypesMarker.ENCLOSING_INSTANCE_OF_RECEIVER, bin.getNodeMetaData(StaticTypesMarker.ENCLOSING_INSTANCE_OF_RECEIVER));
             opCall.setSourcePosition(bin);
             ClassNode resultType = bin.getNodeMetaData(INFERRED_TYPE);
             if (resultType != null) {
@@ -826,6 +827,7 @@ public class BinaryExpressionTransformer {
         } else {
             call = callX(left, name, args(right));
             call.setMethodTarget(node);
+            call.putNodeMetaData(StaticTypesMarker.ENCLOSING_INSTANCE_OF_RECEIVER, bin.getNodeMetaData(StaticTypesMarker.ENCLOSING_INSTANCE_OF_RECEIVER));
         }
         call.setImplicitThis(false);
         if (Types.isAssignment(operationType)) { // +=, -=, /=, ...

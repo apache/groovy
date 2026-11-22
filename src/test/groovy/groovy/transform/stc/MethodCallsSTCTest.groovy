@@ -898,6 +898,66 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-12511: a method that the receiver lacks but an outer class has is the method
+    // of the receiver's enclosing instance, as in dynamic Groovy: also for a plain inner
+    // class, a public method, "this" in a safe call, a closure delegate, a subclass of
+    // the inner class and an operator; a method of the receiver itself comes first
+    @Test
+    void testCallToMethodOfEnclosingInstanceOfReceiver() {
+        assertScript '''
+            class Box {
+                String id
+                Box(String id) { this.id = id }
+                private String im() { 'im:' + id }
+                String om() { 'om:' + id }
+                private String m(String s) { 'box:' + id }
+                private String plus(String s) { 'plus:' + id + s }
+                private String getAt(int i) { 'getAt:' + id + i }
+                private boolean isCase(Object o) { id == 'B' }
+                class Sub extends Box {
+                    Sub(String id) { super(id) }
+                    String m(Object o) { 'sub:' + id }
+                    String safe(Object other) { if (other instanceof Sub) { return other?.im() }; null }
+                    String safeThis() { this?.im() }
+                    String delegate(Sub other) { other.with { im() } }
+                    String own(Sub other) { other.m('x') }
+                    String sub2(Sub2 other) { other.im() }
+                    List<String> spread(Bag bag) { bag*.im() }
+                    List operators(Sub other) { [other + 'x', other[2], 'q' in other] }
+                }
+                class Sub2 extends Sub {
+                    Sub2() { super('sub2') }
+                }
+                class In {
+                    List<String> other(In other) { [other.im(), other.om()] }
+                }
+                class Bag {
+                    List<Sub> items
+                    Iterator<Sub> iterator() { items.iterator() }
+                }
+                Sub sub() { new Sub('self') }
+                Sub2 sub2() { new Sub2() }
+                In in() { new In() }
+                Bag bag(List<Sub> items) { new Bag(items: items) }
+                String anonymous() {
+                    def c = { -> new Box('anon') { String test() { def other = this; other.im() } }.test() }
+                    c()
+                }
+            }
+            def a = new Box('A'), b = new Box('B')
+            def sa = a.sub(), sb = b.sub()
+            assert sa.safe(sb) == 'im:B'
+            assert sa.safeThis() == 'im:A'
+            assert sa.delegate(sb) == 'im:B'
+            assert sa.own(sb) == 'sub:self'
+            assert sa.sub2(b.sub2()) == 'im:B'
+            assert sa.spread(a.bag([sb, sa])) == ['im:B', 'im:A']
+            assert sa.operators(sb) == ['plus:Bx', 'getAt:B2', true]
+            assert a.in().other(b.in()) == ['im:B', 'om:B']
+            assert a.anonymous() == 'im:A'
+        '''
+    }
+
     // GROOVY-12511: this.m() in an inner class may name a method of the enclosing
     // class, as in dynamic Groovy
     @Test

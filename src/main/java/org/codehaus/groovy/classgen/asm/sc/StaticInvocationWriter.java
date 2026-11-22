@@ -99,6 +99,7 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.args;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.attrX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.bytecodeX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.callX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.castX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.classX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.ctorX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.inSamePackage;
@@ -299,17 +300,28 @@ public class StaticInvocationWriter extends InvocationWriter {
 
 
     /**
-     * Returns the expression for the enclosing instance of {@code receiver}, of
-     * type {@code receiverType}, that is an instance of {@code outer}: the chain
-     * of {@code this$0} fields from the receiver's class out to {@code outer}.
+     * Returns the expression for the enclosing instance of {@code receiver} that
+     * has {@code method}: the chain of {@code this$0} fields from the receiver's
+     * class out to that outer class. {@code receiverType} is the type that the
+     * receiver is written with here, {@code selectedType} the type that the type
+     * checker selected the method for, which a safe or spread call writes as a
+     * wider type.
      */
-    private static Expression enclosingInstanceExpression(final Expression receiver, final ClassNode receiverType, final ClassNode outer) {
-        Expression expr = receiver;
-        for (ClassNode type = receiverType; !type.equals(outer); type = type.getOuterClass()) {
+    private static Expression enclosingInstanceExpression(final Expression receiver, final ClassNode receiverType, final ClassNode selectedType, final MethodNode method) {
+        ClassNode outer = StaticTypeCheckingSupport.findEnclosingInstanceTypeWithMethod(selectedType, method);
+        if (outer == null) throw new GroovyBugError("no enclosing instance with " + method.getTypeDescriptor() + " for " + selectedType.getName());
+        Expression expr = receiverType.equals(selectedType) ? receiver : castX(selectedType, receiver);
+        for (ClassNode type = selectedType; !type.equals(outer); type = type.getOuterClass()) {
             FieldNode thisZero = type.getDeclaredField("this$0");
-            if (thisZero == null) throw new GroovyBugError("no enclosing instance of " + outer.getName() + " for " + receiverType.getName());
+            if (thisZero == null) throw new GroovyBugError("no enclosing instance of " + outer.getName() + " for " + selectedType.getName());
             expr = attrX(expr, "this$0");
             expr.setType(thisZero.getType());
+            if (ClassHelper.CLOSURE_TYPE.equals(thisZero.getType())) { // a class created in a closure: the closure's this object, as for Outer.this
+                MethodCallExpression thisObject = callX(expr, "getThisObject");
+                thisObject.setImplicitThis(false);
+                thisObject.setMethodTarget(ClassHelper.CLOSURE_TYPE.getMethod("getThisObject", Parameter.EMPTY_ARRAY));
+                expr = castX(type.getOuterClass(), thisObject);
+            }
         }
         return expr;
     }
@@ -492,10 +504,11 @@ public class StaticInvocationWriter extends InvocationWriter {
                 }
                 if (!(theReceiver instanceof VariableExpression)) isThisImplicit = false;
                 theReceiver.putNodeMetaData(StaticTypesMarker.INFERRED_TYPE, theTarget.getDeclaringClass());
-            } else if (receiver != null && currentCall != null && declaringClass.equals(currentCall.getNodeMetaData(StaticTypesMarker.ENCLOSING_INSTANCE_OF_RECEIVER))) {
-                // GROOVY-12511: the receiver only inherits this private method of an outer class
-                theReceiver = enclosingInstanceExpression(receiver, receiverType, declaringClass);
-                theReceiver.putNodeMetaData(StaticTypesMarker.INFERRED_TYPE, declaringClass);
+            } else if (receiver != null && !target.isStatic() && currentCall != null
+                    && currentCall.getNodeMetaData(StaticTypesMarker.ENCLOSING_INSTANCE_OF_RECEIVER) instanceof ClassNode selectedType) {
+                // GROOVY-12511: the method is one of an enclosing instance of the receiver, not of the receiver
+                theReceiver = enclosingInstanceExpression(receiver, receiverType, selectedType, target);
+                theReceiver.putNodeMetaData(StaticTypesMarker.INFERRED_TYPE, theReceiver.getType());
             }
             if (theReceiver != null && !target.isStatic() && !isSuperExpression(receiver) && !isClassWithSuper(receiver)
                     && currentCall.getNodeMetaData(StaticTypesMarker.IMPLICIT_RECEIVER) == null) {
