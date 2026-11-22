@@ -2177,7 +2177,9 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
                 && (typeVariableBoundEscapes(leftExpressionType, right)
                     || concreteArgumentContainsWildcard(leftExpressionType, right));
         if (incompatible || typeVariableEscapes) {
-            addStaticTypeError("Incompatible generic argument types. Cannot assign " + prettyPrintType(rightExpressionType) + " to: " + prettyPrintType(leftExpressionType), rightExpression);
+            if (!isClosureCoercibleToSAM(leftExpressionType, rightExpressionType)) { // GROOVY-12588
+                addStaticTypeError("Incompatible generic argument types. Cannot assign " + prettyPrintType(rightExpressionType) + " to: " + prettyPrintType(leftExpressionType), rightExpression);
+            }
         }
     }
 
@@ -2281,6 +2283,20 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
                 }
             }
         }
+    }
+
+    /**
+     * Checks if a value of type {@code Closure<R>} can be coerced to the given
+     * SAM type: its abstract method returns void or a supertype of {@code R}.
+     */
+    private static boolean isClosureCoercibleToSAM(final ClassNode samType, final ClassNode closureType) {
+        if (!closureType.isDerivedFrom(CLOSURE_TYPE) || !isSAMType(samType)) return false;
+        ClassNode returnType = GenericsUtils.parameterizeSAM(samType).getV2();
+        if (isPrimitiveVoid(returnType)) return true;
+        GenericsType[] closureGenerics = GenericsUtils.findParameterizedType(CLOSURE_TYPE, closureType).getGenericsTypes();
+        if (closureGenerics == null) return true; // raw Closure
+        ClassNode closureReturnType = getCombinedBoundType(closureGenerics[0]);
+        return GenericsUtils.buildWildcardType(wrapTypeIfNecessary(returnType)).isCompatibleWith(wrapTypeIfNecessary(closureReturnType));
     }
 
     private boolean hasGStringStringError(final ClassNode leftExpressionType, final ClassNode wrappedRHS, final Expression rightExpression) {
