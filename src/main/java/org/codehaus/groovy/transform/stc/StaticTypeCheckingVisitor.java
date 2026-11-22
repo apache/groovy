@@ -9428,6 +9428,12 @@ trying: for (ClassNode[] signature : signatures) {
         return findMethodWithDeclaredType(getDeclaredReceiverType(objectExpression), receiver, name, args);
     }
 
+    /**
+     * Finds the methods as {@link #findMethod} does, with {@code declaredType} as the
+     * declared type of the receiver variable: a private method that it declares is
+     * kept although the receiver only inherits it. With {@code null}, none is kept for
+     * that reason, see {@link #removeInheritedPrivateMethods}.
+     */
     private List<MethodNode> findMethodWithDeclaredType(final ClassNode declaredType, final ClassNode receiver, final String name, final ClassNode... args) {
         ClassNode previous = declaredReceiverType;
         declaredReceiverType = declaredType;
