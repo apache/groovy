@@ -216,6 +216,61 @@ final class ListHashMapTest {
 
     // GROOVY-12744
     @Test
+    void testCannotModifyListViaKeySet() {
+        lhm.put('a', '1')
+        assertThrows(UnsupportedOperationException) {
+            lhm.keySet().clear()
+        }
+        assertThrows(UnsupportedOperationException) {
+            def iter = lhm.keySet().iterator()
+            iter.next()
+            iter.remove()
+        }
+        assertUnchanged()
+    }
+
+    // GROOVY-12744
+    @Test
+    void testCannotModifyListViaEntrySet() {
+        lhm.put('a', '1')
+        assertThrows(UnsupportedOperationException) {
+            lhm.entrySet().clear()
+        }
+        assertThrows(UnsupportedOperationException) {
+            def iter = lhm.entrySet().iterator()
+            iter.next()
+            iter.remove()
+        }
+        assertThrows(UnsupportedOperationException) {
+            lhm.entrySet().iterator().next().setValue('x')
+        }
+        assertUnchanged()
+    }
+
+    // GROOVY-12744
+    @Test
+    void testCannotModifyListViaValueCol() {
+        lhm.put('a', '1')
+        assertThrows(UnsupportedOperationException) {
+            lhm.values().clear()
+        }
+        assertThrows(UnsupportedOperationException) {
+            def iter = lhm.values().iterator()
+            iter.next()
+            iter.remove()
+        }
+        assertUnchanged()
+    }
+
+    private void assertUnchanged() {
+        assert lhm.@innerMap == null
+        assert lhm.size() == 1
+        assert lhm.get('a') == '1'
+        assert lhm.keySet() == ['a'] as Set
+    }
+
+    // GROOVY-12744
+    @Test
     void testViewsSeeLaterChanges() {
         def entries = lhm.entrySet()
         def keys = lhm.keySet()
@@ -252,5 +307,14 @@ final class ListHashMapTest {
         map.put('a', '3')
         assert new HashMap(map) == [a: '3', b: '2']
         assert Map.copyOf(map) == [a: '3', b: '2']
+
+        map.put('c', '4') // switch to inner map
+        assert lhm.@innerMap != null
+        assert new HashMap(map) == [a: '3', b: '2', c: '4']
+
+        map.remove('a') // fall back to list
+        assert lhm.@innerMap == null
+        assert new HashMap(map) == [b: '2', c: '4']
+        assert Map.copyOf(map) == [b: '2', c: '4']
     }
 }

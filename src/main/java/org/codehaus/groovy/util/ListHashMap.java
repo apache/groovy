@@ -278,10 +278,10 @@ public class ListHashMap<K,V> implements Map<K,V> {
     }
 
     /**
-     * Returns the current entries for the views to iterate: the backing map, read-only,
-     * or a copy of the arrays.
+     * Returns the current entries for the views to iterate: the backing map or a copy
+     * of the arrays, read-only.
      */
     private Map<K,V> currentMap() {
-        return innerMap != null ? Collections.unmodifiableMap(innerMap) : toMap();
+        return Collections.unmodifiableMap(innerMap != null ? innerMap : toMap());
     }
 }
