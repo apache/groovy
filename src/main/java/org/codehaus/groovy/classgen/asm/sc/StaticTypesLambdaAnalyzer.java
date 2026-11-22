@@ -35,6 +35,7 @@ import org.codehaus.groovy.ast.expr.PropertyExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.transform.sc.StaticCompilationMetadataKeys;
+import org.codehaus.groovy.transform.trait.Traits;
 
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -294,6 +295,9 @@ class StaticTypesLambdaAnalyzer {
             if (owner == null) return;
 
             ClassNode redirectedOwner = owner.redirect();
+            // a static property of a trait belongs to the class the trait is applied to; the static accessor on the
+            // trait would read that of the trait itself
+            if (Traits.isTrait(redirectedOwner)) return;
             if (referenceOwnerIndex.putIfAbsent(redirectedOwner.getName(), redirectedOwner) != null) return;
 
             collectReferenceOwners(redirectedOwner.getSuperClass(), referenceOwnerIndex);

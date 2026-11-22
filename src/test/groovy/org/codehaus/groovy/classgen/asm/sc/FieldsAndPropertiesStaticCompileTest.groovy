@@ -593,6 +593,121 @@ final class FieldsAndPropertiesStaticCompileTest extends FieldsAndPropertiesSTCT
         '''
     }
 
+    // GROOVY-12621: static compilation accesses the field directly from an enum constant body;
+    // this.z and a bare z there are GROOVY-12626
+    @Override @Test
+    void testPrivateFieldOfEnumViaConstantBody() {
+        assertScript '''
+            enum E {
+                A {
+                    List m() {
+                        def c = { -> super.z }
+                        java.util.function.Supplier<String> s = () -> super.z
+                        [super.z, c(), s.get()]
+                    }
+                    String w() { super.z = 'y'; super.z += '!'; super.z }
+                }
+                abstract List m()
+                abstract String w()
+                private String z = 'x'
+            }
+            assert E.A.m() == ['x', 'x', 'x']
+            assert E.A.w() == 'y!'
+        '''
+    }
+
+    // GROOVY-12621: static compilation writes the field directly
+    @Override @Test
+    void testPrivateFieldOfSuperclassWrittenThroughSuperInInnerSubclass() {
+        assertScript '''
+            class Base {
+                private String z = 'x'
+                class Sub extends Base {
+                    def m1() { super.z = 'y'; super.z }
+                    def m2() { super.z += 'y'; super.z }
+                    def m3() { super.z = 'n'; super.z++; super.z }
+                    def m4() { def c = { -> super.z = 'c' }; c(); super.z }
+                }
+                List test() {
+                    def sub = new Sub()
+                    [sub.m1(), sub.m2(), sub.m3(), sub.m4()]
+                }
+            }
+            assert new Base().test() == ['y', 'yy', 'o', 'c']
+        '''
+    }
+
+    // GROOVY-12621: static compilation accesses the field directly on any receiver
+    @Override @Test
+    void testPrivateFieldOfSuperclassViaReceiverOfOtherClass() {
+        assertScript '''
+            class Base {
+                private String z = 'x'
+                static class Nested extends Base {
+                }
+                class Sub extends Base {
+                    def m1(Nested that) { that.z }
+                    def m2(Sub2 that) { that.z }
+                    def m3() { new Object() { def get() { Sub.this.z } }.get() }
+                    def m4(Sub that) { new Object() { def get() { that.z } }.get() }
+                }
+                class Sub2 extends Base {
+                }
+                class Inner {
+                    def m1(Nested that) { that.z }
+                    def m2(Sub that) { that.z }
+                    def m3(Nested that) { def c = { -> that.z }; c() }
+                    def m4(Sub that) { that.z = 'y'; that.z }
+                }
+                List test() {
+                    def sub = new Sub(), nested = new Nested(), inner = new Inner()
+                    [sub.m1(nested), sub.m2(new Sub2()), sub.m3(), sub.m4(sub), inner.m1(nested), inner.m2(sub), inner.m3(nested), inner.m4(sub)]
+                }
+            }
+            assert new Base().test() == ['x', 'x', 'x', 'x', 'x', 'x', 'x', 'y']
+        '''
+    }
+
+    // GROOVY-12621: static compilation reads the field of the receiver itself, not of its enclosing instance
+    @Override @Test
+    void testPrivateFieldOfSuperclassViaReceiverOfCallingClass() {
+        assertScript '''
+            class Base {
+                private String z
+                Base(String z) { this.z = z }
+                static class Nested extends Base {
+                    Nested() { super('nested') }
+                }
+                class Sub extends Base {
+                    Sub(String z) { super(z) }
+                    def m1(Sub that) { that.z }
+                    def m2(SubSub that) { def c = { -> that.z }; c() }
+                    def m3() { def c = { -> super.z }; c() }
+                    def m4(Nested that) { that.with { z } }
+                    def m5() { new Object() { def get() { z } }.get() }
+                    def m6() { new Inner().get() }
+                    class Inner {
+                        def get() { z }
+                    }
+                }
+                class SubSub extends Sub {
+                    SubSub() { super('subsub') }
+                }
+                class Other {
+                    def m1(Sub that) { that.with { z } }
+                    def m2() { new Object() { def get() { z } }.get() }
+                }
+                Sub newSub(String z) { new Sub(z) }
+                List test(Sub that) {
+                    def sub = new Sub('sub'), other = new Other()
+                    [sub.m1(that), sub.m2(new SubSub()), sub.m3(), sub.m4(new Nested()), sub.m5(), sub.m6(), other.m1(that), other.m2()]
+                }
+            }
+            def that = new Base('far').newSub('that')
+            assert new Base('outer').test(that) == ['that', 'subsub', 'sub', 'nested', 'outer', 'outer', 'that', 'outer']
+        '''
+    }
+
     @Override @Test
     void testPropertyWithMultipleSetters() {
         // we need to override the test because the AST is going to be changed

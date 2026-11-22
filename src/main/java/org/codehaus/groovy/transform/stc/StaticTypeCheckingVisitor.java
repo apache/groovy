@@ -35,6 +35,7 @@ import org.apache.groovy.ast.pattern.MatchPattern.ListPattern;
 import org.apache.groovy.ast.pattern.MatchPattern.MapPattern;
 import org.apache.groovy.ast.pattern.MatchPattern.RecordPattern;
 import org.apache.groovy.runtime.async.AsyncSupport;
+import org.apache.groovy.transform.copywith.CopyWithRecorder;
 import org.apache.groovy.util.SystemUtil;
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.ast.ASTNode;
@@ -120,6 +121,7 @@ import org.codehaus.groovy.ast.tools.WideningCategories;
 import org.codehaus.groovy.classgen.ReturnAdder;
 import org.codehaus.groovy.classgen.asm.InvocationWriter;
 import org.codehaus.groovy.control.CompilationUnit;
+import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.control.ErrorCollector;
 import org.codehaus.groovy.control.ResolveVisitor;
 import org.codehaus.groovy.control.SourceUnit;
@@ -366,6 +368,7 @@ import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.isBein
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.isBitOperator;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.isBoolIntrinsicOp;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.isClassClassNodeWrappingConcreteType;
+import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.isClosureCoercibleToSAM;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.isCompareToBoolean;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.isGStringOrGStringStringLUB;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.isGenericsPlaceHolderOrArrayOf;
@@ -884,7 +887,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     }
                     // falls through
                   case "thisObject":
-                    vexp.putNodeMetaData(INFERRED_TYPE, makeThis());
+                    vexp.putNodeMetaData(INFERRED_TYPE, makeThisObject());
                     return;
                   case "parameterTypes":
                     vexp.putNodeMetaData(INFERRED_TYPE, CLASS_Type.getPlainNodeReference().makeArray());
@@ -900,12 +903,16 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 }
             }
 
+            if (resolveCopyWithBlockVariable(vexp, name)) return; // GROOVY-12713
+
             if (tryVariableExpressionAsProperty(vexp, name)) return;
 
             if (!extension.handleUnresolvedVariableExpression(vexp)) {
                 addStaticTypeError("The variable [" + name + "] is undeclared.", vexp);
             }
         } else if (accessedVariable instanceof FieldNode) {
+            if (resolveCopyWithBlockVariable(vexp, name)) return; // GROOVY-12713
+
             if (tryVariableExpressionAsProperty(vexp, name)) {
                 ClassNode temporaryType = getInferredTypeFromTempInfo(vexp, null); // GROOVY-9454
                 if (temporaryType != null && !isObjectType(temporaryType)) {
@@ -923,6 +930,8 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 addStaticTypeError("No such property: " + name + " for class: " + prettyPrintTypeName(typeCheckingContext.getEnclosingClassNode()), vexp);
             }
         } else if (accessedVariable instanceof PropertyNode) {
+            if (resolveCopyWithBlockVariable(vexp, name)) return; // GROOVY-12713
+
             // we must be careful -- the property node may be of a wrong type:
             // if a class contains a getter and a setter of different types or
             // overloaded setters, the type of the property node is arbitrary!
@@ -1001,6 +1010,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     @Override
     public void visitPropertyExpression(final PropertyExpression expression) {
         boolean readOnly = !typeCheckingContext.isTargetOfEnclosingAssignment(expression);
+        if (resolveCopyWithBlockPath(expression)) return; // GROOVY-12713
         if (existsProperty(expression, readOnly)
                 || extension.handleUnresolvedProperty(expression)) {
             if (readOnly) { // GROOVY-12305: record narrowed type of instanceof-guarded receiver for later use
@@ -2414,7 +2424,8 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
         if (hasIncompatibleGenerics(leftExpressionType, right)) {
             if (isTypedByTarget(leftExpressionType, right, rightExpression)) {
                 rightExpression.setNodeMetaData(TARGET_TYPED, leftExpressionType); // the expression has the type of its target
-            } else {
+            } else if (!(rightExpressionType.isDerivedFrom(CLOSURE_TYPE) && isSAMType(leftExpressionType)
+                    && isClosureCoercibleToSAM(leftExpressionType, rightExpressionType))) { // GROOVY-12588
                 addStaticTypeError("Incompatible generic argument types. Cannot assign " + prettyPrintType(rightExpressionType) + " to: " + prettyPrintType(leftExpressionType), rightExpression);
             }
         } else if (GenericsUtils.hasUnresolvedGenerics(right) && !GenericsUtils.hasUnresolvedGenerics(leftExpressionType)
@@ -3063,6 +3074,14 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
         Set<ClassNode> handledTypes = new HashSet<>();
         List<Receiver<String>> receivers = new ArrayList<>();
         addReceivers(receivers, makeOwnerList(objectExpression), pexp.isImplicitThis());
+        if (pexp.isImplicitThis()) { // GROOVY-12713: a copyWith block's recorder answers every name, so none after it is reached
+            for (int i = 0, n = receivers.size(); i < n; i += 1) {
+                if (receivers.get(i).getType().equals(COPY_WITH_RECORDER_TYPE)) {
+                    receivers.subList(i, n).clear();
+                    break;
+                }
+            }
+        }
 
     on: for (Receiver<String> receiver : receivers) {
             ClassNode receiverType = receiver.getType();
@@ -3226,7 +3245,7 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
                             pexp.removeNodeMetaData(READONLY_PROPERTY);
                             return true;
                         } else if (getter != null && setters.isEmpty() && (field == null || field.isFinal()
-                                || !isFieldAccessible(field, receiverType, pexp, receiver.getData()))) { // GROOVY-12290: inaccessible field cannot make the property writable
+                                || !isFieldAccessible(field, receiverType, pexp, receiver.getData(), true))) { // GROOVY-12290: inaccessible field cannot make the property writable
                             pexp.putNodeMetaData(READONLY_PROPERTY, Boolean.TRUE); // GROOVY-9127
                         }
                     }
@@ -3326,7 +3345,9 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
             while (iter.hasNext()) {
                 ClassNode outer = iter.next();
                 // GROOVY-7994, GROOVY-11198: try "this.propertyName" as "Outer.propertyName" or "Outer.this.propertyName"
-                PropertyExpression pe = propX(staticOnly ? classX(outer) : propX(classX(outer), "this"), pexp.getProperty());
+                Expression outerThis = staticOnly ? classX(outer) : propX(classX(outer), "this");
+                outerThis.putNodeMetaData("implicit outer this", Boolean.TRUE); // dispatched on "this"
+                PropertyExpression pe = propX(outerThis, pexp.getProperty());
                 if (existsProperty(pe, readMode, visitor)) {
                     pexp.copyNodeMetaData(pe);
                     return true;
@@ -3522,7 +3543,7 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
      * access (.@), and closure bodies (GROOVY-9195) — including delegate-resolved
      * access — whose property dispatch stays dynamic-capable under static compilation.
      */
-    private boolean isFieldAccessible(final FieldNode field, final ClassNode receiver, final PropertyExpression expression, final String delegationData) {
+    private boolean isFieldAccessible(final FieldNode field, final ClassNode receiver, final PropertyExpression expression, final String delegationData, final boolean lhsOfAssignment) {
         // GROOVY-12310: when the qualifying type itself is out of reach (e.g. a public
         // enum constant of a package-private nested enum), no static emission can name
         // it -- the JVM rejects the class resolution before it looks at the member
@@ -3539,7 +3560,7 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
             exactReceiver = false; // GROOVY-12290
         }
         if ((superField || !receiver.equals(field.getDeclaringClass())) && !(expression instanceof AttributeExpression)
-                && !isStaticDispatchScope() && isDynamicallyUnreachableThroughSubclass(field)) {
+                && !isStaticDispatchScope() && isDynamicallyUnreachableThroughSubclass(field, receiver, expression, lhsOfAssignment)) {
             return false; // GROOVY-12610
         }
         return exactReceiver
@@ -3552,19 +3573,28 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
      * metaclass of a subclass does not list a private instance field of a
      * superclass, so only code of the declaring class reaches it, or code of an
      * inner class whose chain of enclosing instances leads to the declaring class.
-     * Static compilation accesses the field directly from any class of its nest.
+     * The runtime falls back to the enclosing instance only for a receiver of the
+     * calling class, and not for a write through {@code super}. Static compilation
+     * accesses the field directly from any class of its nest.
      */
-    private boolean isDynamicallyUnreachableThroughSubclass(final FieldNode field) {
+    private boolean isDynamicallyUnreachableThroughSubclass(final FieldNode field, final ClassNode receiver, final PropertyExpression expression, final boolean lhsOfAssignment) {
         if (!field.isPrivate() || field.isStatic()) return false;
         ClassNode declaringClass = field.getDeclaringClass();
-        for (ClassNode cn = typeCheckingContext.getEnclosingClassNode(); !cn.equals(declaringClass); cn = cn.getOuterClass()) {
+        ClassNode enclosingClass = typeCheckingContext.getEnclosingClassNode();
+        if (enclosingClass.equals(declaringClass)) return false;
+        Expression objectExpression = expression.getObjectExpression();
+        if (isSuperExpression(objectExpression) ? lhsOfAssignment
+                : !receiver.isDerivedFrom(enclosingClass) && objectExpression.getNodeMetaData("implicit outer this") == null) {
+            return true;
+        }
+        for (ClassNode cn = enclosingClass; !cn.equals(declaringClass); cn = cn.getOuterClass()) {
             if (cn.getOuterClass() == null || hasNoEnclosingInstance(cn)) return true;
         }
         return false;
     }
 
     private boolean storeField(final FieldNode field, final PropertyExpression expression, final Receiver<String> receiver, final ClassCodeVisitorSupport visitor, final boolean lhsOfAssignment) {
-        boolean accessible = isFieldAccessible(field, receiver.getType(), expression, receiver.getData());
+        boolean accessible = isFieldAccessible(field, receiver.getType(), expression, receiver.getData(), lhsOfAssignment);
         if (!accessible) {
             if (expression instanceof AttributeExpression) {
                 addStaticTypeError("Cannot access field: " + field.getName() + " of class: " + prettyPrintTypeName(field.getDeclaringClass()), expression.getProperty());
@@ -4280,6 +4310,9 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
                 } else if (!statement.isReturningNullOrVoid() && isPrimitiveType(inferredReturnType)
                         && checkReturnValue(inferredReturnType, type, expression, statement)) {
                     type = inferredReturnType; // GROOVY-12616: the value is converted to a primitive return type as by a method's return
+                } else if (!statement.isReturningNullOrVoid() && type.isDerivedFrom(CLOSURE_TYPE) && isSAMType(inferredReturnType)
+                        && isClosureCoercibleToSAM(inferredReturnType, type)) {
+                    type = inferredReturnType; // GROOVY-12606: closure value is coerced to the SAM type at point of return
                 } else if ((statement.isReturningNullOrVoid() || !isPrimitiveVoid(type)) && !extension.handleIncompatibleReturnType(statement, type)) {
                     // GROOVY-10277, GROOVY-11490: incompatible return statement (null for primitive or inconvertible type)
                     String value = (statement.isReturningNullOrVoid() ? "null" : "value of type " + prettyPrintValueType(type, expression));
@@ -4335,6 +4368,10 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
                 ClassNode resultType = getResultType(target, ASSIGN, type, dummy); // GROOVY-10295
                 checkTypeGenerics(target, resultType, value);
             }
+        } else if (type.isDerivedFrom(CLOSURE_TYPE) && isSAMType(target) // GROOVY-12599: Closure<R> value for SAM type
+                && !(value instanceof ClosureExpression || value instanceof MethodPointerExpression)
+                && !isClosureCoercibleToSAM(target, type)) {
+            return false;
         } else { // GROOVY-11623: check array items or number bounds
             addPrecisionErrors(target.redirect(), target, type, value);
         }
@@ -5624,14 +5661,22 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
 
         int nExpressions = expressions.size();
         int nthParameter = parameters.length - 1;
+        int nSelf = nExpressions - arguments.getExpressions().size(); // receiver of an extension method
         for (int i = 0; i < nExpressions; i += 1) {
             Expression expression = expressions.get(i);
             if (visitFunctors == (expression instanceof ClosureExpression || expression instanceof MethodPointerExpression)) {
                 if (visitFunctors && nthParameter != -1) { // GROOVY-10636: vargs call
-                    Parameter target = parameters[Math.min(i, nthParameter)];
+                    Parameter declared = parameters[Math.min(i, nthParameter)], target = declared;
                     ClassNode targetType = target.getType();
                     if (targetType.isArray() && i >= nthParameter)
                         targetType = targetType.getComponentType();
+                    ClassNode functionalType = (i < nSelf || !isFunctionalLiteral(expression) ? null
+                            : getFunctionalTypeArgument(receiver, selectedMethod, arguments, i - nSelf, targetType));
+                    if (functionalType != null) { // a type parameter the call binds to a functional interface
+                        targetType = functionalType;
+                        if (declared.getAnnotations(CLOSUREPARAMS_CLASSNODE).isEmpty())
+                            target = new Parameter(functionalType, declared.getName());
+                    }
                     boolean coerceToMethod = isSAMType(targetType);
                     if (coerceToMethod) { // resolve the target parameter's type
                         Map<GenericsTypeName, GenericsType> context = extractPlaceHoldersVisibleToDeclaration(receiver, selectedMethod, arguments);
@@ -5639,7 +5684,7 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
                         expression.putNodeMetaData(PARAMETER_TYPE, targetType);
                     }
                     if (expression instanceof ClosureExpression) {
-                        checkClosureWithDelegatesTo(receiver, selectedMethod, args(expressions), parameters, expression, target);
+                        checkClosureWithDelegatesTo(receiver, selectedMethod, args(expressions), parameters, expression, declared);
                         if (i > 0 || !(selectedMethod instanceof ExtensionMethodNode)) {
                             inferClosureParameterTypes(receiver, arguments, (ClosureExpression) expression, target, selectedMethod);
                         }
@@ -5667,6 +5712,59 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
                 checkNamedParamsAnnotation(parameters[0], (MapExpression) expression, isNestedCopyWith(selectedMethod));
             }
         }
+    }
+
+    /**
+     * Tells if the expression is a lambda or method reference written where the type checker resolves the
+     * functional interface of a parameter declared with a type parameter: only in statically compiled code, and
+     * for a lambda only with {@link CompilerConfiguration#LAMBDA_TYPE_ARGUMENT} set, since a lambda for such a
+     * parameter is otherwise compiled as a closure. Dynamic and type-checked calls pass such an argument as they are.
+     */
+    private boolean isFunctionalLiteral(final Expression expression) {
+        if (expression instanceof LambdaExpression) {
+            return isStaticDispatchScope() && SystemUtil.getBooleanSafe(CompilerConfiguration.LAMBDA_TYPE_ARGUMENT);
+        }
+        return expression instanceof MethodReferenceExpression && isStaticDispatchScope();
+    }
+
+    /**
+     * Returns the functional interface a call binds a parameter declared with a type parameter to, such as
+     * {@code Supplier<String>} for the parameter of {@code add(E)} called on a {@code List<Supplier<String>>},
+     * or for the second {@code T} of {@code <T extends Function<String, String>> m(T a, T b)} called with a
+     * subinterface of {@code Function} as the first argument. A lambda or method reference for the parameter
+     * is compiled for that interface. Neither the argument itself nor any closure, lambda or method reference
+     * passed for a parameter that is not a functional interface is a witness for the type parameter.
+     *
+     * @return the interface, or {@code null} if the parameter is not declared with a type parameter or the call
+     *         does not bind it to a functional interface
+     */
+    private ClassNode getFunctionalTypeArgument(final ClassNode receiver, final MethodNode method, final ArgumentListExpression arguments, final int index, final ClassNode parameterType) {
+        if (!parameterType.isGenericsPlaceHolder()) return null;
+
+        ClassNode type = applyGenericsContext(extractPlaceHoldersVisibleToDeclaration(receiver, method, arguments), parameterType);
+        if (type.isGenericsPlaceHolder()) { // a type parameter of the method
+            List<Expression> witnesses = new ArrayList<>(arguments.getExpressions());
+            Parameter[] parameters = method.getParameters();
+            for (int i = 0, n = witnesses.size(), last = parameters.length - 1; i < n; i += 1) {
+                if (i == index) {
+                    witnesses.set(i, nullX());
+                } else if (last >= 0 && implementsInterfaceOrIsSubclassOf(getType(witnesses.get(i)), CLOSURE_TYPE)) {
+                    ClassNode pType = parameters[Math.min(i, last)].getType();
+                    if (pType.isArray() && i >= last) pType = pType.getComponentType();
+                    if (!isSAMType(pType)) witnesses.set(i, nullX());
+                }
+            }
+            GenericsType[] typeArguments = null;
+            if (typeCheckingContext.getEnclosingMethodCall() instanceof MethodCallExpression call && call.getArguments() == arguments) {
+                typeArguments = call.getGenericsTypes();
+            }
+            type = inferGenericsOfCall(receiver, method, args(witnesses), typeArguments, parameterType);
+        }
+        if (type == null || type.isGenericsPlaceHolder() || !isSAMType(type)
+                || !implementsInterfaceOrIsSubclassOf(type, parameterType.redirect())) {
+            return null;
+        }
+        return type;
     }
 
     private static LambdaExpression constructLambdaExpressionForMethodReference(final ClassNode functionalInterface, final MethodReferenceExpression methodReference) {
@@ -5774,6 +5872,134 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
                 addStaticTypeError("argument for named param '" + key + "' has type '" + prettyPrintType(argumentType) + "' but expected '" + prettyPrintType(leafType) + "'.", entry);
             }
         }
+    }
+
+    /** Metadata of a closure that is the block of nested {@code copyWith}: the record or immutable type copied. */
+    private static final String COPY_WITH_BLOCK = "copyWith block";
+    /** Metadata of a variable or property expression that names a component path inside such a block: the component's type. */
+    private static final String COPY_WITH_PATH = "copyWith path";
+    /** The delegate of a {@code copyWith} block at run time, and what reading a component path inside it returns. */
+    private static final ClassNode COPY_WITH_RECORDER_TYPE = ClassHelper.make(CopyWithRecorder.class);
+
+    /**
+     * The block form of nested {@code copyWith}: {@code copyWith { address.city = 'x' }} on a type
+     * whose {@code copyWith(Map)} declares its components as named parameters. The closure's delegate is a
+     * {@link CopyWithRecorder}, which turns the assignments into the map form: it answers every property name, as a
+     * component path, and none of the copied type's methods, so a method call goes to the closure's owner.
+     */
+    private static boolean isCopyWithBlock(final MethodNode mn, final Parameter[] params, final ClassNode receiver) {
+        return isNestedCopyWith(mn) && params.length == 1 && CLOSURE_TYPE.equals(params[0].getType())
+                && copyWithNamedParams(receiver) != null;
+    }
+
+    /**
+     * The type copied by the {@code copyWith} block whose recorder answers a bare name here, or null. That is the
+     * innermost enclosing closure, or a block around it reached through closures that have no delegate of their own.
+     */
+    private ClassNode copyWithBlockType() {
+        for (TypeCheckingContext.EnclosingClosure enclosing : typeCheckingContext.getEnclosingClosureStack()) {
+            ClosureExpression closure = enclosing.getClosureExpression();
+            ClassNode blockType = closure.getNodeMetaData(COPY_WITH_BLOCK);
+            if (blockType != null) return blockType;
+            if (closure instanceof LambdaExpression || getDelegationMetadata(closure) != null) break;
+        }
+        return null;
+    }
+
+    /**
+     * The type a component path inside a {@code copyWith} block has: its component's type when it is the target of
+     * an assignment, which the recorder records, and otherwise the recorder that reading it returns at run time.
+     */
+    private ClassNode copyWithPathType(final Expression path, final ClassNode componentType) {
+        BinaryExpression enclosing = typeCheckingContext.getEnclosingBinaryExpression();
+        boolean assigned = enclosing != null && enclosing.getLeftExpression() == path && enclosing.getOperation().getType() == ASSIGN;
+        return assigned ? componentType : COPY_WITH_RECORDER_TYPE;
+    }
+
+    /**
+     * Inside a {@code copyWith} block, a bare name is a component of the copied type ({@code name = 'x'},
+     * {@code address.city = 'y'}) and {@code old} is the original object. The block's recorder answers every such
+     * name at run time, even one that also names a member of the enclosing class, so they are marked for dynamic
+     * dispatch; {@code old} is the real object and only its lookup is dynamic. Any other name would be a component
+     * path too, so it is an error: a member of the enclosing class needs a qualifier.
+     */
+    private boolean resolveCopyWithBlockVariable(final VariableExpression vexp, final String name) {
+        ClassNode blockType = copyWithBlockType();
+        if (blockType == null) return false;
+        if (!(vexp.getAccessedVariable() instanceof DynamicVariable)) {
+            vexp.setAccessedVariable(new DynamicVariable(name, false));
+        }
+        if ("old".equals(name)) {
+            vexp.putNodeMetaData(DYNAMIC_RESOLUTION, blockType);
+            storeType(vexp, blockType);
+            return true;
+        }
+        Map<String, ClassNode> components = copyWithNamedParams(blockType);
+        if (components == null || !components.containsKey(name)) {
+            addStaticTypeError("No such property: " + name + " for class: " + prettyPrintTypeName(blockType)
+                    + ". Inside copyWith { }, a qualifier is required to reference a member of the enclosing class.", vexp);
+            return true;
+        }
+        ClassNode componentType = components.get(name) != null ? components.get(name) : OBJECT_TYPE;
+        ClassNode type = copyWithPathType(vexp, componentType);
+        vexp.putNodeMetaData(DYNAMIC_RESOLUTION, type);
+        vexp.putNodeMetaData(COPY_WITH_PATH, componentType);
+        storeType(vexp, type);
+        return true;
+    }
+
+    /**
+     * Inside a {@code copyWith} block, a property of a component path ({@code address.city}) must be a component of
+     * that path's type, which the type's {@code copyWith(Map)} declares; the path stays dynamic, since the recorder
+     * answers it at run time.
+     */
+    private boolean resolveCopyWithBlockPath(final PropertyExpression expression) {
+        ClassNode blockType = copyWithBlockType();
+        String name = expression.getPropertyAsString();
+        if (blockType == null || name == null || !isCopyWithComponentPath(expression.getObjectExpression(), blockType)) return false;
+        Expression object = expression.getObjectExpression();
+        if (object.getNodeMetaData(COPY_WITH_PATH) == null) {
+            object.visit(this); // types and marks the path up to here, as existsProperty would have
+            if (object.getNodeMetaData(COPY_WITH_PATH) == null) return false;
+        }
+        ClassNode objectType = object.getNodeMetaData(COPY_WITH_PATH);
+        Map<String, ClassNode> components = copyWithNamedParams(objectType);
+        if (components == null || !components.containsKey(name)) {
+            addStaticTypeError("No such property: " + name + " for class: " + prettyPrintTypeName(objectType), expression);
+            return true;
+        }
+        ClassNode componentType = components.get(name) != null ? components.get(name) : OBJECT_TYPE;
+        ClassNode type = copyWithPathType(expression, componentType);
+        expression.putNodeMetaData(DYNAMIC_RESOLUTION, type);
+        expression.putNodeMetaData(COPY_WITH_PATH, componentType);
+        storeType(expression, type);
+        return true;
+    }
+
+    /** Whether a bare name or a chain of properties starts at a component of the block's type (not at {@code old}). */
+    private static boolean isCopyWithComponentPath(Expression expression, final ClassNode blockType) {
+        while (expression instanceof PropertyExpression pexp) expression = pexp.getObjectExpression();
+        if (!(expression instanceof VariableExpression vexp) || !(vexp.getAccessedVariable() instanceof DynamicVariable)) return false;
+        Map<String, ClassNode> components = copyWithNamedParams(blockType);
+        return components != null && components.containsKey(vexp.getName());
+    }
+
+    /**
+     * Inside a {@code copyWith} block, {@code path.modify { it... }} computes a component's new value from its
+     * current one: the closure's parameter and result are of the component's type and the call is answered by the
+     * recorder, even when the component's type has a {@code modify} method of its own.
+     */
+    private List<MethodNode> resolveCopyWithBlockModify(final MethodCallExpression call, final String name, final ArgumentListExpression arguments) {
+        ClassNode componentType = call.getObjectExpression().getNodeMetaData(COPY_WITH_PATH);
+        if (!"modify".equals(name) || componentType == null) return Collections.emptyList();
+        List<Expression> expressions = arguments.getExpressions();
+        if (expressions.size() != 1 || !(expressions.get(0) instanceof ClosureExpression closure)) return Collections.emptyList();
+        closure.putNodeMetaData(CLOSURE_ARGUMENTS, new ClassNode[]{componentType});
+        call.putNodeMetaData(DYNAMIC_RESOLUTION, OBJECT_TYPE);
+        Parameter block = new Parameter(GenericsUtils.makeClassSafeWithGenerics(CLOSURE_TYPE, new GenericsType(getWrapper(componentType))), "block");
+        MethodNode modify = new MethodNode("modify", 0, OBJECT_TYPE, new Parameter[]{block}, ClassNode.EMPTY_ARRAY, null);
+        modify.setDeclaringClass(COPY_WITH_RECORDER_TYPE); // a virtual method, as a type checking extension's makeDynamic would return
+        return List.of(modify);
     }
 
     /**
@@ -5907,7 +6133,7 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
                         Map<GenericsTypeName, GenericsType> gc = new HashMap<>();
                         extractGenericsConnections(gc, wrapTypeIfNecessary(getType(argument)), pType);
                         // GROOVY-10436: extract generics connections from closure parameter declaration(s)
-                        if (argument == expression || (argument instanceof ClosureExpression && isSAMType(pType))) {
+                        if ((argument == expression || argument instanceof ClosureExpression) && isSAMType(pType)) {
                             Parameter[] q = getParametersSafe((ClosureExpression) argument);
                             ClassNode[] r = extractTypesFromParameters(q); // maybe typed
                             ClassNode[] s = GenericsUtils.parameterizeSAM(pType).getV1();
@@ -6152,6 +6378,11 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
     }
 
     private void checkClosureWithDelegatesTo(final ClassNode receiver, final MethodNode mn, final ArgumentListExpression arguments, final Parameter[] params, final Expression expression, final Parameter param) {
+        if (isCopyWithBlock(mn, params, receiver)) { // GROOVY-12713
+            expression.putNodeMetaData(DELEGATION_METADATA, newDelegationMetadata(COPY_WITH_RECORDER_TYPE, Closure.DELEGATE_FIRST));
+            expression.putNodeMetaData(COPY_WITH_BLOCK, receiver);
+            return;
+        }
         List<AnnotationNode> annotations = param.getAnnotations(DELEGATES_TO);
         if (annotations != null && !annotations.isEmpty()) {
             for (AnnotationNode annotation : annotations) {
@@ -6524,11 +6755,19 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
                         if (existsProperty(property, true)
                                 && getType(property).equals(CLOSURE_TYPE)) {
                             chosenReceiver = Receiver.make(getType(property));
+                            if (isStaticPropertyOfTraitSelf(property)) {
+                                // the static accessor of the trait would read the property of the trait, not of the
+                                // class the trait is applied to, which $self or $static$self is at run time
+                                property.putNodeMetaData(DYNAMIC_RESOLUTION, CLOSURE_TYPE);
+                            }
                             call.putNodeMetaData("callable property", property);
                             List<Expression> list = argumentList.getExpressions();
                             int nArgs = list.stream().noneMatch(e -> e instanceof SpreadExpression) ? list.size() : -1;
                             mn = List.of(nArgs == 0 ? CLOSURE_CALL_NO_ARG : nArgs == 1 ? CLOSURE_CALL_ONE_ARG : CLOSURE_CALL_VARGS);
                         }
+                    }
+                    if (mn.isEmpty()) {
+                        mn = resolveCopyWithBlockModify(call, name, argumentList); // GROOVY-12713
                     }
                     if (mn.isEmpty()) {
                         mn = extension.handleMissingMethod(receiver, name, argumentList, args, call);
@@ -6619,7 +6858,7 @@ out:                if (mn.size() != 1) {
                                 }
                                 // falls through
                               case "getThisObject":
-                                returnType = makeThis();
+                                returnType = makeThisObject();
                             }
                         } else if (returnType.isGenericsPlaceHolder() || isUsingGenericsOrIsArrayUsingGenerics(returnType)) {
                             ClassNode irtg = inferReturnTypeGenerics(chosenReceiver.getType(), targetMethod, callArguments, call.getGenericsTypes());
@@ -6907,6 +7146,7 @@ out:                if (mn.size() != 1) {
     }
 
     private void checkSuperCallFromClosure(final Expression call, final MethodNode target) {
+        if (target.isStatic()) return; // no helper: invokestatic works from any class
         Expression objectExpression = getObjectExpression(call);
         ClassNode current = null;
         if (isOuterSuperExpression(objectExpression)) { // "Outer.super.name()": call through Outer's super$ helper
@@ -8379,6 +8619,18 @@ trying: for (ClassNode[] signature : signatures) {
             storeTargetMethod(expr, method);
             typeCheckMethodsWithGenericsOrFail(left, new ClassNode[]{right}, method, expr);
 
+            Parameter[] parameters = (method instanceof ExtensionMethodNode emn ? emn.getExtensionMethodNode() : method).getParameters();
+            if (parameters.length > 0 && isFunctionalLiteral(rightExpression)) { // an operand is compiled like an argument
+                ClassNode functionalType = getFunctionalTypeArgument(left, method, args(rightExpression), 0, parameters[parameters.length - 1].getType());
+                if (functionalType != null) {
+                    rightExpression.putNodeMetaData(PARAMETER_TYPE, functionalType);
+                    // a method reference was visited before the operator method gave its functional interface
+                    // type; the method it calls is selected by the parameter types of that type, as for an argument
+                    if (rightExpression instanceof MethodReferenceExpression)
+                        rightExpression.putNodeMetaData(CLOSURE_ARGUMENTS, GenericsUtils.parameterizeSAM(functionalType).getV1());
+                }
+            }
+
             if (isAssignment(op)) return left;
             if (!"compareTo".equals(operationName))
                 return inferReturnTypeGenerics(left, method, args(rightExpression));
@@ -9120,6 +9372,37 @@ trying: for (ClassNode[] signature : signatures) {
         return null;
     }
 
+    /**
+     * Whether the property is a static property of a trait read in a method of its helper, through the
+     * {@code $self} or {@code $static$self} parameter, or through the implicit this of a closure or lambda,
+     * which is that parameter too. The trait reads such a property with a static accessor.
+     */
+    private boolean isStaticPropertyOfTraitSelf(final PropertyExpression property) {
+        if (!(property.getObjectExpression() instanceof VariableExpression receiver)) return false;
+        Variable self = receiver.getAccessedVariable();
+        if (receiver.isThisExpression() && property.isImplicitThis() && typeCheckingContext.getEnclosingClosure() != null) {
+            MethodNode method = typeCheckingContext.getEnclosingMethod(); // a closure or lambda in a trait method
+            if (method == null || method.getParameters().length == 0) return false;
+            self = method.getParameters()[0];
+        }
+        if (!(self instanceof Parameter)) return false;
+        ClassNode trait = null;
+        if (Traits.THIS_OBJECT.equals(self.getName())) {
+            trait = self.getType();
+        } else if (Traits.STATIC_THIS_OBJECT.equals(self.getName()) && isClassClassNodeWrappingConcreteType(self.getType())) {
+            trait = self.getType().getGenericsTypes()[0].getType();
+        }
+        if (trait == null || !Traits.isTrait(trait)) return false;
+        // the getter the trait transformation generates, or an explicit one; the property is a closure, and only a
+        // boolean property is read through an isser
+        String getter = "get" + capitalize(property.getPropertyAsString());
+        for (ClassNode t : Traits.findTraits(trait)) {
+            MethodNode method = t.getDeclaredMethod(getter, Parameter.EMPTY_ARRAY);
+            if (method != null && method.isStatic()) return true;
+        }
+        return false;
+    }
+
     private static ClassNode makeSelf(final ClassNode trait) {
         Set<ClassNode> selfTypes = Traits.collectSelfTypes(trait, new LinkedHashSet<>());
         if (!selfTypes.isEmpty()) {
@@ -9148,6 +9431,24 @@ trying: for (ClassNode[] signature : signatures) {
 
     private ClassNode makeThis() {
         return makeType(typeCheckingContext.getEnclosingClassNode(), typeCheckingContext.isInStaticContext);
+    }
+
+    /**
+     * Returns the type of the this object of the enclosing closure, which is also its owner when it is not
+     * nested in another closure. In an instance method or instance initializer of a trait, the trait
+     * transformation rehydrates each closure written there to the {@code $self} parameter, and a closure in a
+     * lambda gets the this object of the lambda, which is {@code $self} too, so it is the type of the instance
+     * the trait is applied to.
+     */
+    private ClassNode makeThisObject() {
+        MethodNode method = typeCheckingContext.getEnclosingMethod();
+        if (method != null && method.getParameters().length > 0 && Traits.isTrait(method.getDeclaringClass().getOuterClass())) {
+            Parameter self = method.getParameters()[0];
+            if (Traits.THIS_OBJECT.equals(self.getName()) && Traits.isTrait(self.getType())) {
+                return makeSelf(self.getType());
+            }
+        }
+        return makeThis();
     }
 
     /**
@@ -9337,6 +9638,20 @@ trying: for (ClassNode[] signature : signatures) {
             return inferReturnTypeGenerics(receiver, extension, args, explicitTypeHints);
         }
 
+        return inferGenericsOfCall(receiver, method, arguments, explicitTypeHints, returnType);
+    }
+
+    /**
+     * Resolves the type parameters in a type of the method's signature, its return type or a parameter type,
+     * from the receiver, the type arguments and the arguments of a call.
+     */
+    private ClassNode inferGenericsOfCall(final ClassNode receiver, final MethodNode method, final Expression arguments, final GenericsType[] explicitTypeHints, ClassNode type) {
+        if (method instanceof ExtensionMethodNode) {
+            ArgumentListExpression args = getExtensionArguments(receiver, method, arguments);
+            MethodNode extension = ((ExtensionMethodNode) method).getExtensionMethodNode();
+            return inferGenericsOfCall(receiver, extension, args, explicitTypeHints, type);
+        }
+
         Map<GenericsTypeName, GenericsType> context = method.isStatic() || method.isConstructor()
                                             ? null : extractPlaceHoldersVisibleToDeclaration(receiver, method, arguments);
         GenericsType[] methodGenericTypes = method.isConstructor() ? method.getDeclaringClass().getGenericsTypes() : applyGenericsContext(context, method.getGenericsTypes());
@@ -9345,8 +9660,8 @@ trying: for (ClassNode[] signature : signatures) {
         // a type argument from the call may name a type variable of the caller that has the same
         // name as one of the receiver's type parameters, such as T of "<T> m(Class<T> t) { c.asSubclass(t) }"
 
-        boolean erase = context != null && isRawType(receiver) && !returnType.isGenericsPlaceHolder() && !returnType.isArray()
-                && mentionsTypeParameterWithRawBound(returnType, receiver); // JLS 4.8: the erasure, not a raw bound
+        boolean erase = context != null && isRawType(receiver) && !type.isGenericsPlaceHolder() && !type.isArray()
+                && mentionsTypeParameterWithRawBound(type, receiver); // JLS 4.8: the erasure, not a raw bound
         Map<GenericsTypeName, GenericsType> resolvedPlaceholders = context != null ? new HashMap<>(context) : new HashMap<>();
         if (methodGenericTypes != null) {
             Map<GenericsTypeName, GenericsType> methodPlaceholders = new HashMap<>();
@@ -9356,17 +9671,17 @@ trying: for (ClassNode[] signature : signatures) {
             ).toArray(Parameter[]::new), arguments, explicitTypeHints), methodPlaceholders);
             resolvedPlaceholders.putAll(methodPlaceholders);
         }
-        returnType = applyGenericsContext(resolvedPlaceholders, returnType);
+        type = applyGenericsContext(resolvedPlaceholders, type);
 
-        if (context != null && (erase || (isRawType(receiver) && GenericsUtils.hasUnresolvedGenerics(returnType)))) {
-            returnType = returnType.getPlainNodeReference(); // GROOVY-10049: not "Stream<E>" for raw type
+        if (context != null && (erase || (isRawType(receiver) && GenericsUtils.hasUnresolvedGenerics(type)))) {
+            type = type.getPlainNodeReference(); // GROOVY-10049: not "Stream<E>" for raw type
         }
 
         // 3) resolve bounds of type parameters from calling context
 
-        returnType = applyGenericsContext(extractGenericsParameterMapOfThis(typeCheckingContext), returnType);
+        type = applyGenericsContext(extractGenericsParameterMapOfThis(typeCheckingContext), type);
 
-        return returnType;
+        return type;
     }
 
     private static boolean isObjectGetClass(final MethodNode method) {

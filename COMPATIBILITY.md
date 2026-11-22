@@ -2172,6 +2172,83 @@ declared as `Holder<T extends List>`, a field `Class<? extends T> type` is a
 `Class`, so `Class<? extends List<String>> c = holder.type` is an unchecked
 conversion.
 
+### Groovy 7 — an `instanceof` check narrows a variable only where it guards the code (GROOVY-12562)
+
+Under `@TypeChecked` and `@CompileStatic`, an `instanceof` check used to narrow
+the variable it checks for the rest of the expression or condition, wherever
+the check was. It now narrows only where its outcome decides what is evaluated
+next: in the condition of an `if`, `while`, `for`, `assert` or conditional
+expression, in an operand of `&&`, `||`, `|` or `!`, and when the check is compared
+with a boolean literal, assigned in a condition or cast to `boolean`. The
+condition of a loop narrows inside the loop only.
+
+```groovy
+@CompileStatic
+def f(Object x) { '' + (x instanceof String) + x.length() }
+// before: compiled; f(new StringBuilder('ab')) threw ClassCastException
+// now:    Cannot find matching method java.lang.Object#length()
+
+@CompileStatic
+def g(Object x) { x instanceof String ? 'true' + x.length() : 'false' }
+// before and now: compiles, the check guards the call
+```
+
+**Who is affected.** Code that compiled before and now fails with an error
+such as "Cannot find matching method", because it relied on a narrowing that
+nothing ensured:
+- a check that is an operand of any other operator, a method argument or a
+  list element: `'' + (x instanceof String) + x.length()`,
+  `foo(x instanceof String, x.length())`, `[x instanceof String, x.length()]`,
+  `(x instanceof String) == x.isEmpty()`, and the right operand of `&` in
+  `x instanceof String & x.length() > 0`;
+- a variable used after a loop whose condition checked it:
+  `while (x instanceof String) { break }; x.length()`, and the same for a
+  classic `for` and a `do`/`while` loop;
+- the branch of a check compared with `false`, or with `true` using `!=`:
+  `if ((x instanceof String) == false) x.length()` used to narrow `x` to
+  `String` in the branch where it is not one.
+
+Under `@CompileStatic` such code threw `ClassCastException` whenever the check
+was false. Under `@TypeChecked` the call is dispatched dynamically, so it may
+have run correctly. Move the check into a condition that guards the use, or
+cast the variable.
+
+**More programs compile.** The `else` branch of
+`if ((x instanceof String) == false)` and the code after
+`if ((x instanceof String) == false) return` are now narrowed to `String`, as
+for `!(x instanceof String)`.
+
+**What is unchanged.** A check that is a statement of its own,
+`x instanceof String; x.length()`, or that is only stored,
+`boolean b = x instanceof String; x.length()`, did not narrow the following
+statements before and does not now. `assert x instanceof String` and
+`if (!(x instanceof String)) return` still narrow the code after them.
+`case String:` in a `switch`, `catch` parameters, and dynamic code are
+unaffected. An `instanceof` pattern such as `x instanceof String s` narrows
+`x` in the same guard positions as a plain `instanceof` check; the scoping of
+the pattern variable `s` is unchanged.
+
+### Groovy 7 — `super` reaches a static member the class hides (GROOVY-12519)
+
+When a class declared a static method or property with the same signature as
+one of its superclass, `super.sm()` within the class threw
+`MissingMethodException` in dynamic Groovy and under `@TypeChecked`, or called
+another overload of the superclass with `null`, and `super.sp` threw
+`MissingPropertyException`. They now reach the static member of the nearest
+superclass that declares one, as javac and `@CompileStatic` do. Under
+`@CompileStatic`, `super.sm()` in a closure or lambda failed with
+`IncompatibleClassChangeError` for any static method of the superclass, hidden
+or not, and an extension method called through `super` there, such as
+`super.first()` in a subclass of `ArrayList`, failed with `NoSuchMethodError`.
+Both now call the method.
+
+**Who is affected.** Code that relied on the old failure, or on the other
+overload being called. A private static method of the superclass stays out of
+reach. Calls through `this` or the class name and instance methods behave as
+before, and so does `super` with a static member the class does not hide,
+apart from the `@CompileStatic` closure and lambda case above. There are no
+API changes.
+
 ## The binary-compatibility check
 
 The [`subprojects/binary-compatibility/`](subprojects/binary-compatibility)
