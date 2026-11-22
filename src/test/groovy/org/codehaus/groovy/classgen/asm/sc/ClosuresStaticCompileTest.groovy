@@ -26,6 +26,49 @@ import org.junit.jupiter.api.Test
  */
 final class ClosuresStaticCompileTest extends ClosuresSTCTest implements StaticCompilationTestSupport {
 
+    // GROOVY-12678: a statically compiled lambda is owned by the enclosing instance
+    @Override @Test
+    void testNestedLambdaDelegateOwner() {
+        for (prop in ['delegate', 'owner', 'getDelegate()', 'getOwner()']) {
+            assertScript """
+                import java.util.function.Supplier
+                class C {
+                    String name = 'n'
+                    void m() {
+                        def c = { ->
+                            Supplier<Object> s = () -> {
+                                name
+                                @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                                    def type = node.getNodeMetaData(INFERRED_TYPE)?.toString(false)
+                                    assert type/*of $prop*/ == 'C'
+                                })
+                                Object ref = $prop
+                                assert ref.is(this)
+                            }
+                            s.get()
+                        }
+                        c.call()
+                        Supplier<Object> t = () -> {
+                            name
+                            Supplier<Object> s = () -> {
+                                name
+                                @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                                    def type = node.getNodeMetaData(INFERRED_TYPE)?.toString(false)
+                                    assert type/*of $prop*/ == 'C'
+                                })
+                                Object ref = $prop
+                                assert ref.is(this)
+                            }
+                            s.get()
+                        }
+                        t.get()
+                    }
+                }
+                new C().m()
+            """
+        }
+    }
+
     // GROOVY-5584
     @Test
     void testEachOnMapClosure() {

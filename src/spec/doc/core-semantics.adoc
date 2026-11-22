@@ -990,6 +990,41 @@ include::../test/CoercionTest.groovy[tags=method_call_with_implicit_coercion,ind
 As you can see, this has the advantage of letting you use the closure syntax for method calls, that is to say put the
 closure outside the parenthesis, improving the readability of your code.
 
+==== Lambdas and method references for a type parameter
+
+A method may declare the parameter a lambda or method reference is passed for with a type parameter, such as `E` of
+`List.add(E)` or `V` of `Map.put(K, V)`, whose erasure is `Object`. When statically compiled code binds that type
+parameter to a SAM interface, for instance `Function<String, String>` for a `Map<String, Function<String, String>>`,
+a method reference is compiled for the interface:
+
+[source,groovy]
+----
+include::../test/CoercionTest.groovy[tags=functional_literal_for_type_parameter,indent=0]
+----
+
+The stored value is an instance of the interface, as when it is assigned to a variable of the interface type, and
+dynamically compiled code calls it through the interface's method:
+
+[source,groovy]
+----
+include::../test/CoercionTest.groovy[tags=functional_literal_for_type_parameter_assertions,indent=0]
+----
+
+A lambda for such a parameter is compiled as a closure, unless the code is compiled with the incubating
+`-Dgroovy.target.lambda.typearg=true` option. With the option, the lambda is compiled for the interface too:
+
+[source,groovy]
+----
+include::../test/CoercionTest.groovy[tags=lambda_for_type_parameter,indent=0]
+----
+
+Callers can tell the difference: the stored lambda is then an instance of the interface only, not a closure, so
+dynamically compiled code can no longer call it as one, with `commands().shout('Hi')` or
+`commands().shout.call('Hi')`, as with `Supplier<String> s = () -> 'y'`.
+
+Dynamically compiled and type-checked (`@TypeChecked`) code are unchanged, with or without the option: there a lambda
+for such a parameter is compiled as a closure, and type-checked code rejects a method reference for it.
+
 ==== Closure to arbitrary type coercion
 
 In addition to SAM types, a closure can be coerced to any type and in particular interfaces. Let's define the

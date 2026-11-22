@@ -23,6 +23,7 @@ import org.apache.groovy.util.BeanUtils;
 import org.codehaus.groovy.ast.AnnotatedNode;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.ConstructorNode;
+import org.codehaus.groovy.ast.EnumConstantClassNode;
 import org.codehaus.groovy.ast.FieldNode;
 import org.codehaus.groovy.ast.InnerClassNode;
 import org.codehaus.groovy.ast.MethodNode;
@@ -447,9 +448,9 @@ public class ClassNodeUtils {
 
     /**
      * Determines if the given ClassNode has no instance of its outer class to use:
-     * a static nested class, or an anonymous class created in a static context, such
-     * as a static method, a static initializer, an argument of {@code this(...)} or
-     * {@code super(...)}, or a closure inside one of them.
+     * a static nested class, the body of an enum constant, or an anonymous class
+     * created in a static context, such as a static method, a static initializer, an
+     * argument of {@code this(...)} or {@code super(...)}, or a closure inside one of them.
      *
      * @param cNode the ClassNode of interest
      * @return true if the given node has no enclosing instance, else false
@@ -458,6 +459,7 @@ public class ClassNodeUtils {
      */
     public static boolean hasNoEnclosingInstance(final ClassNode cNode) {
         if (Modifier.isStatic(cNode.getModifiers())) return true;
+        if (cNode.redirect() instanceof EnumConstantClassNode) return true; // created by the static initializer
         if (cNode.redirect() instanceof InnerClassNode inner && inner.isAnonymous()) {
             VariableScope scope = inner.getVariableScope(); // see VariableScopeVisitor
             return scope != null && scope.getParent() != null && scope.getParent().isInStaticContext();
