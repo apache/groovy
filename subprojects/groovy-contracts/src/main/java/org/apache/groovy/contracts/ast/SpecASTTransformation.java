@@ -140,6 +140,10 @@ public class SpecASTTransformation implements ASTTransformation {
             this.target = target;
         }
 
+        /**
+         * Returns {@code null}. This walk only records where the target sits
+         * and does not report through a source unit.
+         */
         @Override
         protected SourceUnit getSourceUnit() {
             return null;
@@ -151,6 +155,12 @@ public class SpecASTTransformation implements ASTTransformation {
             candidate.getCode().visit(this);
         }
 
+        /**
+         * When the target is a direct statement of {@code candidate}, or the
+         * expression of such an {@link ExpressionStatement}, records the method
+         * being walked, the block, and that statement, and stops. Otherwise
+         * keeps walking until a match is found.
+         */
         @Override
         public void visitBlockStatement(final BlockStatement candidate) {
             if (method != null) return;
@@ -165,6 +175,10 @@ public class SpecASTTransformation implements ASTTransformation {
             super.visitBlockStatement(candidate);
         }
 
+        /**
+         * When {@code candidate} is the target, records the method being walked.
+         * This catches a loop that is not a direct child of a block.
+         */
         @Override
         protected void visitStatement(final Statement candidate) {
             // a loop that is not a direct child of a block, e.g. a braceless if branch

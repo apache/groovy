@@ -550,6 +550,22 @@ class LoopInvariantTests extends BaseTestClass {
         }
     }
 
+    // GROOVY-12740: a statement that is not an expression, e.g. 'assert i >= 0', crashed the compiler with an
+    // internal error instead of being reported
+    @Test
+    void statementThatIsNotAnExpressionIsRejected() {
+        def message = shouldFail(MultipleCompilationErrorsException) {
+            assertScript '''
+                import groovy.contracts.Invariant
+
+                int i = 0
+                @Invariant({ assert i >= 0 })
+                while (i < 3) { i++ }
+            '''
+        }.message
+        assert message.contains('@Invariant on a loop may only contain boolean expressions; assert statements are not supported')
+    }
+
     private static List<String> compileWarnings(String source) {
         def unit = new CompilationUnit()
         unit.addSource('Script1.groovy', source)

@@ -28,6 +28,9 @@ import org.apache.groovy.util.SystemUtil;
 public class LexerAtnManager extends AtnManager {
     private static final String GROOVY_CLEAR_LEXER_DFA_CACHE = "groovy.antlr4.clear.lexer.dfa.cache";
     private static final boolean TO_CLEAR_LEXER_DFA_CACHE;
+    /**
+     * Shared manager for the lexer ATN.
+     */
     public static final LexerAtnManager INSTANCE = new LexerAtnManager();
 
     static {

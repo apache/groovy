@@ -57,6 +57,14 @@ public class ThreadManagedMetaBeanProperty extends MetaBeanProperty {
         return getInitialValue(null);
     }
 
+    /**
+     * Returns the initial value for {@code object}. When an initial-value closure was
+     * set, that closure is called with {@code object}; otherwise the stored initial
+     * value is returned. {@link #getInitialValue()} calls this with {@code null}.
+     *
+     * @param object the bean passed to the closure, or {@code null}
+     * @return the closure result, or the stored initial value when no closure is set
+     */
     public synchronized Object getInitialValue(Object object) {
         if (initialValueCreator != null) {
             return initialValueCreator.call(object);

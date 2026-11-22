@@ -872,6 +872,28 @@ which follows `Double.compare` for primitives and objects alike. Classes
 compiled by an earlier release keep the old comparison until they are
 recompiled.
 
+### Groovy 6.0.1 — instance initializer blocks of `@CompileStatic` classes are statically compiled (GROOVY-12761)
+
+Since Groovy 5.0, method calls in an instance initializer block of a
+`@CompileStatic` class were type checked but then dispatched dynamically,
+unlike the same calls in a constructor or a field initializer. In 6.0.0 an
+anonymous inner class created in such a block was also compiled dynamically
+as a whole. Both are statically compiled again, as in Groovy 4. A closure in
+the block that calls a method of a delegate that is not a Groovy object, such
+as `new StringBuilder('a').with { append('b') }`, no longer throws
+`IncompatibleClassChangeError` (GROOVY-12581).
+
+**Who is affected.** Code in an instance initializer block of a
+`@CompileStatic` class, or in an anonymous inner class created there, that
+calls an overloaded method with an argument whose static type is wider than
+its value. The overload is now chosen from the static type, as in a
+constructor, rather than from the run-time type. Meta-class and category
+changes no longer apply to those calls.
+
+**What is unchanged.** Constructor calls written directly in the block,
+static initializer blocks, field initializers, constructors, and classes that
+are not statically compiled. There are no API changes.
+
 ### Groovy 7 — Groovy Console smart highlighter and the language host
 
 `SmartDocumentFilter.getLatestTokenList()` now returns delimiter spans
@@ -947,6 +969,39 @@ their declared return type, as since GROOVY-6401.
   method whose result type may change between versions.
 
 The method descriptors are unchanged, so `japicmp` does not report this.
+
+### Groovy 7 — a property's accessor is chosen over an interface's abstract accessor (GROOVY-12552)
+
+When an interface declares an abstract getter or setter for a property that a
+class declares, and a call's receiver is inferred to be a subclass of that
+class (`Base b = new Impl()` is inferred to be an `Impl`), static type
+checking chose the interface's method if the class was compiled together with
+the call, and the class's accessor if the class was already compiled. It now
+chooses the class's accessor either way, so the same source compiles to the
+same class file whether or not the class is compiled with it.
+
+- **`obj.x = v` calls the class's setter again.** From 5.0.0, the interface's
+  setter was called when compiled together (GROOVY-11381); Groovy 4 called
+  the class's setter.
+- **`obj.getX()` and `obj.setX(v)` call the class's accessor.** Every earlier
+  version called the interface's method when compiled together.
+- **A getter call can have a narrower type.** Where the interface declares a
+  wider type than the property, such as `Object getName()` for a `String name`
+  property, or `T getValue()` of `Holder<Number>` for an `Integer value`
+  property, a call of the getter now has the property's type, as reading the
+  property (`obj.name`) already did. `obj.getName().toUpperCase()` now type
+  checks. Statically compiled overload selection can change with no compile
+  error: `h(obj.getName())` with `h(Object)` and `h(String)` overloads selects
+  `h(String)` where it used to select `h(Object)`.
+
+**Who is affected.** `@CompileStatic` code compiled together with such a class
+now calls the class's accessor with `invokevirtual` rather than the
+interface's method with `invokeinterface`. The same method runs, unless a
+different overload is selected. Type checked (dynamically dispatched) code
+selects its overload by the runtime type, so only its inferred type changes.
+A call compiled against the class file, a receiver inferred to be the class
+that declares the property, and dynamic Groovy behave as before. There are no
+API changes.
 
 ### Groovy 7 — `PlaceholderVisitor` is removed (GROOVY-11744)
 
@@ -1122,6 +1177,113 @@ To keep a narrowing, convert explicitly, as in
 **What is unchanged.** A functional interface whose method returns a reference
 type, such as `Supplier<Long>`, still requires the returned value's type to be
 compatible, so `Supplier<Long> s = () -> 1` remains an error (GROOVY-11414).
+
+### Groovy 7 — a trait's static accessor read as a property is a call of the accessor (GROOVY-12614)
+
+In the body of a trait method, the property form of a static accessor that
+the trait declares (`label` or `this.label` for `static String getLabel()`)
+is now a call of that accessor, exactly as the method form `getLabel()` is.
+A static method of a trait is not overridden by a static method of the
+implementing class unless the trait marks it `@Virtual`, so the property form
+no longer uses an accessor that the implementing class declares. Before,
+dynamic and `@TypeChecked` code used the implementing class's accessor for the
+property form and the trait's own for the method form, and `@CompileStatic`
+code used the trait's own for both. Assignments (`label = v`) and compound
+assignments (`label += v`) call the trait's setter and getter in the same way.
+
+**Who is affected.** Dynamic or `@TypeChecked` trait code that reads or
+assigns a static accessor of the trait in the property form and relies on an
+implementing class supplying its own static accessor of the same name. Mark
+the trait's accessor `@Virtual` to keep that behaviour:
+
+```groovy
+trait Described {
+    @Virtual static String getLabel() { 'default' }   // was: static String getLabel()
+    static String describe() { "label is $label" }
+}
+class Special implements Described {
+    static String getLabel() { 'special' }
+}
+assert Special.describe() == 'label is special'
+```
+
+A `@Virtual` static is not available through the trait itself, so
+`Described.label` and `Described.getLabel()` must be written with an
+implementing class instead.
+
+**What is unchanged.** The method form, a `@Virtual` accessor, a declared
+static property (`static String label = 'x'`, which trait code always reads
+from the trait's own field), instance accessors and properties, names in a
+closure or lambda (which the closure resolves), `++` and `--`, and access from
+outside the trait (`Special.label`).
+
+### Groovy 7 — a declared trait property in a closure is read and written through its accessor (GROOVY-12598)
+
+In a closure in a trait method, the name of an instance property that the
+trait declares is resolved by the closure, through its delegate and owner,
+and `this.name` is a call of the accessor on the implementing instance.
+Before, both went straight to the trait's backing field. This is what the
+same names mean in a closure in a class that declares the property.
+
+**Who is affected.** A trait that declares a property and uses it in a
+closure, when an implementing class declares its own accessor for that
+property, or when the closure's delegate has a property of the same name and
+the closure's resolve strategy consults the delegate first. In a closure
+within a lambda the name is the accessor of the implementing instance, and the
+delegate is not consulted. A getter or
+setter that the trait itself declares for the property and that uses the
+property in a closure now calls itself; use the property outside the closure
+there.
+
+**What is unchanged.** The property in a method body or a lambda, which is
+the trait's backing field; private and static fields of the trait; and
+`getName()` and `setName(v)`.
+
+### Groovy 6.0.1 — a lambda in a statically compiled trait reads a super trait's static accessor directly (GROOVY-12608)
+
+In a lambda in a trait annotated with `@CompileStatic`, the property form of
+a static accessor of a super trait (`cnt` for `static int getCnt()`, or for a
+static property `cnt`) is now a call of that accessor. In 6.0.0 the name was
+left for the lambda to resolve at run time: for a static property of the
+super trait that failed with a `MissingMethodException`, and for a declared
+accessor a lambda passed as a closure took the name from the closure's
+delegate when the delegate had a property of that name.
+
+**Who is affected.** A statically compiled trait that passes such a lambda
+where a closure is expected and relies on the closure's delegate to supply
+the name, as in `p.with((x) -> cnt)` where `p` has a `cnt` property: the
+lambda now reads the super trait's accessor. Use a closure (`p.with { cnt }`),
+which consults its delegate, or qualify the name (`x.cnt`).
+
+**What is unchanged.** Dynamic and `@TypeChecked` trait code, where the
+delegate of such a lambda still supplies the name; closures; and the method
+form `getCnt()`.
+
+### Groovy 6.0.1 — trait static state used through the trait itself throws `MissingFieldException` (GROOVY-12597)
+
+A public static method of a trait is promoted onto the trait interface, so it
+can be called as `T.m()` as well as through an implementing class. Called
+through the trait, it has no implementing class, and so no static state: a
+trait's static fields and properties exist only in the classes that implement
+it. Reading or writing one there, as in `T.count`, `T.getCount()`, or `T.m()`
+where `m` uses a static field of `T`, now throws a `MissingFieldException`.
+Its message says that the state belongs to each implementing class, and its
+`field` and `type` are the field's name and the trait. In 6.0.0 the same code
+threw a `MissingMethodException` that named an internal accessor, such as
+`T__count$get`.
+
+To do this, the interface of a trait that has promoted static methods now
+declares a synthetic public static accessor for each static field of the
+trait.
+
+**Who is affected.** Code that catches `MissingMethodException`, or
+inspects its message or method name, around such a call. Catch
+`MissingFieldException` (or `GroovyRuntimeException`, which both extend), or
+better, call the method through an implementing class, as in `C.m()`.
+
+**What is unchanged.** Calls through an implementing class; promoted static
+methods that do not use static state; and code that reaches the static state
+of a super trait, which can still fail with a `MissingMethodException`.
 
 ### Groovy 6.0.1 — statically compiled constructor references call the constructor directly (GROOVY-12488)
 
@@ -1660,6 +1822,355 @@ time, is unaffected.
 
 **Who is not affected (binary).** Existing call sites are compiled against
 the unchanged existing overloads.
+
+### Groovy 6.0.1 — async constructs rethrow a checked exception as itself (GROOVY-12763)
+
+In 6.0.0, `await` rethrew a checked exception from an async task unchanged,
+but other async constructs wrapped it: a scope's child task failure and a
+`defer` action in `RuntimeException`, a `withScope` body and a generator body
+in `UndeclaredThrowableException`, and a `Flow.Publisher` error consumed with
+`for await` in `RuntimeException`. All of them now rethrow the original
+exception, as `await` does, and a timed `withScope` uses it as the cause of
+its `TimeoutException`. Async/await is incubating.
+
+**Who is affected.** Code that catches `RuntimeException` or
+`UndeclaredThrowableException` around these constructs and reads
+`getCause()` to find a checked exception. Catch the checked exception
+directly instead. Java callers of `AsyncScope.close()` and `withScope`,
+which declare no checked exceptions, catch `Exception` and test its type.
+
+An `UndeclaredThrowableException` around a checked exception that a
+`withScope` or generator body throws is removed too, because it cannot be
+told apart from the layer closure conversion adds. Such a wrapper most
+often comes from a `java.lang.reflect.Proxy`, such as a Spring AOP proxy or
+an RPC stub, called in the body.
+
+**What is unchanged.** Unchecked exceptions and errors, which were never
+wrapped, and the exception `await` rethrows. Exceptions suppressed by a
+wrapper that `await` or a scope removes now move to the exception
+rethrown. There are no API signature changes in `groovy.concurrent`.
+
+### Groovy 7 — a default-package class on the class path is resolved before the default imports (GROOVY-12555)
+
+In a compilation unit of the default package, a simple type name that the
+unit neither declares nor imports, and that no other unit of the same
+`CompilationUnit` declares, is now looked up as a class of the default
+package on the class path, and on the source path of the
+`GroovyClassLoader`, *before* the default imports (`java.lang`, `java.util`,
+`java.io`, `java.net`, `java.time`, `groovy.lang`, `groovy.util`,
+`BigInteger`, `BigDecimal`). That lookup used to come after the default
+imports, so a default-package `Factory` was found while it was compiled
+together with its callers but lost to `groovy.util.Factory` once it had been
+compiled ahead of them, as in an incremental build, and the same source
+compiled to a different class. A class of a named package was already
+resolved before the default imports for a unit of the same package, and the
+Java Language Specification (§6.4.1) has a type of the same package, the
+unnamed package included, shadow a type imported on demand. An explicit star
+import still takes precedence over a class of the default package, as
+elsewhere in Groovy. A compiled nested class named through its outer class
+is looked up the same way: with a compiled default-package `Proxy` that has
+a nested `Type`, `Proxy.Type` is that class and not `java.net.Proxy.Type`.
+
+**Who is affected.** Default-package code whose class path has a class, or a
+`.groovy` source, of the default package with the simple name of a
+default-import type. The `groovy` command uses the current directory as the
+class path when none is given, so in a directory of scripts a sibling
+`Node.groovy`, `Timer.groovy` or `Math.groovy` now stands for that name in
+the other scripts, where `groovy.util.Node`, `java.util.Timer` and
+`java.lang.Math` did, and a sibling source that does not compile is now a
+compile error for a script that uses its name. The roots of a
+`GroovyScriptEngine`, and so of groovlets, are source paths of the same kind.
+A script there records a dependency only on the class a name resolved to, so
+a script that resolved `Date` to `java.util.Date` is not recompiled when a
+`Date.groovy` appears in a root: the same engine then gives `java.util.Date`
+to that script and the root's `Date` to a script compiled after it, and a
+script that resolved `Date` to the root's `Date.groovy` keeps it after the
+file is deleted, until the engine is recreated. The lookup also takes in the
+classes that the class loader has already compiled or loaded, so in a
+`GroovyShell` or `GroovyScriptEngine` that is reused, and in groovysh or the
+console, a name resolves to a default-package class compiled earlier by the
+same loader, such as a `Timer` from a `Timer.groovy` parsed before, and to
+the default import while there is none.
+
+**Remedies.** Rename the file, give it a package, or use the fully qualified
+name of the default-import type. Set the optimization option
+`defaultPackageSources` to `false` to look up only the `.class` files of the
+default package before the default imports: a compiled class still shadows a
+default import, while a source of the default package, and a class compiled
+earlier by the class loader, are found only after the default imports, as
+before. Set the optimization option `defaultPackageFirst` to `false` to
+restore the previous order altogether; `defaultPackageSources` is then
+ignored. Either can be set through its system property,
+`groovy.resolve.default.package.sources=false` or
+`groovy.resolve.default.package.first=false`, a configuration script, or, in
+Gradle, `groovyOptions.optimizationOptions['defaultPackageSources'] = false`
+or `groovyOptions.optimizationOptions['defaultPackageFirst'] = false`. Only
+the last of these reaches the compiler from Gradle, which replaces the
+compiler's optimization options with that map after the configuration script
+has run. An incremental Gradle build gives the same result whatever
+`defaultPackageSources` is, since the classes it does not recompile are
+`.class` files in its output directory and its source directories are not on
+the compile class path.
+
+**Cost.** A compilation unit of the default package also pays one class-path
+lookup per default-import type it names, as a unit of a named package always
+has; a `GroovyShell`, `Eval` or `GroovyScriptEngine` that compiles many small
+scripts pays it for each of them, since the lookup cache is per compilation
+unit. A `GroovyScriptEngine` also looks each such name up in its roots, two
+more root lookups per name in each compile, unless `defaultPackageSources` is
+`false`.
+
+Code in a named package, and default-package code whose class path has no
+such class or source, resolve as before. The two options are the only API
+change.
+
+### Groovy 6.0.1 — the default-package lookup before the default imports is an opt-in (GROOVY-12555)
+
+The change described under Groovy 7 is in 6.0.1 behind the same two
+options, both off by default: the resolution order of 6.0.0 is unchanged
+unless the optimization option `defaultPackageFirst` is `true`, and with it
+only the compiled classes of the default package come before the default
+imports unless `defaultPackageSources` is `true` as well. Set them through
+the system properties `groovy.resolve.default.package.first=true` and
+`groovy.resolve.default.package.sources=true`, a configuration script, or,
+in Gradle, `groovyOptions.optimizationOptions['defaultPackageFirst'] = true`,
+the only one of the three that Gradle passes on to the compiler. An
+incremental build that compiles a default-package class against previously
+compiled classes of the default package needs `defaultPackageFirst` for the
+same source to compile to the same class as in a full build, and does not
+need `defaultPackageSources`.
+
+### Groovy 7 — type checking compares a wildcard argument with every bound of a type parameter (GROOVY-12754)
+
+Under `@TypeChecked` and `@CompileStatic`, an argument with an upper-bounded
+wildcard, such as a `List<? extends B>` passed to `<T extends U> m(List<T>)`,
+was compared with the bound of `T` the wrong way round, and only with the
+erasure of its first bound. The wildcard is now checked as Java checks it: it
+stands for an unknown subtype of `B`, which must be within every bound of `T`,
+type arguments included.
+
+- **Calls that were rejected compile.** A `List<? extends Integer>` for
+  `<T extends Number>`, a `Class<? extends String>` for
+  `<T extends CharSequence>` and `Collections.sort(list)` for a
+  `List<? extends Integer>` were compile errors ("Cannot call <T extends …>")
+  and now compile.
+- **Calls that were accepted are rejected.** A wildcard whose bound is not
+  within a bound of the type parameter was accepted, and the call could then
+  return a wrong value: statically compiled,
+  `<T extends Integer> T narrow(List<T>)` returned `1` for a
+  `List<? extends Number>` holding `1.5`. Such a call is now a compile error,
+  `Cannot call <T extends …> … with arguments […]`. Other examples are a
+  `List<? extends Serializable>` for `<T extends Number>`, a
+  `Class<? extends List<String>>` for `<T extends List<Integer>>`,
+  `Enum.valueOf(type, name)` for a `Class<? extends Enum<?>>` and
+  `Collections.sort(list)` for a `List<? extends Comparable<?>>`.
+- **A wildcard with no upper bound is checked too.** `?` and `? super B`
+  stand for a type with the upper bound that the generic type declares for
+  that type argument: `Object` for a `List<?>` or a `Class<?>`, and `Number`
+  for a `NumBox<?>` declared as `NumBox<N extends Number>`. So a `List<?>` and
+  a `List<? super Integer>` are rejected for `<T extends Number>`, while an
+  `EnumSet<?>` is accepted for `<T extends Enum<T>>`. `Enum.valueOf(type, name)`
+  and `method.getAnnotation(type)` for a `Class<?>`, and
+  `Collections.sort(list)` for a `List<?>`, were accepted and are now compile
+  errors, as in Java.
+
+**Who is affected.** Statically checked code that makes such a call. Declare
+the wildcard with a bound that is within the bounds of the type parameter,
+such as a `Class<? extends Annotation>` for `getAnnotation`, or use a raw
+type, which is still an unchecked conversion: a `Class<? extends Enum>` or
+`(Class) type` for `Enum.valueOf`, and `(List) list` for `Collections.sort`.
+
+**What is unchanged.** Dynamic code, an argument without a wildcard and a
+method whose type parameter has no bound.
+
+### Groovy 7 — type checking types `getClass()` by its receiver (GROOVY-12755)
+
+Under `@TypeChecked` and `@CompileStatic`, `e.getClass()` and `e.class` were
+typed `Class<? extends Object>`, and that type was accepted wherever a
+`Class<? extends X>` was expected, whatever `X` was. They are now typed
+`Class<? extends |T|>`, where `|T|` is the erasure of the static type of `e`,
+as in Java: `Class<? extends String>` for a `String` and
+`Class<? extends List>` for a `List<String>`. The type is checked like any
+other type.
+
+- **A correct bound compiles, as before.** `Class<? extends String> c = s.getClass()`,
+  and `datastore.getClass()` passed where a `Class<? extends Datastore>` is
+  expected, compile.
+- **A wrong bound is a compile error.** For a `String s`,
+  `Class<? extends Integer> c = s.getClass()`, and `s.getClass()` passed to a
+  parameter typed `Class<? extends Number>`, compiled. The variable or
+  parameter then held a class outside its bound. These are now compile errors,
+  as in Java.
+- **`@CompileStatic` may select a more specific overload.** A value made from
+  `x.getClass()`, such as `x.getClass().cast(o)`,
+  `x.getClass().getDeclaredConstructor().newInstance()` or the result of
+  `<T> T create(Class<T>)`, now has the type of `x`. With overloads
+  `f(Object)`, `f(CharSequence)` and `f(StringBuilder)` and a
+  `StringBuilder x`, `f(x.getClass().cast(o))` calls `f(StringBuilder)` where
+  it called `f(Object)`. That is the overload Java selects, and the one dynamic
+  Groovy and `@TypeChecked` code select at run time. There is no compile error.
+  As before, the overload is selected before its generics are checked, and a
+  selected overload that fails that check is a compile error rather than a
+  reason to select a less specific one: with `f(Object)` and
+  `f(Class<String>)`, `f(new StringBuilder().getClass())` is rejected, as it
+  was before, where Java selects `f(Object)`.
+  Cast the argument to `Object` to select that overload.
+- **A generic call takes type arguments from its target.** In an assignment, a
+  return or an argument, a call of a generic method is accepted when the target
+  type determines its type arguments, as in Java. The target of an argument is
+  the parameter of the method that is called, once that method is selected:
+  `List<Class<?>> l = Collections.singletonList(x.getClass())`,
+  `takes(Collections.singletonList(x.getClass()))` for a
+  `takes(List<Class<?>>)`, `Arrays.asList(a.getClass(), b.getClass())`,
+  `Optional.of(x.getClass())` and `list.collect { it.getClass() }` compile, as
+  does a generic call nested in another, such as
+  `same(Collections.singletonList(x.getClass()))`. These compiled before
+  because the type of `getClass()` was not checked; they now compile because
+  the target gives the type argument. So do
+  `List<Number> l = Collections.singletonList(1)` and
+  `count(Collections.singletonList(1))` for a `count(List<Number>)`, which were
+  compile errors. The type argument is not a conversion: an assigned value may
+  be converted, as an `int` to a `Long` or a `GString` to a `String`, but the
+  elements of a list are stored as they are. So
+  `List<Long> l = Collections.singletonList(1)` and a `List<String>` made by
+  `Collections.singletonList("a$x")` are still compile errors, as they were
+  before and are in Java, since the list would hold an `Integer` or a
+  `GString`. A spread expression makes a new list, so it takes its element
+  type from the target in the same way: `list*.getClass()` and `list*.class`
+  compile for a `List<Class<?>>`, and `people*.name` for a `List<CharSequence>`.
+  A variable declared with such a target has the declared type. A value that
+  already has a type is not converted: assigning or passing a variable of type
+  `List<Class<? extends String>>` as a `List<Class<?>>` is a compile error, as
+  it is in Java.
+- **A method reference passed to such a call is checked and compiled for the
+  functional interface type that the target gives.** For
+  `<T, R> Function<T, R> toFunction(Function<T, R> fn)` and the like:
+  - **Calls that were rejected compile.** `Type::instanceMethod` on a generic
+    class takes the type arguments of the class from the first parameter of
+    the functional interface, as in Java, so
+    `Function<Optional<String>, String> f = toFunction(Optional::get)` and
+    `BiFunction<List<String>, Integer, String> f = toBiFunction(List::get)`
+    compile. So do a reference to a supertype's method, an overloaded or
+    variadic method, and an extension method:
+    `Function<String, Integer> f = toFunction(CharSequence::length)`,
+    `Function<char[], String> f = toFunction(String::valueOf)`,
+    `Consumer<String> c = toConsumer(System.out::print)` and
+    `Function<String, Integer> f = toFunction(String::size)`. The overload is
+    the one a direct assignment of the reference selects.
+  - **A variadic method runs under `@CompileStatic`.**
+    `Function<String, List<String>> f = toFunction(Arrays::asList)` compiled,
+    and statically compiled it failed with a `ClassCastException` when called.
+    It now returns a list of the one value, as `@TypeChecked` and dynamic code
+    do.
+  - **Calls that were accepted are rejected.** A method whose type parameter
+    has a bound that the target does not keep compiled, and failed when
+    called: `Consumer<String> c = toConsumer(C::takeNumber)` for
+    `<T extends Number> void takeNumber(T t)`. The bound is also checked
+    where only the result of the method names the type parameter,
+    `Supplier<List<String>> s = toSupplier(C::numbers)` for
+    `<T extends Number> List<T> numbers()`, which let a `String` be added to
+    a list of numbers, and where the reference goes through a second generic
+    call, `toConsumer(sameConsumer(C::takeNumber))`. So did a method whose other
+    parameters or return type do not fit the type arguments of its receiver:
+    `BiFunction<List<String>, Integer, Boolean> f = toBiFunction(List::add)`
+    added an `Integer` to a `List<String>`, and
+    `Function<List<Integer>, String> f = toFunction(List::first)` returned an
+    `Integer` as a `String`. These are now compile errors,
+    `Incompatible generic argument types`, as their Java equivalents are
+    (`List::first` is a Groovy method).
+    Declare the functional interface with the types that the method accepts
+    and returns.
+- **A constructor call with a diamond infers the type arguments of the class
+  from its arguments.** With no target, `new Holder<>(list)` takes the type
+  arguments of `Holder` from the constructor arguments, as a generic method
+  call does, and they must be within the bounds of the class. For
+  `class Holder<T extends Number>` with a `Holder(List<T>)` constructor, a
+  `List<? extends Integer>` is accepted, as before, and gives a
+  `Holder<? extends Integer>`. A `List<String>` or a `List<? extends String>`
+  compiled and failed when run with a `GroovyCastException`, and a `List<?>`
+  compiled with no check of its elements. These are now compile errors,
+  `Cannot call Holder#<init>(...) with arguments [...]`, as in Java. Where the
+  elements are known to fit, declare the parameter as a
+  `List<? extends Number>`, cast the argument to one, or pass it as a raw
+  `List`; each of these also compiles with earlier versions.
+- **A variable declared with `def` or `var` has the type of its value.** So
+  `def classes = Collections.singletonList(x.getClass())` is a
+  `List<Class<? extends String>>`, and passing it to a `takes(List<Class<?>>)`,
+  which compiled before, is now a compile
+  error, as it is in Java with `var`. The error suggests the declared type:
+  `Cannot call …#takes(java.util.List<java.lang.Class<?>>) with arguments
+  [java.util.List<java.lang.Class<? extends java.lang.String>>]. Declare
+  variable classes as java.util.List<java.lang.Class<?>> to pass it`. Declare
+  the variable with that type, or pass the call directly.
+- **A raw bound is not within a parameterized one, and a type is not within a
+  type variable.** For an assignment, a return and a declared parameter,
+  `? extends A` is no longer accepted for `? extends B` when `B` is
+  parameterized and `A` is raw, or when `B` is a type variable and `A` is not
+  one. These were accepted and are now compile errors, as in Java:
+
+  ```groovy
+  Class<? extends List<String>> a(Class<? extends List> c) { c }
+  <T extends Number> Class<? extends T> b(Class<? extends Number> c) { c }
+  <T> Class<? extends T> c(T t) { t.getClass() }
+  ```
+
+  This also holds within a type argument, and for a spread expression or a
+  closure typed by its target. A `List<Class<? extends List>>`, from a
+  variable, `raw*.getClass()` for a `List<List> raw`, or
+  `classes.collect { it }`, is not a `List<Class<? extends List<String>>>`.
+  `items*.getClass()` for a `List<Object> items` is not a
+  `List<Class<? extends T>>`. These compiled and are now compile errors, as in
+  Java.
+
+- **The class of a value of a type variable is not the class of the type
+  variable.** For a `T t`, `t.getClass()` is a `Class<? extends Object>`.
+  `<T> Class<T> typeOf(T t) { t.getClass() }` compiled and is now a compile
+  error, as in Java. So is passing `t.getClass()` to a parameter typed by a
+  type variable in scope, such as `accept(Class<? extends T>)` or
+  `Map<Class<? extends T>, T>.put` within `Box<T>`, and so is
+  `List<Class<? extends T>> l = items*.getClass()` for a `List<T> items`.
+  `T` may be a parameterized type, such as `List<String>`, and a class does
+  not have type arguments. With a `Class<T> type`,
+  `items*.getClass()*.asSubclass(type)` compiles and checks each class when
+  run; otherwise add the cast that Java requires.
+- **The class of a variable follows `instanceof`.** After
+  `o instanceof String` for an `Object o`, `o.getClass()` and `o.class` are a
+  `Class<? extends String>`, like every other member of `o` there; this is
+  Groovy's `instanceof` inference. Java keeps `o` an `Object`, so it rejects
+  `Class<? extends String> c = o.getClass()`, and passing `o.getClass()` as a
+  `Class<? extends CharSequence>`; both compile in Groovy, as before. The
+  difference only accepts more code: the Java forms,
+  `o instanceof String s` followed by `s.getClass()`, and
+  `((String) o).getClass()`, also compile.
+
+- **The simple name of an inner class keeps the type arguments of the
+  enclosing class.** Within `Outer<T>`, `Inner` now means `Outer<T>.Inner`
+  and not the raw type `Outer.Inner`, with or without static compilation. The
+  `Signature` attribute of a member typed with such a name names the enclosing
+  type, so reflection reports the generic type `Outer<T>$Inner` where it
+  reported the class `Outer$Inner`. As a type argument it is not the raw type
+  either: `List<Inner> a = raw` and `List<? extends Inner> b = raw` for a
+  `List<Outer.Inner> raw` compiled and are now compile errors, as in Java.
+
+**Who is affected.** Statically checked code that gives the class of a value
+a bound it does not have, code that relied on one of the conversions above,
+and `@CompileStatic` code whose overloads differ for the class of a receiver.
+Correct the bound, add the cast that Java requires, such as
+`(Class<? extends T>) t.getClass()`, or declare the raw bound, such as
+`Class<? extends List>`. The class of a value is also now checked against the
+bound of a type parameter (see GROOVY-12754 above), so
+`Enum.valueOf(e.getClass(), name)` for an `E e` of an enum type `E` is a
+compile error; use
+`e.getDeclaringClass()`. Code that reads the generic signature of an inner
+class member by reflection sees the enclosing type.
+
+**What is unchanged.** Dynamic code, apart from the generic signatures. A raw
+type that is not the bound of a wildcard is still an unchecked conversion, as
+in `List<String> x = rawList`. A member of a raw type whose type parameter has
+a raw bound has the erasure of its type, as in Java: for a raw `Holder`
+declared as `Holder<T extends List>`, a field `Class<? extends T> type` is a
+`Class`, so `Class<? extends List<String>> c = holder.type` is an unchecked
+conversion.
 
 ## The binary-compatibility check
 

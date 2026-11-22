@@ -83,11 +83,13 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.net.URL;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.Deque;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -503,15 +505,14 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
 
     private void removeMultimethodsOverloadedWithPrivateMethods() {
         var mia = new MethodIndexAction() {
-            /** {@inheritDoc} */
-            @Override
             /**
-         * Determines whether a class should be skipped while iterating method indexes.
-         *
-         * @param clazz the class being considered
-         * @return {@code true} to skip the class
-         */
-        public boolean skipClass(final Class<?> clazz) {
+             * Determines whether a class should be skipped while iterating method indexes.
+             *
+             * @param clazz the class being considered
+             * @return {@code true} to skip the class
+             */
+            @Override
+            public boolean skipClass(final Class<?> clazz) {
                 return clazz == theClass;
             }
 
@@ -565,6 +566,11 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
              */
             boolean useThis;
 
+            /**
+             * Extension methods of the superclass by name, per class of the hierarchy.
+             */
+            Map<Class<?>, Map<String, List<MetaMethod>>> superExtensionMethods;
+
             /** {@inheritDoc} */
             @Override
             public void methodNameAction(final Class<?> c, final MetaMethodIndex.Cache e) {
@@ -577,7 +583,15 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
                         if (matchedMethod >= 0) {
                             methods.set(i, mopMethods[matchedMethod]);
                         } else if (!useThis && notSuperUseful(method, c)) {
-                            methods.remove(i--); // not fit for super usage
+                            MetaMethod replacement = superMethodOfAnotherRuntimePackage(method, c);
+                            if (replacement == null) {
+                                replacement = getHiddenExtensionMethod(method, c);
+                            }
+                            if (replacement != null) {
+                                methods.set(i, replacement);
+                            } else {
+                                methods.remove(i--); // not fit for super usage
+                            }
                         }
                     }
                     if (!useThis) {
@@ -592,7 +606,10 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
                         if (useThis) e.methods = mopMethods[matchedMethod];
                         else e.methodsForSuper = mopMethods[matchedMethod];
                     } else if (!useThis && notSuperUseful(method, c)) {
-                        e.methodsForSuper = null; // not fit for super usage
+                        e.methodsForSuper = superMethodOfAnotherRuntimePackage(method, c);
+                        if (e.methodsForSuper == null) {
+                            e.methodsForSuper = getHiddenExtensionMethod(method, c);
+                        }
                     }
                 }
             }
@@ -611,10 +628,22 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
                 boolean bridge = isBridge(method);
                 while (distance > 0) {
                     int index = mopArrayIndex(method, "super$" + distance + "$" + method.getName());
-                    if (index >= 0 && (!bridge || mopMethods[index].getDeclaringClass().getTheClass() == c)) return index;
+                    if (index >= 0 && (bridge ? mopMethods[index].getDeclaringClass().getTheClass() == c
+                                              : !skipsLevel(mopMethods[index], method, c))) return index;
                     distance -= 1;
                 }
                 return -1;
+            }
+
+            /**
+             * A MOP method calls the super method of the class that declares it. If class
+             * {@code c} inherits {@code method}, a MOP method of its declaring class, or of a super class
+             * of that, calls a method further up. This is the only match when {@code c} has no MOP method
+             * for the name, like when the super call is made from a closure or an inner class.
+             */
+            private boolean skipsLevel(final MetaMethod mopMethod, final MetaMethod method, final Class<?> c) {
+                Class<?> declaringClass = method.getDeclaringClass().getTheClass();
+                return declaringClass != c && mopMethod.getDeclaringClass().getTheClass().isAssignableFrom(declaringClass);
             }
 
             private int mopArrayIndex(final MetaMethod method, final String mopName) {
@@ -633,6 +662,85 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
                     }
                 }
                 return -1;
+            }
+
+            /**
+             * Finds the superclass method that a method declared by class c
+             * replaced in the index, if it is a package-private method of a
+             * class with the same package name but another class loader, so of
+             * another run-time package. The JVM does not let the method of c
+             * override it, and no super$ method can call it, but invoked
+             * reflectively it is the method a super call should reach.
+             */
+            private MetaMethod superMethodOfAnotherRuntimePackage(final MetaMethod method, final Class<?> c) {
+                if (c != method.getDeclaringClass().getTheClass()) return null;
+                for (Class<?> sc = c.getSuperclass(); sc != null; sc = sc.getSuperclass()) {
+                    for (CachedMethod cm : ReflectionCache.getCachedClass(sc).getMethods()) {
+                        if (cm.getName().equals(method.getName()) && !cm.isStatic()
+                                && MetaMethod.equal(cm.getParameterTypes(), method.getParameterTypes())) {
+                            // the nearest method decides; if it is not of another run-time package, it hides any deeper one
+                            return cm.isPackagePrivate() && sc.getClassLoader() != c.getClassLoader()
+                                    && sc.getPackageName().equals(c.getPackageName()) ? cm : null;
+                        }
+                    }
+                }
+                return null;
+            }
+
+            /**
+             * Finds the extension method of a superclass, or of an interface that
+             * {@code c} or a superclass implements, that a method of class {@code c}
+             * overrides: "super.name()" within {@code c} calls it, as there is no
+             * super$ helper for it. The one for the most specific type wins; of two
+             * for unrelated types, the one met first in the order of
+             * {@link #getExtensionMethodsOfSupertypes(Class)}.
+             */
+            private MetaMethod getHiddenExtensionMethod(final MetaMethod method, final Class<?> c) {
+                if (method.isStatic() || isBridge(method) || method.getDeclaringClass().getTheClass() != c || c.getSuperclass() == null) return null;
+                if (superExtensionMethods == null) superExtensionMethods = new HashMap<>();
+                List<MetaMethod> candidates = superExtensionMethods.computeIfAbsent(c, this::getExtensionMethodsOfSupertypes).get(method.getName());
+                MetaMethod hidden = null;
+                if (candidates != null) {
+                    for (MetaMethod m : candidates) {
+                        if (MetaMethod.equal(m.getParameterTypes(), method.getParameterTypes())
+                                && (hidden == null || hidden.getDeclaringClass().getTheClass().isAssignableFrom(m.getDeclaringClass().getTheClass()))) {
+                            hidden = m; // the one for the most specific type
+                        }
+                    }
+                }
+                return hidden;
+            }
+
+            /**
+             * The extension methods of the supertypes of {@code c} by name: those of
+             * the superclasses, nearest first, then those of the interfaces of
+             * {@code c} and of each superclass in turn, each in the order the class
+             * declares them, breadth first. The order is that of the declarations,
+             * not of {@link CachedClass#getInterfaces()}, which is a hash set.
+             */
+            private Map<String, List<MetaMethod>> getExtensionMethodsOfSupertypes(final Class<?> c) {
+                Set<Class<?>> types = new LinkedHashSet<>();
+                for (Class<?> sc = c.getSuperclass(); sc != null; sc = sc.getSuperclass()) {
+                    types.add(sc);
+                }
+                Deque<Class<?>> interfaces = new ArrayDeque<>();
+                for (Class<?> t = c; t != null; t = t.getSuperclass()) {
+                    Collections.addAll(interfaces, t.getInterfaces());
+                }
+                while (!interfaces.isEmpty()) {
+                    Class<?> i = interfaces.removeFirst();
+                    if (types.add(i)) Collections.addAll(interfaces, i.getInterfaces());
+                }
+
+                Map<String, List<MetaMethod>> methodsByName = new HashMap<>();
+                for (Class<?> type : types) {
+                    for (MetaMethod m : ReflectionCache.getCachedClass(type).getNewMetaMethods()) {
+                        if (isDGM(m) && !m.isStatic()) {
+                            methodsByName.computeIfAbsent(m.getName(), name -> new ArrayList<>()).add(m);
+                        }
+                    }
+                }
+                return methodsByName;
             }
 
             private boolean notSuperUseful(final MetaMethod method, final Class<?> c) {
@@ -1351,7 +1459,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
     }
 
     private Object invokeOuterMethod(final Class<?> sender, final Object object, final String methodName, final Object[] arguments, final MissingMethodException mme) {
-        if (sender == theClass ? isGroovyObject() : GroovyObject.class.isAssignableFrom(sender)) {
+        if ((sender == theClass || sender.isInterface()) ? isGroovyObject() : GroovyObject.class.isAssignableFrom(sender)) {
             var outerClass = getNonClosureOuter(sender); // check outer class nesting of call site
             if (outerClass != null && (sender == theClass || sender.isAssignableFrom(theClass))) {
                 MetaClass omc = registry.getMetaClass(outerClass);
@@ -1386,6 +1494,17 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
             outer = getNonClosureOuter(innerClass);
         }
         return outer;
+    }
+
+    /**
+     * A call site in a closure has the closure class as its sender; the call
+     * site is nested in the class that declares the closure.
+     */
+    private static Class<?> getNonClosureSender(Class<?> c) {
+        while (c != null && GeneratedClosure.class.isAssignableFrom(c)) {
+            c = c.getEnclosingClass();
+        }
+        return c;
     }
 
     /**
@@ -2220,8 +2339,9 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         }
     }
 
-    private Object getOuterProperty(final Class<?> sender, final Object object, final String name, final MissingPropertyException mpe) {
-        if (sender == theClass ? isGroovyObject() : GroovyObject.class.isAssignableFrom(sender)) {
+    private Object getOuterProperty(Class<?> sender, final Object object, final String name, final MissingPropertyException mpe) {
+        sender = getNonClosureSender(sender); // GROOVY-12627
+        if ((sender == theClass || sender.isInterface()) ? isGroovyObject() : GroovyObject.class.isAssignableFrom(sender)) {
             var outerClass = getNonClosureOuter(sender); // check outer class nesting of call site
             if (outerClass != null && (sender == theClass || sender.isAssignableFrom(theClass))) {
                 MetaClass omc = registry.getMetaClass(outerClass);
@@ -3193,7 +3313,8 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
 
     private void setOuterProperty(Class<?> sender, final Object object, final String name, final Object newValue, final MissingPropertyException mpe) {
         if (sender == null) sender = theClass; // GROOVY-11745
-        if (sender == theClass ? isGroovyObject() : GroovyObject.class.isAssignableFrom(sender)) {
+        sender = getNonClosureSender(sender); // GROOVY-12627
+        if ((sender == theClass || sender.isInterface()) ? isGroovyObject() : GroovyObject.class.isAssignableFrom(sender)) {
             var outerClass = getNonClosureOuter(sender); // check outer class nesting of call site
             if (outerClass != null && (sender == theClass || sender.isAssignableFrom(theClass))) {
                 MetaClass omc = registry.getMetaClass(outerClass);
@@ -3791,6 +3912,12 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         try {
             if (isBeanDerivative(theClass)) {
                 info = Introspector.getBeanInfo(theClass, Introspector.IGNORE_ALL_BEANINFO);
+            } else if (GroovyClassLoader.isGeneratedClassName(theClass)) {
+                // Skip this class's BeanInfo. Superclass BeanInfo is still
+                // read. The JDK still probes <name>Customizer; the defining
+                // loader answers that probe for a generated name without
+                // delegating it.
+                info = Introspector.getBeanInfo(theClass, Introspector.IGNORE_IMMEDIATE_BEANINFO);
             } else {
                 info = Introspector.getBeanInfo(theClass);
             }

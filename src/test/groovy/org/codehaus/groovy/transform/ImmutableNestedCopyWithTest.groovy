@@ -267,4 +267,31 @@ final class ImmutableNestedCopyWithTest {
             assert a.balance.cents == 100
         '''
     }
+
+    // GROOVY-12713: dotted keys under static type checking, as for records
+    @Test
+    void immutable_nested_keys_under_static_type_checking() {
+        assertScript shell, GRAPH + '''
+            @groovy.transform.CompileStatic
+            Person moved(Person person) {
+                person.copyWith('address.city': 'Boston', 'company.address.zip': '07031')
+            }
+            def q = moved(p)
+            assert q.address.city == 'Boston'
+            assert q.company.address.zip == '07031'
+        '''
+    }
+
+    // GROOVY-12713
+    @Test
+    void immutable_nested_key_with_unknown_segment_is_a_static_type_error() {
+        def err = shouldFail shell, GRAPH + '''
+            @groovy.transform.CompileStatic
+            Person moved(Person person) {
+                person.copyWith('company.address.state': 'NJ')
+            }
+            moved(p)
+        '''
+        assert err.message.contains("unexpected named arg: company.address.state")
+    }
 }

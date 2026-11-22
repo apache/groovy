@@ -53,76 +53,184 @@ public class TimeCategory {
 
     /* ******** time-based amounts -> java.time.Duration ******** */
 
+    /**
+     * A {@link Duration} of {@code self} nanoseconds.
+     *
+     * @param self the number of nanoseconds
+     * @return that duration
+     */
     public static Duration getNanoseconds(final Integer self) {
         return Duration.ofNanos(self);
     }
 
+    /**
+     * Same nanosecond duration as {@link #getNanoseconds(Integer)}.
+     *
+     * @param self the number of nanoseconds
+     * @return that duration
+     */
     public static Duration getNanosecond(final Integer self) {
         return getNanoseconds(self);
     }
 
+    /**
+     * A {@link Duration} of {@code self} milliseconds.
+     *
+     * @param self the number of milliseconds
+     * @return that duration
+     */
     public static Duration getMilliseconds(final Integer self) {
         return Duration.ofMillis(self);
     }
 
+    /**
+     * Same millisecond duration as {@link #getMilliseconds(Integer)}.
+     *
+     * @param self the number of milliseconds
+     * @return that duration
+     */
     public static Duration getMillisecond(final Integer self) {
         return getMilliseconds(self);
     }
 
+    /**
+     * A {@link Duration} of {@code self} seconds.
+     *
+     * @param self the number of seconds
+     * @return that duration
+     */
     public static Duration getSeconds(final Integer self) {
         return Duration.ofSeconds(self);
     }
 
+    /**
+     * Same second duration as {@link #getSeconds(Integer)}.
+     *
+     * @param self the number of seconds
+     * @return that duration
+     */
     public static Duration getSecond(final Integer self) {
         return getSeconds(self);
     }
 
+    /**
+     * A {@link Duration} of {@code self} minutes.
+     *
+     * @param self the number of minutes
+     * @return that duration
+     */
     public static Duration getMinutes(final Integer self) {
         return Duration.ofMinutes(self);
     }
 
+    /**
+     * Same minute duration as {@link #getMinutes(Integer)}.
+     *
+     * @param self the number of minutes
+     * @return that duration
+     */
     public static Duration getMinute(final Integer self) {
         return getMinutes(self);
     }
 
+    /**
+     * A {@link Duration} of {@code self} hours.
+     *
+     * @param self the number of hours
+     * @return that duration
+     */
     public static Duration getHours(final Integer self) {
         return Duration.ofHours(self);
     }
 
+    /**
+     * Same hour duration as {@link #getHours(Integer)}.
+     *
+     * @param self the number of hours
+     * @return that duration
+     */
     public static Duration getHour(final Integer self) {
         return getHours(self);
     }
 
     /* ******** date-based amounts -> java.time.Period ******** */
 
+    /**
+     * A {@link Period} of {@code self} days.
+     *
+     * @param self the number of days
+     * @return that period
+     */
     public static Period getDays(final Integer self) {
         return Period.ofDays(self);
     }
 
+    /**
+     * Same day period as {@link #getDays(Integer)}.
+     *
+     * @param self the number of days
+     * @return that period
+     */
     public static Period getDay(final Integer self) {
         return getDays(self);
     }
 
+    /**
+     * A {@link Period} of {@code self} weeks.
+     *
+     * @param self the number of weeks
+     * @return that period
+     */
     public static Period getWeeks(final Integer self) {
         return Period.ofWeeks(self);
     }
 
+    /**
+     * Same week period as {@link #getWeeks(Integer)}.
+     *
+     * @param self the number of weeks
+     * @return that period
+     */
     public static Period getWeek(final Integer self) {
         return getWeeks(self);
     }
 
+    /**
+     * A {@link Period} of {@code self} months.
+     *
+     * @param self the number of months
+     * @return that period
+     */
     public static Period getMonths(final Integer self) {
         return Period.ofMonths(self);
     }
 
+    /**
+     * Same month period as {@link #getMonths(Integer)}.
+     *
+     * @param self the number of months
+     * @return that period
+     */
     public static Period getMonth(final Integer self) {
         return getMonths(self);
     }
 
+    /**
+     * A {@link Period} of {@code self} years.
+     *
+     * @param self the number of years
+     * @return that period
+     */
     public static Period getYears(final Integer self) {
         return Period.ofYears(self);
     }
 
+    /**
+     * Same year period as {@link #getYears(Integer)}.
+     *
+     * @param self the number of years
+     * @return that period
+     */
     public static Period getYear(final Integer self) {
         return getYears(self);
     }
@@ -167,10 +275,22 @@ public class TimeCategory {
             this.point = point;
         }
 
+        /**
+         * Returns the temporal captured when {@code from} was evaluated.
+         * A {@link Duration} was added to {@link LocalDateTime#now()}; a {@link Period}
+         * was added to {@link LocalDate#now()}.
+         *
+         * @return that stored temporal
+         */
         public Temporal getNow() {
             return point;
         }
 
+        /**
+         * Returns the same temporal as {@link #getNow()}.
+         *
+         * @return that stored temporal
+         */
         public Temporal getToday() {
             return point;
         }

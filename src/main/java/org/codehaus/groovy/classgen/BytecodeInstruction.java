@@ -24,8 +24,9 @@ import org.objectweb.asm.MethodVisitor;
  * Helper class used by the class generator. Usually
  * an inner class is produced, that contains bytecode
  * creation code in the visit method.
+ * <p>
+ * TODO: convert to {@code @FunctionalInterface}.
  */
-// TODO: convert to @FunctionalInterface
 public abstract class BytecodeInstruction {
     /**
      * Emits bytecode instructions using the provided method visitor.
