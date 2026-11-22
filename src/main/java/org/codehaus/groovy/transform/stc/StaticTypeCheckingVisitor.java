@@ -186,6 +186,7 @@ import java.util.stream.IntStream;
 import static org.apache.groovy.ast.tools.AnnotatedNodeUtils.isGenerated;
 import static org.apache.groovy.ast.tools.ClassNodeUtils.getNestHost;
 import static org.apache.groovy.ast.tools.ClassNodeUtils.hasNoEnclosingInstance;
+import static org.apache.groovy.ast.tools.ExpressionUtils.isOuterSuperExpression;
 import static org.apache.groovy.ast.tools.ExpressionUtils.isThisExpression;
 import static org.apache.groovy.ast.tools.MethodNodeUtils.withDefaultArgumentMethods;
 import static org.apache.groovy.ast.tools.SwitchExpressionUtils.enumConstantName;
@@ -1721,6 +1722,7 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
             for (MethodNode setter : setterInfo.setters) {
                 if (setter == methodTarget) {
                     leftExpression.putNodeMetaData(DIRECT_METHOD_CALL_TARGET, methodTarget);
+                    if (!methodTarget.isStatic()) checkSuperCallFromClosure(leftExpression, methodTarget);
                     leftExpression.removeNodeMetaData(INFERRED_TYPE); // clear assumption
                     storeType(leftExpression, setterType.apply(methodTarget));
                     break;
@@ -3023,7 +3025,11 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
                 ClassNode outer = getType(objectExpression).getGenericsTypes()[0].getType();
 
                 ClassNode found = null;
+                if (outer.equals(typeCheckingContext.getEnclosingClassNode()) && !typeCheckingContext.isInStaticContext) {
+                    found = outer; // "Type.this" within Type is "this"
+                }
                 for (ClassNode enclosingType : enclosingTypes) {
+                    if (found != null) break;
                     if (!enclosingType.isStaticClass() && outer.equals(enclosingType.getOuterClass())) {
                         found = enclosingType;
                         break;
@@ -3045,6 +3051,12 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
                         storeType(pexp, accessingType);
                         return true;
                     }
+                }
+                // "Outer.super" in a class nested in Outer: the superclass of the enclosing instance
+                if (!accessingType.isInterface() && enclosingType.getOuterClasses().contains(accessingType)
+                        && !typeCheckingContext.isInStaticContext && accessingType.getUnresolvedSuperClass() != null) {
+                    storeType(pexp, accessingType.getUnresolvedSuperClass());
+                    return true;
                 }
                 return false;
             }
@@ -3646,6 +3658,16 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
         accessMethod.setSynthetic(true);
 
         expression.putNodeMetaData(DIRECT_METHOD_CALL_TARGET, accessMethod); // GROOVY-11029
+        if (!property.isStatic()) {
+            checkSuperCallFromClosure(expression, accessMethod);
+            if (lhsOfAssignment && isCompoundAssignment(typeCheckingContext.getEnclosingBinaryExpression())) {
+                // "super.name += value" or "super.name++" reads the property, too
+                MethodNode getter = new MethodNode(property.getGetterNameOrDefault(), Opcodes.ACC_PUBLIC, propertyType, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, null);
+                getter.setDeclaringClass(property.getDeclaringClass());
+                getter.setSynthetic(true);
+                checkSuperCallFromClosure(expression, getter);
+            }
+        }
         extension.onMethodSelection(expression, accessMethod);
         return true;
     }
@@ -7121,8 +7143,14 @@ out:                if (mn.size() != 1) {
 
     private void checkSuperCallFromClosure(final Expression call, final MethodNode target) {
         if (target.isStatic()) return; // no helper: invokestatic works from any class
-        if (isSuperExpression(getObjectExpression(call)) && typeCheckingContext.getEnclosingClosure() != null) {
-            ClassNode current = typeCheckingContext.getEnclosingClassNode();
+        Expression objectExpression = getObjectExpression(call);
+        ClassNode current = null;
+        if (isOuterSuperExpression(objectExpression)) { // "Outer.super.name()": call through Outer's super$ helper
+            current = ((PropertyExpression) objectExpression).getObjectExpression().getType().redirect();
+        } else if (isSuperExpression(objectExpression) && typeCheckingContext.getEnclosingClosure() != null) {
+            current = typeCheckingContext.getEnclosingClassNode();
+        }
+        if (current != null) {
             current.getNodeMetaData(SUPER_MOP_METHOD_REQUIRED, x -> new LinkedList<>()).add(target);
             call.putNodeMetaData(SUPER_MOP_METHOD_REQUIRED, current);
         }
