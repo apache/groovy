@@ -252,6 +252,53 @@ final class CoercionTest {
     }
 
     @Test
+    void testMethodReferenceForATypeParameter() {
+        assertScript '''
+            import groovy.transform.CompileStatic
+            import java.util.function.Function
+
+            // tag::functional_literal_for_type_parameter[]
+            @CompileStatic
+            Map<String, Function<String, String>> commands() {
+                Map<String, Function<String, String>> commands = [:]
+                commands.put('trim', String::trim) // V of put(K, V)
+                commands
+            }
+            // end::functional_literal_for_type_parameter[]
+
+            // tag::functional_literal_for_type_parameter_assertions[]
+            assert commands().trim.apply(' Hi ') == 'Hi' // the method reference is a Function
+            // end::functional_literal_for_type_parameter_assertions[]
+        '''
+    }
+
+    @Test
+    void testLambdaForATypeParameter() {
+        String previous = System.getProperty('groovy.target.lambda.typearg')
+        System.setProperty('groovy.target.lambda.typearg', 'true')
+        try {
+            assertScript '''
+                import groovy.transform.CompileStatic
+                import java.util.function.Function
+
+                // tag::lambda_for_type_parameter[]
+                @CompileStatic
+                Map<String, Function<String, String>> commands() {
+                    Map<String, Function<String, String>> commands = [:]
+                    commands.put('shout', (String s) -> s.toUpperCase())
+                    commands
+                }
+
+                assert commands().shout.apply('Hi') == 'HI' // the lambda is a Function
+                // end::lambda_for_type_parameter[]
+            '''
+        } finally {
+            if (previous != null) System.setProperty('groovy.target.lambda.typearg', previous)
+            else System.clearProperty('groovy.target.lambda.typearg')
+        }
+    }
+
+    @Test
     void testClosureCoercionToInterface() {
         assertScript '''
             // tag::foobar_interface[]
