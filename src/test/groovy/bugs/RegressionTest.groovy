@@ -166,7 +166,7 @@ final class RegressionTest {
 
     // GROOVY-3250: StackOverflowError in List and Map formatting
     @Timeout(value = 5, unit = TimeUnit.SECONDS)
-    @NotYetImplemented @Test
+    @Test
     void testGroovy3250() {
         assertScript '''
             import org.codehaus.groovy.runtime.InvokerHelper

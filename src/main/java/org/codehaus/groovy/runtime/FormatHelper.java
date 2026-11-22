@@ -37,7 +37,9 @@ import java.io.InputStreamReader;
 import java.io.Reader;
 import java.io.Writer;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
+import java.util.IdentityHashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -61,6 +63,50 @@ public class FormatHelper {
 
     // heuristic size to pre-allocate stringbuffers for collections of items
     private static final int ITEM_ALLOCATE_SIZE = 5;
+
+    /**
+     * Containers on the current unbounded render path, compared by identity.
+     * A repeat is a cycle and uses the same marker as a direct self-reference.
+     * A non-negative size limit does not record a path of its own, so it still
+     * unrolls a container until it truncates, but it will not re-enter one an
+     * unbounded render is already walking.
+     */
+    private static final ThreadLocal<Set<Object>> RENDERING = new ThreadLocal<>();
+
+    private enum Render {
+        SKIP,
+        ROOT,
+        NESTED,
+        CYCLE
+    }
+
+    private static Render openRender(Object node, int maxSize) {
+        Set<Object> active = RENDERING.get();
+        if (active != null && active.contains(node)) {
+            return Render.CYCLE;
+        }
+        if (maxSize != -1) {
+            return Render.SKIP;
+        }
+        boolean root = active == null;
+        if (root) {
+            active = Collections.newSetFromMap(new IdentityHashMap<>(8));
+            RENDERING.set(active);
+        }
+        active.add(node);
+        return root ? Render.ROOT : Render.NESTED;
+    }
+
+    private static void closeRender(Render state, Object node) {
+        if (state != Render.ROOT && state != Render.NESTED) {
+            return;
+        }
+        Set<Object> active = RENDERING.get();
+        active.remove(node);
+        if (state == Render.ROOT) {
+            RENDERING.remove();
+        }
+    }
 
     /**
      * The registry returned by {@link GroovySystem#getMetaClassRegistry()} when this
@@ -337,37 +383,45 @@ public class FormatHelper {
     }
 
     private static String formatMap(Map map, boolean inspect, boolean escapeBackslashes, int maxSize, boolean safe) {
-        if (map.isEmpty()) {
-            return "[:]";
+        Render render = openRender(map, maxSize);
+        if (render == Render.CYCLE) {
+            return "(this Map)";
         }
-        StringBuilder buffer = new StringBuilder(ITEM_ALLOCATE_SIZE * map.size() * 2);
-        buffer.append('[');
-        boolean first = true;
-        for (Object o : map.entrySet()) {
-            if (first) {
-                first = false;
-            } else {
-                buffer.append(", ");
+        try {
+            if (map.isEmpty()) {
+                return "[:]";
             }
-            if (maxSize != -1 && buffer.length() > maxSize) {
-                buffer.append("...");
-                break;
+            StringBuilder buffer = new StringBuilder(ITEM_ALLOCATE_SIZE * map.size() * 2);
+            buffer.append('[');
+            boolean first = true;
+            for (Object o : map.entrySet()) {
+                if (first) {
+                    first = false;
+                } else {
+                    buffer.append(", ");
+                }
+                if (maxSize != -1 && buffer.length() > maxSize) {
+                    buffer.append("...");
+                    break;
+                }
+                Map.Entry entry = (Map.Entry) o;
+                if (entry.getKey() == map) {
+                    buffer.append("(this Map)");
+                } else {
+                    buffer.append(format(entry.getKey(), inspect, escapeBackslashes, sizeLeft(maxSize, buffer), safe));
+                }
+                buffer.append(":");
+                if (entry.getValue() == map) {
+                    buffer.append("(this Map)");
+                } else {
+                    buffer.append(format(entry.getValue(), inspect, escapeBackslashes, sizeLeft(maxSize, buffer), safe));
+                }
             }
-            Map.Entry entry = (Map.Entry) o;
-            if (entry.getKey() == map) {
-                buffer.append("(this Map)");
-            } else {
-                buffer.append(format(entry.getKey(), inspect, escapeBackslashes, sizeLeft(maxSize, buffer), safe));
-            }
-            buffer.append(":");
-            if (entry.getValue() == map) {
-                buffer.append("(this Map)");
-            } else {
-                buffer.append(format(entry.getValue(), inspect, escapeBackslashes, sizeLeft(maxSize, buffer), safe));
-            }
+            buffer.append(']');
+            return buffer.toString();
+        } finally {
+            closeRender(render, map);
         }
-        buffer.append(']');
-        return buffer.toString();
     }
 
     private static int sizeLeft(int maxSize, StringBuilder buffer) {
@@ -375,27 +429,38 @@ public class FormatHelper {
     }
 
     private static String formatCollection(Collection collection, boolean inspect, boolean escapeBackslashes, int maxSize, boolean safe) {
-        StringBuilder buffer = new StringBuilder(ITEM_ALLOCATE_SIZE * collection.size());
-        buffer.append('[');
-        boolean first = true;
-        for (Object item : collection) {
-            if (first) {
-                first = false;
-            } else {
-                buffer.append(", ");
-            }
-            if (maxSize != -1 && buffer.length() > maxSize) {
-                buffer.append("...");
-                break;
-            }
-            if (item == collection) {
-                buffer.append("(this Collection)");
-            } else {
-                buffer.append(format(item, inspect, escapeBackslashes, sizeLeft(maxSize, buffer), safe));
-            }
+        Render render = openRender(collection, maxSize);
+        if (render == Render.CYCLE) {
+            return "(this Collection)";
         }
-        buffer.append(']');
-        return buffer.toString();
+        try {
+            if (collection.isEmpty()) {
+                return "[]";
+            }
+            StringBuilder buffer = new StringBuilder(ITEM_ALLOCATE_SIZE * collection.size());
+            buffer.append('[');
+            boolean first = true;
+            for (Object item : collection) {
+                if (first) {
+                    first = false;
+                } else {
+                    buffer.append(", ");
+                }
+                if (maxSize != -1 && buffer.length() > maxSize) {
+                    buffer.append("...");
+                    break;
+                }
+                if (item == collection) {
+                    buffer.append("(this Collection)");
+                } else {
+                    buffer.append(format(item, inspect, escapeBackslashes, sizeLeft(maxSize, buffer), safe));
+                }
+            }
+            buffer.append(']');
+            return buffer.toString();
+        } finally {
+            closeRender(render, collection);
+        }
     }
 
     /**
@@ -539,28 +604,39 @@ public class FormatHelper {
         if (array == null) {
             return "null";
         }
-        boolean first = true;
-        StringBuilder argBuf = new StringBuilder(array.length);
-        argBuf.append('[');
-
-        for (Object item : array) {
-            if (first) {
-                first = false;
-            } else {
-                argBuf.append(", ");
-            }
-            if (maxSize != -1 && argBuf.length() > maxSize) {
-                argBuf.append("...");
-                break;
-            }
-            if (item == array) {
-                argBuf.append("(this array)");
-            } else {
-                argBuf.append(format(item, inspect, escapeBackslashes, sizeLeft(maxSize, argBuf), safe));
-            }
+        Render render = openRender(array, maxSize);
+        if (render == Render.CYCLE) {
+            return "(this array)";
         }
-        argBuf.append(']');
-        return argBuf.toString();
+        try {
+            if (array.length == 0) {
+                return "[]";
+            }
+            boolean first = true;
+            StringBuilder argBuf = new StringBuilder(array.length);
+            argBuf.append('[');
+
+            for (Object item : array) {
+                if (first) {
+                    first = false;
+                } else {
+                    argBuf.append(", ");
+                }
+                if (maxSize != -1 && argBuf.length() > maxSize) {
+                    argBuf.append("...");
+                    break;
+                }
+                if (item == array) {
+                    argBuf.append("(this array)");
+                } else {
+                    argBuf.append(format(item, inspect, escapeBackslashes, sizeLeft(maxSize, argBuf), safe));
+                }
+            }
+            argBuf.append(']');
+            return argBuf.toString();
+        } finally {
+            closeRender(render, array);
+        }
     }
 
     /**
