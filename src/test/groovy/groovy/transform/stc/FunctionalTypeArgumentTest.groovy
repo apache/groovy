@@ -314,6 +314,51 @@ final class FunctionalTypeArgumentTest {
         '''
     }
 
+    // GROOVY-12561
+    @Test
+    void testClosureLiteralIsPassedAsBeforeForAnInterfaceItsClassMayNotImplement() {
+        assertScript shell, '''
+            sealed interface Shout permits Loud { String shout(String s) }
+            final class Loud implements Shout { String shout(String s) { s.toUpperCase() } }
+            trait Greeter { abstract String greet(String s); String twice(String s) { greet(s) + greet(s) } }
+            @CompileStatic
+            class C {
+                static List<Object> make() {
+                    List<Shout> shouts = []
+                    shouts.add { String s -> s + '!' }
+                    List<Greeter> greeters = []
+                    greeters.add { String s -> 'hi ' + s }
+                    [shouts[0], greeters[0]]
+                }
+            }
+
+            // only the classes a sealed interface permits may implement it, and a trait's methods are not added
+            def values = C.make()
+            assert values.every { it instanceof Closure }
+            assert !(values[0] instanceof Shout) && !(values[1] instanceof Greeter)
+        '''
+
+        def parent = new GroovyClassLoader()
+        parent.parseClass '''
+            package p
+            @groovy.transform.PackageScope
+            interface Callback { String f(String s) }
+        '''
+        // another class loader defines C, so C is in another run-time package than Callback
+        def c = new GroovyClassLoader(parent).parseClass '''
+            package p
+            @groovy.transform.CompileStatic
+            class C {
+                static List make() {
+                    List<Callback> list = []
+                    list.add { String s -> s + '!' }
+                    list
+                }
+            }
+        '''
+        assert c.make()[0] instanceof Closure
+    }
+
     @Test
     void testTypeCheckedCodePassesAClosureAsBefore() {
         def err = shouldFail shell, '''

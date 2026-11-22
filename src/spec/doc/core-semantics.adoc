@@ -1022,8 +1022,8 @@ include::../test/CoercionTest.groovy[tags=closure_value_for_type_parameter,inden
 ----
 
 A closure literal is passed as it is for an interface that `Closure` already implements, such as `Runnable` or
-`Callable`, for an interface whose method has the name of a method of `Closure`, such as `call`, and for an abstract
-class. Closure packing (`@PackedClosures`) does not pack a closure that implements an interface this way. Dynamically
+`Callable`, for an interface whose method has the name of a method of `Closure`, such as `call`, for a sealed
+interface, a trait, a non-public interface not compiled with the closure, and for an abstract class. Closure packing (`@PackedClosures`) does not pack a closure that implements an interface this way. Dynamically
 compiled and type-checked (`@TypeChecked`) code pass a closure, lambda or method reference for a type parameter as it
 is.
 

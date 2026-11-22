@@ -5477,13 +5477,37 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
      * where the closure is converted as before, or if the interface is one that {@code Closure} already
      * implements, such as {@code Runnable} or {@code Callable}. Neither can it implement an interface whose
      * abstract method declares type parameters or has the name of a method of {@code Closure}, such as
-     * {@code call} or {@code isCase}, nor an interface the closure class cannot access.
+     * {@code call} or {@code isCase}. A sealed interface, which only the classes it permits may implement, and
+     * a trait, whose methods a closure class does not get, are not implemented either, nor is an interface
+     * whose method's types the closure class cannot name.
      */
     private boolean isClosureTargetInterface(final ClassNode type, final ClassNode slotType) {
-        if (!type.isInterface() || type.equals(slotType.redirect()) || CLOSURE_TYPE.implementsInterface(type)) return false;
+        if (!type.isInterface() || type.equals(slotType.redirect()) || CLOSURE_TYPE.implementsInterface(type) || type.isSealed()) return false;
         MethodNode sam = findSAM(type);
         if (sam == null || sam.getGenericsTypes() != null || CLOSURE_METHOD_NAMES.contains(sam.getName())) return false;
-        return Modifier.isPublic(type.getModifiers()) || inSamePackage(typeCheckingContext.getEnclosingClassNode(), type);
+        for (ClassNode face : type.getAllInterfaces()) {
+            if (Traits.isTrait(face)) return false;
+        }
+        Tuple2<ClassNode[], ClassNode> signature = GenericsUtils.parameterizeSAM(type);
+        List<ClassNode> named = new ArrayList<>(List.of(type, signature.getV2()));
+        named.addAll(Arrays.asList(signature.getV1()));
+        named.addAll(Arrays.asList(sam.getExceptions()));
+        for (ClassNode t : named) {
+            if (!isAccessibleToClosureClass(erasureOf(t))) return false;
+        }
+        return true;
+    }
+
+    /**
+     * Tells if a closure class of the enclosing class can name the type. A type that is not public must be in
+     * the package of the enclosing class and compiled with it: a type loaded by another class loader is in
+     * another run-time package, even if its package has the same name.
+     */
+    private boolean isAccessibleToClosureClass(final ClassNode type) {
+        ClassNode t = type;
+        while (t.isArray()) t = t.getComponentType();
+        return isPrimitiveType(t) || Modifier.isPublic(t.getModifiers())
+                || (t.isPrimaryClassNode() && inSamePackage(typeCheckingContext.getEnclosingClassNode(), t));
     }
 
     private static Set<String> closureMethodNames() {
