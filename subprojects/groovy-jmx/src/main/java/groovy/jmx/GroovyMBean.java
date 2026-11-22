@@ -20,6 +20,8 @@ package groovy.jmx;
 
 import groovy.lang.GroovyObjectSupport;
 import groovy.lang.GroovyRuntimeException;
+import org.codehaus.groovy.runtime.MetaClassHelper;
+import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 
 import javax.management.Attribute;
 import javax.management.JMException;
@@ -31,6 +33,7 @@ import javax.management.MBeanParameterInfo;
 import javax.management.MBeanServerConnection;
 import javax.management.ObjectName;
 import java.io.IOException;
+import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -49,7 +52,7 @@ public class GroovyMBean extends GroovyObjectSupport {
     private final ObjectName name;
     private MBeanInfo beanInfo;
     private final boolean ignoreErrors;
-    private final Map<String, String[]> operations = new HashMap<String, String[]>();
+    private final Map<String, List<Operation>> operations = new HashMap<String, List<Operation>>();
 
     /**
      * Creates a facade for the named MBean.
@@ -106,9 +109,13 @@ public class GroovyMBean extends GroovyObjectSupport {
         MBeanOperationInfo[] operationInfos = beanInfo.getOperations();
         for (MBeanOperationInfo info : operationInfos) {
             String[] signature = createSignature(info);
-            // Construct a simplistic key to support overloaded operations on the MBean.
             String operationKey = createOperationKey(info.getName(), signature.length);
-            operations.put(operationKey, signature);
+            List<Operation> overloads = operations.get(operationKey);
+            if (overloads == null) {
+                overloads = new ArrayList<Operation>(1);
+                operations.put(operationKey, overloads);
+            }
+            overloads.add(new Operation(info.getName(), signature));
         }
     }
 
@@ -194,24 +201,29 @@ public class GroovyMBean extends GroovyObjectSupport {
         } else {
             argArray = new Object[]{arguments};
         }
-        // Locate the specific method based on the name and number of parameters
-        String operationKey = createOperationKey(method, argArray.length);
-        String[] signature = operations.get(operationKey);
-
-        if (signature != null) {
-            try {
-                return server.invoke(name, method, argArray, signature);
-            }
-            catch (MBeanException e) {
-                throwExceptionWithTarget("Could not invoke method: " + method + ". Reason: ", e);
-            }
-            catch (Exception e) {
-                throwException("Could not invoke method: " + method + ". Reason: ", e);
-            }
-            return null;
-        } else {
+        String[] signature;
+        Object[] callArgs = argArray;
+        List<Operation> matches = operationsFor(method, argArray.length);
+        if (matches == null || matches.isEmpty()) {
             return super.invokeMethod(method, arguments);
+        } else if (matches.size() == 1) {
+            signature = matches.get(0).signature;
+        } else {
+            Selection selection = select(matches, argArray);
+            signature = selection.signature;
+            callArgs = selection.arguments;
         }
+
+        try {
+            return server.invoke(name, method, callArgs, signature);
+        }
+        catch (MBeanException e) {
+            throwExceptionWithTarget("Could not invoke method: " + method + ". Reason: ", e);
+        }
+        catch (Exception e) {
+            throwException("Could not invoke method: " + method + ". Reason: ", e);
+        }
+        return null;
     }
 
     /**
@@ -230,16 +242,14 @@ public class GroovyMBean extends GroovyObjectSupport {
     }
 
     /**
-     * Construct a simple key based on the method name and the number of parameters
+     * Groups operations that share a name and a parameter count.
+     * Overloads in that group are distinguished when the operation is invoked.
      *
-     * @param operation - the mbean operation name
-     * @param params    - the number of parameters the operation supports
-     * @return simple unique identifier for a method
+     * @param operation the mbean operation name
+     * @param params the number of parameters the operation supports
+     * @return key for the overload group
      */
     protected String createOperationKey(String operation, int params) {
-        // This could be changed to support some hash of the parameter types, etc.
-        // but should distinguish between reordered params while allowing normal
-        // type coercions to be honored
         return operation + "_" + params;
     }
 
@@ -464,6 +474,374 @@ public class GroovyMBean extends GroovyObjectSupport {
     private void throwExceptionWithTarget(String m, MBeanException e) {
         if (!ignoreErrors) {
             throw new GroovyRuntimeException(m + e, e.getTargetException());
+        }
+    }
+
+    private List<Operation> operationsFor(String method, int arity) {
+        List<Operation> grouped = operations.get(createOperationKey(method, arity));
+        if (grouped == null) {
+            return null;
+        }
+        if (grouped.size() == 1) {
+            Operation only = grouped.get(0);
+            if (method.equals(only.name) && only.signature.length == arity) {
+                return grouped;
+            }
+        }
+        List<Operation> matched = new ArrayList<Operation>(grouped.size());
+        for (Operation operation : grouped) {
+            if (method.equals(operation.name) && operation.signature.length == arity) {
+                matched.add(operation);
+            }
+        }
+        return matched;
+    }
+
+    /**
+     * Chooses an overload. Java method-invocation conversion is preferred, so a
+     * short argument can still reach an int parameter. Groovy coercions such as
+     * GString to String are used only when no overload is applicable that way,
+     * and those arguments are converted before the server sees them. A remaining
+     * tie keeps the last registered operation.
+     */
+    private static Selection select(List<Operation> matches, Object[] args) {
+        List<Candidate> candidates = new ArrayList<Candidate>(matches.size());
+        for (Operation operation : matches) {
+            candidates.add(new Candidate(operation, operation.parameterTypes(args)));
+        }
+        List<Candidate> applicable = applicable(candidates, args, true);
+        boolean coerce = false;
+        if (applicable.isEmpty()) {
+            applicable = applicable(candidates, args, false);
+            coerce = !applicable.isEmpty();
+        }
+        if (applicable.isEmpty()) {
+            Operation last = matches.get(matches.size() - 1);
+            return new Selection(last.signature, args);
+        }
+        List<Candidate> best = mostSpecific(applicable, !coerce);
+        best = closest(best, args);
+        Candidate chosen = best.get(best.size() - 1);
+        Object[] callArgs = coerce ? coerce(args, chosen.types) : args;
+        return new Selection(chosen.operation.signature, callArgs);
+    }
+
+    private static List<Candidate> applicable(List<Candidate> candidates, Object[] args, boolean javaRules) {
+        List<Candidate> matched = new ArrayList<Candidate>(candidates.size());
+        for (Candidate candidate : candidates) {
+            if (accepts(args, candidate.types, javaRules)) {
+                matched.add(candidate);
+            }
+        }
+        return matched;
+    }
+
+    private static boolean accepts(Object[] args, Class<?>[] params, boolean javaRules) {
+        for (int i = 0; i < args.length; i++) {
+            Class<?> param = params[i];
+            Object arg = args[i];
+            if (javaRules) {
+                if (!isJavaAssignable(argumentClass(arg), param)) {
+                    return false;
+                }
+            } else if (param == null || !groovyAssignable(param, arg)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private static boolean groovyAssignable(Class<?> param, Object arg) {
+        if (arg == null) {
+            return !param.isPrimitive();
+        }
+        return MetaClassHelper.isAssignableFrom(param, arg.getClass());
+    }
+
+    private static List<Candidate> mostSpecific(List<Candidate> applicable, boolean javaRules) {
+        List<Candidate> best = new ArrayList<Candidate>(applicable.size());
+        for (Candidate candidate : applicable) {
+            boolean dominated = false;
+            for (int i = 0; i < best.size(); ) {
+                Candidate other = best.get(i);
+                boolean better = isMoreSpecific(candidate.types, other.types, javaRules);
+                boolean worse = isMoreSpecific(other.types, candidate.types, javaRules);
+                if (better) {
+                    best.remove(i);
+                } else if (worse) {
+                    dominated = true;
+                    break;
+                } else {
+                    i++;
+                }
+            }
+            if (!dominated) {
+                best.add(candidate);
+            }
+        }
+        return best;
+    }
+
+    private static boolean isMoreSpecific(Class<?>[] left, Class<?>[] right, boolean javaRules) {
+        boolean stricter = false;
+        for (int i = 0; i < left.length; i++) {
+            boolean leftToRight = compatible(left[i], right[i], javaRules);
+            boolean rightToLeft = compatible(right[i], left[i], javaRules);
+            if (!leftToRight) {
+                return false;
+            }
+            if (!rightToLeft) {
+                stricter = true;
+            }
+        }
+        return stricter;
+    }
+
+    private static boolean compatible(Class<?> from, Class<?> to, boolean javaRules) {
+        if (javaRules) {
+            return isJavaAssignable(from, to);
+        }
+        Class<?> source = from.isPrimitive() ? box(from) : from;
+        return MetaClassHelper.isAssignableFrom(to, source);
+    }
+
+    private static List<Candidate> closest(List<Candidate> best, Object[] args) {
+        int bestDistance = Integer.MAX_VALUE;
+        List<Candidate> closest = new ArrayList<Candidate>(best.size());
+        for (Candidate candidate : best) {
+            int distance = distance(args, candidate.types);
+            if (distance < bestDistance) {
+                bestDistance = distance;
+                closest.clear();
+                closest.add(candidate);
+            } else if (distance == bestDistance) {
+                closest.add(candidate);
+            }
+        }
+        return closest;
+    }
+
+    private static int distance(Object[] args, Class<?>[] params) {
+        int sum = 0;
+        for (int i = 0; i < args.length; i++) {
+            int part = argumentDistance(argumentClass(args[i]), params[i]);
+            if (part == Integer.MAX_VALUE) {
+                return Integer.MAX_VALUE;
+            }
+            sum += part;
+        }
+        return sum;
+    }
+
+    private static int argumentDistance(Class<?> arg, Class<?> param) {
+        if (arg == null) {
+            return REFERENCE_DISTANCE;
+        }
+        if (arg == param) {
+            return 0;
+        }
+        Class<?> argPrimitive = asPrimitive(arg);
+        Class<?> paramPrimitive = asPrimitive(param);
+        if (argPrimitive != null && argPrimitive == paramPrimitive) {
+            return BOX_DISTANCE;
+        }
+        if (!param.isPrimitive() && param.isAssignableFrom(arg)) {
+            return REFERENCE_DISTANCE;
+        }
+        if (MetaClassHelper.isAssignableFrom(param, arg)) {
+            return GROOVY_DISTANCE;
+        }
+        return Integer.MAX_VALUE;
+    }
+
+    private static Object[] coerce(Object[] args, Class<?>[] params) {
+        Object[] copy = new Object[args.length];
+        for (int i = 0; i < args.length; i++) {
+            if (isJavaAssignable(argumentClass(args[i]), params[i])) {
+                copy[i] = args[i];
+            } else {
+                copy[i] = DefaultTypeTransformation.castToType(args[i], params[i]);
+            }
+        }
+        return copy;
+    }
+
+    private static boolean isJavaAssignable(Class<?> arg, Class<?> param) {
+        if (param == null) {
+            return false;
+        }
+        if (arg == null) {
+            return !param.isPrimitive();
+        }
+        if (param.isPrimitive()) {
+            Class<?> argPrimitive = asPrimitive(arg);
+            if (argPrimitive == null) {
+                return false;
+            }
+            return argPrimitive == param || wideningSteps(argPrimitive, param) >= 0;
+        }
+        Class<?> source = arg.isPrimitive() ? box(arg) : arg;
+        return param.isAssignableFrom(source);
+    }
+
+    private static int wideningSteps(Class<?> from, Class<?> to) {
+        if (from == byte.class) {
+            if (to == short.class) return 1;
+            if (to == int.class) return 2;
+            if (to == long.class) return 3;
+            if (to == float.class) return 4;
+            if (to == double.class) return 5;
+        } else if (from == short.class) {
+            if (to == int.class) return 1;
+            if (to == long.class) return 2;
+            if (to == float.class) return 3;
+            if (to == double.class) return 4;
+        } else if (from == char.class) {
+            if (to == int.class) return 1;
+            if (to == long.class) return 2;
+            if (to == float.class) return 3;
+            if (to == double.class) return 4;
+        } else if (from == int.class) {
+            if (to == long.class) return 1;
+            if (to == float.class) return 2;
+            if (to == double.class) return 3;
+        } else if (from == long.class) {
+            if (to == float.class) return 1;
+            if (to == double.class) return 2;
+        } else if (from == float.class) {
+            if (to == double.class) return 1;
+        }
+        return -1;
+    }
+
+    private static Class<?> asPrimitive(Class<?> type) {
+        if (type.isPrimitive()) {
+            return type;
+        }
+        return WRAPPER_TO_PRIMITIVE.get(type);
+    }
+
+    private static Class<?> argumentClass(Object arg) {
+        return arg == null ? null : arg.getClass();
+    }
+
+    private static Class<?> box(Class<?> primitive) {
+        return BOXED.get(primitive);
+    }
+
+    private static Class<?> loadType(String typeName) {
+        Class<?> primitive = PRIMITIVE_TYPES.get(typeName);
+        if (primitive != null) {
+            return primitive;
+        }
+        if (typeName.endsWith("[]")) {
+            Class<?> component = loadType(typeName.substring(0, typeName.length() - 2));
+            if (component == null) {
+                return null;
+            }
+            return Array.newInstance(component, 0).getClass();
+        }
+        Class<?> type = tryLoad(typeName, Thread.currentThread().getContextClassLoader());
+        if (type != null) {
+            return type;
+        }
+        return tryLoad(typeName, GroovyMBean.class.getClassLoader());
+    }
+
+    private static Class<?> tryLoad(String typeName, ClassLoader loader) {
+        try {
+            return Class.forName(typeName, false, loader);
+        } catch (ClassNotFoundException ex) {
+            return null;
+        }
+    }
+
+    private static final int BOX_DISTANCE = 1;
+    private static final int REFERENCE_DISTANCE = 8;
+    private static final int GROOVY_DISTANCE = 32;
+
+    private static final Map<String, Class<?>> PRIMITIVE_TYPES = Map.of(
+            "boolean", boolean.class,
+            "byte", byte.class,
+            "char", char.class,
+            "short", short.class,
+            "int", int.class,
+            "long", long.class,
+            "float", float.class,
+            "double", double.class);
+
+    private static final Map<Class<?>, Class<?>> WRAPPER_TO_PRIMITIVE = Map.of(
+            Boolean.class, boolean.class,
+            Byte.class, byte.class,
+            Character.class, char.class,
+            Short.class, short.class,
+            Integer.class, int.class,
+            Long.class, long.class,
+            Float.class, float.class,
+            Double.class, double.class);
+
+    private static final Map<Class<?>, Class<?>> BOXED = Map.of(
+            boolean.class, Boolean.class,
+            byte.class, Byte.class,
+            char.class, Character.class,
+            short.class, Short.class,
+            int.class, Integer.class,
+            long.class, Long.class,
+            float.class, Float.class,
+            double.class, Double.class);
+
+    private static final class Operation {
+        final String name;
+        final String[] signature;
+        private final Class<?>[] resolved;
+
+        Operation(String name, String[] signature) {
+            this.name = name;
+            this.signature = signature;
+            this.resolved = new Class<?>[signature.length];
+        }
+
+        Class<?>[] parameterTypes(Object[] args) {
+            Class<?>[] types = new Class<?>[signature.length];
+            for (int i = 0; i < signature.length; i++) {
+                types[i] = resolve(i, args[i]);
+            }
+            return types;
+        }
+
+        private Class<?> resolve(int index, Object sample) {
+            Class<?> cached = resolved[index];
+            if (cached != null) {
+                return cached;
+            }
+            Class<?> type = loadType(signature[index]);
+            if (type == null && sample != null && signature[index].equals(sample.getClass().getName())) {
+                type = sample.getClass();
+            }
+            if (type != null) {
+                resolved[index] = type;
+            }
+            return type;
+        }
+    }
+
+    private static final class Candidate {
+        final Operation operation;
+        final Class<?>[] types;
+
+        Candidate(Operation operation, Class<?>[] types) {
+            this.operation = operation;
+            this.types = types;
+        }
+    }
+
+    private static final class Selection {
+        final String[] signature;
+        final Object[] arguments;
+
+        Selection(String[] signature, Object[] arguments) {
+            this.signature = signature;
+            this.arguments = arguments;
         }
     }
 }
