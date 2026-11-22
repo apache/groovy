@@ -1282,6 +1282,14 @@ final class FieldsAndPropertiesStaticCompileTest extends FieldsAndPropertiesSTCT
         '''
     }
 
+    // GROOVY-12511: static compilation does not reach the enclosing instance of the
+    // receiver for property syntax, so it reports these instead of using the receiver
+    @Override @Test
+    void testPrivateAccessorOfEnclosingInstanceOfOtherReceiverInInnerSubclass() {
+        shouldFailWithMessages PRIVATE_ACCESSOR_OF_ENCLOSING_INSTANCE_OF_OTHER_RECEIVER,
+            'No such property: p for class: Box$Sub', 'No such property: q for class: Box$Sub'
+    }
+
     // GROOVY-12513: the private setter of the declared type, as for b.setY(v)
     @Override @Test
     void testPrivateSetterThroughDeclaredTypeOfNarrowedVariable() {

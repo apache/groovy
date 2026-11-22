@@ -2253,6 +2253,34 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    protected static final String PRIVATE_ACCESSOR_OF_ENCLOSING_INSTANCE_OF_OTHER_RECEIVER = '''
+        class Box {
+            String id
+            Box(String id) { this.id = id }
+            private String getP() { 'p:' + id }
+            private void setQ(String v) { id = 'q' + v }
+            class Sub extends Box {
+                Sub() { super('self') }
+                String read(Sub other) { other.p }
+                void write(Sub other) { other.q = '1' }
+            }
+            Sub make() { new Sub() }
+        }
+    '''
+
+    // GROOVY-12511: through a receiver other than "this", a private accessor of the enclosing
+    // class is the property of that receiver's enclosing instance, as in dynamic Groovy
+    @Test
+    void testPrivateAccessorOfEnclosingInstanceOfOtherReceiverInInnerSubclass() {
+        assertScript PRIVATE_ACCESSOR_OF_ENCLOSING_INSTANCE_OF_OTHER_RECEIVER + '''
+            def a = new Box('A'), b = new Box('B')
+            def sa = a.make(), sb = b.make()
+            assert sa.read(sb) == 'p:B'
+            sa.write(sb)
+            assert b.id == 'q1' && sb.id == 'self'
+        '''
+    }
+
     // GROOVY-12511: this.@name is a field of this class, not the enclosing instance's
     // property, so a private getter of the enclosing superclass does not stand in for it
     @Test

@@ -3403,6 +3403,17 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
                 }
                 staticOnly = staticOnly || hasNoEnclosingInstance(outer);
             }
+        } else if (!isStaticDispatchScope() && !(pexp instanceof AttributeExpression) && !isSuperExpression(objectExpression)
+                && !(objectExpression instanceof ClassExpression) && getType(objectExpression).equals(typeCheckingContext.getEnclosingClassNode())) {
+            // GROOVY-12511: dynamic Groovy looks a property that an instance of the calling class lacks up on its enclosing
+            // instance (GROOVY-12621); static compilation has no access to the receiver's enclosing instance for it here
+            for (ClassNode type = getType(objectExpression); !hasNoEnclosingInstance(type) && (type = type.getOuterClass()) != null; ) {
+                PropertyExpression pe = propX(propX(classX(type), "this"), pexp.getProperty());
+                if (existsProperty(pe, readMode, visitor)) {
+                    pexp.copyNodeMetaData(pe);
+                    return true;
+                }
+            }
         }
 
         return foundGetterOrSetter;
