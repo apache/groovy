@@ -93,6 +93,15 @@ class IndexedPropertyTransformTest extends GroovyShellTestCase {
             shouldFail(NoSuchMethodException) {
                 Demo2.getMethod('setFoo', int, Integer)
             }
+
+            @Immutable
+            class Demo3 {
+                @IndexedProperty String[] bar
+            }
+            assert Demo3.getMethod('getBar', int)
+            shouldFail(NoSuchMethodException) {
+                Demo3.getMethod('setBar', int, String)
+            }
         '''
     }
 
@@ -130,6 +139,104 @@ class IndexedPropertyTransformTest extends GroovyShellTestCase {
             assert new Demo2([1, 2]).getFoo(1) == 2
             assert new Demo3([1, 2] as Integer[]).getFoo(1) == 2
         '''
+    }
+
+    // GROOVY-12726
+    void testImmutableAliasDropsIndexedSetterStub() {
+        assertScript '''
+            import groovy.transform.*
+            import static groovy.test.GroovyAssert.shouldFail
+
+            @AnnotationCollector([ImmutableBase, TupleConstructor, PropertyOptions])
+            @interface MyImmutable {}
+
+            @MyImmutable(defaults = false, propertyHandler = groovy.transform.options.ImmutablePropertyHandler)
+            class ArrayBox {
+                @IndexedProperty String[] tags
+            }
+            @MyImmutable(defaults = false, propertyHandler = groovy.transform.options.ImmutablePropertyHandler)
+            class ListBox {
+                @IndexedProperty List<String> items
+            }
+
+            def tags = new ArrayBox(new String[] {'a', 'b'})
+            assert tags.getTags(1) == 'b'
+            shouldFail(NoSuchMethodException) { ArrayBox.getMethod('setTags', int, String) }
+
+            def items = new ListBox(['x', 'y'])
+            assert items.getItems(0) == 'x'
+            shouldFail(NoSuchMethodException) { ListBox.getMethod('setItems', int, String) }
+        '''
+    }
+
+    // GROOVY-12726
+    void testRecordLikeClassesExposeIndexedGetters() {
+        assertScript '''
+            import groovy.transform.*
+
+            @RecordType
+            class RecordBox {
+                @IndexedProperty List<String> items
+                @IndexedProperty String[] tags
+            }
+            @RecordBase
+            @TupleConstructor
+            class BaseBox {
+                @IndexedProperty List<Integer> nums
+            }
+
+            assert RecordBox.getMethod('getItems', int)
+            assert RecordBox.getMethod('getTags', int)
+            assert BaseBox.getMethod('getNums', int)
+
+            def record = new RecordBox(['a', 'b'], new String[] {'x'})
+            assert record.getItems(1) == 'b'
+            assert record.getTags(0) == 'x'
+
+            def base = new BaseBox([1, 2])
+            assert base.getNums(0) == 1
+        '''
+    }
+
+    // GROOVY-12726
+    void testStaticIndexedProperty() {
+        assertScript '''
+            import groovy.transform.IndexedProperty
+            import static java.lang.reflect.Modifier.isStatic
+
+            class Demo {
+                @IndexedProperty static List<String> items = ['a', 'b']
+            }
+
+            assert isStatic(Demo.getMethod('getItems', int).modifiers)
+            assert isStatic(Demo.getMethod('setItems', int, String).modifiers)
+            Demo.setItems(0, 'z')
+            assert Demo.getItems(0) == 'z'
+        '''
+    }
+
+    // GROOVY-12726
+    void testRejectsNonPropertyAndNonIndexableField() {
+        def notProperty = shouldFail {
+            assertScript '''
+                import groovy.transform.IndexedProperty
+                class Demo {
+                    public @IndexedProperty List<String> items
+                }
+            '''
+        }
+        assert notProperty.contains("doesn't appear to be a property")
+
+        def notIndexable = shouldFail {
+            assertScript '''
+                import groovy.transform.IndexedProperty
+                class Demo {
+                    @IndexedProperty String name
+                }
+            '''
+        }
+        assert notIndexable.contains('Non-Indexable property')
+        assert notIndexable.contains('String')
     }
 
 }

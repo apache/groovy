@@ -82,6 +82,11 @@ public class VetoableASTTransformation extends BindableASTTransformation {
      */
     protected static final ClassNode constrainedClassNode = ClassHelper.make(Vetoable.class);
 
+    private static final String ADD_VETOABLE_CHANGE_LISTENER = "addVetoableChangeListener";
+    private static final String REMOVE_VETOABLE_CHANGE_LISTENER = "removeVetoableChangeListener";
+    private static final String FIRE_VETOABLE_CHANGE = "fireVetoableChange";
+    private static final String GET_VETOABLE_CHANGE_LISTENERS = "getVetoableChangeListeners";
+
     /**
      * Convenience method to see if an annotated node is {@code @Vetoable}.
      *
@@ -144,17 +149,15 @@ public class VetoableASTTransformation extends BindableASTTransformation {
 
 
     private void addListenerToClass(SourceUnit source, ClassNode classNode) {
-        // GEP-21 Shape C: discard any stubber-emitted placeholder methods so
-        // needsVetoableChangeSupport() correctly detects "no existing
-        // user-written support" and the real bodies get installed.
-        // Use removeMethod() rather than removeIf() on the list, since
-        // ClassNode keeps a parallel name->methods map.
-        List<MethodNode> stubs = new ArrayList<>();
-        for (MethodNode m : classNode.getMethods()) {
-            if (StubberSupport.isStub(m)) stubs.add(m);
-        }
-        stubs.forEach(classNode::removeMethod);
+        // Listener placeholders only. Property-change placeholders belong
+        // to @Bindable, so drop them only when this class is also bound.
+        // A field-level @Bindable is handled in createListenerSetter.
+        // Other stub-tagged methods stay for their own transforms.
         boolean bindable = BindableASTTransformation.hasBindableAnnotation(classNode);
+        removeVetoableChangeStubs(classNode);
+        if (bindable) {
+            removePropertyChangeStubs(classNode);
+        }
         for (PropertyNode propertyNode : classNode.getProperties()) {
             if (!hasVetoableAnnotation(propertyNode.getField())
                 && !propertyNode.getField().isFinal()
@@ -188,7 +191,7 @@ public class VetoableASTTransformation extends BindableASTTransformation {
             block.addStatement(declS(oldValue, callThisX(getterName)));
 
             // add the fireVetoableChange method call
-            block.addStatement(stmt(callThisX("fireVetoableChange", args(
+            block.addStatement(stmt(callThisX(FIRE_VETOABLE_CHANGE, args(
                     constX(propertyName), oldValue, proposedValue))));
 
             // call the existing block, which will presumably set the value properly
@@ -208,9 +211,13 @@ public class VetoableASTTransformation extends BindableASTTransformation {
     }
 
     private void createListenerSetter(SourceUnit source, boolean bindable, ClassNode declaringClass, PropertyNode propertyNode) {
-        if (bindable && needsPropertyChangeSupport(declaringClass, source)) {
-            addPropertyChangeSupport(declaringClass);
+        if (bindable) {
+            removePropertyChangeStubs(declaringClass);
+            if (needsPropertyChangeSupport(declaringClass, source)) {
+                addPropertyChangeSupport(declaringClass);
+            }
         }
+        removeVetoableChangeStubs(declaringClass);
         if (needsVetoableChangeSupport(declaringClass, source)) {
             addVetoableChangeSupport(declaringClass);
         }
@@ -241,7 +248,7 @@ public class VetoableASTTransformation extends BindableASTTransformation {
      * @return the created statement
      */
     protected Statement createConstrainedStatement(PropertyNode propertyNode, Expression fieldExpression) {
-        return stmt(callThisX("fireVetoableChange", args(constX(propertyNode.getName()), fieldExpression, varX("value"))));
+        return stmt(callThisX(FIRE_VETOABLE_CHANGE, args(constX(propertyNode.getName()), fieldExpression, varX("value"))));
     }
 
     /**
@@ -272,9 +279,9 @@ public class VetoableASTTransformation extends BindableASTTransformation {
         while (consideredClass!= null) {
             for (MethodNode method : consideredClass.getMethods()) {
                 // just check length, MOP will match it up
-                foundAdd = foundAdd || "addVetoableChangeListener".equals(method.getName()) && method.getParameters().length == 1;
-                foundRemove = foundRemove || "removeVetoableChangeListener".equals(method.getName()) && method.getParameters().length == 1;
-                foundFire = foundFire || "fireVetoableChange".equals(method.getName()) && method.getParameters().length == 3;
+                foundAdd = foundAdd || ADD_VETOABLE_CHANGE_LISTENER.equals(method.getName()) && method.getParameters().length == 1;
+                foundRemove = foundRemove || REMOVE_VETOABLE_CHANGE_LISTENER.equals(method.getName()) && method.getParameters().length == 1;
+                foundFire = foundFire || FIRE_VETOABLE_CHANGE.equals(method.getName()) && method.getParameters().length == 3;
                 if (foundAdd && foundRemove && foundFire) {
                     return false;
                 }
@@ -300,6 +307,28 @@ public class VetoableASTTransformation extends BindableASTTransformation {
             return false;
         }
         return true;
+    }
+
+    /**
+     * Drops listener placeholders emitted by {@link VetoableASTStubber}.
+     * Other stubber placeholders on the same class are left alone.
+     */
+    private static void removeVetoableChangeStubs(ClassNode declaringClass) {
+        List<MethodNode> stubs = new ArrayList<>();
+        for (MethodNode method : declaringClass.getMethods()) {
+            if (StubberSupport.isStub(method) && isVetoableChangeStub(method.getName())) {
+                stubs.add(method);
+            }
+        }
+        stubs.forEach(declaringClass::removeMethod);
+    }
+
+    private static boolean isVetoableChangeStub(String methodName) {
+        return switch (methodName) {
+            case ADD_VETOABLE_CHANGE_LISTENER, REMOVE_VETOABLE_CHANGE_LISTENER,
+                 FIRE_VETOABLE_CHANGE, GET_VETOABLE_CHANGE_LISTENERS -> true;
+            default -> false;
+        };
     }
 
     /**
@@ -361,12 +390,12 @@ public class VetoableASTTransformation extends BindableASTTransformation {
         //  }
         addGeneratedMethod(declaringClass,
                 new MethodNode(
-                        "addVetoableChangeListener",
+                        ADD_VETOABLE_CHANGE_LISTENER,
                         ACC_PUBLIC,
                         ClassHelper.VOID_TYPE,
                         params(param(vclClassNode, "listener")),
                         ClassNode.EMPTY_ARRAY,
-                        stmt(callX(fieldX(vcsField), "addVetoableChangeListener", args(varX("listener", vclClassNode))))));
+                        stmt(callX(fieldX(vcsField), ADD_VETOABLE_CHANGE_LISTENER, args(varX("listener", vclClassNode))))));
 
         // add method:
         // void addVetoableChangeListener(name, listener) {
@@ -374,12 +403,12 @@ public class VetoableASTTransformation extends BindableASTTransformation {
         //  }
         addGeneratedMethod(declaringClass,
                 new MethodNode(
-                        "addVetoableChangeListener",
+                        ADD_VETOABLE_CHANGE_LISTENER,
                         ACC_PUBLIC,
                         ClassHelper.VOID_TYPE,
                         params(param(ClassHelper.STRING_TYPE, "name"), param(vclClassNode, "listener")),
                         ClassNode.EMPTY_ARRAY,
-                        stmt(callX(fieldX(vcsField), "addVetoableChangeListener", args(varX("name", ClassHelper.STRING_TYPE), varX("listener", vclClassNode))))));
+                        stmt(callX(fieldX(vcsField), ADD_VETOABLE_CHANGE_LISTENER, args(varX("name", ClassHelper.STRING_TYPE), varX("listener", vclClassNode))))));
 
         // add method:
         // boolean removeVetoableChangeListener(listener) {
@@ -387,22 +416,22 @@ public class VetoableASTTransformation extends BindableASTTransformation {
         // }
         addGeneratedMethod(declaringClass,
                 new MethodNode(
-                        "removeVetoableChangeListener",
+                        REMOVE_VETOABLE_CHANGE_LISTENER,
                         ACC_PUBLIC,
                         ClassHelper.VOID_TYPE,
                         params(param(vclClassNode, "listener")),
                         ClassNode.EMPTY_ARRAY,
-                        stmt(callX(fieldX(vcsField), "removeVetoableChangeListener", args(varX("listener", vclClassNode))))));
+                        stmt(callX(fieldX(vcsField), REMOVE_VETOABLE_CHANGE_LISTENER, args(varX("listener", vclClassNode))))));
 
         // add method: void removeVetoableChangeListener(name, listener)
         addGeneratedMethod(declaringClass,
                 new MethodNode(
-                        "removeVetoableChangeListener",
+                        REMOVE_VETOABLE_CHANGE_LISTENER,
                         ACC_PUBLIC,
                         ClassHelper.VOID_TYPE,
                         params(param(ClassHelper.STRING_TYPE, "name"), param(vclClassNode, "listener")),
                         ClassNode.EMPTY_ARRAY,
-                        stmt(callX(fieldX(vcsField), "removeVetoableChangeListener", args(varX("name", ClassHelper.STRING_TYPE), varX("listener", vclClassNode))))));
+                        stmt(callX(fieldX(vcsField), REMOVE_VETOABLE_CHANGE_LISTENER, args(varX("name", ClassHelper.STRING_TYPE), varX("listener", vclClassNode))))));
 
         // add method:
         // void fireVetoableChange(String name, Object oldValue, Object newValue)
@@ -412,12 +441,12 @@ public class VetoableASTTransformation extends BindableASTTransformation {
         //  }
         addGeneratedMethod(declaringClass,
                 new MethodNode(
-                        "fireVetoableChange",
+                        FIRE_VETOABLE_CHANGE,
                         ACC_PUBLIC,
                         ClassHelper.VOID_TYPE,
                         params(param(ClassHelper.STRING_TYPE, "name"), param(ClassHelper.OBJECT_TYPE, "oldValue"), param(ClassHelper.OBJECT_TYPE, "newValue")),
                         new ClassNode[] {ClassHelper.make(PropertyVetoException.class)},
-                        stmt(callX(fieldX(vcsField), "fireVetoableChange", args(varX("name", ClassHelper.STRING_TYPE), varX("oldValue"), varX("newValue"))))));
+                        stmt(callX(fieldX(vcsField), FIRE_VETOABLE_CHANGE, args(varX("name", ClassHelper.STRING_TYPE), varX("oldValue"), varX("newValue"))))));
 
         // add method:
         // VetoableChangeListener[] getVetoableChangeListeners() {
@@ -425,12 +454,12 @@ public class VetoableASTTransformation extends BindableASTTransformation {
         // }
         addGeneratedMethod(declaringClass,
                 new MethodNode(
-                        "getVetoableChangeListeners",
+                        GET_VETOABLE_CHANGE_LISTENERS,
                         ACC_PUBLIC,
                         vclClassNode.makeArray(),
                         Parameter.EMPTY_ARRAY,
                         ClassNode.EMPTY_ARRAY,
-                        returnS(callX(fieldX(vcsField), "getVetoableChangeListeners"))));
+                        returnS(callX(fieldX(vcsField), GET_VETOABLE_CHANGE_LISTENERS))));
 
         // add method:
         // VetoableChangeListener[] getVetoableChangeListeners(String name) {
@@ -438,12 +467,12 @@ public class VetoableASTTransformation extends BindableASTTransformation {
         // }
         addGeneratedMethod(declaringClass,
                 new MethodNode(
-                        "getVetoableChangeListeners",
+                        GET_VETOABLE_CHANGE_LISTENERS,
                         ACC_PUBLIC,
                         vclClassNode.makeArray(),
                         params(param(ClassHelper.STRING_TYPE, "name")),
                         ClassNode.EMPTY_ARRAY,
-                        returnS(callX(fieldX(vcsField), "getVetoableChangeListeners", args(varX("name", ClassHelper.STRING_TYPE))))));
+                        returnS(callX(fieldX(vcsField), GET_VETOABLE_CHANGE_LISTENERS, args(varX("name", ClassHelper.STRING_TYPE))))));
     }
 
 }
