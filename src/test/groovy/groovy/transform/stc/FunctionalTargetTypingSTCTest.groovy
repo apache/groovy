@@ -155,11 +155,9 @@ class FunctionalTargetTypingSTCTest extends StaticTypeCheckingTestCase {
         'lambda wrappedReturn'     : ['result'],
         'closure wrapped'          : ['result'],
         // GROOVY-12778: a bound that names the type parameter is not checked
-        'reference wrapped'        : ['selfBound'],
-        'reference nested'         : ['selfBound'],
         'reference wrappedReturn'  : ['selfBound'],
         // GROOVY-12777: a generic call that is itself an argument
-        'reference wrappedArgument': ['parameter', 'selfBound']
+        'reference wrappedArgument': ['parameter']
     ]
 
     /**
@@ -182,8 +180,6 @@ class FunctionalTargetTypingSTCTest extends StaticTypeCheckingTestCase {
         'lambda wrappedArgument'   : ['parameter', 'result', 'bareResult', 'parameterAndResult', 'selfBound', 'receiver'],
         'lambda wrappedReturn'     : ['parameter', 'bareResult', 'parameterAndResult', 'selfBound', 'receiver'],
         'closure wrapped'          : ['parameter', 'bareResult', 'parameterAndResult', 'selfBound', 'receiver'],
-        // a generic call that is itself an argument, as for GROOVY-12777
-        'reference wrappedArgument': ['result', 'parameterAndResult']
     ]
 
     /**

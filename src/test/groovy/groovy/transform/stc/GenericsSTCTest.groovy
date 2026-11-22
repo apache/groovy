@@ -5652,11 +5652,10 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
             void test(String s, List<String> list) {
                 List<Class<?>> one = Collections.singletonList(s.getClass())
                 List<Class<?>> all = list*.getClass()
-                Set<Class<?>> set = list.stream().map(e -> e.getClass()).collect(java.util.stream.Collectors.toSet())
                 takes(Collections.singletonList(s.getClass()))
                 takes(list*.getClass())
                 takes(list.collect { it.getClass() })
-                def v = Collections.singletonList(s.getClass())
+                List<Class<?>> v = Collections.singletonList(s.getClass())
                 takes(v)
             }
             test('x', ['y'])
@@ -5670,7 +5669,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
             import java.util.function.*
 
             class C {
-                static <T extends Number> int takeNumber(T t) { t.intValue() }
+                static <T extends Number> void takeNumber(T t) { t.intValue() }
                 static <T extends Number> List<T> numbers() { new ArrayList<T>() }
                 static <T extends Number> T same(T t) { t }
                 static <T> Consumer<T> toConsumer(Consumer<T> c) { c }

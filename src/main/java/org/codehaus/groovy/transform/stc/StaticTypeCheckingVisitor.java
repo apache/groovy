@@ -2167,9 +2167,6 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
                 || isNullConstant(rightExpression) || UNKNOWN_PARAMETER_TYPE.equals(rightExpressionType)) {
             return;
         }
-        if (isClassOfReceiverWithin(leftExpressionType, rightExpression)) {
-            return;
-        }
         ClassNode right = wrapTypeIfNecessary(rightExpressionType);
         if (hasIncompatibleGenerics(leftExpressionType, right)) {
             if (isTypedByTarget(leftExpressionType, right, rightExpression)) {
@@ -2248,53 +2245,6 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
         }
         if (type.isArray() || target.isArray() || target.isGenericsPlaceHolder()) return true; // checked elsewhere
         return implementsInterfaceOrIsSubclassOf(wrapTypeIfNecessary(type), wrapTypeIfNecessary(target));
-    }
-
-    /**
-     * For {@code x.getClass()} and {@code x.class}, returns the types that the class is known
-     * to be a subtype of: the static type of {@code x}, followed by any type that an
-     * {@code instanceof} test has given it. Returns {@code null} for any other expression.
-     */
-    private List<ClassNode> classOfReceiverTypes(final Expression expression) {
-        Expression receiver;
-        if (expression instanceof MethodCallExpression call && "getClass".equals(call.getMethodAsString())
-                && call.getArguments() instanceof TupleExpression arguments && arguments.getExpressions().isEmpty()) {
-            receiver = call.getObjectExpression();
-        } else if (expression instanceof PropertyExpression property && !(expression instanceof AttributeExpression)
-                && "class".equals(property.getPropertyAsString())) {
-            receiver = property.getObjectExpression();
-        } else {
-            return null;
-        }
-        if (receiver instanceof ClassExpression || !isClassType(getType(expression))) return null;
-        ClassNode receiverType = getType(receiver);
-        if (receiverType == null || isClassType(receiverType)) return null;
-        List<ClassNode> types = new ArrayList<>();
-        types.add(wrapTypeIfNecessary(receiverType));
-        types.addAll(getTemporaryTypesForExpression(receiver));
-        return types;
-    }
-
-    /**
-     * The declared type of {@code getClass()} is {@code Class<?>}, but the class of a value is
-     * a subtype of the type of the value (JLS 4.3.2). So {@code x.getClass()} and {@code x.class}
-     * are accepted for a {@code Class} whose type argument the type of {@code x} is within.
-     */
-    private boolean isClassOfReceiverWithin(final ClassNode targetType, final Expression expression) {
-        if (!isClassType(targetType)) return false;
-        GenericsType[] typeArguments = targetType.getGenericsTypes();
-        if (typeArguments == null || typeArguments.length != 1) return false;
-        List<ClassNode> receiverTypes = classOfReceiverTypes(expression);
-        if (receiverTypes == null) return false;
-
-        GenericsType typeArgument = typeArguments[0];
-        if (typeArgument.isWildcard() && typeArgument.getLowerBound() != null) return false;
-        ClassNode[] bounds = typeArgument.isWildcard() ? typeArgument.getUpperBounds() : new ClassNode[]{typeArgument.getType()};
-        if (bounds == null) return true; // Class<?>
-        for (ClassNode bound : bounds) {
-            if (receiverTypes.stream().noneMatch(type -> type.equals(bound) || implementsInterfaceOrIsSubclassOf(type, bound))) return false;
-        }
-        return true;
     }
 
     /**
@@ -2499,39 +2449,6 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
         return true;
     }
 
-    /**
-     * Replaces the type of each {@code x.getClass()} or {@code x.class} argument with
-     * {@code Class<? extends X>}. Returns {@code null} if there is no such argument.
-     */
-    private ClassNode[] classOfReceiverArgumentTypes(final ClassNode[] argumentTypes, final Expression call) {
-        Expression arguments = call instanceof MethodCall methodCall ? methodCall.getArguments() : null;
-        if (!(arguments instanceof TupleExpression tuple) || tuple.getExpressions().size() != argumentTypes.length) return null;
-        ClassNode[] types = null;
-        for (int i = 0; i < argumentTypes.length; i += 1) {
-            List<ClassNode> receiverTypes = classOfReceiverTypes(tuple.getExpression(i));
-            if (receiverTypes == null) continue;
-            ClassNode receiverType = receiverTypes.get(receiverTypes.size() - 1); // the most specific that is known
-            if (!receiverType.isGenericsPlaceHolder()) receiverType = receiverType.getPlainNodeReference();
-            if (types == null) types = argumentTypes.clone();
-            types[i] = GenericsUtils.makeClassSafe0(CLASS_Type, GenericsUtils.buildWildcardType(receiverType));
-        }
-        return types;
-    }
-
-    /**
-     * Whether the type names a type variable that is declared neither by the enclosing
-     * method nor by an enclosing class.
-     */
-    private boolean mentionsTypeVariableOutOfScope(final ClassNode type) {
-        Set<String> names = new HashSet<>();
-        collectTypeVariableNames(type, names);
-        if (names.isEmpty()) return false;
-        Map<GenericsTypeName, GenericsType> scope = extractGenericsParameterMapOfThis(typeCheckingContext);
-        for (String name : names) {
-            if (scope == null || !scope.containsKey(new GenericsTypeName(name))) return true;
-        }
-        return false;
-    }
 
     /**
      * Whether each explicitly typed parameter of a closure or lambda accepts the type that the
@@ -6775,8 +6692,7 @@ trying: for (ClassNode[] signature : signatures) {
                 && !resultType.isGenericsPlaceHolder()
             // A declared type variable has a bound. Do not paint the target
             // over "? extends T"; inference placeholders ("#E") still may.
-            // A type variable that is not in scope was left open by the call.
-            && !(containsDeclaredTypeVariable(resultType) && !mentionsTypeVariableOutOfScope(resultType))) {
+            && !containsDeclaredTypeVariable(resultType)) {
             // unchecked assignment
             // List<Type> list = new LinkedList()
             // Iterable<Type> iter = new LinkedList()
@@ -7027,8 +6943,7 @@ trying: for (ClassNode[] signature : signatures) {
                 // A parameterized Class must keep the right-hand type when that is a Class: substituting
                 // the target would make Class<?> assignable to Class<? extends CharSequence>.
                 if (isWildcardLeftHandSide(initialType) && !isObjectType(initialType)
-                        && !(isClassType(initialType) && initialType.isUsingGenerics() && isClassType(right)
-                            && !isClassOfReceiverWithin(initialType, rightExpression))) {
+                        && !(isClassType(initialType) && initialType.isUsingGenerics() && isClassType(right))) {
                     return initialType;
                 }
             } else if (isClassType(left) && left.isUsingGenerics() && !isClassType(right)) {
@@ -8301,10 +8216,12 @@ trying: for (ClassNode[] signature : signatures) {
                 actuals[i] = getType(a);
             }
 
-            // a generic call or spread expression takes its type from the parameter, as from an assignment target
-            if (!GenericsUtils.hasUnresolvedGenerics(pt) && !GenericsUtils.hasUnresolvedGenerics(at)) {
+            // a generic call or spread expression takes its type from the parameter, as from an assignment target.
+            // An untargeted method reference may leave a type variable open in the argument type
+            // (for example BinaryOperator<Comparable<T>>); still type the call from the parameter.
+            if (!GenericsUtils.hasUnresolvedGenerics(pt)) {
                 ClassNode wrapped = wrapTypeIfNecessary(at);
-                if (hasIncompatibleGenerics(pt, wrapped) && isTypedByTarget(pt, wrapped, a)) {
+                if ((hasIncompatibleGenerics(pt, wrapped) || GenericsUtils.hasUnresolvedGenerics(at)) && isTypedByTarget(pt, wrapped, a)) {
                     a.setNodeMetaData(TARGET_TYPED, pt);
                     actuals[i] = pt;
                     continue;
@@ -8552,11 +8469,6 @@ out:    for (ClassNode type : todo) {
      */
     protected boolean typeCheckMethodsWithGenericsOrFail(final ClassNode receiver, final ClassNode[] arguments, final MethodNode candidateMethod, final Expression location) {
         if (!typeCheckMethodsWithGenerics(receiver, arguments, candidateMethod)) {
-            // the class of a value is a subtype of the type of the value (JLS 4.3.2)
-            ClassNode[] classOfReceiver = classOfReceiverArgumentTypes(arguments, location);
-            if (classOfReceiver != null && typeCheckMethodsWithGenerics(receiver, classOfReceiver, candidateMethod)) {
-                return true;
-            }
             ClassNode r = receiver;
             ClassNode[] at = arguments;
             MethodNode m = candidateMethod;
