@@ -98,6 +98,11 @@ tasks.withType(Test).configureEach {
     if (closurePack) {
         systemProperty 'groovy.target.closure.pack', closurePack
     }
+    // Forward the opt-in compile-time closure-to-SAM conversion flag to the test JVM. Set only when present.
+    def closureSam = findProperty('groovy.target.closure.sam') ?: System.getProperty('groovy.target.closure.sam')
+    if (closureSam) {
+        systemProperty 'groovy.target.closure.sam', closureSam
+    }
     // Forward the global ClassValue mode (GROOVY-12142/GROOVY-12281: false = weak-key map,
     // soft = soft values with resurrection) to the test JVM so whole suites can be run
     // against a non-default mode, e.g. -Pgroovy.use.classvalue=soft. Set only when present.
@@ -291,6 +296,11 @@ tasks.withType(GroovyCompile).configureEach {
     def closurePack = findProperty('groovy.target.closure.pack') ?: System.getProperty('groovy.target.closure.pack')
     if (closurePack != null) {
         groovyOptions.forkOptions.jvmArgs += ["-Dgroovy.target.closure.pack=${closurePack}" as String]
+    }
+    // Likewise for the compile-time closure-to-SAM conversion flag. Set only when present.
+    def closureSam = findProperty('groovy.target.closure.sam') ?: System.getProperty('groovy.target.closure.sam')
+    if (closureSam != null) {
+        groovyOptions.forkOptions.jvmArgs += ["-Dgroovy.target.closure.sam=${closureSam}" as String]
     }
 }
 

@@ -128,6 +128,12 @@ public final class StaticTypeCheckingPass {
             super(source, classNode);
         }
 
+        /**
+         * Returns {@link TypeChecked} and {@link CompileStatic} as the annotations
+         * that select this visitor.
+         *
+         * @return the two type-checking annotation types
+         */
         @Override
         protected ClassNode[] getTypeCheckingAnnotations() {
             return new ClassNode[]{TYPE_CHECKED, COMPILE_STATIC};

@@ -18,6 +18,8 @@
  */
 package org.codehaus.groovy.runtime;
 
+import org.apache.groovy.lang.annotation.GroovyABI;
+
 import java.lang.invoke.CallSite;
 import java.lang.invoke.ConstantCallSite;
 import java.lang.invoke.LambdaMetafactory;
@@ -68,6 +70,7 @@ public interface GeneratedDispatcher {
      *             the call arguments, all in the target's declared parameter order
      * @return the target's return value ({@code null} for a void target)
      */
+    @GroovyABI(since = "6.0.0")
     Object dispatch(int id, Object[] args);
 
     /**
@@ -86,6 +89,7 @@ public interface GeneratedDispatcher {
          * @param a     the single captured value or call argument
          * @return the target's return value
          */
+        @GroovyABI(since = "6.0.0")
         Object dispatch1(int id, Object owner, Object a);
     }
 
@@ -105,6 +109,7 @@ public interface GeneratedDispatcher {
          * @param b     the second captured value or call argument
          * @return the target's return value
          */
+        @GroovyABI(since = "6.0.0")
         Object dispatch2(int id, Object owner, Object a, Object b);
     }
 
@@ -121,6 +126,7 @@ public interface GeneratedDispatcher {
          * Public because the hosting class's compiler-emitted factory constructs it directly
          * (see {@code ClosureWriter#writeDispatchersFactory}); not API for hand-written code.
          */
+        @GroovyABI(since = "6.0.0")
         public Bundle(final GeneratedDispatcher dispatcher, final Arity1 arity1, final Arity2 arity2) {
             this.dispatcher = dispatcher;
             this.arity1 = arity1;
@@ -168,8 +174,8 @@ public interface GeneratedDispatcher {
      * @param caller the hosting class's lookup (supplied by the JVM)
      * @param name   the invoked name (unused)
      * @param type   the accessor's type: {@code () -> Object} as emitted (typed loosely so the
-     *               {@code Bundle} type stays off the emitted-bytecode surface); the constant is
-     *               typed off the requested return type, so {@code () -> Bundle} also links
+     *               accessor's callers need not name {@code Bundle}); the constant is typed off
+     *               the requested return type, so {@code () -> Bundle} also links
      * @return a constant call site producing the bundle
      * @throws Throwable if the tables cannot be found or linked (a compiler bug)
      */

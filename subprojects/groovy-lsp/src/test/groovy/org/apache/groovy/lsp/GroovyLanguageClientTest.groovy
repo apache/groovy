@@ -216,4 +216,40 @@ final class GroovyLanguageClientTest {
         assert GroovyLanguageClient.spanOf('abc', 0, 3, 0, 3, true) == [2, 3] as int[]
         assert GroovyLanguageClient.spanOf('abc', 0, 3, 0, 3, false) == [3, 3] as int[]
     }
+
+
+    @Test
+    void anUnqualifiedNameCompletesWhatTheImplicitReceiverCanCall() {
+        def client = GroovyLanguageClient.open('groovy-buffer:implicit-receiver', '', true)
+        try {
+            assert 'println' in completions(client, 'printl')
+            assert completions(client, 'prin').containsAll(['print', 'printf', 'println'])
+            assert 'println' in completions(client, 'def x = 1\nprintl')
+            assert 'sleep' in completions(client, 'sle')
+            assert 'sprintf' in completions(client, 'sprin')
+            assert !('println' in completions(client, 'def x = 1\n'))
+
+            def instance = 'class Box {\n    def ping() { hashC }\n}'
+            assert 'hashCode' in completions(client, instance, 'hashC')
+            def inStatic = 'class Box {\n    static void go() { hashC }\n}'
+            assert !('hashCode' in completions(client, inStatic, 'hashC'))
+            assert 'sleep' in completions(client, 'class Box {\n    static void go() { sle }\n}', 'sle')
+
+            def once = completions(client, 'def ping() {}\npin')
+            assert once.count('ping') == 1
+        } finally {
+            client.close()
+        }
+    }
+
+    private static List<String> completions(GroovyLanguageClient client, String text, String word = null) {
+        def lines = text.split('\n', -1) as List<String>
+        int line = lines.size() - 1
+        int character = lines[line].length()
+        if (word != null) {
+            line = lines.findLastIndexOf { it.contains(word) }
+            character = lines[line].lastIndexOf(word) + word.length()
+        }
+        client.complete(text, line, character)*.label
+    }
 }

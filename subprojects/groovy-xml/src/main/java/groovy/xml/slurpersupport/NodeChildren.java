@@ -69,11 +69,23 @@ public class NodeChildren extends GPathResult {
             private final Iterator iter = nodeIterator();
             private Iterator childIter = nextChildIter();
 
+            /**
+             * Returns whether a child iterator is still assigned.
+             *
+             * @return {@code true} when {@code childIter} is non-null
+             */
             @Override
             public boolean hasNext() {
                 return childIter != null;
             }
 
+            /**
+             * Returns the next child node, moving to the next parent that
+             * still has children. Returns {@code null} once those parents
+             * are exhausted.
+             *
+             * @return the next child node, or {@code null}
+             */
             @Override
             public Object next() {
                 while (childIter != null) {
@@ -90,6 +102,9 @@ public class NodeChildren extends GPathResult {
                 return null;
             }
 
+            /**
+             * Refuses removal. Child traversal does not modify the tree.
+             */
             @Override
             public void remove() {
                 throw new UnsupportedOperationException();
@@ -112,16 +127,30 @@ public class NodeChildren extends GPathResult {
         return new Iterator() {
             final Iterator iter = nodeIterator();
 
+            /**
+             * Returns whether another matching node remains.
+             *
+             * @return the node iterator's {@code hasNext} result
+             */
             @Override
             public boolean hasNext() {
                 return iter.hasNext();
             }
 
+            /**
+             * Wraps the next node as a child whose parent is this result's
+             * parent and whose namespace prefix is unrestricted.
+             *
+             * @return the wrapped child
+             */
             @Override
             public Object next() {
                 return new NodeChild((Node) iter.next(), pop(), namespaceTagHints);
             }
 
+            /**
+             * Refuses removal. Node iteration does not modify the tree.
+             */
             @Override
             public void remove() {
                 throw new UnsupportedOperationException();
@@ -136,6 +165,16 @@ public class NodeChildren extends GPathResult {
             return parent.childNodes();
         } else {
             return new NodeIterator(parent.childNodes()) {
+                /**
+                 * Returns the next child with this result's name whose namespace
+                 * matches the prefix. A prefix of {@code *} accepts any namespace.
+                 * An empty prefix accepts an empty namespace URI. Otherwise the
+                 * node's namespace URI must equal the URI mapped from the prefix.
+                 * Returns {@code null} when no such child remains.
+                 *
+                 * @param iter source iterator of child nodes
+                 * @return the next matching child, or {@code null}
+                 */
                 @Override
                 protected Object getNextNode(Iterator iter) {
                     while (iter.hasNext()) {

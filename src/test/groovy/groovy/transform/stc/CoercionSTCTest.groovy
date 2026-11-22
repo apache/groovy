@@ -756,6 +756,42 @@ class CoercionSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-12748
+    @Test
+    void testCoerceToFunctionalInterfaceImplicitParameterCheckedAgain1() {
+        // a loop or closure body checked a second time still prefers the one-parameter interface
+        for (body in [
+            'for (i in 0..1) { result = C.m { it }; x = "a" }',
+            'while (x != "a") { result = C.m { it }; x = "a" }',
+            '[0].each { result = C.m { it }; x = "a" }'
+        ]) {
+            assertScript """
+                class C {
+                    static String m(Function<Integer, Integer> f) { 'function' }
+                    static String m(BinaryOperator<Integer> f) { 'binary' }
+                }
+                def x = 1
+                String result = null
+                $body
+                assert result == 'function'
+            """
+        }
+    }
+
+    // GROOVY-12748
+    @Test
+    void testCoerceToFunctionalInterfaceImplicitParameterCheckedAgain2() {
+        // a missing method on the result is the only error, though the call is checked again
+        shouldFailWithMessages '''
+            class C {
+                static Object m(Function<Integer, Integer> f) { 'function' }
+                static Object m(BinaryOperator<Integer> f) { 'binary' }
+            }
+            C.m { it }.length()
+        ''',
+        'Cannot find matching method java.lang.Object#length()'
+    }
+
     // GROOVY-11051
     @Test
     void testCoerceToFunctionalInterface16() {
@@ -818,6 +854,40 @@ import static groovy.test.GroovyAssert.shouldFail
                 foo = { $type n -> n instanceof Long }
             """
         }
+    }
+
+    // GROOVY-12747: an untyped parameter is declared with the type the functional interface gives it,
+    // so a value of another type would be converted to that type, not kept
+    @Test
+    void testCoerceToFunctionalInterfaceParameterReassignment1() {
+        shouldFailWithMessages '''
+            List<Integer> numbers = [1, 2]
+            numbers.stream().map { n -> n = n.toString(); n }.toList()
+        ''',
+        'Cannot assign value of type java.lang.String to variable of type java.lang.Integer'
+
+        shouldFailWithMessages '''
+            List<Integer> numbers = [1, 2]
+            numbers.stream().map(n -> { n = 'x'; n }).toList()
+        ''',
+        'Cannot assign value of type java.lang.String to variable of type java.lang.Integer'
+
+        shouldFailWithMessages '''
+            Function<Integer, Object> f = { n -> n = n + 0.5; n }
+        ''',
+        'Cannot assign value of type java.math.BigDecimal to variable of type java.lang.Integer'
+    }
+
+    @Test
+    void testCoerceToFunctionalInterfaceParameterReassignment2() {
+        // a value of the parameter's type can still be assigned, and an implicit "it" is declared Object
+        assertScript '''
+            List<Integer> numbers = [1, 2]
+            assert numbers.stream().map { n -> n = n * 2; n }.toList() == [2, 4]
+            assert numbers.stream().map { n -> n += 1; n }.toList() == [2, 3]
+            assert numbers.stream().map { n -> n = null; n }.toList() == [null, null]
+            assert numbers.stream().map { it = 'x'; it }.toList() == ['x', 'x']
+        '''
     }
 
     // GROOVY-11092

@@ -210,6 +210,10 @@ public class ContractClosureWriter {
 
     private void correctAccessedVariable(MethodNode methodNode, ClosureExpression ce) {
         CodeVisitorSupport visitor = new CodeVisitorSupport() {
+            /**
+             * When {@code expression} reads a {@link DynamicVariable}, retargets that
+             * read at the generated method parameter of the same name.
+             */
             @Override
             public void visitVariableExpression(VariableExpression expression) {
                 Variable v = expression.getAccessedVariable();

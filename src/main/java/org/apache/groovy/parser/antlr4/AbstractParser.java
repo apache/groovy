@@ -26,6 +26,11 @@ import org.antlr.v4.runtime.TokenStream;
  * we have to create a super class for it and implement the interface.
  */
 public abstract class AbstractParser extends Parser implements SyntaxErrorReportable {
+    /**
+     * Creates a parser that reads {@code input}.
+     *
+     * @param input the token stream passed to {@link Parser}
+     */
     public AbstractParser(TokenStream input) {
         super(input);
     }
