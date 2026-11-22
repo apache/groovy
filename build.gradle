@@ -17,10 +17,10 @@
  *  under the License.
  */
 plugins {
-    id 'io.github.ben-manes.versions' version '0.66.0'
+    id 'io.github.ben-manes.versions' version '0.67.0'
     id 'io.github.goooler.osgi' version '0.8.6'
-    id 'com.github.jk1.dependency-license-report' version '3.1.4'
-    id 'org.sonarqube' version '7.5.0.8588'
+    id 'com.github.jk1.dependency-license-report' version '3.1.5'
+    id 'org.sonarqube' version '7.6.0.18749'
     id 'org.apache.groovy-core'
     id 'java-test-fixtures'
     id 'org.apache.groovy-jacoco-aggregation'
@@ -159,8 +159,7 @@ dependencies {
     testImplementation projects.groovyTestJunit6 // for groovy.junit6.plugin.ForkedJvm
     testImplementation "net.jcip:jcip-annotations:${versions.jcipAnnotations}"
     testImplementation "com.github.javaparser:javaparser-core:${versions.javaParser}"
-    testImplementation "com.fasterxml.jackson.core:jackson-databind:${versions.jackson}"
-    testImplementation "com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:${versions.jackson}"
+    testImplementation "tools.jackson.core:jackson-databind:${versions.jackson3}"
 
     testFixturesImplementation projects.groovyXml
     testFixturesImplementation projects.groovyTest
@@ -172,9 +171,9 @@ dependencies {
     // updated bridger dependencies to remove vulnerabilities:
     tools "com.jcraft:jsch:0.1.55"
     tools "commons-io:commons-io:2.22.0"
-    tools "org.apache.maven:maven-core:3.10.0"
+    tools "org.apache.maven:maven-core:3.10.1"
     tools "org.apache.maven.shared:maven-shared-utils:3.5.0"
-    tools "org.codehaus.plexus:plexus-utils:4.1.0"
+    tools "org.codehaus.plexus:plexus-utils:4.2.0"
     // end
     tools "org.ow2.asm:asm:${versions.asm}"
     spotbugsPlugins 'com.h3xstream.findsecbugs:findsecbugs-plugin:1.14.0'
@@ -183,6 +182,12 @@ dependencies {
         because 'Tests are using Grapes'
         capabilities {
             requireCapability 'org.apache.groovy:groovy-grapes'
+        }
+    }
+    testRuntimeOnly(project(':')) {
+        because 'Tests are using JLine Jansi to render ANSI log output'
+        capabilities {
+            requireCapability 'org.apache.groovy:groovy-logging'
         }
     }
     testRuntimeOnly projects.groovyGrapeIvy

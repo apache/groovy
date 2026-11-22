@@ -89,7 +89,8 @@ public abstract class AsmDecompiler {
             throw new GroovyRuntimeException(e);
         }
 
-        SoftReference<ClassStub> ref = stubCache.get(uri);
+        boolean cacheable = cacheableScheme(uri);
+        SoftReference<ClassStub> ref = cacheable ? stubCache.get(uri) : null;
         ClassStub stub = (ref != null ? ref.get() : null);
         if (stub == null) {
             DecompilingVisitor visitor = new DecompilingVisitor();
@@ -99,9 +100,22 @@ public abstract class AsmDecompiler {
             }
 
             stub = visitor.result;
-            stubCache.put(uri, new SoftReference<>(stub));
+            if (cacheable) {
+                stubCache.put(uri, new SoftReference<>(stub));
+            }
         }
         return stub;
+    }
+
+    /**
+     * In-memory class output ({@code x-groovy-mem}) can replace the bytes
+     * behind one URL, so those URLs are parsed on every call. Every other
+     * scheme is cached, including {@code file}, {@code jar}, {@code jrt},
+     * and container schemes such as {@code bundleresource}, {@code vfs},
+     * and {@code wsjar}.
+     */
+    private static boolean cacheableScheme(final URI uri) {
+        return !"x-groovy-mem".equalsIgnoreCase(uri.getScheme());
     }
 
     /**
@@ -147,6 +161,8 @@ public abstract class AsmDecompiler {
     private static class DecompilingVisitor extends ClassVisitor {
 
         private ClassStub result;
+        private String selfName;
+        private Map<String, InnerClassStub> memberClasses;
 
         /**
          * Creates a decompiling visitor with the current ASM API version.
@@ -168,6 +184,7 @@ public abstract class AsmDecompiler {
         @Override
         public void visit(final int version, final int access, final String name, final String signature, final String superName, final String[] interfaceNames) {
             result = new ClassStub(fromInternalName(name), access, signature, superName, interfaceNames);
+            selfName = name;
         }
 
         /**
@@ -203,6 +220,26 @@ public abstract class AsmDecompiler {
             if (fromInternalName(name).equals(result.className)) {
                 result.innerClassModifiers = access;
             }
+            if (outerName != null) {
+                if (memberClasses == null) memberClasses = new HashMap<>();
+                memberClasses.put(name, new InnerClassStub(name, outerName, innerName, access));
+            }
+        }
+
+        /**
+         * Records the INNERCLASS entries of this class and its enclosing classes, outermost
+         * first, so that a class referring to this one can write the same entries.
+         */
+        @Override
+        public void visitEnd() {
+            if (memberClasses == null) return;
+            InnerClassStub entry = memberClasses.get(selfName);
+            while (entry != null) {
+                if (result.innerClassEntries == null) result.innerClassEntries = new ArrayList<>(2);
+                result.innerClassEntries.add(0, entry);
+                entry = memberClasses.get(entry.outerName());
+            }
+            memberClasses = null;
         }
 
         /**

@@ -48,13 +48,27 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Deque;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
+import java.util.NavigableMap;
+import java.util.NavigableSet;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Queue;
+import java.util.Set;
+import java.util.SortedMap;
+import java.util.SortedSet;
+import java.util.TreeMap;
+import java.util.TreeSet;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.BaseStream;
@@ -64,6 +78,7 @@ import java.util.stream.LongStream;
 
 /**
  * Class providing various type conversions, coercions and boxing/unboxing operations.
+ *
  * @since Groovy 1.8.0
  */
 public class DefaultTypeTransformation {
@@ -489,8 +504,10 @@ public class DefaultTypeTransformation {
             return asArray(object, type);
         } else if (type.isEnum()) {
             return ShortTypeHandling.castToEnum(object, type);
-        } else if (Collection.class.isAssignableFrom(type)) {
+        } else if (Collection.class.isAssignableFrom(type) || type == Iterable.class) {
             return continueCastOnCollection(object, type);
+        } else if (Map.class.isAssignableFrom(type) && object instanceof Map) {
+            return continueCastOnMap((Map) object, type);
         } else if (type == String.class) {
             return FormatHelper.toString(object);
         } else if (type == Boolean.class) {
@@ -504,13 +521,39 @@ public class DefaultTypeTransformation {
         return continueCastOnNumber(object, type);
     }
 
+    /**
+     * The implementation used when a value is cast or coerced to one of these
+     * collection or map interfaces and is not already an instance of it.
+     */
+    private static final Map<Class<?>, Supplier<?>> DEFAULT_IMPLEMENTATIONS = Map.ofEntries(
+        Map.entry(Iterable.class, ArrayList::new),
+        Map.entry(Collection.class, ArrayList::new),
+        Map.entry(List.class, ArrayList::new),
+        Map.entry(Set.class, LinkedHashSet::new),
+        Map.entry(SortedSet.class, TreeSet::new),
+        Map.entry(NavigableSet.class, TreeSet::new),
+        Map.entry(Queue.class, LinkedList::new), // unlike ArrayDeque, accepts null elements
+        Map.entry(Deque.class, LinkedList::new),
+        Map.entry(BlockingQueue.class, LinkedBlockingQueue::new),
+        Map.entry(SortedMap.class, TreeMap::new),
+        Map.entry(NavigableMap.class, TreeMap::new),
+        Map.entry(ConcurrentMap.class, ConcurrentHashMap::new)
+    );
+
+    private static boolean isConcrete(final Class type) {
+        return !type.isInterface() && !Modifier.isAbstract(type.getModifiers());
+    }
+
     private static Object continueCastOnCollection(final Object object, final Class type) {
         if (object instanceof Collection && type.isAssignableFrom(LinkedHashSet.class)) {
             return new LinkedHashSet((Collection) object);
         }
 
         Supplier<Collection> newCollection = () -> {
-            if (type.isAssignableFrom(ArrayList.class) && Modifier.isAbstract(type.getModifiers())) {
+            Supplier<?> defaultImplementation = DEFAULT_IMPLEMENTATIONS.get(type);
+            if (defaultImplementation != null) {
+                return (Collection) defaultImplementation.get();
+            } else if (type.isAssignableFrom(ArrayList.class) && Modifier.isAbstract(type.getModifiers())) {
                 return new ArrayList();
             } else if (type.isAssignableFrom(LinkedHashSet.class) && Modifier.isAbstract(type.getModifiers())) {
                 return new LinkedHashSet();
@@ -542,7 +585,51 @@ public class DefaultTypeTransformation {
             return answer;
         }
 
+        if (object instanceof Collection collection) {
+            if (DEFAULT_IMPLEMENTATIONS.containsKey(type)) {
+                Collection answer = newCollection.get();
+                answer.addAll(collection);
+                return answer;
+            }
+            if (isConcrete(type)) {
+                // prefer a copy constructor, then a no-arg constructor plus addAll, over
+                // passing the elements as constructor arguments, e.g. Vector(int capacity)
+                Object answer = newCollectionOf(type, collection);
+                if (answer != null) return answer;
+            }
+        }
+
         return continueCastOnNumber(object, type);
+    }
+
+    private static Object continueCastOnMap(final Map map, final Class type) {
+        Supplier<?> defaultImplementation = DEFAULT_IMPLEMENTATIONS.get(type);
+        if (defaultImplementation != null) {
+            Map answer = (Map) defaultImplementation.get();
+            answer.putAll(map);
+            return answer;
+        }
+
+        return continueCastOnNumber(map, type);
+    }
+
+    /**
+     * Fills a concrete collection class through its copy constructor, or else
+     * its no-arg constructor followed by addAll; null if neither works.
+     * Failures are left to the caller's fallback, which reports them (GROOVY-7867).
+     */
+    private static Object newCollectionOf(final Class type, final Collection elements) {
+        try {
+            return InvokerHelper.invokeConstructorOf(type, new Object[]{elements});
+        } catch (Exception ignore) {
+        }
+        try {
+            Collection answer = (Collection) InvokerHelper.invokeConstructorOf(type, null);
+            answer.addAll(elements);
+            return answer;
+        } catch (Exception ignore) {
+        }
+        return null;
     }
 
     private static Object continueCastOnNumber(Object object, Class type) {
@@ -827,8 +914,9 @@ public class DefaultTypeTransformation {
 
     /**
      * Determines whether the value object is a Class object representing a
-     * subclass of java.lang.Enum. Uses class name check to avoid breaking on
-     * pre-Java 5 JREs.
+     * subclass of java.lang.Enum. Walks superclass names and compares them with
+     * {@code java.lang.Enum}. {@code Enum} has been in the platform since Java 5;
+     * this method keeps the name comparison.
      *
      * @param value an object
      * @return true if the object is an Enum
@@ -1247,7 +1335,8 @@ public class DefaultTypeTransformation {
         if (left instanceof List && right instanceof List) {
             return DefaultGroovyMethods.equals((List) left, (List) right);
         }
-        if (left instanceof Comparable) {
+        // GROOVY-12699: a Number that is not Comparable compares numerically, as for <=>
+        if (left instanceof Comparable || (left instanceof Number && right instanceof Number)) {
             return compareToWithEqualityCheck(left, right, true) == 0;
         }
         // handle arrays on both sides as special case for efficiency
@@ -1320,6 +1409,16 @@ public class DefaultTypeTransformation {
         return (value instanceof String || value instanceof GString) && value.toString().length() == 1;
     }
 
+    /**
+     * Copies {@code a} into an {@code int} array. An array whose runtime class name
+     * is {@code "[I"} is returned as itself. Anything else is cast to
+     * {@code Object[]}; a {@code null} element stays {@code 0}, and every other
+     * element must be a {@link Number}. A null array fails immediately.
+     *
+     * @param a an {@code int[]} or an array of numbers
+     * @return the converted array
+     * @deprecated since 2.3.0
+     */
     @Deprecated(since = "2.3.0")
     public static int[] convertToIntArray(Object a) {
         int[] ans = null;
@@ -1340,6 +1439,16 @@ public class DefaultTypeTransformation {
         return ans;
     }
 
+    /**
+     * Copies {@code a} into a {@code boolean} array. A {@code boolean[]} is returned
+     * as itself. Anything else is cast to {@code Object[]}; a {@code null} element
+     * stays {@code false}, and every other element is cast to {@link Boolean}.
+     * A null array fails immediately.
+     *
+     * @param a a {@code boolean[]} or an array of booleans
+     * @return the converted array
+     * @deprecated since 2.3.0
+     */
     @Deprecated(since = "2.3.0")
     public static boolean[] convertToBooleanArray(Object a) {
         boolean[] ans = null;
@@ -1358,6 +1467,16 @@ public class DefaultTypeTransformation {
         return ans;
     }
 
+    /**
+     * Copies {@code a} into a {@code byte} array. A {@code byte[]} is returned as
+     * itself. Anything else is cast to {@code Object[]}; a {@code null} element
+     * stays {@code 0}, and every other element must be a {@link Number}.
+     * A null array fails immediately.
+     *
+     * @param a a {@code byte[]} or an array of numbers
+     * @return the converted array
+     * @deprecated since 2.3.0
+     */
     @Deprecated(since = "2.3.0")
     public static byte[] convertToByteArray(Object a) {
         byte[] ans = null;
@@ -1377,6 +1496,16 @@ public class DefaultTypeTransformation {
         return ans;
     }
 
+    /**
+     * Copies {@code a} into a {@code short} array. A {@code short[]} is returned as
+     * itself. Anything else is cast to {@code Object[]}, and every element,
+     * including a {@code null} element, is cast to {@link Number} and converted
+     * with {@link Number#shortValue()}. A null array fails immediately.
+     *
+     * @param a a {@code short[]} or an array of numbers
+     * @return the converted array
+     * @deprecated since 2.3.0
+     */
     @Deprecated(since = "2.3.0")
     public static short[] convertToShortArray(Object a) {
         short[] ans = null;
@@ -1394,6 +1523,16 @@ public class DefaultTypeTransformation {
         return ans;
     }
 
+    /**
+     * Copies {@code a} into a {@code char} array. A {@code char[]} is returned as
+     * itself. Anything else is cast to {@code Object[]}; a {@code null} element
+     * stays {@code '\0'}, and every other element is cast to {@link Character}.
+     * A null array fails immediately.
+     *
+     * @param a a {@code char[]} or an array of characters
+     * @return the converted array
+     * @deprecated since 2.3.0
+     */
     @Deprecated(since = "2.3.0")
     public static char[] convertToCharArray(Object a) {
         char[] ans = null;
@@ -1414,6 +1553,16 @@ public class DefaultTypeTransformation {
         return ans;
     }
 
+    /**
+     * Copies {@code a} into a {@code long} array. A {@code long[]} is returned as
+     * itself. Anything else is cast to {@code Object[]}; a {@code null} element
+     * stays {@code 0L}, and every other element must be a {@link Number}.
+     * A null array fails immediately.
+     *
+     * @param a a {@code long[]} or an array of numbers
+     * @return the converted array
+     * @deprecated since 2.3.0
+     */
     @Deprecated(since = "2.3.0")
     public static long[] convertToLongArray(Object a) {
         long[] ans = null;
@@ -1434,6 +1583,16 @@ public class DefaultTypeTransformation {
         return ans;
     }
 
+    /**
+     * Copies {@code a} into a {@code float} array. A {@code float[]} is returned as
+     * itself. Anything else is cast to {@code Object[]}; a {@code null} element
+     * stays {@code 0.0f}, and every other element must be a {@link Number}.
+     * A null array fails immediately.
+     *
+     * @param a a {@code float[]} or an array of numbers
+     * @return the converted array
+     * @deprecated since 2.3.0
+     */
     @Deprecated(since = "2.3.0")
     public static float[] convertToFloatArray(Object a) {
         float[] ans = null;
@@ -1454,6 +1613,16 @@ public class DefaultTypeTransformation {
         return ans;
     }
 
+    /**
+     * Copies {@code a} into a {@code double} array. A {@code double[]} is returned
+     * as itself. Anything else is cast to {@code Object[]}; a {@code null} element
+     * stays {@code 0.0d}, and every other element must be a {@link Number}.
+     * A null array fails immediately.
+     *
+     * @param a a {@code double[]} or an array of numbers
+     * @return the converted array
+     * @deprecated since 2.3.0
+     */
     @Deprecated(since = "2.3.0")
     public static double[] convertToDoubleArray(Object a) {
         double[] ans = null;
@@ -1474,6 +1643,18 @@ public class DefaultTypeTransformation {
         return ans;
     }
 
+    /**
+     * Converts {@code a} to a primitive array whose component type is {@code type}.
+     * The eight primitive {@code Class} objects select the matching converter.
+     * Any other type, including {@code null}, returns {@code a} unchanged. A null
+     * array fails when {@code type} is a primitive class.
+     *
+     * @param a the array passed to the selected converter; {@code null} is returned
+     *        unchanged when {@code type} is not a primitive class
+     * @param type a primitive class such as {@link Integer#TYPE}, or some other class
+     * @return the converted array, or {@code a} when {@code type} is not primitive
+     * @deprecated since 2.3.0
+     */
     @Deprecated(since = "2.3.0")
     public static Object convertToPrimitiveArray(Object a, Class type) {
         if (type == Byte.TYPE) {
@@ -1504,6 +1685,16 @@ public class DefaultTypeTransformation {
         }
     }
 
+    /**
+     * Returns the single character of a length-1 string. A {@link GString} is
+     * reduced with {@code toString()} first. A value that is neither a {@link String}
+     * nor a {@link GString} is cast to {@link Character}, so {@code null} is returned
+     * as {@code null}. A string whose length is not 1 is rejected.
+     *
+     * @param value a length-1 string, or a {@link Character}
+     * @return the character
+     * @deprecated since 2.3.0
+     */
     @Deprecated(since = "2.3.0")
     public static Character getCharFromSizeOneString(Object value) {
         if (value instanceof GString) value = value.toString();

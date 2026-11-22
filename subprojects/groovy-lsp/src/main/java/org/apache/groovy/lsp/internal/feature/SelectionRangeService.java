@@ -39,6 +39,18 @@ import java.util.List;
  */
 public final class SelectionRangeService {
 
+    /**
+     * Builds one selection range per caret. The AST path from {@link AstQuery}
+     * is walked from its last node toward its first, and each non-null range
+     * becomes the parent of the range built so far. A null snapshot or module
+     * yields an empty range at the caret, as does a path that produces no range.
+     *
+     * @param document the open document
+     * @param snapshot compilation snapshot, possibly {@code null}
+     * @param positions caret positions
+     * @param encoding negotiated encoding
+     * @return one range per caret, in the same order
+     */
     public List<SelectionRange> selectionRanges(final TextDocument document, final CompilationSnapshot snapshot,
                                                 final List<Position> positions, final PositionEncoding encoding) {
         List<SelectionRange> ranges = new ArrayList<>();

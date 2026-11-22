@@ -180,6 +180,35 @@ class CanonicalComponentsTransformTest extends GroovyShellTestCase {
         assert c1.bonus == c2.bonus
     }
 
+    // GROOVY-12676
+    void testCloningWithSerializablePrimitiveClassField() {
+        assertScript """
+            @groovy.transform.AutoClone(style=groovy.transform.AutoCloneStyle.SERIALIZATION)
+            class C implements Serializable {
+                Class type
+                Closure<?> handler
+            }
+            def c = new C(type: int, handler: { int i -> i * 2 }.dehydrate()).clone()
+            assert c.type == int
+            assert c.handler(21) == 42
+        """
+    }
+
+    // GROOVY-12676
+    void testCloningWithSerializablePrimitiveClassFieldCompileStatic() {
+        assertScript """
+            @groovy.transform.AutoClone(style=groovy.transform.AutoCloneStyle.SERIALIZATION)
+            @groovy.transform.CompileStatic
+            class C implements Serializable {
+                Class type
+                Closure<?> handler
+            }
+            def c = new C(type: void, handler: { long l -> l + 1 }.dehydrate()).clone()
+            assert c.type == void
+            assert c.handler(41L) == 42L
+        """
+    }
+
     void testCloningWithExternalizable() {
         def c1 = new Customer4(first:'John', last:'Smith', favItems:['ipod', 'shiraz'], since:new Date(), bonus:10)
         def c2 = c1.clone()

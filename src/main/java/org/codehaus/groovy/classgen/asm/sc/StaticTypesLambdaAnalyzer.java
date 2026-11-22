@@ -22,12 +22,12 @@ import org.codehaus.groovy.ast.ClassCodeExpressionTransformer;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.CodeVisitorSupport;
+import org.codehaus.groovy.ast.DynamicVariable;
 import org.codehaus.groovy.ast.FieldNode;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.PropertyNode;
 import org.codehaus.groovy.ast.Variable;
-import org.codehaus.groovy.ast.DynamicVariable;
 import org.codehaus.groovy.ast.expr.AttributeExpression;
 import org.codehaus.groovy.ast.expr.ClassExpression;
 import org.codehaus.groovy.ast.expr.ClosureExpression;
@@ -354,7 +354,8 @@ class StaticTypesLambdaAnalyzer {
         @Override
         public void visitVariableExpression(final VariableExpression expression) {
             if (accessingInstanceMembers) return;
-            if (expression.isThisExpression() || expression.isSuperExpression() || "thisObject".equals(expression.getName())) {
+            // GROOVY-12672: delegate, owner, thisObject, etc. are read from the lambda, whose owner is this
+            if (expression.isThisExpression() || expression.isSuperExpression() || expression.getAccessedVariable() instanceof DynamicVariable) {
                 accessingInstanceMembers = true;
                 return;
             }

@@ -200,6 +200,132 @@ final class TraitWithClosureOrLambda {
         '''
     }
 
+    // GROOVY-12612
+    @Test
+    void testInvokeTraitMethodOnExplicitThisFromTraitClosure() {
+        assertScript shell, '''
+            class D {
+                String getName() { 'D' }
+                String run(@DelegatesTo(value=D, strategy=Closure.DELEGATE_FIRST) Closure<String> block) {
+                    block.resolveStrategy = Closure.DELEGATE_FIRST
+                    block.delegate = this
+                    block.call()
+                }
+            }
+            trait S {
+                String getSup() { 'S' }
+            }
+            trait T extends S {
+                String getName() { 'T' }
+                String greet(String s, int i) { getName() + s + i }
+                private String p() { 'p' }
+                String m1() { Closure<String> c = { -> this.getName() }; c() }
+                String m2() { Closure<String> c = { -> this.greet('x', 1) }; c() }
+                String m3() { Closure<String> c = { -> this.p() }; c() }
+                String m4() { Closure<String> c = { -> this.getSup() }; c() }
+                String m5() { Closure<String> c = { -> Closure<String> d = { -> this.getName() }; d() }; c() }
+                String m6() { 's'.with { this.getName() + it } }
+                String m7() { Closure<String> c = { -> this?.getName() }; c() }
+                String m8() { new D().run { -> this.getName() } } // "this" is never the delegate
+            }
+            class C implements T {
+                @Override
+                String getName() { 'C' }
+            }
+
+            def c = new C()
+            assert c.m1() == 'C'
+            assert c.m2() == 'Cx1'
+            assert c.m3() == 'p'
+            assert c.m4() == 'S'
+            assert c.m5() == 'C'
+            assert c.m6() == 'Cs'
+            assert c.m7() == 'C'
+            assert c.m8() == 'C'
+        '''
+    }
+
+    // GROOVY-12612
+    @Test
+    void testInvokeTraitMethodOnExplicitThisFromTraitLambda() {
+        assertScript shell, '''import java.util.function.Supplier
+            trait T {
+                String getName() { 'T' }
+                String m1() { Supplier<String> s = () -> this.getName(); s.get() }
+                String m2() { Closure<String> c = () -> this.getName(); c() }
+                String m3() { Closure<String> c = { -> Supplier<String> s = () -> this.getName(); s.get() }; c() }
+                String m4() { Supplier<String> s = () -> { Closure<String> c = { -> this.getName() }; c() }; s.get() }
+            }
+            class C implements T {
+                @Override
+                String getName() { 'C' }
+            }
+
+            def c = new C()
+            assert c.m1() == 'C'
+            assert c.m2() == 'C'
+            assert c.m3() == 'C'
+            assert c.m4() == 'C'
+        '''
+    }
+
+    // GROOVY-12612
+    @Test
+    void testInvokeMethodOnExplicitThisFromStaticTraitMethodClosure() {
+        assertScript shell, '''
+            trait T {
+                static String s() { 's' }
+                static String m1() { Closure<String> c = { -> this.s() }; c() }
+                static String m2() { Closure<String> c = { -> this.getSimpleName() }; c() }
+                static String m3() { this.getSimpleName() }
+            }
+            class C implements T {
+            }
+
+            assert C.m1() == 's'
+            assert C.m2() == 'C'
+            assert C.m3() == 'C'
+        '''
+    }
+
+    // GROOVY-12612
+    @Test
+    void testInvokeTraitMethodOnExplicitThisFromTraitClosureOrLambda() {
+        ['', '@groovy.transform.TypeChecked', '@groovy.transform.CompileStatic'].each { mode ->
+            assertScript """import java.util.function.Supplier
+                $mode
+                trait S {
+                    String getSup() { 'S' }
+                }
+                $mode
+                trait T extends S {
+                    String getName() { 'T' }
+                    String greet(String s, int i) { getName() + s + i }
+                    String m1() { Closure<String> c = { -> this.getName() }; c() }
+                    String m2() { Closure<String> c = { -> this.greet('x', 1) }; c() }
+                    String m3() { Closure<String> c = { -> this.getSup() }; c() }
+                    String m4() { 's'.with { this.getName() + it } }
+                    String m5() { Supplier<String> s = () -> this.getName(); s.get() }
+                    String m6() { Closure<String> c = () -> this.getName(); c() }
+                    static String m7() { Closure<String> c = { -> this.getSimpleName() }; c() }
+                }
+                class C implements T {
+                    @Override
+                    String getName() { 'C' }
+                }
+
+                def c = new C()
+                assert c.m1() == 'C'
+                assert c.m2() == 'Cx1'
+                assert c.m3() == 'S'
+                assert c.m4() == 'Cs'
+                assert c.m5() == 'C'
+                assert c.m6() == 'C'
+                assert C.m7() == 'C'
+            """
+        }
+    }
+
     // GROOVY-7512
     @Test
     void testInvokeTraitMethodFromTraitClosureInMapConstructor() {
@@ -410,6 +536,269 @@ final class TraitWithClosureOrLambda {
 
             assert C.one() == 'good bad ugly'
         '''
+    }
+
+    // GROOVY-12602
+    @Test
+    void testInvokeTraitMethodFromTraitLambda() {
+        assertScript shell, '''import java.util.function.*
+            trait T {
+                String getName() { 'T' }
+                String m1() { Supplier<String> s = () -> getName(); s.get() }
+                String m2() { Supplier<String> s = () -> name; s.get() }
+                String m3() { Function<String,String> f = (x) -> getName() + x; f.apply('!') }
+                String m4() { Supplier<String> s = () -> { Supplier<String> t = () -> getName(); t.get() }; s.get() }
+                String m5() { Supplier<String> s = () -> { Closure<String> c = { -> getName() }; c() }; s.get() }
+                String m6() { Closure<String> c = { -> Supplier<String> s = () -> getName(); s.get() }; c() }
+                String m7() { Closure<String> c = { -> this.name }; Supplier<String> s = () -> getName(); s.get() + c() }
+                String m8() { Supplier<String> s = this::getName; s.get() }
+            }
+            class C implements T {
+                @Override
+                String getName() { 'C' }
+            }
+
+            def c = new C()
+            assert c.m1() == 'C'
+            assert c.m2() == 'C'
+            assert c.m3() == 'C!'
+            assert c.m4() == 'C'
+            assert c.m5() == 'C'
+            assert c.m6() == 'C'
+            assert c.m7() == 'CC'
+            assert c.m8() == 'C'
+        '''
+    }
+
+    // GROOVY-12602
+    @Test
+    void testInvokeSuperTraitMethodFromTraitLambda() {
+        assertScript shell, '''import java.util.function.Supplier
+            trait T {
+                String getName() { 'T' }
+            }
+            trait U extends T {
+                String m1() { Supplier<String> s = () -> getName(); s.get() }
+                String m2() { Supplier<String> s = () -> name; s.get() }
+                String m3() { Supplier<String> s = () -> this.name; s.get() }
+                String m4() { Closure<String> c = { -> getName() }; c() }
+            }
+            class C implements U {
+            }
+
+            def c = new C()
+            assert c.m1() == 'T'
+            assert c.m2() == 'T'
+            assert c.m3() == 'T'
+            assert c.m4() == 'T'
+        '''
+    }
+
+    // GROOVY-12602
+    @Test
+    void testInvokeTraitMethodFromTraitLambdaInFieldInitializer() {
+        assertScript shell, '''import java.util.function.Supplier
+            trait T {
+                final Supplier<String> greeter = () -> 'Hello ' + getName()
+                String getName() { 'T' }
+            }
+            class C implements T {
+            }
+
+            assert new C().greeter.get() == 'Hello T'
+        '''
+    }
+
+    // GROOVY-12602
+    @Test
+    void testInvokeTraitStaticOrPrivateMethodFromTraitLambda() {
+        assertScript shell, '''import java.util.function.Supplier
+            trait T {
+                private String p() { 'p' }
+                static String s() { 's' }
+                String m1() { Supplier<String> f = () -> p(); f.get() }
+                String m2() { Supplier<String> f = () -> s(); f.get() }
+                static String m3() { Supplier<String> f = () -> s(); f.get() }
+            }
+            class C implements T {
+            }
+
+            assert new C().m1() == 'p'
+            assert new C().m2() == 's'
+            assert C.m3() == 's'
+        '''
+    }
+
+    // GROOVY-12602
+    @Test
+    void testInvokeTraitMethodFromTraitLambdaOrClosure() {
+        ['', '@groovy.transform.TypeChecked', '@groovy.transform.CompileStatic'].each { mode ->
+            assertScript """import java.util.function.Supplier
+                $mode
+                trait T {
+                    String getName() { 'T' }
+                    String m1() { Supplier<String> s = () -> getName(); s.get() }
+                    String m2() { Supplier<String> s = () -> name; s.get() }
+                    String m3() { Closure<String> c = { -> getName() }; c() }
+                    String m4() { Closure<String> c = () -> getName(); c() }
+                    String m5() { new StringBuilder('x').with((sb) -> sb.toString() + getName()) }
+                }
+                class C implements T {
+                }
+
+                def c = new C()
+                assert c.m1() == 'T'
+                assert c.m2() == 'T'
+                assert c.m3() == 'T'
+                assert c.m4() == 'T'
+                assert c.m5() == 'xT'
+            """
+        }
+    }
+
+    // GROOVY-12602
+    @Test
+    void testInvokeClassMethodFromTraitLambdaInStaticMethod() {
+        assertScript shell, '''import java.util.function.Supplier
+            trait T {
+                static String m1() { Supplier<String> s = () -> getSimpleName(); s.get() }
+                static String m2() { Supplier<String> s = () -> simpleName; s.get() }
+                static String m3() { Supplier<String> s = () -> { Closure<String> c = { -> getSimpleName() }; c() }; s.get() }
+                static String m4() { Supplier<String> s = () -> { Supplier<String> t = () -> getSimpleName(); t.get() }; s.get() }
+                static String m5() { Closure<String> c = { -> getSimpleName() }; c() }
+            }
+            class C implements T {
+            }
+
+            assert C.m1() == 'C'
+            assert C.m2() == 'C'
+            assert C.m3() == 'C'
+            assert C.m4() == 'C'
+            assert C.m5() == 'C'
+        '''
+    }
+
+    // GROOVY-12624
+    @Test
+    void testInvokeTraitStaticMethodFromDelegateClosureInInstanceMethod() {
+        for (mode in ['', '@groovy.transform.TypeChecked', '@groovy.transform.CompileStatic']) {
+            assertScript """
+                $mode
+                trait T {
+                    static String who() { this.simpleName }
+                    def m() { new Object().with { who() } }
+                    def n() { 'x'.with { this.who() } }
+                    def p() { [1].collect { who() + it } }
+                    def q() { java.util.function.Supplier<String> s = () -> who(); s.get() }
+                    @groovy.transform.Virtual
+                    static String vwho() { this.simpleName }
+                    def r() { new Object().with { vwho() } }
+                }
+                class C implements T {
+                }
+                class D implements T {
+                }
+
+                assert new C().m() == 'C'
+                assert new D().m() == 'D'
+                assert new C().n() == 'C'
+                assert new D().n() == 'D'
+                assert new C().p() == ['C1']
+                assert new D().p() == ['D1']
+                assert new C().q() == 'C'
+                assert new D().q() == 'D'
+                assert new C().r() == 'C'
+                assert new D().r() == 'D'
+            """
+        }
+    }
+
+    // GROOVY-12624
+    @Test
+    void testInvokeSuperTraitStaticMethodFromDelegateClosureInInstanceMethod() {
+        for (mode in ['', '@groovy.transform.TypeChecked', '@groovy.transform.CompileStatic']) {
+            assertScript """
+                $mode
+                trait S {
+                    static String who() { this.simpleName }
+                }
+                $mode
+                trait T extends S {
+                    def m() { new Object().with { who() } }
+                }
+                class C implements T {
+                }
+                class D implements T {
+                }
+
+                assert new C().m() == 'C'
+                assert new D().m() == 'D'
+            """
+        }
+    }
+
+    // GROOVY-12624
+    @Test
+    void testReadTraitStaticFieldFromDelegateClosureInInstanceMethod() {
+        for (mode in ['', '@groovy.transform.TypeChecked', '@groovy.transform.CompileStatic']) {
+            assertScript """
+                $mode
+                trait T {
+                    static String label = 'T'
+                    public static String tag = 'T'
+                    def m() { new Object().with { label } }
+                    def n() { new Object().with { tag } }
+                    def p() { new Object().with { label = 'p'; tag = 'p' } }
+                }
+                class C implements T {
+                }
+                class D implements T {
+                }
+
+                C.label = 'C'
+                D.label = 'D'
+                assert new C().m() == 'C'
+                assert new D().m() == 'D'
+                assert new C().n() == 'T'
+                assert new D().n() == 'T'
+                new C().p()
+                assert new C().m() == 'p'
+                assert new C().n() == 'p'
+                assert new D().m() == 'D'
+                assert new D().n() == 'T'
+            """
+        }
+    }
+
+    // GROOVY-12624
+    @Test
+    void testInvokeTraitMethodFromDelegateClosureNotOnDelegateWithSelfParameter() {
+        for (mode in ['', '@groovy.transform.TypeChecked', '@groovy.transform.CompileStatic']) {
+            assertScript """
+                class Dg {
+                    String who(Class c, int i) { 'delegate' }
+                    String tag(T t, int i) { 'delegate' }
+                }
+                $mode
+                trait T {
+                    static String who(int i) { this.simpleName }
+                    private String tag(int i) { getClass().simpleName }
+                    def m() { new Dg().with { who(1) } }
+                    def n() { new Dg().with { this.who(1) } }
+                    def p() { new Dg().with { tag(1) } }
+                }
+                class C implements T {
+                }
+                class D implements T {
+                }
+
+                assert new C().m() == 'C'
+                assert new D().m() == 'D'
+                assert new C().n() == 'C'
+                assert new C().p() == 'C'
+                assert new D().p() == 'D'
+            """
+        }
     }
 
     // GROOVY-12563

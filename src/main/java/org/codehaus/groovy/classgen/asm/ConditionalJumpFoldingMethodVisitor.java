@@ -80,7 +80,7 @@ public class ConditionalJumpFoldingMethodVisitor extends MethodVisitor {
     private static final int IDLE = 0, JCC = 1, ONE = 2, GOTO_L2 = 3, AT_L1 = 4, ZERO = 5, AT_L2 = 6;
 
     private int state = IDLE;
-    private int jcc;
+    private int jumpOpcode;
     private Label l1, l2;
     private final Map<Label, Integer> references = new HashMap<>();
     private Set<Label> dropped;
@@ -124,7 +124,7 @@ public class ConditionalJumpFoldingMethodVisitor extends MethodVisitor {
             return;
         }
         if (state == AT_L2 && (opcode == IFEQ || opcode == IFNE)) {
-            int folded = opcode == IFEQ ? jcc : negate(jcc);
+            int folded = opcode == IFEQ ? jumpOpcode : negate(jumpOpcode);
             drop(l1); drop(l2);
             state = IDLE;
             startOrEmitJump(folded, label);
@@ -136,7 +136,7 @@ public class ConditionalJumpFoldingMethodVisitor extends MethodVisitor {
 
     private void startOrEmitJump(final int opcode, final Label label) {
         if (negate(opcode) != -1) {
-            jcc = opcode;
+            jumpOpcode = opcode;
             l1 = label;
             state = JCC;
         } else {
@@ -178,7 +178,7 @@ public class ConditionalJumpFoldingMethodVisitor extends MethodVisitor {
     private void flush() {
         int matched = state;
         state = IDLE;
-        if (matched >= JCC)     super.visitJumpInsn(jcc, l1);
+        if (matched >= JCC)     super.visitJumpInsn(jumpOpcode, l1);
         if (matched >= ONE)     super.visitInsn(ICONST_1);
         if (matched >= GOTO_L2) super.visitJumpInsn(GOTO, l2);
         if (matched >= AT_L1)   super.visitLabel(l1);

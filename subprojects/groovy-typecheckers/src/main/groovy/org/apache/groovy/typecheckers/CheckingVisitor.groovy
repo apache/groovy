@@ -58,16 +58,25 @@ class CheckingVisitor extends ClassCodeVisitorSupport {
      * @return the matching constant expression, or {@code null} when none can be resolved
      */
     protected Expression findConstExp(Expression exp, Class type) {
+        findConstExp(exp, type, new HashSet<Variable>())
+    }
+
+    // seen holds the variables already followed, so initializers that refer back to one of them
+    // (static final String A = B; static final String B = A) end the search rather than recurse
+    private Expression findConstExp(Expression exp, Class type, Set<Variable> seen) {
         if (exp instanceof ConstantExpression && type.isAssignableFrom(exp.value.getClass())) {
             return exp
         }
         if (exp instanceof VariableExpression) {
             def var = findTargetVariable(exp)
+            if (!seen.add(var)) {
+                return null
+            }
             if (var instanceof FieldNode && var.hasInitialExpression()) {
-                return findConstExp(var.initialExpression, type)
+                return findConstExp(var.initialExpression, type, seen)
             }
             if (localConstVars.containsKey(var)) {
-                return findConstExp(localConstVars.get(var), type)
+                return findConstExp(localConstVars.get(var), type, seen)
             }
         }
         null

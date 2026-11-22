@@ -43,6 +43,7 @@ import org.codehaus.groovy.classgen.BytecodeInstruction;
 import org.codehaus.groovy.classgen.BytecodeSequence;
 import org.codehaus.groovy.classgen.ReturnAdder;
 import org.codehaus.groovy.classgen.asm.BytecodeHelper;
+import org.codehaus.groovy.classgen.asm.BytecodeVariable;
 import org.codehaus.groovy.classgen.asm.CompileStack;
 import org.codehaus.groovy.classgen.asm.LambdaWriter;
 import org.codehaus.groovy.classgen.asm.OperandStack;
@@ -243,11 +244,9 @@ public class StaticTypesLambdaWriter extends LambdaWriter implements AbstractFun
         mv.visitTypeInsn(NEW, lambdaClassInternalName);
         mv.visitInsn(DUP);
 
-        Parameter self = generatedLambda.accessingInstanceMembers ? getTraitSelf() : null;
-        if (self != null) {
-            // the lambda, and a closure in it, use this object for an implicit this: the instance (or class) the
-            // trait is applied to, as a closure written directly in the method is rehydrated to
-            new VariableExpression(self).visit(controller.getAcg());
+        BytecodeVariable traitSelf = generatedLambda.accessingInstanceMembers ? getTraitSelf() : null;
+        if (traitSelf != null) {
+            operandStack.loadOrStoreVariable(traitSelf, false); // GROOVY-12602: like closure.rehydrate($self,$self,$self)
         } else if (controller.isStaticMethod() || compileStack.isInSpecialConstructorCall() || !generatedLambda.accessingInstanceMembers) {
             classX(controller.getThisType()).visit(controller.getAcg());
         } else {
@@ -262,6 +261,20 @@ public class StaticTypesLambdaWriter extends LambdaWriter implements AbstractFun
         mv.visitMethodInsn(INVOKESPECIAL, lambdaClassInternalName, "<init>", createMethodDescriptor(VOID_TYPE, lambdaClassConstructorParameters), generatedLambda.lambdaClass.isInterface());
 
         operandStack.replace(CLOSURE_TYPE, lambdaClassConstructorParameters.length);
+    }
+
+    /**
+     * Returns the {@code $self} or {@code $static$self} parameter of the trait helper method that encloses the lambda, if any.
+     */
+    private BytecodeVariable getTraitSelf() {
+        MethodNode methodNode = controller.getMethodNode();
+        if (methodNode != null && !controller.isInGeneratedFunction() && Traits.isTrait(controller.getClassNode().getOuterClass())) {
+            Parameter[] parameters = methodNode.getParameters();
+            if (parameters.length > 0 && (Traits.THIS_OBJECT.equals(parameters[0].getName()) || Traits.STATIC_THIS_OBJECT.equals(parameters[0].getName()))) {
+                return controller.getCompileStack().getVariable(parameters[0].getName(), false);
+            }
+        }
+        return null;
     }
 
     private void loadSharedVariables(final Parameter[] lambdaSharedVariableParameters) {
@@ -446,19 +459,6 @@ public class StaticTypesLambdaWriter extends LambdaWriter implements AbstractFun
     @Override
     protected ClassNode createClosureClass(final ClosureExpression expression, final int modifiers) {
         return staticTypesClosureWriter.createClosureClass(expression, modifiers);
-    }
-
-    /**
-     * Returns the {@code $self} or {@code $static$self} parameter of the trait helper method being written, or
-     * {@code null} outside one.
-     */
-    private Parameter getTraitSelf() {
-        MethodNode method = controller.getMethodNode();
-        if (method == null || method.getParameters().length == 0 || !Traits.isTrait(controller.getClassNode().getOuterClass())) {
-            return null;
-        }
-        Parameter self = method.getParameters()[0];
-        return Traits.THIS_OBJECT.equals(self.getName()) || Traits.STATIC_THIS_OBJECT.equals(self.getName()) ? self : null;
     }
 
     private static boolean containsNestedFunction(final Statement code) {

@@ -78,6 +78,10 @@ class StrictCachedGrapesResolver extends FileSystemResolver {
 
     private static final Logger LOGGER = Logger.getLogger(StrictCachedGrapesResolver.name)
 
+    /**
+     * Requires an Ivy descriptor. A missing descriptor makes this resolver
+     * return null so the chain continues.
+     */
     StrictCachedGrapesResolver() {
         // Prevent the in-memory synthesis path that creates stubs from
         // artifact-only state. With descriptor="required", a missing ivy file

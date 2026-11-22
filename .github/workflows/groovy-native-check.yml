@@ -87,7 +87,7 @@ jobs:
       # GraalVM renamed its builds from jdk-25.0.x to graal-25.x in 2026, and
       # with `java-version` alone (or with setup-java) the resolution stops at
       # the January jdk-25.0.2 build, which predates the fix Groovy 6 needs.
-      - uses: graalvm/setup-graalvm@27b360dbb857524eaf0b4c4cef364d38e5b4f173 # v1.6.7
+      - uses: graalvm/setup-graalvm@f70bc8032f90a104502824a54bcb94b6f01715bc # v1.6.8
         with:
           version: '25.3'
           java-version: '25'
@@ -102,20 +102,43 @@ jobs:
             || { echo "GraalVM for JDK 25.0.4 or later is required" >&2; exit 1; }
       # Restore-only (never saves): this job resolves a subset of the `build`
       # lineage; see groovy-build-test.yml (lts job) for the caching rationale.
-      - name: "🗄 Restore Gradle dependencies (~/.gradle/caches/modules-2 + wrapper)"
+      - uses: gradle/actions/setup-gradle@8da46b539cd8fe6ab27ca75128919a18d757604c # v6.4.1
+        # The action's own caching is disabled: dependency jars and wrapper
+        # dists are cached by the explicit branch-keyed cache step below instead.
+        with:
+          cache-disabled: true
+      # On Windows setup-gradle may set GRADLE_USER_HOME=D:\a\.gradle, so
+      # caching ~/.gradle never hits and the save fails path validation.
+      - name: "🗄 Restore Gradle dependencies (GRADLE_USER_HOME modules-2 + wrapper)"
         uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: |
-            ~/.gradle/caches/modules-2
-            ~/.gradle/wrapper
+            ${{ env.GRADLE_USER_HOME }}/caches/modules-2
+            ${{ env.GRADLE_USER_HOME }}/wrapper
           key: gradle-deps-${{ runner.os }}-build-${{ github.base_ref || github.ref_name }}-${{ hashFiles('versions.properties', 'gradle/wrapper/gradle-wrapper.properties', 'settings.gradle', 'build-logic/build.gradle') }}
           restore-keys: |
             gradle-deps-${{ runner.os }}-build-${{ github.base_ref || github.ref_name }}-
-      - uses: gradle/actions/setup-gradle@8da46b539cd8fe6ab27ca75128919a18d757604c # v6.4.1
-        # The action's own caching is disabled: dependency jars and wrapper
-        # dists are cached by the explicit branch-keyed step above instead.
-        with:
-          cache-disabled: true
       - name: Native image metadata check
         run: ./gradlew :tests-native:nativeCheck -Pgroovy.native.home=$GRAALVM_HOME --no-daemon --no-scan
         timeout-minutes: 30
+      - name: "🛑 Stop Gradle daemon before cache save"
+        if: always()
+        continue-on-error: true
+        run: ./gradlew --stop
+      - name: "🧹 Scrub Gradle cache lock files before save"
+        if: always()
+        shell: bash
+        run: |
+          dir="${GRADLE_USER_HOME:-$HOME/.gradle}/caches"
+          [ -d "$dir" ] || { echo "No $dir — nothing to scrub."; exit 0; }
+          deleted=0
+          while IFS= read -r f; do
+            [ -n "$f" ] || continue
+            echo "lock: $f"
+            if rm -f "$f"; then
+              deleted=$((deleted + 1))
+            else
+              echo "skipped busy lock: $f"
+            fi
+          done < <(find "$dir" -name '*.lock' 2>/dev/null)
+          echo "Scrubbed $deleted Gradle cache lock file(s) before cache save."

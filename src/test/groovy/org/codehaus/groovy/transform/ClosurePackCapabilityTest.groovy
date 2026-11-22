@@ -240,6 +240,58 @@ final class ClosurePackCapabilityTest {
         assertEquals(['barfoo', 'hellofoo'], eval(src, 'new Host().run()', true))
     }
 
+    // GROOVY-12670
+    @Test
+    void explicitThisIsNotSyntacticallyIndependent() {
+        // a dynamic closure class reads an explicit this from getThisObject(), which rehydrate
+        // replaces; a hoisted body kept the instance it was created on. The syntactic check must
+        // decline such a body, nested closures included, so the rehydrated copy answers for its new
+        // this object as the closure class does; a no-free-name closure beside them still packs.
+        String src = '''class D { String name = 'd'; String foo() { 'D.foo' }; String toString() { 'D' } }
+            class O {
+                String name
+                String foo() { 'foo ' + name }
+                String toString() { 'O:' + name }
+                static List onto(Closure c, Object... targets) { targets.collect { t -> c.rehydrate(null, t, t)().toString() } }
+                List run(O b, D d) {
+                    Closure self = { -> this }
+                    Closure call = { -> this.foo() }
+                    Closure field = { -> this.@name }
+                    Closure pointer = { -> (this.&foo)() }
+                    Closure nested = { -> ({ -> this.foo() })() }
+                    Closure free = { int x -> x + 1 }
+                    [onto(self, b, d), onto(call, b, d), onto(field, b, d), onto(pointer, b, d), onto(nested, b, d),
+                     free(1), free instanceof org.codehaus.groovy.runtime.PackedClosure]
+                }
+            }'''
+        String tail = "new O(name: 'a').run(new O(name: 'b'), new D())"
+        def rehydrated = [['O:b', 'D'], ['foo b', 'D.foo'], ['b', 'd'], ['foo b', 'D.foo'], ['foo b', 'D.foo'], 2]
+        assertEquals(rehydrated + [false], eval(src, tail, false))
+        assertEquals(rehydrated + [true], eval(src, tail, true))
+    }
+
+    // GROOVY-12670
+    @Test
+    void outerThisAndOuterSuperAreNotSyntacticallyIndependent() {
+        // Outer.this and Outer.super in an inner class's closure also go through getThisObject()
+        String src = '''class B0 { String hi() { 'B0.hi ' + this } }
+            class P extends B0 {
+                String n
+                String hi() { 'P.hi' }
+                String toString() { 'P:' + n }
+                class I {
+                    List run(I other) {
+                        Closure outer = { -> P.this }
+                        Closure sup = { -> P.super.hi() }
+                        [outer.rehydrate(null, other, other)().toString(), sup.rehydrate(null, other, other)()]
+                    }
+                }
+            }'''
+        String tail = "new P.I(new P(n: 'p1')).run(new P.I(new P(n: 'p2')))"
+        assertEquals(['P:p2', 'B0.hi P:p2'], eval(src, tail, false))
+        assertEquals(['P:p2', 'B0.hi P:p2'], eval(src, tail, true))
+    }
+
     @Test
     void dynamicDelegateIndependentClosuresAutoPackBySyntax() {
         // GROOVY-12151 dynamic syntactic path: a closure with NO free name -- only its parameter,
@@ -277,7 +329,8 @@ final class ClosurePackCapabilityTest {
     void syntacticallyPackedClosureTreatsDelegateAsHarmlessNoOp() {
         // the non-strict guard: a syntactically-packed closure has no free name, so a caller-set
         // delegate must be IGNORED, not rejected -- exactly as a normal closure behaves. (The
-        // annotation trust path, by contrast, throws, since it cannot prove independence.)
+        // annotation trust path, by contrast, throws for a body with a free name, since it cannot
+        // prove independence.)
         Object result = eval('', '''
             Closure c = { x -> x + 1 }
             assert c.getClass().name.startsWith('org.codehaus.groovy.runtime.PackedClosure')
@@ -286,6 +339,22 @@ final class ClosurePackCapabilityTest {
             c(41)
         ''', true)
         assertEquals(42, result)
+    }
+
+    // GROOVY-12661
+    @Test
+    void syntacticallyPackedClosureCanBeRehydratedElsewhere() {
+        // the rehydrate guard is the strict one only: a closure with no free name does not depend on
+        // its owner, so rehydrating it onto another delegate, owner and this object (the DSL
+        // builder idiom) keeps working
+        Object result = eval('', '''
+            Closure c = { x -> x + 1 }
+            assert c.getClass().name.startsWith('org.codehaus.groovy.runtime.PackedClosure')
+            def other = new Object()
+            Closure r = c.rehydrate(other, other, other)
+            [r.owner.is(other), r(41)]
+        ''', true)
+        assertEquals([true, 42], result)
     }
 
     @Test
@@ -366,5 +435,105 @@ final class ClosurePackCapabilityTest {
                 new B().test()
             '''))
         }
+    }
+
+    // GROOVY-12666
+    @Test
+    void autoPackedClosureRehydratedOntoAnotherOwnerUsesIt() {
+        // the flag path: a @CompileStatic closure class reads foo() and name from the rehydrated this
+        // object, and throws ClassCastException for an object that is not an O; the packed body
+        // kept reading them from the receiver it was created with. A body that does not use its
+        // receiver keeps running against it, so rehydrating onto an unrelated object (the DSL
+        // builder idiom) keeps working.
+        String src = '''import groovy.transform.CompileStatic
+            class Builder {}
+            @CompileStatic
+            class O {
+                String name
+                String foo() { 'foo ' + name }
+                static Object attempt(Closure c, Object t) {
+                    try { c.rehydrate(t, t, t).call() } catch (ClassCastException e) { 'CCE' }
+                }
+                List run(O b) {
+                    Closure f = { -> foo() }
+                    Closure n = { -> name }
+                    Closure free = { -> [1, 2].collect { Integer i -> i * 2 } }
+                    Closure print = { -> sprintf('%s', 'x') }
+                    assert [f, n, free, print].every { it instanceof org.codehaus.groovy.runtime.PackedClosure }
+                    def builder = new Builder()
+                    [attempt(f, b), attempt(n, b), attempt(f, builder), attempt(n, builder),
+                     attempt(free, builder), attempt(print, builder), f(), n()]
+                }
+            }'''
+        assertEquals(['foo b', 'b', 'CCE', 'CCE', [2, 4], 'x', 'foo a', 'a'],
+                eval(src, "new O(name: 'a').run(new O(name: 'b'))", true))
+    }
+
+    // GROOVY-12666
+    @Test
+    void syntacticallyPackedClosureRehydratedOntoAnInstanceOfItsOwnerClassUsesIt() {
+        // the dynamic syntactic path packs a body with no free name, which cannot name this
+        // (GROOVY-12670) but can create a nested closure, whose this object is the enclosing
+        // closure's this object: for the hoisted body, its receiver. Rehydrated onto
+        // another instance of the owner class, the copy hands that instance on, as the closure
+        // class does
+        String src = '''
+            class O {
+                String name
+                String foo() { name }
+                List run(O b) {
+                    Closure c = { -> Closure n = { -> 0 }; n.getThisObject().foo() }
+                    [c.rehydrate(null, b, b)(), c(), c instanceof org.codehaus.groovy.runtime.PackedClosure]
+                }
+            }'''
+        String tail = "new O(name: 'a').run(new O(name: 'b'))"
+        assertEquals(['b', 'a', false], eval(src, tail, false))
+        assertEquals(['b', 'a', true], eval(src, tail, true))
+    }
+
+    // GROOVY-12666
+    @Test
+    void syntacticallyPackedClosureCreatedOnASubclassInstanceRehydratesOntoAnInstanceOfItsOwnerClass() {
+        // created by an inherited method of a subclass instance, the closure's receiver is that
+        // instance; rehydrated onto an instance of the owner class that is not a subclass instance,
+        // the closure class hands the new this object to the nested closure, so the copy must too
+        String src = '''
+            class O {
+                String name
+                String foo() { name }
+                List run(O b) {
+                    Closure c = { -> Closure n = { -> 0 }; n.getThisObject().foo() }
+                    [c.rehydrate(null, b, b)(), c(), c instanceof org.codehaus.groovy.runtime.PackedClosure]
+                }
+            }
+            class P extends O {}'''
+        String tail = "new P(name: 'p').run(new O(name: 'b'))"
+        assertEquals(['b', 'p', false], eval(src, tail, false))
+        assertEquals(['b', 'p', true], eval(src, tail, true))
+    }
+
+    @Test
+    void directCallsLetABodyThrownInvokerInvocationExceptionThrough() {
+        // no reflective step lies between the call lanes and a hoisted body, so there is nothing to
+        // unwrap: like Closure.call's cached-handle path on a generated class, an
+        // InvokerInvocationException the body itself throws reaches a direct caller as-is, on both
+        // the call(Object) lane and the call(Object...) lane
+        String src = '''import groovy.transform.CompileStatic
+            import org.codehaus.groovy.runtime.InvokerInvocationException
+            @CompileStatic
+            class Thrower {
+                List<String> go() {
+                    Closure one = { Object x -> throw new InvokerInvocationException(new IOException('one')) }
+                    Closure two = { Object x, Object y -> throw new InvokerInvocationException(new IOException('two')) }
+                    [one.getClass().simpleName, two.getClass().simpleName,
+                     kind { one.call((Object) 1) }, kind { two.call(1, 2) }]
+                }
+                private static String kind(Closure work) {
+                    try { work.call(); 'none' } catch (Throwable t) { t.getClass().simpleName }
+                }
+            }'''
+        def thrown = ['InvokerInvocationException', 'InvokerInvocationException']
+        assertEquals(['_go_closure1', '_go_closure2'] + thrown, eval(src, 'new Thrower().go()', false))
+        assertEquals(['Fixed1', 'Fixed2'] + thrown, eval(src, 'new Thrower().go()', true))
     }
 }

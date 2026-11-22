@@ -156,6 +156,11 @@ public class TemplateServlet extends AbstractHttpServlet {
             return true;
         }
 
+        /**
+         * Returns the hit count, and the cache time when one was recorded.
+         *
+         * @return {@code Hit #n}, or {@code Hit #n since} the recorded date
+         */
         @Override
         public String toString() {
             if (date == null) {

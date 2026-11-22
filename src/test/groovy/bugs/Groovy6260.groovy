@@ -71,4 +71,41 @@ final class Groovy6260 {
         '''
         assert err.message == 'No such property: bar for class: Foo\nPossible solutions: baz'
     }
+
+    // GROOVY-12675
+    @Test
+    void testErrorMessage5() {
+        def c = { -> }
+        String type = c.getClass().getName()
+
+        def err = shouldFail(MissingPropertyException) {
+            c.metaClass.getProperty(c, 'bc')
+        }
+        assert err.message == "No such property: bc for class: $type"
+
+        err = shouldFail(MissingPropertyException) {
+            c.metaClass.setProperty(c, 'bc', null)
+        }
+        assert err.message == "No such property: bc for class: $type"
+
+        err = shouldFail(MissingPropertyException) {
+            c.metaClass.getProperty(c, 'thisTyp')
+        }
+        assert err.message == "No such property: thisTyp for class: $type"
+
+        err = shouldFail(MissingPropertyException) {
+            c.metaClass.getProperty(c, 'serialVersionUI')
+        }
+        assert err.message == "No such property: serialVersionUI for class: $type"
+
+        err = shouldFail(MissingPropertyException) {
+            c.metaClass.getProperty(c, 'directiv')
+        }
+        assert err.message == "No such property: directiv for class: $type\nPossible solutions: directive"
+
+        err = shouldFail(MissingPropertyException) {
+            c.metaClass.getProperty(c, 'owne')
+        }
+        assert err.message == "No such property: owne for class: $type\nPossible solutions: owner, DONE"
+    }
 }

@@ -33,6 +33,13 @@ public class StaticMethodCallExpression extends Expression implements MethodCall
     private final Expression arguments;
     private MetaMethod metaMethod = null;
 
+    /**
+     * Creates a static call of {@code method} on {@code type}.
+     *
+     * @param type class the method is invoked on
+     * @param method method name
+     * @param arguments argument list, usually a tuple expression
+     */
     public StaticMethodCallExpression(ClassNode type, String method, Expression arguments) {
         ownerType = type;
         this.method = method;
@@ -67,6 +74,11 @@ public class StaticMethodCallExpression extends Expression implements MethodCall
         return arguments;
     }
 
+    /**
+     * Returns the name of the method being called.
+     *
+     * @return the method name
+     */
     public String getMethod() {
         return method;
     }
@@ -81,18 +93,39 @@ public class StaticMethodCallExpression extends Expression implements MethodCall
         return super.toString() + "[" + getOwnerType().getName() + "#" + method + " arguments: " + arguments + "]";
     }
 
+    /**
+     * Returns the class the static method is invoked on.
+     *
+     * @return the owner class
+     */
     public ClassNode getOwnerType() {
         return ownerType;
     }
 
+    /**
+     * Replaces the class the static method is invoked on.
+     *
+     * @param ownerType class to invoke the method on
+     */
     public void setOwnerType(ClassNode ownerType) {
         this.ownerType = ownerType;
     }
 
+    /**
+     * Records the meta-method selected for this call. Null until the call
+     * has been resolved.
+     *
+     * @param metaMethod resolved meta-method, or null to clear it
+     */
     public void setMetaMethod(MetaMethod metaMethod) {
         this.metaMethod = metaMethod;
     }
 
+    /**
+     * Returns the meta-method recorded by {@link #setMetaMethod}.
+     *
+     * @return the resolved meta-method, or null when the call is unresolved
+     */
     public MetaMethod getMetaMethod() {
         return metaMethod;
     }

@@ -18,7 +18,6 @@
  */
 package org.codehaus.groovy.transform.sc.transformers;
 
-import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.FieldNode;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.expr.AttributeExpression;
@@ -78,10 +77,12 @@ class PropertyExpressionTransformer {
                 ae = new AttributeExpression(classX(field.getDeclaringClass()), pe.getProperty());
             } else if (!isThisExpression(pe.getObjectExpression())) {
                 ae = new AttributeExpression(scTransformer.transform(pe.getObjectExpression()), pe.getProperty(), pe.isSafe());
-            } else if (fieldIsOnThisInstance(field)) {
-                // GROOVY-12533: this is a subclass of the field's declaring class, so the
-                // field is on this instance. DeclaringClass.this would select an enclosing
-                // instance, which a static nested subclass does not have.
+            } else if (scTransformer.extendsClass(field.getDeclaringClass())
+                    && (pe instanceof AttributeExpression || !scTransformer.hasEnclosingInstanceOf(field.getDeclaringClass()))) {
+                // GROOVY-12533: this is a subclass of the field's declaring class. this.@name
+                // is the field of this instance. this.name is the field of the enclosing
+                // instance when there is one, as in dynamic code; a static nested subclass
+                // has none, so it is the field of this instance too.
                 ae = new AttributeExpression(pe.getObjectExpression(), pe.getProperty(), pe.isSafe());
             } else {
                 ae = new AttributeExpression(new PropertyExpression(classX(field.getDeclaringClass()), "this"), pe.getProperty(), pe.isSafe());
@@ -96,20 +97,5 @@ class PropertyExpressionTransformer {
         }
 
         return scTransformer.superTransform(pe);
-    }
-
-    /**
-     * True when {@code this} is a subclass of the field's declaring class, so the
-     * field belongs to this instance rather than to an enclosing instance.
-     * Closure classes are not materialized until class generation, which is after
-     * this transform, so {@code this} here is already the enclosing user class.
-     */
-    private boolean fieldIsOnThisInstance(final FieldNode field) {
-        ClassNode declaringClass = field.getDeclaringClass();
-        ClassNode type = scTransformer.getTransformClass().getSuperClass();
-        while (type != null && !type.equals(declaringClass)) {
-            type = type.getSuperClass();
-        }
-        return type != null;
     }
 }
