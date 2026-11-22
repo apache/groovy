@@ -3414,6 +3414,53 @@ final class InnerClassTest {
         '''
     }
 
+    // GROOVY-12517: a static method of Outer's superclass needs no super$ helper of Outer
+    @CompileModesTest
+    void testQualifiedSuperOfOuterClassForStaticMethod(String mode) {
+        assertScript """
+            import java.util.function.Supplier
+
+            class Base {
+                static String sm() { 'base' }
+                static String sn() { 'base-n' }
+            }
+            $mode
+            class Outer extends Base {
+                static String sm() { 'outer' }
+                class In {
+                    String plain() { Outer.super.sm() + Outer.super.sn() }
+                    String closure() { def c = { -> Outer.super.sm() + Outer.super.sn() }; c() }
+                    String lambda() { Supplier<String> s = () -> Outer.super.sm() + Outer.super.sn(); s.get() }
+                    String nested() { { -> { -> Outer.super.sm() }() }() }
+                }
+            }
+            def i = new Outer.In(new Outer())
+            assert i.plain() == 'basebase-n'
+            assert i.closure() == 'basebase-n'
+            assert i.lambda() == 'basebase-n'
+            assert i.nested() == 'base'
+        """
+    }
+
+    // GROOVY-12517: an extension method is a static method, too
+    @CompileModesTest
+    void testQualifiedSuperOfOuterClassForExtensionMethod(String mode) {
+        assertScript """
+            $mode
+            class Outer extends ArrayList<String> {
+                String first() { 'outer' }
+                class In {
+                    String plain() { Outer.super.first() }
+                    String closure() { def c = { -> Outer.super.first() }; c() }
+                }
+            }
+            def o = new Outer(); o << 'a' << 'b'
+            def i = new Outer.In(o)
+            assert i.plain() == 'a'
+            assert i.closure() == 'a'
+        """
+    }
+
     // GROOVY-12517
     @Test
     void testQualifiedSuperOfOuterClassWithoutEnclosingInstance() {
