@@ -136,7 +136,7 @@ final class FunctionalTypeArgumentTest {
                     static List<Function<String, String>> references() {
                         List<Function<String, String>> list = []
                         list.add(String::toUpperCase)
-                        list.add(String::trim)
+                        list << String::trim
                         list
                     }
                 }

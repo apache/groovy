@@ -8098,7 +8098,13 @@ trying: for (ClassNode[] signature : signatures) {
             Parameter[] parameters = (method instanceof ExtensionMethodNode emn ? emn.getExtensionMethodNode() : method).getParameters();
             if (parameters.length > 0 && isFunctionalLiteral(rightExpression)) { // an operand is compiled like an argument
                 ClassNode functionalType = getFunctionalTypeArgument(left, method, args(rightExpression), 0, parameters[parameters.length - 1].getType());
-                if (functionalType != null) rightExpression.putNodeMetaData(PARAMETER_TYPE, functionalType);
+                if (functionalType != null) {
+                    rightExpression.putNodeMetaData(PARAMETER_TYPE, functionalType);
+                    // a method reference was visited before the operator method gave its functional interface
+                    // type; the method it calls is selected by the parameter types of that type, as for an argument
+                    if (rightExpression instanceof MethodReferenceExpression)
+                        rightExpression.putNodeMetaData(CLOSURE_ARGUMENTS, GenericsUtils.parameterizeSAM(functionalType).getV1());
+                }
             }
 
             if (isAssignment(op)) return left;
