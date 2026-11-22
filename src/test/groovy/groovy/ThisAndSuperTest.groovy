@@ -751,9 +751,9 @@ final class ThisAndSuperTest {
         """
     }
 
-    // GROOVY-12522: in a closure; @CompileStatic calls a super method from a closure through a super$ helper
+    // GROOVY-12522: in a closure; @CompileStatic calls the extension method directly, without a super$ helper (GROOVY-12519)
     @ParameterizedTest
-    @ValueSource(strings=['', '@groovy.transform.TypeChecked'])
+    @ValueSource(strings=['', '@groovy.transform.TypeChecked', '@groovy.transform.CompileStatic'])
     void testSuperDotExtensionMethodTheClassOverridesInClosure(String mode) {
         assertScript """
             $mode
