@@ -359,6 +359,42 @@ final class FunctionalTypeArgumentTest {
         assert warnings.every { it == "The Closure is stored as it is, not converted to java.util.function.Supplier<java.lang.String>; write 'as java.util.function.Supplier<java.lang.String>' to convert it" }
     }
 
+    // GROOVY-12561
+    @Test
+    void testLambdaOrMethodReferenceAssignedToASubscriptOrPropertyGetsNoWarning() {
+        String source = '''
+            import groovy.transform.CompileStatic
+            import java.util.function.Function
+            class Holder<T> { T value }
+            @CompileStatic
+            class W {
+                static List<Object> make(Closure<String> closure) {
+                    Map<String, Function<String, String>> map = [:]
+                    map['lambda'] = (String s) -> s + '!'
+                    map['reference'] = String::trim
+                    def holder = new Holder<Function<String, String>>()
+                    holder.value = (String s) -> s + '?'
+                    def field = new Holder<Function<String, String>>()
+                    field.@value = String::toUpperCase
+                    map['closure'] = closure // warning: stored as a Closure
+                    [map['lambda'], map['reference'], holder.value, field.@value]
+                }
+            }
+        '''
+        for (option in [true, false]) {
+            Closure<List<String>> compile = { warnings(source) }
+            def warnings = option ? compile() : withoutLambdaTypeArgument(compile)
+            // the assignment compiles a lambda or method reference for the interface, so only the closure is stored as it is
+            assert warnings == ["The Closure is stored as it is, not converted to java.util.function.Function<java.lang.String, java.lang.String>; write 'as java.util.function.Function<java.lang.String, java.lang.String>' to convert it"]
+        }
+
+        assertScript shell, source + '''
+            def values = W.make { it }
+            assert values.every { it instanceof Function && !(it instanceof Closure) }
+            assert values*.apply(' a ') == [' a !', 'a', ' a ?', ' A ']
+        '''
+    }
+
     @Test
     void testClosureLiteralIsPassedAsBeforeWhereItCannotImplementTheInterface() {
         assertScript shell, '''

@@ -1424,7 +1424,9 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     convertMapValue(expression, mapValueType);
                     resultType = mapValueType;
                 }
-                if (op == EQUAL && isSAMType(lType) && isStaticDispatchScope()) {
+                // the assignment compiles a lambda or method reference for lType, so only a closure is converted here
+                if (op == EQUAL && isSAMType(lType) && isStaticDispatchScope()
+                        && !(rightExpression instanceof LambdaExpression || rightExpression instanceof MethodReferenceExpression)) {
                     ClassNode slotType = getTypeParameterOfSlot(leftExpression, rType);
                     if (slotType != null) convertClosureValue(rightExpression, lType, slotType);
                 }
