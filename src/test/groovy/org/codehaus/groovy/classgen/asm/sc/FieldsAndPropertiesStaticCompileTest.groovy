@@ -534,6 +534,180 @@ final class FieldsAndPropertiesStaticCompileTest extends FieldsAndPropertiesSTCT
         '''
     }
 
+    // GROOVY-12610: static compilation accesses the field directly from a nest-mate
+    @Override @Test
+    void testPrivateFieldOfSuperclassViaStaticNestedSubclass() {
+        assertScript '''
+            class Base {
+                private String z = 'x'
+                static class Sub extends Base {
+                    def m1() { this.z }
+                    def m2() { super.z }
+                    def m3() { def c = { -> this.z }; c() }
+                    def m4() { java.util.function.Supplier<String> s = () -> this.z; s.get() }
+                    def m5() { this.z = 'y'; this.z }
+                    def m6() { super.z = 'z'; super.z }
+                    def m7(Sub that) { that.z += '!'; that.z }
+                }
+                static class Other {
+                    def m(Sub sub) { sub.z }
+                }
+            }
+            def sub = new Base.Sub()
+            assert [sub.m1(), sub.m2(), sub.m3(), sub.m4()] == ['x', 'x', 'x', 'x']
+            assert [sub.m5(), sub.m6(), sub.m7(sub)] == ['y', 'z', 'z!']
+            assert new Base.Other().m(sub) == 'z!'
+        '''
+    }
+
+    // GROOVY-12610: static compilation reads super.z from this instance, not the enclosing instance
+    @Override @Test
+    void testPrivateFieldOfSuperclassViaInnerSubclassOrDeclaringClass() {
+        assertScript '''
+            class Base {
+                private String z
+                Base(String z) { this.z = z }
+                class Sub extends Base {
+                    Sub() { super('sub') }
+                    def m1() { this.z }
+                    def m2() { z }
+                    def m3() { super.z }
+                    def m4() { def c = { -> z }; c() }
+                    def m5() { java.util.function.Supplier<String> s = () -> this.z; s.get() }
+                    def m6() { z = 'y'; z }
+                }
+                static class Nested extends Base {
+                    Nested() { super('nested') }
+                }
+                static List test(Nested nested) {
+                    def c = { -> nested.z }
+                    [nested.z, c()]
+                }
+                List test() {
+                    def sub = new Sub()
+                    [sub.m1(), sub.m2(), sub.m3(), sub.m4(), sub.m5(), sub.m6(), z]
+                }
+            }
+            assert new Base('outer').test() == ['outer', 'outer', 'sub', 'outer', 'outer', 'y', 'y']
+            assert Base.test(new Base.Nested()) == ['nested', 'nested']
+        '''
+    }
+
+    // GROOVY-12621: static compilation accesses the field directly from an enum constant body;
+    // this.z and a bare z there are GROOVY-12626
+    @Override @Test
+    void testPrivateFieldOfEnumViaConstantBody() {
+        assertScript '''
+            enum E {
+                A {
+                    List m() {
+                        def c = { -> super.z }
+                        java.util.function.Supplier<String> s = () -> super.z
+                        [super.z, c(), s.get()]
+                    }
+                    String w() { super.z = 'y'; super.z += '!'; super.z }
+                }
+                abstract List m()
+                abstract String w()
+                private String z = 'x'
+            }
+            assert E.A.m() == ['x', 'x', 'x']
+            assert E.A.w() == 'y!'
+        '''
+    }
+
+    // GROOVY-12621: static compilation writes the field directly
+    @Override @Test
+    void testPrivateFieldOfSuperclassWrittenThroughSuperInInnerSubclass() {
+        assertScript '''
+            class Base {
+                private String z = 'x'
+                class Sub extends Base {
+                    def m1() { super.z = 'y'; super.z }
+                    def m2() { super.z += 'y'; super.z }
+                    def m3() { super.z = 'n'; super.z++; super.z }
+                    def m4() { def c = { -> super.z = 'c' }; c(); super.z }
+                }
+                List test() {
+                    def sub = new Sub()
+                    [sub.m1(), sub.m2(), sub.m3(), sub.m4()]
+                }
+            }
+            assert new Base().test() == ['y', 'yy', 'o', 'c']
+        '''
+    }
+
+    // GROOVY-12621: static compilation accesses the field directly on any receiver
+    @Override @Test
+    void testPrivateFieldOfSuperclassViaReceiverOfOtherClass() {
+        assertScript '''
+            class Base {
+                private String z = 'x'
+                static class Nested extends Base {
+                }
+                class Sub extends Base {
+                    def m1(Nested that) { that.z }
+                    def m2(Sub2 that) { that.z }
+                    def m3() { new Object() { def get() { Sub.this.z } }.get() }
+                    def m4(Sub that) { new Object() { def get() { that.z } }.get() }
+                }
+                class Sub2 extends Base {
+                }
+                class Inner {
+                    def m1(Nested that) { that.z }
+                    def m2(Sub that) { that.z }
+                    def m3(Nested that) { def c = { -> that.z }; c() }
+                    def m4(Sub that) { that.z = 'y'; that.z }
+                }
+                List test() {
+                    def sub = new Sub(), nested = new Nested(), inner = new Inner()
+                    [sub.m1(nested), sub.m2(new Sub2()), sub.m3(), sub.m4(sub), inner.m1(nested), inner.m2(sub), inner.m3(nested), inner.m4(sub)]
+                }
+            }
+            assert new Base().test() == ['x', 'x', 'x', 'x', 'x', 'x', 'x', 'y']
+        '''
+    }
+
+    // GROOVY-12621: static compilation reads the field of the receiver itself, not of its enclosing instance
+    @Override @Test
+    void testPrivateFieldOfSuperclassViaReceiverOfCallingClass() {
+        assertScript '''
+            class Base {
+                private String z
+                Base(String z) { this.z = z }
+                static class Nested extends Base {
+                    Nested() { super('nested') }
+                }
+                class Sub extends Base {
+                    Sub(String z) { super(z) }
+                    def m1(Sub that) { that.z }
+                    def m2(SubSub that) { def c = { -> that.z }; c() }
+                    def m3() { def c = { -> super.z }; c() }
+                    def m4(Nested that) { that.with { z } }
+                    def m5() { new Object() { def get() { z } }.get() }
+                    def m6() { new Inner().get() }
+                    class Inner {
+                        def get() { z }
+                    }
+                }
+                class SubSub extends Sub {
+                    SubSub() { super('subsub') }
+                }
+                class Other {
+                    def m1(Sub that) { that.with { z } }
+                    def m2() { new Object() { def get() { z } }.get() }
+                }
+                Sub newSub(String z) { new Sub(z) }
+                List test(Sub that) {
+                    def sub = new Sub('sub'), other = new Other()
+                    [sub.m1(that), sub.m2(new SubSub()), sub.m3(), sub.m4(new Nested()), sub.m5(), sub.m6(), other.m1(that), other.m2()]
+                }
+            }
+            def that = new Base('far').newSub('that')
+            assert new Base('outer').test(that) == ['that', 'subsub', 'sub', 'nested', 'outer', 'outer', 'that', 'outer']
+        '''
+    }
+
     @Override @Test
     void testPropertyWithMultipleSetters() {
         // we need to override the test because the AST is going to be changed
@@ -816,6 +990,118 @@ final class FieldsAndPropertiesStaticCompileTest extends FieldsAndPropertiesSTCT
                dump = astTrees['C$_closure1'][1]
         assert !dump.contains('INVOKESTATIC C.pfaccess$2 (LC;)Ljava/lang/String;')
         assert !dump.contains('INVOKESTATIC C.pfaccess$02 (LC;Ljava/lang/String;)Ljava/lang/String;')
+    }
+
+    // GROOVY-12600: a class nested in a static nested subclass has no enclosing instance of the outer class; "z" is the field the subclass inherits
+    @Test
+    void testPrivateFieldOfOuterClassInClassNestedInStaticNestedSubclass() {
+        assertScript '''
+            import java.util.function.Supplier
+
+            class Base {
+                private String z = 'x'
+                static class Sub extends Base {
+                    class Inner { String v() { z } }
+                    List read() {
+                        Supplier<String> lambda = new Object() { Supplier<String> m() { () -> z } }.m()
+                        [new Object() { String v() { z } }.v(), new Object() { String v() { { -> z }() } }.v(), lambda.get(), new Inner().v()]
+                    }
+                    String write() { new Runnable() { void run() { z = 'a' } }.run(); this.@z }
+                    String writeInClosure() { new Runnable() { void run() { { -> z = 'b' }() } }.run(); this.@z }
+                    String compound() { new Runnable() { void run() { z += '1'; z++; { -> z += '3' }() } }.run(); this.@z }
+                }
+                static class Mid {
+                    class Sub extends Base {
+                        String read() { new Object() { String v() { z } }.v() }
+                    }
+                }
+            }
+            def sub = new Base.Sub()
+            assert sub.read() == ['x', 'x', 'x', 'x']
+            assert sub.write() == 'a'
+            assert sub.writeInClosure() == 'b'
+            assert sub.compound() == 'b23'
+            assert new Base.Mid().with { new Base.Mid.Sub(it) }.read() == 'x'
+        '''
+    }
+
+    // GROOVY-12600: an inner subclass and its anonymous classes read and write the field of the enclosing instance, as dynamic Groovy does
+    @Test
+    void testPrivateFieldOfOuterClassInInnerSubclass() {
+        assertScript '''
+            import java.util.function.Supplier
+
+            class Base {
+                private String z
+                Base(String z) { this.z = z }
+                class Sub extends Base {
+                    Sub(String z) { super(z) }
+                    List test() {
+                        Supplier<String> lambda = () -> z
+                        def r = [z, { -> z }(), lambda.get(), new Object() { String v() { z } }.v()]
+                        z = 'a';
+                        { -> z += 'b' }()
+                        new Runnable() { void run() { z += 'c' } }.run()
+                        r << Base.this.@z << this.@z
+                    }
+                }
+            }
+            def sub = new Base('outer').with { new Base.Sub(it, 'own') }
+            assert sub.test() == ['outer', 'outer', 'outer', 'outer', 'abc', 'own']
+        '''
+    }
+
+    // GROOVY-12626: an enum constant body extends the enum but has no enclosing instance of it; "z" is the field it inherits
+    @Test
+    void testPrivateFieldOfEnumByBareNameInConstantBody() {
+        assertScript '''
+            import java.util.function.Supplier
+
+            enum E {
+                A {
+                    List read() {
+                        Supplier<String> lambda = () -> z
+                        [z, this.z, { -> z }(), lambda.get(), new Object() { String v() { z } }.v(), m(), { -> m() }()]
+                    }
+                    String write() { z = 'a'; this.@z }
+                    String writeInClosure() { { -> z = 'b' }(); this.@z }
+                    String compound() { z += '1'; z++; { -> z += '3' }(); this.@z }
+                }
+                abstract List read()
+                abstract String write()
+                abstract String writeInClosure()
+                abstract String compound()
+                private String z = 'x'
+                private String m() { z }
+            }
+            assert E.A.read() == ['x', 'x', 'x', 'x', 'x', 'x', 'x']
+            assert E.A.write() == 'a'
+            assert E.A.writeInClosure() == 'b'
+            assert E.A.compound() == 'b23'
+        '''
+    }
+
+    // GROOVY-12626: an anonymous subclass created in a static method has no enclosing instance; "z" is the field it inherits
+    @Test
+    void testPrivateFieldOfOuterClassInAnonymousSubclassInStaticMethod() {
+        assertScript '''
+            import java.util.function.Supplier
+
+            class Base {
+                private String z = 'x'
+                static Base make() {
+                    new Base() {
+                        String toString() {
+                            Supplier<String> lambda = () -> z
+                            String r = [z, { -> z }(), lambda.get()].join()
+                            z += '1'; { -> z += '2' }()
+                            r + this.@z
+                        }
+                    }
+                }
+            }
+            assert Base.make().toString() == 'xxxx12'
+        '''
     }
 
     // GROOVY-8369

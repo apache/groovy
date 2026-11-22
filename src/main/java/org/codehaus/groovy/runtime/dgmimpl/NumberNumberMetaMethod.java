@@ -33,6 +33,9 @@ public abstract class NumberNumberMetaMethod extends MetaMethod {
     private static final CachedClass   NUMBER_CLASS = ReflectionCache.getCachedClass(Number.class);
     private static final CachedClass[] NUMBER_CLASS_ARR = {NUMBER_CLASS};
 
+    /**
+     * Sets the parameter types to a single {@link Number}.
+     */
     protected NumberNumberMetaMethod() {
         setParametersTypes(NUMBER_CLASS_ARR);
     }

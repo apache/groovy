@@ -19,10 +19,12 @@
 package org.codehaus.groovy.ast;
 
 import org.apache.groovy.ast.tools.ClassNodeUtils;
+import org.codehaus.groovy.ast.expr.BinaryExpression;
 import org.codehaus.groovy.ast.expr.ConstructorCallExpression;
 import org.codehaus.groovy.ast.expr.DeclarationExpression;
+import org.codehaus.groovy.ast.expr.EmptyExpression;
 import org.codehaus.groovy.ast.expr.Expression;
-import org.codehaus.groovy.ast.expr.ListExpression;
+import org.codehaus.groovy.ast.expr.TupleExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.ast.stmt.ExpressionStatement;
@@ -626,6 +628,10 @@ public class ModuleNode extends ASTNode {
 
         boolean hasUncontainedStatements = false;
         List<FieldNode> fields = new ArrayList<>();
+        // a multiple assignment is kept as an assignment, so that every form of it (a rest binding, map
+        // style, any right-hand side) behaves as it does elsewhere; field initializers run before the
+        // object initializer, so the declarations after it are assigned there too, to keep their order
+        List<Statement> initializers = new ArrayList<>();
         // check for uncontained statements (excluding decl statements)
         for (Statement statement : statementBlock.getStatements()) {
             if (!(statement instanceof ExpressionStatement es)) {
@@ -638,28 +644,42 @@ public class ModuleNode extends ASTNode {
                 break;
             }
             if (de.isMultipleAssignmentDeclaration()) {
-                List<Expression> variables = de.getTupleExpression().getExpressions();
-                if (!(de.getRightExpression() instanceof ListExpression)) break;
-                List<Expression> values = ((ListExpression)de.getRightExpression()).getExpressions();
-                for (int i = 0; i < variables.size(); i++) {
-                    VariableExpression var = (VariableExpression) variables.get(i);
-                    Expression val = i >= values.size() ? null : values.get(i);
-                    fields.add(new FieldNode(var.getName(), var.getModifiers(), var.getType(), null, val));
+                List<Expression> targets = new ArrayList<>();
+                for (Expression e : de.getTupleExpression().getExpressions()) {
+                    VariableExpression var = (VariableExpression) e;
+                    fields.add(new FieldNode(var.getName(), var.getModifiers(), var.getType(), null, null));
+                    VariableExpression target = new VariableExpression(var.getName(), var.getType());
+                    target.setSourcePosition(var);
+                    target.copyNodeMetaData(var); // the rest binding and map key
+                    targets.add(target);
                 }
+                BinaryExpression assignment = new BinaryExpression(new TupleExpression(targets), de.getOperation(), de.getRightExpression());
+                assignment.setSourcePosition(de);
+                initializers.add(stmt(assignment));
             } else {
                 VariableExpression ve = de.getVariableExpression();
-                fields.add(new FieldNode(ve.getName(), ve.getModifiers(), ve.getType(), null, de.getRightExpression()));
+                if (initializers.isEmpty() || de.getRightExpression() instanceof EmptyExpression) {
+                    fields.add(new FieldNode(ve.getName(), ve.getModifiers(), ve.getType(), null, de.getRightExpression()));
+                } else {
+                    fields.add(new FieldNode(ve.getName(), ve.getModifiers(), ve.getType(), null, null));
+                    BinaryExpression assignment = new BinaryExpression(varX(ve.getName(), ve.getType()), de.getOperation(), de.getRightExpression());
+                    assignment.setSourcePosition(de);
+                    initializers.add(stmt(assignment));
+                }
             }
         }
 
         if (existingMain != null && !hasUncontainedStatements) { // JEP 445 main
             ClassNode result = new ClassNode(classNode.getName(), 0, ClassHelper.OBJECT_TYPE);
-            result.addAnnotations(existingMain.getAnnotations());
+            for (AnnotationNode annotation : existingMain.getAnnotations()) {
+                if (!isKnownMethodOnly(annotation)) result.addAnnotation(annotation);
+            }
             result.setScriptBody(false);
             result.putNodeMetaData("_SKIPPABLE_ANNOTATIONS", Boolean.TRUE);
             existingMain.putNodeMetaData("_SKIPPABLE_ANNOTATIONS", Boolean.TRUE);
             methods.forEach(result::addMethod);
             fields.forEach(result::addField);
+            initializers.forEach(result::addObjectInitializerStatements);
             return result;
         }
 
@@ -703,7 +723,13 @@ public class ModuleNode extends ASTNode {
             .visit(statementBlock);
         } else {
             fields.forEach(classNode::addField);
-            classNode.addAnnotations(existingRun.getAnnotations());
+            initializers.forEach(classNode::addObjectInitializerStatements);
+            // the method's annotations apply to the script class, except those that may go on a
+            // method but not on a type, which stay on run() only (GROOVY-12720); the known ones are
+            // left off here, before any Java stub is generated, and ExtendedVerifier skips the rest
+            for (AnnotationNode annotation : existingRun.getAnnotations()) {
+                if (!isKnownMethodOnly(annotation)) classNode.addAnnotation(annotation);
+            }
             classNode.putNodeMetaData("_SKIPPABLE_ANNOTATIONS", Boolean.TRUE);
             existingRun.putNodeMetaData("_SKIPPABLE_ANNOTATIONS", Boolean.TRUE);
         }
@@ -731,6 +757,26 @@ public class ModuleNode extends ASTNode {
             classNode.addMethod(method);
         }
         return classNode;
+    }
+
+    /**
+     * Best effort: annotation types are not resolved yet in this phase, so the check is by name.
+     * It covers fully-qualified names, {@code Override} via the default {@code java.lang} import,
+     * and single-type imports including aliased ones, but not star imports or same-named types
+     * that shadow them. ExtendedVerifier still skips anything missed here on the class, but a
+     * missed annotation is copied to the class in any Java stub.
+     */
+    private boolean isKnownMethodOnly(final AnnotationNode annotation) {
+        String name = annotation.getClassNode().getName();
+        if (name.indexOf('.') < 0) {
+            ImportNode importNode = getImport(name);
+            if (importNode != null) {
+                name = importNode.getType().getName();
+            } else if ("Override".equals(name)) {
+                name = "java.lang.Override";
+            }
+        }
+        return "java.lang.Override".equals(name) || "java.beans.Transient".equals(name);
     }
 
     private MethodNode findRun() {

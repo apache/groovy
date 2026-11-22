@@ -33,12 +33,30 @@ public class MetaClassConstructorSite extends MetaClassSite {
     private final ClassInfo classInfo;
     private final int version;
 
+    /**
+     * Caches {@code metaClass} and the version of its class so a later
+     * constructor call can tell whether that meta-class is still current.
+     *
+     * @param site the site whose name and index are reused
+     * @param metaClass the meta-class used to invoke the constructor
+     */
     public MetaClassConstructorSite(CallSite site, MetaClass metaClass) {
         super(site, metaClass);
         classInfo = ClassInfo.getClassInfo(metaClass.getTheClass());
         version = classInfo.getVersion();
     }
 
+    /**
+     * Invokes the constructor through the cached meta-class when
+     * {@code receiver} is that meta-class's class and the version is unchanged.
+     * Otherwise uses the default constructor call.
+     * A {@link GroovyRuntimeException} is rethrown via
+     * {@link ScriptBytecodeAdapter#unwrap(GroovyRuntimeException)}.
+     *
+     * @param receiver the class being constructed
+     * @param args the constructor arguments
+     * @return the new instance
+     */
     @Override
     public Object callConstructor(Object receiver, Object[] args) throws Throwable {
         try {

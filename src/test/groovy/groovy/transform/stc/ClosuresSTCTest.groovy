@@ -1006,6 +1006,41 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-10714: a closure or lambda with declared parameters implements only an interface it can be called as
+    @Test
+    void testSAMsInMethodSelection10() {
+        assertScript '''
+            import java.util.function.Consumer
+            class Try<T> {
+                final T value
+                Try(T value) { this.value = value }
+                String andThenTry(Consumer<? super T> consumer) { consumer.accept(value); 'Consumer' }
+                String andThenTry(Runnable runnable) { runnable.run(); 'Runnable' }
+            }
+
+            def attempt = new Try<String>('x')
+            assert attempt.andThenTry { String s -> assert s == 'x' } == 'Consumer'
+            assert attempt.andThenTry((String s) -> { assert s == 'x' }) == 'Consumer'
+            assert attempt.andThenTry { -> } == 'Runnable'
+            assert attempt.andThenTry { it } == 'Runnable'
+        '''
+    }
+
+    // GROOVY-10714
+    @Test
+    void testSAMsInMethodSelection11() {
+        assertScript '''
+            import java.util.concurrent.Callable
+            import java.util.function.Function
+
+            String fc(Function<String, ?> f) { 'Function' }
+            String fc(Callable<?> c) { 'Callable' }
+
+            assert fc { String s -> s } == 'Function'
+            assert fc { -> 1 } == 'Callable'
+        '''
+    }
+
     // GROOVY-6238
     @Test
     void testDirectMethodCallOnClosureExpression() {
@@ -1404,6 +1439,50 @@ ${' ' * 46}value.prop += 1
         '''
     }
 
+    // GROOVY-12678: a type-checked lambda is a closure
+    @Test
+    void testNestedLambdaDelegateOwner() {
+        for (prop in ['delegate', 'owner', 'getDelegate()', 'getOwner()']) {
+            assertScript """
+                import java.util.function.Supplier
+                class C {
+                    String name = 'n'
+                    void m() {
+                        def that
+                        that = { ->
+                            Supplier<Object> s = () -> {
+                                name
+                                @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                                    def type = node.getNodeMetaData(INFERRED_TYPE)
+                                    assert type/*of $prop*/ == CLOSURE_TYPE
+                                })
+                                Object ref = $prop
+                                assert ref == that
+                            }
+                            s.get()
+                        }
+                        that.call()
+                        Supplier<Object> t = () -> {
+                            name
+                            Supplier<Object> s = () -> {
+                                name
+                                @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                                    def type = node.getNodeMetaData(INFERRED_TYPE)
+                                    assert type/*of $prop*/ == CLOSURE_TYPE
+                                })
+                                Object ref = $prop
+                                assert ref instanceof Closure
+                            }
+                            s.get()
+                        }
+                        t.get()
+                    }
+                }
+                new C().m()
+            """
+        }
+    }
+
     // GROOVY-9652
     @Test
     void testDelegatePropertyAndCharCompareOptimization() {
@@ -1504,6 +1583,24 @@ ${' ' * 46}value.prop += 1
                 assert y.contains('$_foo_closure')
             }
             foo()
+        '''
+    }
+
+    // GROOVY-12581
+    @Test
+    void testClosureDelegateInInstanceInitializer() {
+        assertScript '''
+            class C {
+                List<String> log = [];
+                {
+                    log << new StringBuilder('a').with { append('b') }.toString()
+                    log << new ArrayList<String>().tap { add('c') }.toString()
+                    log << new ArrayList<String>(['d']).with { get(0) }
+                    log << new StringBuilder('e').with { length().toString() }
+                }
+            }
+
+            assert new C().log == ['ab', '[c]', 'd', '1']
         '''
     }
 
@@ -1705,6 +1802,99 @@ ${' ' * 46}value.prop += 1
             assert sub.lambdas() == ['m', 'm']
             assert sub.mixed() == ['mn', 'mn', 'm:x', 'm:y']
             assert sub.nested() == ['mm:z', 'm']
+        '''
+    }
+
+    // GROOVY-12662
+    @Test
+    void testClosureOverloadedMethods() {
+        assertScript '''
+            Closure<Object> c = { String a, String b -> b == null ? curry(a) : a + b }
+            Closure<Object> cc = { String a, String b, String x -> x == null ? curry(a, b) : a + b + x }
+            Closure<Object> r = { String a, String b -> a == null ? rcurry(b) : a + b }
+            Closure<Object> rr = { String a, String b, String x -> a == null ? rcurry(b, x) : a + b + x }
+            Closure<Object> n = { String a, String b, String x -> b == null ? ncurry(1, x) : a + b + x }
+            Closure<Object> nn = { String a, String b, String x -> b == null ? ncurry(1, a, x) : a + b + x }
+            Closure<Object> t = { int i -> i == 0 ? trampoline() : i }
+            Closure<Object> tt = { int i -> i == 0 ? trampoline(5) : i }
+            Closure<Object> s = { int i -> i == 0 ? andThenSelf() : i + 1 }
+            Closure<Object> ss = { int i -> i == 0 ? composeSelf(2) : i + 1 }
+            Closure<Object> l = { int i -> i == 0 ? leftShift({ int j -> j * 10 }) : i + 1 }
+            Closure<Object> ll = { int i -> i == 0 ? leftShift(5) : i + 1 }
+            Closure<Object> m = { int i -> i == 0 ? memoizeAtMost(2) : i + 1 }
+
+            assert ((Closure) c('x', null))('y') == 'xy'
+            assert ((Closure) cc('x', 'y', null))('z') == 'xyz'
+            assert ((Closure) r(null, 'y'))('x') == 'xy'
+            assert ((Closure) rr(null, 'y', 'z'))('x') == 'xyz'
+            assert ((Closure) n('a', null, 'x'))('p', 'q') == 'pxq'
+            assert ((Closure) nn('a', null, 'x'))('p') == 'pax'
+            assert ((Closure) t(0))(1) == 1
+            assert ((Closure) tt(0))() == 5
+            assert ((Closure) s(0))(1) == 3
+            assert ((Closure) ss(0))(1) == 4
+            assert ((Closure) l(0))(1) == 11
+            assert ll(0) == 6
+            assert ((Closure) m(0))(1) == 2
+        '''
+    }
+
+    // GROOVY-12662
+    @Test
+    void testClosureMethodWithoutMatchingArguments() {
+        assertScript '''
+            class D {
+                String memoize(String s) { 'D' + s }
+            }
+            class C {
+                String memoize(String s) { 'C' + s }
+                String getDelegate(int i) { 'C' + i }
+                static Object withD(@DelegatesTo(value=D, strategy=Closure.DELEGATE_FIRST) Closure c) {
+                    c.resolveStrategy = Closure.DELEGATE_FIRST
+                    c.delegate = new D()
+                    c()
+                }
+                List<Object> m() {
+                    [
+                        { -> memoize('x') }(),
+                        { -> getDelegate(1) }(),
+                        { -> { -> memoize('y') }() }(),
+                        withD { -> memoize('z') },
+                        { -> memoize() }() instanceof Closure
+                    ]
+                }
+            }
+
+            assert new C().m() == ['Cx', 'C1', 'Cy', 'Dz', true]
+        '''
+    }
+
+    // GROOVY-12662
+    @Test
+    void testClosureDelegateOnlyCurryAndShiftMethods() {
+        assertScript '''
+            class D {
+                String curry(String s) { 'curry' + s }
+                String rcurry(String s) { 'rcurry' + s }
+                String ncurry(int i, String s) { 'ncurry' + i + s }
+                String leftShift(String s) { 'leftShift' + s }
+                String rightShift(String s) { 'rightShift' + s }
+                String memoize() { 'memoize' }
+            }
+            class C {
+                static Object delegateOnly(@DelegatesTo(value=D, strategy=Closure.DELEGATE_ONLY) Closure c) {
+                    c.resolveStrategy = Closure.DELEGATE_ONLY
+                    c.delegate = new D()
+                    c()
+                }
+            }
+
+            assert C.delegateOnly { -> curry('x') } == 'curryx'
+            assert C.delegateOnly { -> rcurry('x') } == 'rcurryx'
+            assert C.delegateOnly { -> ncurry(1, 'x') } == 'ncurry1x'
+            assert C.delegateOnly { -> leftShift('x') } == 'leftShiftx'
+            assert C.delegateOnly { -> rightShift('x') } == 'rightShiftx'
+            assert C.delegateOnly { -> memoize() } instanceof Closure
         '''
     }
 }

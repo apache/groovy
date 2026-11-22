@@ -25,6 +25,11 @@ import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.attribute.PosixFileAttributeView
 import java.nio.file.attribute.PosixFilePermission
+import java.util.logging.Handler
+import java.util.logging.Level
+import java.util.logging.LogRecord
+import java.util.logging.Logger
+import java.util.logging.SimpleFormatter
 
 import static org.junit.jupiter.api.Assumptions.assumeTrue
 
@@ -75,5 +80,32 @@ class XStreamUtilsTest {
         def perms = Files.getPosixFilePermissions(dump)
         assert !perms.contains(PosixFilePermission.OTHERS_READ)
         assert !perms.contains(PosixFilePermission.GROUP_READ)
+    }
+
+    // GROOVY-12732
+    @Test
+    void dumpThatCannotBeWrittenIsReportedWithItsCause() {
+        List<LogRecord> logged = []
+        Handler capture = new Handler() {
+            @Override void publish(LogRecord record) { logged << record }
+            @Override void flush() {}
+            @Override void close() {}
+        }
+        Logger logger = Logger.getLogger(XStreamUtils.name)
+        boolean parentHandlers = logger.useParentHandlers
+        logger.useParentHandlers = false
+        logger.addHandler(capture)
+        String name = dir.resolve('missing').resolve('Script.groovy').toString()
+        try {
+            XStreamUtils.serialize(name, 'placeholder AST content')
+        } finally {
+            logger.removeHandler(capture)
+            logger.useParentHandlers = parentHandlers
+        }
+
+        assert logged.size() == 1
+        assert logged[0].level == Level.WARNING
+        assert new SimpleFormatter().formatMessage(logged[0]) == "Couldn't write to " + name + '.xml'
+        assert logged[0].thrown instanceof IOException
     }
 }

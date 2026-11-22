@@ -27,6 +27,13 @@ import org.apache.groovy.lang.annotation.Incubating;
  */
 @Incubating
 public class UncheckedThrow {
+    /**
+     * Throws {@code checkedException} without wrapping it, so a checked
+     * exception can leave a method that does not declare it. A null
+     * argument is thrown as {@link NullPointerException}.
+     *
+     * @param checkedException throwable to rethrow
+     */
     public static void rethrow( final Throwable checkedException ) {
         UncheckedThrow.thrownInsteadOf( checkedException );
     }

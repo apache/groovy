@@ -151,6 +151,12 @@ class GrapeMaven implements GrapeEngine {
 
     private AbstractRepositoryListener createRepositoryListener() {
         new AbstractRepositoryListener() {
+            /**
+             * Notifies listeners that a non-POM artifact is being resolved.
+             * An event with no artifact is ignored.
+             *
+             * @param event the repository event
+             */
             @Override
             void artifactResolving(RepositoryEvent event) {
                 Artifact artifact = event?.artifact
@@ -163,6 +169,12 @@ class GrapeMaven implements GrapeEngine {
 
     private AbstractTransferListener createTransferListener() {
         new AbstractTransferListener() {
+            /**
+             * Notifies listeners that a download started, using the resource's
+             * file name. Metadata, POM, checksum, and signature names are skipped.
+             *
+             * @param event the transfer that is starting
+             */
             @Override
             void transferInitiated(TransferEvent event) {
                 String resourceName = event?.resource?.resourceName
@@ -893,6 +905,11 @@ class GrapeMaven implements GrapeEngine {
      * without also rejecting artifacts that publish no checksum.
      */
     private static class GrapeRepositorySystemSupplier extends RepositorySystemSupplier {
+        /**
+         * Wraps the stock checksum provider in a {@code GrapeChecksumPolicyProvider}.
+         *
+         * @return the Grape checksum provider
+         */
         @Override
         protected ChecksumPolicyProvider createChecksumPolicyProvider() {
             new GrapeChecksumPolicyProvider(super.createChecksumPolicyProvider())

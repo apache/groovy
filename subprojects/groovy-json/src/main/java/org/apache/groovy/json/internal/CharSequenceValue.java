@@ -51,17 +51,6 @@ public class CharSequenceValue implements Value, CharSequence {
     private Object value;
 
     /**
-     * Creates a value view over a character buffer slice.
-     *
-     * @param chop whether to copy the slice immediately
-     * @param type token type
-     * @param startIndex slice start
-     * @param endIndex slice end
-     * @param buffer backing buffer
-     * @param encoded whether string decoding should be applied
-     * @param dateHandling what a date-like string should become
-     */
-    /**
      * Retained so that the boolean form of this constructor keeps working.
      *
      * @param chop whether to eagerly copy the slice out of the buffer
@@ -80,6 +69,22 @@ public class CharSequenceValue implements Value, CharSequence {
                 checkDate ? JsonDateHandling.UTIL_DATE : JsonDateHandling.STRING);
     }
 
+    /**
+     * Keeps the slice {@code buffer[startIndex, endIndex)} as this value.
+     * When {@code chop} is true the slice is copied into a private array and
+     * a failed copy is rethrown as an internal JSON exception; otherwise the
+     * caller's array and indexes are retained. {@code encoded} is remembered
+     * so later string conversion can decode escapes, and {@code dateHandling}
+     * selects how a date-like string is converted.
+     *
+     * @param chop whether to copy the slice out of {@code buffer}
+     * @param type token type of the slice
+     * @param startIndex start index, inclusive
+     * @param endIndex end index, exclusive
+     * @param buffer characters holding the token
+     * @param encoded whether the token still contains escapes
+     * @param dateHandling how a date-like string is converted
+     */
     public CharSequenceValue(boolean chop, Type type, int startIndex, int endIndex, char[] buffer,
                              boolean encoded, JsonDateHandling dateHandling) {
         this.type = type;

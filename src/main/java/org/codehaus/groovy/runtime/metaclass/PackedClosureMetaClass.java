@@ -57,6 +57,12 @@ public final class PackedClosureMetaClass extends MetaClassImpl {
 
     private static final Object[] NO_ARGS = new Object[0];
 
+    /**
+     * Creates the metaclass for one packed-closure adapter class.
+     *
+     * @param registry registry that owns this metaclass
+     * @param theClass adapter class for one fixed-arity family member
+     */
     public PackedClosureMetaClass(final MetaClassRegistry registry, final Class theClass) {
         super(registry, theClass);
     }
