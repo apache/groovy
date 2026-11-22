@@ -3087,6 +3087,41 @@ final class MethodReferenceTest {
         '''
     }
 
+    // GROOVY-12510: a property's explicit private accessor is not inherited either, and
+    // Verifier generates no public one beside it, so there is none to refer to
+    @ParameterizedTest
+    @ValueSource(strings=['TypeChecked','CompileStatic'])
+    void testPrivateAccessorOfPropertyOfSuperclassReferenceThroughSubclass(String mode) {
+        def refs = [
+            'Consumer<String> f = new Sub()::setP'  : 'setP',
+            'BiConsumer<Sub, String> f = Sub::setP' : 'setP',
+            'Supplier<String> f = new Sub()::getQ'  : 'getQ',
+        ]
+        refs.each { ref, name ->
+            def err = shouldFail shell, """
+                import java.util.function.*
+                @$mode
+                class Outer {
+                    static class Box {
+                        String p, q
+                        private void setP(String v) { p = v }
+                        private String getQ() { q }
+                    }
+                    static class Sub extends Box {
+                    }
+                    static class Other {
+                        static test() { $ref }
+                    }
+                }
+            """
+            if (mode == 'TypeChecked') {
+                assert err.message.contains("Cannot find matching method Outer\$Sub#${name}.")
+            } else {
+                assert err.message =~ /Failed to find (class )?method '${name}\(.*\)'.* for the type: Outer[$]Sub/
+            }
+        }
+    }
+
     // GROOVY-12510: a private method is not inherited (JLS 8.2); javac rejects these
     // references and dynamic Groovy throws MissingMethodException, even in the class
     // that declares the method

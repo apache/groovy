@@ -788,6 +788,44 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-12510: a property's explicit private accessor is not inherited, and Verifier
+    // generates no public one beside it; a generated accessor is still found
+    @Test
+    void testPrivateAccessorOfPropertyOfSuperclassThroughSubclass() {
+        for (code in ['def s = new Sub(); s.setP("x")', 'new Sub().getQ()']) {
+            def name = code.contains('setP') ? 'setP(java.lang.String)' : 'getQ()'
+            shouldFailWithMessages """
+                class Outer {
+                    static class Box {
+                        String p, q
+                        private void setP(String v) { p = v }
+                        private String getQ() { q }
+                    }
+                    static class Sub extends Box {
+                    }
+                    static class Other {
+                        static test() { $code }
+                    }
+                }
+            """,
+            "Cannot find matching method Outer\$Sub#$name"
+        }
+
+        assertScript '''
+            class Outer {
+                static class Box {
+                    String r = 'r'
+                }
+                static class Sub extends Box {
+                }
+                static class Other {
+                    static test() { def s = new Sub(); s.setR('w'); s.getR() }
+                }
+            }
+            assert Outer.Other.test() == 'w'
+        '''
+    }
+
     // GROOVY-12511: through a receiver other than "this", the private method of the
     // enclosing class is the method of that receiver's enclosing instance, as in dynamic
     // Groovy; in the declaring class itself it is the method of the receiver

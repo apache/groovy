@@ -5119,12 +5119,15 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
     private static MethodNode findPropertyMethod(final ClassNode type, final String name) {
         for (ClassNode cn = type; cn != null; cn = cn.getSuperClass()) {
             for (PropertyNode pn : cn.getProperties()) {
+                // only an accessor that Verifier will emit; an explicit one may have been dropped, e.g. one that is private and only inherited
                 if (name.equals(pn.getGetterNameOrDefault())) {
+                    if (!generatesPropertyGetter(pn, name)) return null;
                     MethodNode node = new MethodNode(name, Opcodes.ACC_PUBLIC | (pn.isStatic() ? Opcodes.ACC_STATIC : 0), pn.getType(), Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, null);
                     node.setDeclaringClass(pn.getDeclaringClass());
                     node.setSynthetic(true);
                     return node;
                 } else if (name.equals(pn.getSetterNameOrDefault()) && !pn.isFinal()) {
+                    if (pn.getSetterBlock() == null && (pn.isPrivate() || !needsGeneratedAccessor(cn, cn.getSetterMethod(name, false)))) return null;
                     MethodNode node = new MethodNode(name, Opcodes.ACC_PUBLIC | (pn.isStatic() ? Opcodes.ACC_STATIC : 0), VOID_TYPE, new Parameter[]{new Parameter(pn.getType(), pn.getName())}, ClassNode.EMPTY_ARRAY, null);
                     node.setDeclaringClass(pn.getDeclaringClass());
                     node.setSynthetic(true);
@@ -9249,7 +9252,9 @@ trying: for (ClassNode[] signature : signatures) {
                 String pname = extractPropertyNameFromMethodName("set", name);
                 if (pname != null) {
                     PropertyNode property = findProperty(receiver, pname);
-                    if (property != null && !property.isFinal()) {
+                    if (property != null && !property.isFinal() && property.getDeclaringClass() != null
+                            // only a setter that Verifier will emit; an explicit one may have been dropped, e.g. one that is private and only inherited
+                            && (property.getSetterBlock() != null || (!property.isPrivate() && needsGeneratedAccessor(property.getDeclaringClass(), property.getDeclaringClass().getSetterMethod(name, false))))) {
                         ClassNode type = property.getOriginType();
                         // GROOVY-12229: the synthetic mutator accepts whatever the property
                         // assignment form accepts, including implicit conversions like GString-String
