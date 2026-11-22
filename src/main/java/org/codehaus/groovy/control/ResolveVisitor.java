@@ -870,15 +870,15 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
     /**
      * Resolves a type through Groovy's default imports.
      * <p>
-     * {@link #DEFAULT_IMPORT_INDEX} is the startup scan of every default-import
-     * package, in {@link #DEFAULT_IMPORTS} order. Those sets are shared with the
+     * {@link DefaultImportsHolder#DEFAULT_IMPORT_INDEX} is the one-time scan of every
+     * default-import package, in {@link #DEFAULT_IMPORTS} order. Those sets are shared with the
      * cache until a resolution replaces one. {@code known == indexed} means the
-     * cache still holds that complete startup index, so trying it in order
+     * cache still holds that complete scanned index, so trying it in order
      * matches a full walk and skips packages that do not contain the name.
      * Any other cache value is only partial information: the packages seen so
      * far. Prefixes above a cached package that are not themselves cached are
      * checked before the lower package is accepted. Cache updates must replace
-     * the entry. Mutating a set that is still the startup instance would make
+     * the entry. Mutating a set that is still the scanned instance would make
      * a partial entry indistinguishable from the complete index.
      *
      * @param type the type to resolve
@@ -891,10 +891,10 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
         if (!(type instanceof LowerCaseClass)) {
             String typeName = type.getName();
 
-            Set<String> known = DEFAULT_IMPORT_CLASS_AND_PACKAGES_CACHE.get(typeName);
+            Set<String> known = DefaultImportsHolder.DEFAULT_IMPORT_CLASS_AND_PACKAGES_CACHE.get(typeName);
             if (known != null) {
-                Set<String> indexed = DEFAULT_IMPORT_INDEX.get(typeName);
-                // Identity, not contents. The startup entry is the complete index
+                Set<String> indexed = DefaultImportsHolder.DEFAULT_IMPORT_INDEX.get(typeName);
+                // Identity, not contents. The scanned entry is the complete index
                 // only while the cache still holds that same instance.
                 if (known == indexed) {
                     if (resolveFromDefaultImports(type, known.toArray(EMPTY_STRING_ARRAY))) {
@@ -921,29 +921,38 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
     }
 
     /**
-     * Startup scan of every default-import package. Each value is the complete
-     * index for that simple name. The same instances are placed in the cache below.
+     * Holds the default-import scan and the cache seeded from it. The scan reads
+     * the file system, so it runs when the first type is resolved through the
+     * default imports rather than when {@code ResolveVisitor} is initialized.
+     * Both maps are built here from the one scan result, so that the cache
+     * starts out sharing the index's set instances.
      */
-    private static final Map<String, Set<String>> DEFAULT_IMPORT_INDEX;
-    /**
-     * Simple name to the default-import packages known to contain it.
-     * <p>
-     * A value that is still the startup instance from {@link #DEFAULT_IMPORT_INDEX}
-     * is the complete index. A value stored by a later resolution is only partial
-     * information. The distinction is object identity ({@code known == indexed}),
-     * which holds because startup entries are shared with this map and later
-     * updates replace the cache value instead of modifying the set. An update
-     * must preserve that distinction: mutating a shared startup set would make
-     * partial information look complete.
-     * <p>
-     * Values are immutable. Replacing an entry, rather than mutating the set,
-     * also keeps a concurrent reader from observing a half-updated package list.
-     */
-    private static final Map<String, Set<String>> DEFAULT_IMPORT_CLASS_AND_PACKAGES_CACHE = new ConcurrentHashMap<>();
-    static {
-        Map<String, Set<String>> indexed = VMPluginFactory.getPlugin().getDefaultImportClasses(DEFAULT_IMPORTS);
-        DEFAULT_IMPORT_INDEX = Collections.unmodifiableMap(indexed);
-        DEFAULT_IMPORT_CLASS_AND_PACKAGES_CACHE.putAll(indexed);
+    private static final class DefaultImportsHolder {
+        /**
+         * Scan of every default-import package. Each value is the complete
+         * index for that simple name. The same instances are placed in the cache below.
+         */
+        private static final Map<String, Set<String>> DEFAULT_IMPORT_INDEX;
+        /**
+         * Simple name to the default-import packages known to contain it.
+         * <p>
+         * A value that is still the scanned instance from {@link #DEFAULT_IMPORT_INDEX}
+         * is the complete index. A value stored by a later resolution is only partial
+         * information. The distinction is object identity ({@code known == indexed}),
+         * which holds because scanned entries are shared with this map and later
+         * updates replace the cache value instead of modifying the set. An update
+         * must preserve that distinction: mutating a shared scanned set would make
+         * partial information look complete.
+         * <p>
+         * Values are immutable. Replacing an entry, rather than mutating the set,
+         * also keeps a concurrent reader from observing a half-updated package list.
+         */
+        private static final Map<String, Set<String>> DEFAULT_IMPORT_CLASS_AND_PACKAGES_CACHE = new ConcurrentHashMap<>();
+        static {
+            Map<String, Set<String>> indexed = VMPluginFactory.getPlugin().getDefaultImportClasses(DEFAULT_IMPORTS);
+            DEFAULT_IMPORT_INDEX = Collections.unmodifiableMap(indexed);
+            DEFAULT_IMPORT_CLASS_AND_PACKAGES_CACHE.putAll(indexed);
+        }
     }
 
     /**
@@ -1011,10 +1020,10 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
         }
         type.setRedirect(tmp.redirect());
         if (recordHit) {
-            // Replace the entry. Mutating a shared startup set would keep
+            // Replace the entry. Mutating a shared scanned set would keep
             // known == indexed after the set had stopped being the complete index,
             // and a concurrent reader could observe a half-updated package list.
-            DEFAULT_IMPORT_CLASS_AND_PACKAGES_CACHE.compute(typeName, (key, existing) ->
+            DefaultImportsHolder.DEFAULT_IMPORT_CLASS_AND_PACKAGES_CACHE.compute(typeName, (key, existing) ->
                     DefaultImportPackages.including(existing, packagePrefix, DEFAULT_IMPORTS));
         }
         return true;

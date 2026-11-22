@@ -322,7 +322,7 @@ final class Groovy12725 {
     }
 
     private static Map<String, Set<String>> staticMap(String fieldName) {
-        Field field = ResolveVisitor.getDeclaredField(fieldName)
+        Field field = ResolveVisitor.declaredClasses.find { it.simpleName == 'DefaultImportsHolder' }.getDeclaredField(fieldName)
         field.accessible = true
         return (Map<String, Set<String>>) field.get(null)
     }
