@@ -174,12 +174,8 @@ public class GenericsType extends ASTNode {
                 sb.append(parentClassNodeName);
             } else {
                 ClassNode outerClass = theType.getOuterClassType();
-                if (outerClass != null || !theType.isRedirectNode()) {
-                    if (outerClass == null) outerClass = theType.getOuterClass();
-                    sb.append(genericsBounds(outerClass, new HashSet<>()));
-                } else { // a use of the type with no enclosing type is the raw type
-                    sb.append(parentClassNodeName);
-                }
+                if (outerClass == null) outerClass = theType.getOuterClass();
+                sb.append(genericsBounds(outerClass, new HashSet<>()));
             }
             sb.append('.');
             sb.append(theType.getName(), parentClassNodeName.length() + 1, theType.getName().length());

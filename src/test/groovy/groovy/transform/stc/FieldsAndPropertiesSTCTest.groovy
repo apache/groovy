@@ -632,7 +632,7 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
             void test(List list) {
                 @ASTTest(phase=INSTRUCTION_SELECTION, value={
                     def type = node.getNodeMetaData(INFERRED_TYPE)
-                    assert type.toString(false) == 'java.lang.Class<? extends java.util.List>'
+                    assert type.toString(false) == 'java.lang.Class<? extends java.lang.Object>'
                 })
                 def c = list.class
             }
