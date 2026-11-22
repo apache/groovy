@@ -970,6 +970,39 @@ their declared return type, as since GROOVY-6401.
 
 The method descriptors are unchanged, so `japicmp` does not report this.
 
+### Groovy 7 — a property's accessor is chosen over an interface's abstract accessor (GROOVY-12552)
+
+When an interface declares an abstract getter or setter for a property that a
+class declares, and a call's receiver is inferred to be a subclass of that
+class (`Base b = new Impl()` is inferred to be an `Impl`), static type
+checking chose the interface's method if the class was compiled together with
+the call, and the class's accessor if the class was already compiled. It now
+chooses the class's accessor either way, so the same source compiles to the
+same class file whether or not the class is compiled with it.
+
+- **`obj.x = v` calls the class's setter again.** From 5.0.0, the interface's
+  setter was called when compiled together (GROOVY-11381); Groovy 4 called
+  the class's setter.
+- **`obj.getX()` and `obj.setX(v)` call the class's accessor.** Every earlier
+  version called the interface's method when compiled together.
+- **A getter call can have a narrower type.** Where the interface declares a
+  wider type than the property, such as `Object getName()` for a `String name`
+  property, or `T getValue()` of `Holder<Number>` for an `Integer value`
+  property, a call of the getter now has the property's type, as reading the
+  property (`obj.name`) already did. `obj.getName().toUpperCase()` now type
+  checks. Statically compiled overload selection can change with no compile
+  error: `h(obj.getName())` with `h(Object)` and `h(String)` overloads selects
+  `h(String)` where it used to select `h(Object)`.
+
+**Who is affected.** `@CompileStatic` code compiled together with such a class
+now calls the class's accessor with `invokevirtual` rather than the
+interface's method with `invokeinterface`. The same method runs, unless a
+different overload is selected. Type checked (dynamically dispatched) code
+selects its overload by the runtime type, so only its inferred type changes.
+A call compiled against the class file, a receiver inferred to be the class
+that declares the property, and dynamic Groovy behave as before. There are no
+API changes.
+
 ### Groovy 7 — `PlaceholderVisitor` is removed (GROOVY-11744)
 
 `org.codehaus.groovy.control.PlaceholderVisitor` marked a `_` repeated in a
