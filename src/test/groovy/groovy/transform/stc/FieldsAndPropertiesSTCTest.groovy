@@ -2830,6 +2830,36 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    /**
+     * Assigns a property through a variable declared as Box, which flow typing
+     * narrows to Sub, where Box has a private setter, in the place of {@code code}.
+     */
+    protected static String privateSetterOfNarrowedVariable(String code) {
+        """
+            class Outer {
+                static class Box {
+                    String log = ''
+                    private String getY() { 'y' }
+                    private void setY(String s) { log += s }
+                    private void setZ(String s) { log += 'z' + s }
+                }
+                static class Sub extends Box {
+                }
+                static class Other {
+                    static String test() { Box b = new Sub(); $code; b.log }
+                }
+            }
+        """
+    }
+
+    // GROOVY-12513: under type checking the setter is looked up on the meta-class of Sub
+    @Test
+    void testPrivateSetterThroughDeclaredTypeOfNarrowedVariable() {
+        ['b.y = "p"': 'y', 'b.y += "e"': 'y', 'b.z = "z"': 'z'].each { code, name ->
+            shouldFailWithMessages privateSetterOfNarrowedVariable(code), "No such property: $name for class: Outer\$Sub"
+        }
+    }
+
     // GROOVY-12513: a private field of a class of another nest is not reached through
     // a variable declared with that class, as through one of the subclass type
     @Test

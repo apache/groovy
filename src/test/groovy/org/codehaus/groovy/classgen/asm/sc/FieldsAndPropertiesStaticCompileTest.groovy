@@ -1282,6 +1282,14 @@ final class FieldsAndPropertiesStaticCompileTest extends FieldsAndPropertiesSTCT
         '''
     }
 
+    // GROOVY-12513: the private setter of the declared type, as for b.setY(v)
+    @Override @Test
+    void testPrivateSetterThroughDeclaredTypeOfNarrowedVariable() {
+        ['b.y = "p"': 'p', 'b.y += "e"': 'ye', 'b.z = "z"': 'zz', 'b.setY("c")': 'c'].each { code, log ->
+            assertScript privateSetterOfNarrowedVariable(code) + "assert Outer.Other.test() == '$log'"
+        }
+    }
+
     // GROOVY-12513
     @Override @Test
     void testPrivateFieldThroughDeclaredTypeOfNarrowedVariable() {

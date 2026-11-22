@@ -1688,8 +1688,13 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
         // we know that the RHS type is a closure
         // but we must check if the binary expression is an assignment
         // because we need to check if a setter uses @DelegatesTo
-        VariableExpression receiver = varX("%", setterInfo.receiverType);
-        receiver.setType(setterInfo.receiverType); // same as origin type
+        // GROOVY-12513: a variable declared with a superclass of the type flow typing narrows it to keeps that superclass
+        // as its origin type, so that a private setter of the declared type is found here as by the property lookup
+        ClassNode declaredType = leftExpression instanceof PropertyExpression pe ? getDeclaredReceiverType(pe.getObjectExpression()) : null;
+        boolean narrowed = declaredType != null && !declaredType.equals(setterInfo.receiverType) && setterInfo.receiverType.isDerivedFrom(declaredType)
+                && setterInfo.setters.stream().anyMatch(setter -> setter.isPrivate() && setter.getDeclaringClass().equals(declaredType));
+        VariableExpression receiver = varX("%", narrowed ? declaredType : setterInfo.receiverType);
+        receiver.setType(setterInfo.receiverType); // same as origin type, unless narrowed
 
         Function<Expression, MethodNode> setterCall = (value) -> {
             typeCheckingContext.pushEnclosingBinaryExpression(null); // GROOVY-10628: LHS re-purposed
