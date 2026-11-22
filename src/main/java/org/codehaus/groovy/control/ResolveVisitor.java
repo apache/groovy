@@ -29,6 +29,7 @@ import org.codehaus.groovy.ast.ClassHelper;
 import org.apache.groovy.ast.pattern.MatchPattern.RecordPattern;
 import org.apache.groovy.ast.pattern.MatchPattern.RestPattern;
 import org.apache.groovy.ast.pattern.MatchPattern.TypePattern;
+import org.apache.groovy.vmplugin.internal.DefaultImportPackages;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.CompileUnit;
 import org.codehaus.groovy.ast.DynamicVariable;
@@ -45,6 +46,7 @@ import org.codehaus.groovy.ast.PropertyNode;
 import org.codehaus.groovy.ast.Variable;
 import org.codehaus.groovy.ast.VariableScope;
 import org.codehaus.groovy.ast.expr.AnnotationConstantExpression;
+import org.codehaus.groovy.ast.expr.ArrayExpression;
 import org.codehaus.groovy.ast.expr.BinaryExpression;
 import org.codehaus.groovy.ast.expr.CastExpression;
 import org.codehaus.groovy.ast.expr.ClassExpression;
@@ -66,8 +68,8 @@ import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.ast.stmt.CatchStatement;
 import org.codehaus.groovy.ast.stmt.ForStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
+import org.codehaus.groovy.ast.tools.GenericsUtils;
 import org.codehaus.groovy.classgen.VariableScopeVisitor;
-import org.codehaus.groovy.runtime.memoize.UnlimitedConcurrentCache;
 import org.codehaus.groovy.syntax.Types;
 import org.codehaus.groovy.transform.trait.Traits;
 import org.codehaus.groovy.vmplugin.VMPluginFactory;
@@ -86,11 +88,13 @@ import java.util.ListIterator;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 import static groovy.lang.Tuple.tuple;
 import static org.apache.groovy.ast.tools.ClassNodeUtils.hasNoEnclosingInstance;
 import static org.apache.groovy.ast.tools.ExpressionUtils.transformInlineConstants;
 import static org.apache.groovy.ast.tools.TypeUseUtils.isParameterizedTypeUsage;
+import static org.apache.groovy.ast.tools.TypeUseUtils.isStaticMemberType;
 import static org.codehaus.groovy.ast.tools.ClosureUtils.getParametersSafe;
 
 /**
@@ -464,7 +468,13 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
             resolveGenericsTypes(type.getGenericsTypes());
             if (resolveAliasFromModule(type)) return;
         }
-        if (resolve(type)) return;
+        if (resolve(type)) {
+            // a class literal and an array creation name the class, not a parameterization of it
+            if (!(node instanceof ClassExpression) && !(node instanceof ArrayExpression)) {
+                setOuterClassTypeOfSimpleName(type);
+            }
+            return;
+        }
         if (resolveToInner(type)) return;
 
         if (!type.hasPackageName() && isTypeParameterHiddenByStatic(type.getUnresolvedName())) {
@@ -472,6 +482,105 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
             return;
         }
         addError("unable to resolve class " + type.toString(false) + msg, node);
+    }
+
+    /**
+     * JLS 6.5.5.1, 8.1.3, 8.5: within {@code Outer<T>}, the simple name {@code Inner}
+     * of an inner class is the type {@code Outer<T>.Inner}, and within a subclass that
+     * extends {@code Outer<String>} it is {@code Outer<String>.Inner}. Neither is the
+     * raw type {@code Outer.Inner}. Records the enclosing type for such a name. A name
+     * used where the type variables are out of scope, as in a static method, stays raw.
+     */
+    private void setOuterClassTypeOfSimpleName(ClassNode type) {
+        while (type.isArray()) type = type.getComponentType();
+        if (!type.isRedirectNode() || type.isGenericsPlaceHolder() || type.getOuterClassType() != null) return;
+        String name = type.getUnresolvedName();
+        ClassNode inner = type.redirect(), outer = inner.getOuterClass();
+        if (outer == null || isStaticMember(inner)) return;
+        // Outer.Inner and Outer$Inner are the raw type; a simple name may itself contain a '$'
+        if (name.indexOf('.') != -1 || (name.indexOf('$') != -1 && !inner.getName().equals(outer.getName() + '$' + name))) return;
+        if (type.getGenericsTypes() == null && inner.getGenericsTypes() != null) return; // raw type
+
+        for (ClassNode cn = currentClass; cn != null; cn = cn.getOuterClass()) {
+            boolean declares = cn.equals(outer);
+            if (declares || inherits(cn, outer)) {
+                ClassNode outerType = typeOfThis(cn);
+                if (outerType != null && !declares) {
+                    outerType = GenericsUtils.parameterizeType(outerType, outer);
+                }
+                if (outerType != null && (outerType.getOuterClassType() != null
+                        || (outerType.isRedirectNode() && outerType.getGenericsTypes() != null))) {
+                    type.setOuterClassType(outerType);
+                }
+                return;
+            }
+            if (isRecord(cn)) return; // the type variables of its enclosing classes are out of scope
+        }
+    }
+
+    private static boolean isStaticMember(final ClassNode cn) {
+        return isStaticMemberType(cn) || isRecord(cn);
+    }
+
+    /**
+     * A nested record is implicitly static (JLS 8.10), which its declaration does not
+     * show until {@code RecordTypeASTTransformation} has run.
+     */
+    private static boolean isRecord(final ClassNode cn) {
+        for (AnnotationNode annotation : cn.getAnnotations()) {
+            // the annotation may not be resolved yet, so it may have its simple name
+            String name = annotation.getClassNode().getName();
+            if (name.startsWith("groovy.transform.")) name = name.substring("groovy.transform.".length());
+            if (name.equals("RecordType") || name.equals("RecordBase")) return true;
+        }
+        return false;
+    }
+
+    /**
+     * Returns {@code C<T>} for the generic class {@code C<T>} and {@code Outer<T>.C}
+     * for an inner class of it, {@code C} itself if no type variable is involved,
+     * or {@code null} if one of the type variables is not in scope.
+     */
+    private ClassNode typeOfThis(final ClassNode cn) {
+        ClassNode outer = cn.getOuterClass(), outerType = null;
+        if (outer != null && !isStaticMember(cn)) {
+            outerType = typeOfThis(outer);
+            if (outerType == null) return null;
+            if (outerType == outer) outerType = null;
+        }
+        GenericsType[] typeParameters = cn.getGenericsTypes();
+        if (typeParameters == null && outerType == null) return cn;
+
+        ClassNode type = ClassHelper.makeWithoutCaching(cn.getName());
+        type.setRedirect(cn);
+        if (typeParameters != null) {
+            GenericsType[] typeArguments = new GenericsType[typeParameters.length];
+            for (int i = 0; i < typeParameters.length; i += 1) {
+                String name = typeParameters[i].getName();
+                // not in a static context and not hidden by a type parameter of a method or an inner class
+                if (genericParameterNames.get(new GenericsTypeName(name)) != typeParameters[i]) return null;
+                typeArguments[i] = new GenericsType(ClassHelper.makeWithoutCaching(name));
+            }
+            type.setGenericsTypes(typeArguments);
+            resolveGenericsTypes(typeArguments);
+        }
+        type.setOuterClassType(outerType);
+        return type;
+    }
+
+    /**
+     * True when {@code cn} is a subclass of {@code target} and no class between
+     * them extends a raw type, whose members are erased (JLS 4.8).
+     */
+    private boolean inherits(final ClassNode cn, final ClassNode target) {
+        if (phase == 1) return false; // the head of another class may not be resolved yet
+        Set<ClassNode> seen = new HashSet<>();
+        for (ClassNode sc = cn.getUnresolvedSuperClass(); sc != null && seen.add(sc.redirect()); sc = sc.redirect().getUnresolvedSuperClass()) {
+            if (!sc.isResolved() && !sc.isPrimaryClassNode()) return false;
+            if (sc.getGenericsTypes() == null && sc.redirect().getGenericsTypes() != null) return false;
+            if (sc.equals(target)) return true;
+        }
+        return false;
     }
 
     /**
@@ -595,6 +704,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
             resolved = (!type.hasPackageName() && resolveNestedClass(type))
                     || resolveFromModule(type, testModuleImports)
                     || resolveFromCompileUnit(type)
+                    || (testDefaultImports && !type.hasPackageName() && resolveFromDefaultPackage(type))
                     || (testDefaultImports && !type.hasPackageName() && resolveFromDefaultImports(type))
                     || resolveToOuter(type)
                     || (testStaticInnerClasses && type.hasPackageName() && resolveFromStaticInnerClasses(type));
@@ -743,6 +853,17 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
 
     /**
      * Resolves a type through Groovy's default imports.
+     * <p>
+     * {@link #DEFAULT_IMPORT_INDEX} is the startup scan of every default-import
+     * package, in {@link #DEFAULT_IMPORTS} order. Those sets are shared with the
+     * cache until a resolution replaces one. {@code known == indexed} means the
+     * cache still holds that complete startup index, so trying it in order
+     * matches a full walk and skips packages that do not contain the name.
+     * Any other cache value is only partial information: the packages seen so
+     * far. Prefixes above a cached package that are not themselves cached are
+     * checked before the lower package is accepted. Cache updates must replace
+     * the entry. Mutating a set that is still the startup instance would make
+     * a partial entry indistinguishable from the complete index.
      *
      * @param type the type to resolve
      * @return {@code true} if the type was resolved
@@ -754,11 +875,16 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
         if (!(type instanceof LowerCaseClass)) {
             String typeName = type.getName();
 
-            Set<String> packagePrefixSet = DEFAULT_IMPORT_CLASS_AND_PACKAGES_CACHE.get(typeName);
-            if (packagePrefixSet != null) {
-                // if the type name was resolved before, we can try the successfully resolved packages first, which are much less and very likely successful to resolve.
-                // As a result, we can avoid trying other default import packages and further resolving, which can improve the resolving performance to some extent.
-                if (resolveFromDefaultImports(type, packagePrefixSet.toArray(EMPTY_STRING_ARRAY))) {
+            Set<String> known = DEFAULT_IMPORT_CLASS_AND_PACKAGES_CACHE.get(typeName);
+            if (known != null) {
+                Set<String> indexed = DEFAULT_IMPORT_INDEX.get(typeName);
+                // Identity, not contents. The startup entry is the complete index
+                // only while the cache still holds that same instance.
+                if (known == indexed) {
+                    if (resolveFromDefaultImports(type, known.toArray(EMPTY_STRING_ARRAY))) {
+                        return true;
+                    }
+                } else if (resolvePartialDefaultImports(type, typeName, known)) {
                     return true;
                 }
             }
@@ -778,13 +904,68 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
         return false;
     }
 
-    private static final Map<String, Set<String>> DEFAULT_IMPORT_CLASS_AND_PACKAGES_CACHE = new UnlimitedConcurrentCache<>();
+    /**
+     * Startup scan of every default-import package. Each value is the complete
+     * index for that simple name. The same instances are placed in the cache below.
+     */
+    private static final Map<String, Set<String>> DEFAULT_IMPORT_INDEX;
+    /**
+     * Simple name to the default-import packages known to contain it.
+     * <p>
+     * A value that is still the startup instance from {@link #DEFAULT_IMPORT_INDEX}
+     * is the complete index. A value stored by a later resolution is only partial
+     * information. The distinction is object identity ({@code known == indexed}),
+     * which holds because startup entries are shared with this map and later
+     * updates replace the cache value instead of modifying the set. An update
+     * must preserve that distinction: mutating a shared startup set would make
+     * partial information look complete.
+     * <p>
+     * Values are immutable. Replacing an entry, rather than mutating the set,
+     * also keeps a concurrent reader from observing a half-updated package list.
+     */
+    private static final Map<String, Set<String>> DEFAULT_IMPORT_CLASS_AND_PACKAGES_CACHE = new ConcurrentHashMap<>();
     static {
-        DEFAULT_IMPORT_CLASS_AND_PACKAGES_CACHE.putAll(VMPluginFactory.getPlugin().getDefaultImportClasses(DEFAULT_IMPORTS));
+        Map<String, Set<String>> indexed = VMPluginFactory.getPlugin().getDefaultImportClasses(DEFAULT_IMPORTS);
+        DEFAULT_IMPORT_INDEX = Collections.unmodifiableMap(indexed);
+        DEFAULT_IMPORT_CLASS_AND_PACKAGES_CACHE.putAll(indexed);
+    }
+
+    /**
+     * Tries default imports up through the last package in {@code known}.
+     * A prefix that is not in {@code known} is still resolved, and a hit is
+     * recorded, so a higher-precedence class found later wins over a stale
+     * lower one. Prefixes after every cached package are left to the full scan.
+     *
+     * @param type the type to resolve
+     * @param typeName the simple name being resolved
+     * @param known packages already recorded for {@code typeName}
+     * @return {@code true} if the type was resolved
+     */
+    private boolean resolvePartialDefaultImports(final ClassNode type, final String typeName, final Set<String> known) {
+        int lastKnown = -1;
+        for (int i = 0; i < DEFAULT_IMPORTS.length; i++) {
+            if (known.contains(DEFAULT_IMPORTS[i])) {
+                lastKnown = i;
+            }
+        }
+        if (lastKnown < 0) {
+            return false;
+        }
+        for (int i = 0; i <= lastKnown; i++) {
+            String prefix = DEFAULT_IMPORTS[i];
+            if (resolveOneDefaultImport(type, typeName, prefix, !known.contains(prefix))) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**
      * Resolves a type against the supplied import prefixes.
+     * <p>
+     * Hits are recorded only when {@code packagePrefixes} is {@link #DEFAULT_IMPORTS}.
+     * A cached prefix list is a different array; recording it would rewrite the
+     * set currently being read.
      *
      * @param type the type to resolve
      * @param packagePrefixes the package prefixes to test
@@ -792,28 +973,35 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
      */
     protected boolean resolveFromDefaultImports(final ClassNode type, final String[] packagePrefixes) {
         String typeName = type.getName();
-
+        boolean recordHit = packagePrefixes == DEFAULT_IMPORTS;
         for (String packagePrefix : packagePrefixes) {
-            // We limit the inner class lookups here by using ConstructedClassWithPackage.
-            // This way only the name will change, the packagePrefix will
-            // not be included in the lookup. The case where the
-            // packagePrefix is really a class is handled elsewhere.
-            // WARNING: This code does not expect a class that has a static
-            //          inner class in DEFAULT_IMPORTS
-            ConstructedClassWithPackage tmp = new ConstructedClassWithPackage(packagePrefix, typeName);
-            if (resolve(tmp, false, false, false)) {
-                type.setRedirect(tmp.redirect());
-
-                if (DEFAULT_IMPORTS == packagePrefixes) { // Only the non-cached type and packages should be cached
-                    Set<String> packagePrefixSet = DEFAULT_IMPORT_CLASS_AND_PACKAGES_CACHE.computeIfAbsent(typeName, key -> new HashSet<>(2));
-                    packagePrefixSet.add(packagePrefix);
-                }
-
+            if (resolveOneDefaultImport(type, typeName, packagePrefix, recordHit)) {
                 return true;
             }
         }
-
         return false;
+    }
+
+    private boolean resolveOneDefaultImport(final ClassNode type, final String typeName, final String packagePrefix, final boolean recordHit) {
+        // We limit the inner class lookups here by using ConstructedClassWithPackage.
+        // This way only the name will change, the packagePrefix will
+        // not be included in the lookup. The case where the
+        // packagePrefix is really a class is handled elsewhere.
+        // WARNING: This code does not expect a class that has a static
+        //          inner class in DEFAULT_IMPORTS
+        ConstructedClassWithPackage tmp = new ConstructedClassWithPackage(packagePrefix, typeName);
+        if (!resolve(tmp, false, false, false)) {
+            return false;
+        }
+        type.setRedirect(tmp.redirect());
+        if (recordHit) {
+            // Replace the entry. Mutating a shared startup set would keep
+            // known == indexed after the set had stopped being the complete index,
+            // and a concurrent reader could observe a half-updated package list.
+            DEFAULT_IMPORT_CLASS_AND_PACKAGES_CACHE.compute(typeName, (key, existing) ->
+                    DefaultImportPackages.including(existing, packagePrefix, DEFAULT_IMPORTS));
+        }
+        return true;
     }
 
     /**
@@ -1027,6 +1215,45 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
         }
 
         return false;
+    }
+
+    /**
+     * Looks up a class of the default package on the class path for a class of the default package. It takes
+     * precedence over the default imports, as a class of a named package does for a class of the same package and
+     * as a class of the default package that is being compiled does, unless the
+     * {@link CompilerConfiguration#DEFAULT_PACKAGE_FIRST} option is {@code false}. A miss leaves {@code type}
+     * untouched and is cached by the {@link ClassNodeResolver}, so the later {@link #resolveToOuter} of the same
+     * lookup is a no-op. If the {@link CompilerConfiguration#DEFAULT_PACKAGE_SOURCES} option is {@code false}, only
+     * a {@code .class} file is looked up and a miss is not cached, so the later {@link #resolveToOuter} can still find
+     * a source, after the default imports.
+     *
+     * @param type the type to resolve
+     * @return {@code true} if the type was resolved
+     */
+    private boolean resolveFromDefaultPackage(final ClassNode type) {
+        if (compilationUnit == null) {
+            return false;
+        }
+        Map<String, Boolean> options = compilationUnit.getConfiguration().getOptimizationOptions();
+        if (Boolean.FALSE.equals(options.get(CompilerConfiguration.DEFAULT_PACKAGE_FIRST))) {
+            return false;
+        }
+        ModuleNode module = currentClass.getModule();
+        if (module == null || module.hasPackageName() || type instanceof ConstructedClassWithPackage
+                || type instanceof ConstructedNestedClass || type instanceof LowerCaseClass) {
+            return false;
+        }
+        if (!Boolean.FALSE.equals(options.get(CompilerConfiguration.DEFAULT_PACKAGE_SOURCES))) {
+            return resolveToOuter(type);
+        }
+        if (classNodeResolver == null)
+            classNodeResolver = new ClassNodeResolver();
+        ClassNode cn = classNodeResolver.resolveClassFile(type.getName(), compilationUnit);
+        if (cn == null) {
+            return false;
+        }
+        type.setRedirect(cn);
+        return true;
     }
 
     /**

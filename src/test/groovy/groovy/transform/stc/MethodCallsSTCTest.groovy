@@ -1933,6 +1933,55 @@ import static groovy.test.GroovyAssert.shouldFail
         '''
     }
 
+    // GROOVY-12577
+    @Test
+    void testCallClassMethodFromStaticContext() {
+        assertScript '''
+            class E {
+                static class N {
+                    static String n() { getSimpleName() + ':' + toString() }
+                }
+                static String sf = toString()
+                static String sb
+                static {
+                    sb = getSimpleName() + ':' + getName()
+                }
+                static String sm() {
+                    toString() + ':' + getSimpleName() + ':' + isInstance(new E())
+                }
+            }
+
+            assert E.N.n() == 'N:class E$N'
+            assert E.sf == 'class E'
+            assert E.sb == 'E:E'
+            assert E.sm() == 'class E:E:true'
+        '''
+    }
+
+    // GROOVY-12577
+    @Test
+    void testCallClassMethodFromClosureInStaticContext() {
+        assertScript '''
+            import java.util.function.Supplier
+
+            class E {
+                static String sf = { -> getSimpleName() }()
+                static String sc() {
+                    def c = { -> getSimpleName() + ':' + { -> getName() }() }
+                    c()
+                }
+                static String sl() {
+                    Supplier<String> s = () -> getSimpleName()
+                    s.get()
+                }
+            }
+
+            assert E.sf == 'E'
+            assert E.sc() == 'E:E'
+            assert E.sl() == 'E'
+        '''
+    }
+
     // GROOVY-10341
     @Test
     void testCallAbstractSuperMethod() {
@@ -2005,6 +2054,29 @@ import static groovy.test.GroovyAssert.shouldFail
                 static String p = this.getName() // instance method of Class
             }
             assert Foo.p == 'Foo'
+        '''
+    }
+
+    // GROOVY-12654
+    @Test
+    void testStaticContext3() {
+        assertScript '''
+            class Foo {
+                static String p = getName() // instance method of Class
+                static String m() { getSimpleName() }
+                static String s() { toString() }
+                static boolean b(Object o) { isInstance(o) }
+                static String c(Class type) { getName() }
+                static class Bar {
+                    static String m() { getName() }
+                }
+            }
+            assert Foo.p == 'Foo'
+            assert Foo.m() == 'Foo'
+            assert Foo.s() == 'class Foo'
+            assert Foo.b(new Foo()) && !Foo.b('x')
+            assert Foo.c(String) == 'Foo'
+            assert Foo.Bar.m() == 'Foo$Bar'
         '''
     }
 

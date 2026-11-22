@@ -35,6 +35,7 @@ import org.codehaus.groovy.ast.expr.ArgumentListExpression;
 import org.codehaus.groovy.ast.expr.ArrayExpression;
 import org.codehaus.groovy.ast.expr.AttributeExpression;
 import org.codehaus.groovy.ast.expr.ClassExpression;
+import org.codehaus.groovy.ast.expr.ClosureExpression;
 import org.codehaus.groovy.ast.expr.ConstantExpression;
 import org.codehaus.groovy.ast.expr.ConstructorCallExpression;
 import org.codehaus.groovy.ast.expr.Expression;
@@ -87,6 +88,7 @@ import java.util.stream.Collectors;
 
 import static org.apache.groovy.ast.tools.ClassNodeUtils.formatTypeName;
 import static org.apache.groovy.ast.tools.ClassNodeUtils.isSubtype;
+import static org.apache.groovy.ast.tools.ClassNodeUtils.samePackageName;
 import static org.apache.groovy.ast.tools.ExpressionUtils.isNullConstant;
 import static org.apache.groovy.ast.tools.ExpressionUtils.isSuperExpression;
 import static org.apache.groovy.ast.tools.ExpressionUtils.isThisExpression;
@@ -160,6 +162,15 @@ public class StaticInvocationWriter extends InvocationWriter {
         }
         ClassNode declaringClass = cn.getDeclaringClass();
         ClassNode enclosingClass = controller.getClassNode();
+        if (!cn.isPrivate() && !isDirectlyAccessible(cn, enclosingClass) && !samePackageName(declaringClass, enclosingClass)) {
+            // JLS 6.6.2.2: outside its package, only super(...) or an anonymous inner class can call a protected constructor;
+            // reported here, while the class is generated, so @TypeChecked code is not checked for it and works dynamically
+            controller.getSourceUnit().addError(new SyntaxException(
+                    "Cannot call " + (cn.isProtected() ? "protected" : "package-private") + " constructor for "
+                            + declaringClass.toString(false) + " from class " + enclosingClass.toString(false),
+                    call
+            ));
+        }
         RuntimePackageCheck.checkConstructor(controller, cn, false, call);
         List<Expression> argList = call.getArguments() instanceof TupleExpression
                 ? ((TupleExpression) call.getArguments()).getExpressions() : List.of(call.getArguments());
@@ -416,7 +427,9 @@ public class StaticInvocationWriter extends InvocationWriter {
         RuntimePackageCheck.checkMethod(controller, target, receiver == null || isSuperExpression(receiver) ? null : receiverType, currentCall != null ? currentCall : receiver != null ? receiver : args);
 
         if (AsmClassGenerator.isMemberDirectlyAccessible(target.getModifiers(), declaringClass, enclosingClass)
-                && !(target.isProtected() && !inSamePackage(declaringClass, enclosingClass) && !isSubtype(receiverType, enclosingClass))) { // GROOVY-7325
+                // GROOVY-7325, JVMS 4.10.1.8: outside its package, a protected instance method needs a receiver of the current class
+                && !(target.isProtected() && !target.isStatic() && !inSamePackage(declaringClass, enclosingClass) && receiver != null
+                        && !isSuperExpression(receiver) && !isClassWithSuper(receiver) && !isSubtype(enclosingClass, receiverType))) {
             boolean isThisImplicit = implicitThis;
             Expression theReceiver = receiver;
             MethodNode theTarget = target;
@@ -428,6 +441,8 @@ public class StaticInvocationWriter extends InvocationWriter {
                             && !isSubtype(ClassHelper.CLOSURE_TYPE, receiverType)))) {
                 if (target.isStatic()) {
                     theReceiver = classX(declaringClass);
+                } else if (controller.isStaticMethod() && !controller.isInGeneratedFunction()) {
+                    theReceiver = classX(enclosingClass); // method of the Class object, like getName()
                 } else if (!controller.isInGeneratedFunction()) {
                     ClassNode outerType = getImplicitReceiverType(enclosingClass, declaringClass);
                     theReceiver = propX(classX(outerType != null ? outerType : declaringClass), "this");
@@ -455,7 +470,11 @@ public class StaticInvocationWriter extends InvocationWriter {
                 if (storedTypeTarget != null) checkcastReceiver.setType(storedType); // no cast to the narrower type
                 theReceiver = checkcastReceiver;
             }
-            return super.writeDirectMethodCall(theTarget, isThisImplicit, theReceiver, args);
+            boolean written = super.writeDirectMethodCall(theTarget, isThisImplicit, theReceiver, args);
+            if (written && receiver instanceof ClosureExpression && theReceiver instanceof CheckcastReceiverExpression checkcastReceiver) {
+                keepClassOfRehydratedClosure(target, checkcastReceiver.receiverType);
+            }
+            return written;
 
         } else if (tryBridgeMethod(target, receiver, implicitThis, args, enclosingClass)) {
             return true;
@@ -560,6 +579,21 @@ public class StaticInvocationWriter extends InvocationWriter {
             }
         }
         return null;
+    }
+
+    /**
+     * After type checking, a closure written in a trait method is replaced by a copy rehydrated to the
+     * implementing instance, {@code closure.rehydrate($self, $self, $self)}, and the copy is what goes to a
+     * functional interface. {@code rehydrate} returns an instance of the closure's own class, so the copy keeps
+     * the class the closure was typed as when that class can be adapted to the interface (see
+     * {@code SamAdapterFactory}).
+     */
+    private void keepClassOfRehydratedClosure(final MethodNode target, final ClassNode closureClass) {
+        if (closureClass != null && closureClass.getNodeMetaData(StaticCompilationMetadataKeys.FUNCTIONAL_INTERFACE_ADAPTER) != null
+                && "rehydrate".equals(target.getName()) && ClassHelper.CLOSURE_TYPE.equals(target.getDeclaringClass())) {
+            controller.getMethodVisitor().visitTypeInsn(CHECKCAST, BytecodeHelper.getClassInternalName(closureClass));
+            controller.getOperandStack().replace(closureClass);
+        }
     }
 
     private void writeMethodAccessError(final MethodNode target, final Expression origin) {
@@ -1049,6 +1083,8 @@ public class StaticInvocationWriter extends InvocationWriter {
     private class CheckcastReceiverExpression extends Expression {
         private final Expression receiver;
         private final MethodNode target;
+        /** The operand stack type of the receiver as written, before any cast. */
+        private ClassNode receiverType;
 
         /**
          * Stores {@code receiver} and {@code target} and leaves the expression type
@@ -1074,6 +1110,7 @@ public class StaticInvocationWriter extends InvocationWriter {
             receiver.visit(visitor);
             if (visitor instanceof AsmClassGenerator) {
                 ClassNode topOperand = controller.getOperandStack().getTopOperand();
+                receiverType = topOperand;
                 ClassNode type = getType();
                 if (ClassHelper.isGStringType(topOperand) && ClassHelper.isStringType(type)) {
                     // perform regular type conversion

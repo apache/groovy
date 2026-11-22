@@ -154,6 +154,7 @@ final class MemClassOutputClasspath {
         private final String id;
         private final PublishedOutput published;
         private final ConcurrentHashMap<String, byte[]> committed = new ConcurrentHashMap<>();
+        @SuppressWarnings("java:S3077") // writers (begin/commit/abort) are synchronized on this; volatile gives lock-free readers a happens-before on the reference, while ConcurrentHashMap guards its contents
         private volatile ConcurrentHashMap<String, byte[]> staged;
 
         private Store(final String id, final PublishedOutput published) {
@@ -263,6 +264,7 @@ final class MemClassOutputClasspath {
      * that parent does not define these classes.
      */
     static final class PublishedOutput {
+        @SuppressWarnings("java:S3077") // Map.copyOf snapshot is immutable once published under synchronized (this); volatile publishes replacement without extra AtomicReference indirection
         private volatile Map<String, byte[]> bytes = Map.of();
 
         private PublishedOutput() {
@@ -299,6 +301,7 @@ final class MemClassOutputClasspath {
      */
     static final class CompilationLoader extends GroovyClassLoader {
         private final PublishedOutput published;
+        @SuppressWarnings("java:S3077") // write-once reference set under synchronized (compilation) in open; volatile publishes the reference safely, while Store guards its own state
         private volatile Store own;
 
         private CompilationLoader(final ClassLoader parent, final CompilerConfiguration configuration,

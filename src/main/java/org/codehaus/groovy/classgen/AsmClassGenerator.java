@@ -105,6 +105,7 @@ import org.codehaus.groovy.ast.stmt.YieldStatement;
 import org.codehaus.groovy.classgen.asm.BytecodeHelper;
 import org.codehaus.groovy.classgen.asm.BytecodeVariable;
 import org.codehaus.groovy.classgen.asm.CallSiteWriter;
+import org.codehaus.groovy.classgen.asm.ClosureWriter;
 import org.codehaus.groovy.classgen.asm.CompileStack;
 import org.codehaus.groovy.classgen.asm.MethodCaller;
 import org.codehaus.groovy.classgen.asm.MethodCallerMultiAdapter;
@@ -371,6 +372,7 @@ public class AsmClassGenerator extends ClassGenerator {
             controller = factory.makeController(controller);
         }
         controller.init(this, context, classVisitor, classNode);
+        RuntimePackageCheck.checkSuperTypes(controller);
         if (controller.shouldOptimizeForInt() || factory != null) {
             OptimizingStatementWriter.setNodeMeta(controller.getTypeChooser(), classNode);
         }
@@ -600,7 +602,7 @@ public class AsmClassGenerator extends ClassGenerator {
                 BytecodeHelper.getGenericsMethodSignature(node),
                 buildExceptions(node.getExceptions()));
 
-        controller.setMethodVisitor(mv);
+        controller.setMethodVisitor(RuntimePackageCheck.checkNamedClasses(controller, mv));
         controller.resetLineNumber();
 
         visitAnnotations(node, mv);
@@ -1514,6 +1516,16 @@ public class AsmClassGenerator extends ClassGenerator {
             || (expression instanceof ClassExpression && expression.getType().equals(controller.getClassNode()));
     }
 
+    /**
+     * A packed closure's body is hoisted into a method of the owner class, but it
+     * keeps the closure-context contract: "name" and "this.name" go through the owner's accessors
+     * (or MOP), as in the closure class it replaces, not straight to the declared field.
+     */
+    private boolean isInPackedClosureBody() {
+        MethodNode methodNode = controller.getMethodNode();
+        return methodNode != null && methodNode.getName().startsWith(ClosureWriter.PACKED_METHOD_PREFIX);
+    }
+
     private boolean isThisOrSuper(final Expression expression) {
         return isThisExpression(expression) || isSuperExpression(expression);
     }
@@ -1541,7 +1553,7 @@ public class AsmClassGenerator extends ClassGenerator {
                 if (isThisExpression(objectExpression)) {
                     if (controller.isInGeneratedFunction()) { // params/variables are stored as fields
                         if (expression.isImplicitThis()) fieldNode = classNode.getDeclaredField(name);
-                    } else if (!expression.isSpreadSafe()) {
+                    } else if (!expression.isSpreadSafe() && !isInPackedClosureBody()) {
                         fieldNode = classNode.getDeclaredField(name);
                         // GROOVY-8448: "this.name" from anon. inner class
                         if (fieldNode != null && !expression.isImplicitThis()

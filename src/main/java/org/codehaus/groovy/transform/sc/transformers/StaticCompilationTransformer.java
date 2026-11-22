@@ -23,6 +23,7 @@ import org.apache.groovy.util.Maps;
 import org.codehaus.groovy.ast.ClassCodeExpressionTransformer;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
+import org.codehaus.groovy.ast.EnumConstantClassNode;
 import org.codehaus.groovy.ast.FieldNode;
 import org.codehaus.groovy.ast.InnerClassNode;
 import org.codehaus.groovy.ast.MethodNode;
@@ -47,6 +48,7 @@ import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.ast.stmt.ExpressionStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
 import org.codehaus.groovy.classgen.ReturnAdder;
+import org.codehaus.groovy.classgen.asm.ClosureWriter;
 import org.codehaus.groovy.classgen.asm.sc.StaticTypesTypeChooser;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.runtime.ScriptBytecodeAdapter;
@@ -58,8 +60,8 @@ import java.util.IdentityHashMap;
 import java.util.Map;
 import java.util.Set;
 
+import static org.apache.groovy.ast.tools.ClassNodeUtils.hasNoEnclosingInstance;
 import static org.objectweb.asm.Opcodes.ACC_PUBLIC;
-import static org.objectweb.asm.Opcodes.ACC_STATIC;
 
 /**
  * Some expressions use symbols as aliases to method calls (&lt;&lt;, +=, ...). In static compilation,
@@ -162,16 +164,37 @@ public class StaticCompilationTransformer extends ClassCodeExpressionTransformer
     /**
      * Tells whether the class whose body is being rewritten is nested in the
      * given class with an enclosing instance of it, so that {@code Type.this}
-     * is available: no class on the way out is static.
+     * is available: no class on the way out is static, an enum constant body
+     * or an anonymous class created in a static context.
      */
     boolean hasEnclosingInstanceOf(final ClassNode type) {
         ClassNode cn = transformClass;
-        while (cn instanceof InnerClassNode && !cn.isStaticClass() && (cn.getModifiers() & ACC_STATIC) == 0) {
+        while (hasOuterInstance(cn)) {
             cn = cn.getOuterClass();
             if (cn == null) break;
             if (cn.equals(type)) return true;
         }
         return false;
+    }
+
+    private static boolean hasOuterInstance(final ClassNode cn) {
+        return cn instanceof InnerClassNode && !(cn instanceof EnumConstantClassNode) // GROOVY-12626
+            && !cn.isStaticClass() && !hasNoEnclosingInstance(cn);
+    }
+
+    /**
+     * Returns the innermost class that encloses the class being rewritten,
+     * with an enclosing instance of it, and extends the given class; or
+     * {@code null} when there is none.
+     */
+    ClassNode findEnclosingSubclassOf(final ClassNode type) {
+        ClassNode cn = transformClass;
+        while (hasOuterInstance(cn)) {
+            cn = cn.getOuterClass();
+            if (cn == null || cn.equals(type)) break;
+            if (cn.isDerivedFrom(type)) return cn;
+        }
+        return null;
     }
 
     /**
@@ -295,7 +318,19 @@ public class StaticCompilationTransformer extends ClassCodeExpressionTransformer
             return;
         }
         collectImplicitReturns(node);
+        ClosureWriter.markEscapingClosures(node); // GROOVY-12650, GROOVY-12652
         super.visitConstructorOrMethod(node, isConstructor);
+    }
+
+    /**
+     * Marks the escaping closures of the instance initializer blocks before transforming them.
+     *
+     * @param node the class whose initializer blocks are visited
+     */
+    @Override
+    protected void visitObjectInitializerStatements(final ClassNode node) {
+        ClosureWriter.markEscapingClosures(node); // GROOVY-12652
+        super.visitObjectInitializerStatements(node);
     }
 
     /**

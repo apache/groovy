@@ -1,22 +1,20 @@
-<!--
-  Licensed to the Apache Software Foundation (ASF) under one
-  or more contributor license agreements.  See the NOTICE file
-  distributed with this work for additional information
-  regarding copyright ownership.  The ASF licenses this file
-  to you under the Apache License, Version 2.0 (the
-  "License"); you may not use this file except in compliance
-  with the License.  You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-  Unless required by applicable law or agreed to in writing,
-  software distributed under the License is distributed on an
-  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-  KIND, either express or implied.  See the License for the
-  specific language governing permissions and limitations
-  under the License.
--->
 ---
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
 name: groovy-reassess
 description: Running a bulk reassessment campaign over old GROOVY JIRA issues — narrow JQL selection (Reopened pool surfaces wishlists; Open+EOL surfaces silent fixes and real bugs), per-issue reproducer extraction and execution via `groovy-reproducer`, classification (`fixed-on-master` / `still-fails-same` / `still-fails-different` / `cannot-run-*` / `intended-behaviour` / `duplicate-of-resolved` / `timeout`), orthogonal `nature` analysis (`bug-as-advertised` vs `feature-request-disguised-as-bug` vs `intended-and-documented`), workaround search, related-JIRA scan, split-candidate assessment, structured report and per-issue evidence package, and a strict hand-back contract — no JIRA comments, no transitions, no closures posted on behalf of the project. Use when sweeping old issues to surface candidates for closure (silently-fixed), candidates for a real fix (still-failing), feature-requests-disguised-as-bugs, and documentation gaps.
 license: Apache-2.0

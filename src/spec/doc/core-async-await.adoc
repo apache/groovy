@@ -266,8 +266,9 @@ a `ThreadLocal` fallback is used transparently.
 [[async-for-await]]
 === Consuming with `for await`
 
-`for await` iterates over any async source. For generators and plain collections,
-it works identically to a regular `for` loop:
+`for await` iterates over any async source. For generators, collections, other
+`Iterable` or `Iterator` sources, and arrays of objects, it works like a regular
+`for` loop:
 
 [source,groovy]
 ----
@@ -279,7 +280,11 @@ The key value of `for await` is with **reactive types** (Reactor `Flux`, RxJava
 converts the source to a blocking iterable via the adapter SPI. Without
 `for await`, you would need to call the conversion manually (e.g.,
 `flux.toIterable()`). For generators and plain collections, a regular `for`
-loop works identically.
+loop works the same way.
+
+Unlike a regular `for` loop, `for await` does not iterate over a `String`, a `Map`,
+an `Enumeration`, a `Stream` or an array of primitives unless an adapter supports
+the type; without one, it throws an `IllegalArgumentException`.
 
 The JDK's `Flow.Publisher` is supported out of the box — no adapter module
 needed. This means streams exposed by built-in sources such as

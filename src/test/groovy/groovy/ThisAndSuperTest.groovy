@@ -424,6 +424,62 @@ final class ThisAndSuperTest {
         '''
     }
 
+    // GROOVY-12592: the class neither overrides the methods nor calls them on super outside the closure
+    @ParameterizedTest
+    @ValueSource(strings=['', '@groovy.transform.TypeChecked', '@groovy.transform.CompileStatic'])
+    void testSuperDotMethodInClosure(String mode) {
+        assertScript """
+            class Base {
+                String m(x) { 'base:' + x }
+            }
+            class Root extends Base {
+                String toString() { 'root' }
+                String m(x) { 'root:' + x }
+            }
+            $mode
+            class Outer extends Root {
+                String test() {
+                    def c = { -> super.toString() + ',' + super.m(1) }
+                    c()
+                }
+            }
+            class Sub extends Outer {
+                String toString() { 'sub' }
+                String m(x) { 'sub:' + x }
+            }
+            assert new Outer().test() == 'root,root:1'
+            assert new Sub().test() == 'root,root:1'
+        """
+    }
+
+    // GROOVY-12592: a statically compiled subclass has no super$ methods, so the closure calls those of the class
+    @ParameterizedTest
+    @ValueSource(strings=['', '@groovy.transform.TypeChecked'])
+    void testSuperDotMethodInClosureWithStaticallyCompiledSubclass(String mode) {
+        assertScript """
+            class Root {
+                String toString() { 'root' }
+                String m(x) { 'root:' + x }
+                String getP() { 'p:root' }
+            }
+            $mode
+            class Outer extends Root {
+                String test() {
+                    def c = { -> super.toString() + ',' + super.m(1) + ',' + super.p }
+                    c()
+                }
+            }
+            @groovy.transform.CompileStatic
+            class Sub extends Outer {
+                String toString() { 'sub:' + test() }
+                String m(x) { 'sub:' + x }
+                String getP() { 'p:sub' }
+            }
+            assert new Sub().test() == 'root,root:1,p:root'
+            assert new Sub().toString() == 'sub:root,root:1,p:root'
+        """
+    }
+
     // GROOVY-10302
     @Test
     void testSuperDotMethod5() {
@@ -654,6 +710,87 @@ final class ThisAndSuperTest {
                 String test() { super.sm() }
             }
             new Sub().test()
+        '''
+    }
+
+    // GROOVY-12522: an extension method of the superclass, or of an interface of it, that the class overrides
+    @ParameterizedTest
+    @ValueSource(strings=['', '@groovy.transform.TypeChecked', '@groovy.transform.CompileStatic'])
+    void testSuperDotExtensionMethodTheClassOverrides(String mode) {
+        assertScript """
+            $mode
+            class Numbers extends ArrayList<Integer> {
+                Numbers() { super([1, 2, 3]) }
+                Integer first() { -1 }
+                Map getProperties() { [:] }
+                List test() {
+                    [super.first(), first(), super.properties.containsKey('class'), properties]
+                }
+            }
+            $mode
+            class Text extends File {
+                Text(File file) { super(file.path) }
+                String getText() { 'own' }
+                void setText(String s) { throw new UnsupportedOperationException(s) }
+                List test() {
+                    super.setText('a')
+                    def one = super.getText()
+                    super.text = 'b'
+                    def two = super.text
+                    super.text += 'c'
+                    [one, two, super.text, text]
+                }
+            }
+            assert new Numbers().test() == [1, -1, true, [:]]
+            def file = File.createTempFile('text', '.txt')
+            try {
+                assert new Text(file).test() == ['a', 'b', 'bc', 'own']
+            } finally {
+                file.delete()
+            }
+        """
+    }
+
+    // GROOVY-12522: in a closure; @CompileStatic calls a super method from a closure through a super$ helper
+    @ParameterizedTest
+    @ValueSource(strings=['', '@groovy.transform.TypeChecked'])
+    void testSuperDotExtensionMethodTheClassOverridesInClosure(String mode) {
+        assertScript """
+            $mode
+            class Numbers extends ArrayList<Integer> {
+                Numbers() { super([1, 2, 3]) }
+                Integer first() { -1 }
+                List test() {
+                    def c = { -> super.first() }
+                    [c(), first()]
+                }
+            }
+            assert new Numbers().test() == [1, -1]
+        """
+    }
+
+    // GROOVY-12522: an extension method of an interface the class itself implements, the superclass being Object;
+    // static type checking rejects an interface method called through unqualified super (GROOVY-8299, GROOVY-10494)
+    @Test
+    void testSuperDotExtensionMethodOfAnInterfaceOfTheClass() {
+        assertScript '''
+            class Numbers implements Iterable<Integer> {
+                Iterator<Integer> iterator() { [1, 2, 3].iterator() }
+                Integer first() { -1 }
+                List test() {
+                    [super.first(), first()]
+                }
+            }
+            class Delegating implements List<Integer> {
+                @Delegate List<Integer> list = [4, 5]
+                Integer first() { -1 }
+                Integer last() { -2 }
+                List test() {
+                    [super.first(), super.last(), first(), last()]
+                }
+            }
+            assert new Numbers().test() == [1, -1]
+            assert new Delegating().test() == [4, 5, -1, -2]
         '''
     }
 

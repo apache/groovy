@@ -56,6 +56,7 @@ import org.codehaus.groovy.syntax.Types;
 
 import java.util.Collection;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Set;
 
 import static org.apache.groovy.ast.tools.AnnotatedNodeUtils.hasAnnotation;
@@ -370,10 +371,7 @@ class TraitReceiverTransformer extends ClassCodeExpressionTransformer {
             // GROOVY-12597: (Class) $static$self, so static compilation does not bind to the trait interface's accessor
             receiver = castX(ClassHelper.CLASS_Type.getPlainNodeReference(), varX(weaved));
         } else if (fn.isStatic()) {
-            var call = callX(varX(weaved), "getClass"); // $self.getClass()
-            call.setImplicitThis(false);
-            call.setMethodTarget(ClassHelper.OBJECT_TYPE.getGetterMethod("getClass", false));
-            receiver = call;
+            receiver = selfGetClass();
         } else {
             receiver = castX(fieldHelper, varX(weaved)); // (<trait class>$Trait$FieldHelper) $self
         }
@@ -400,6 +398,17 @@ class TraitReceiverTransformer extends ClassCodeExpressionTransformer {
         if (fn.isStatic()) mce.putNodeMetaData(TraitASTTransformation.DO_DYNAMIC, fn.getOriginType());
 
         return mce;
+    }
+
+    /**
+     * Returns {@code $self.getClass()} as an explicit call, so that inside a closure it
+     * is not resolved against the closure's delegate.
+     */
+    private MethodCallExpression selfGetClass() {
+        MethodCallExpression call = callX(varX(weaved), "getClass");
+        call.setImplicitThis(false);
+        call.setMethodTarget(ClassHelper.OBJECT_TYPE.getGetterMethod("getClass", false));
+        return call;
     }
 
     /**
@@ -624,7 +633,7 @@ class TraitReceiverTransformer extends ClassCodeExpressionTransformer {
 
                     // GROOVY-11985: this.m(x) --> ($static$self or (Class)$self.getClass()).m(x)
                     boolean staticSelf = ClassHelper.isClassType(weaved.getOriginType());
-                    Expression selfClass = staticSelf ? varX(weaved) : castX(ClassHelper.CLASS_Type.getPlainNodeReference(), callX(varX(weaved), "getClass"));
+                    Expression selfClass = staticSelf ? varX(weaved) : castX(ClassHelper.CLASS_Type.getPlainNodeReference(), selfGetClass());
                     Expression newArgs = transform(arguments);
                     newCall = callX(selfClass, method, newArgs);
                     newCall.setImplicitThis(false);
@@ -646,8 +655,24 @@ class TraitReceiverTransformer extends ClassCodeExpressionTransformer {
                     // instance method, or any call inside a closure.
 
                     // this.m(x) --> (this or T$Trait$Helper).m($self or $static$self or (Class)$self.getClass(), x)
-                    Expression selfClassOrObject = methodNode.isStatic() && !ClassHelper.isClassType(weaved.getOriginType()) ? castX(ClassHelper.CLASS_Type.getPlainNodeReference(), callX(weaved, "getClass")) : weaved;
+                    Expression selfClassOrObject = methodNode.isStatic() && !ClassHelper.isClassType(weaved.getOriginType()) ? castX(ClassHelper.CLASS_Type.getPlainNodeReference(), selfGetClass()) : weaved;
                     newCall = callX(!inClosure ? thisExpr : classX(traitHelper), method, createArgumentList(selfClassOrObject, arguments));
+                    // GROOVY-12611: T$Trait$Helper.m($self, x) is not checked against the closure's delegate
+                    if (inClosure) newCall.setImplicitThis(false);
+                    if (inClosure && !inLambda && call.isImplicitThis()) {
+                        // GROOVY-12611, GROOVY-12618: m(x) in a closure may target the closure's delegate; the type
+                        // checker of statically compiled code keeps T$Trait$Helper.m($self, x) or
+                        // selects m(x) on the delegate, otherwise the closure resolves m(x) and its
+                        // metaclass falls back to the trait helper for the owner
+                        List<Expression> args = ((ArgumentListExpression) newCall.getArguments()).getExpressions();
+                        MethodCallExpression closureCall = callX(thisExpr, method, args(args.subList(1, args.size()).toArray(Expression[]::new)));
+                        closureCall.setGenericsTypes(call.getGenericsTypes());
+                        closureCall.setImplicitThis(true);
+                        closureCall.setSafe(call.isSafe());
+                        closureCall.setSpreadSafe(call.isSpreadSafe());
+                        closureCall.setSourcePosition(call);
+                        newCall.putNodeMetaData(TraitASTTransformation.POST_TYPECHECKING_REPLACEMENT, closureCall);
+                    }
                 }
                 newCall.setGenericsTypes(call.getGenericsTypes());
                 newCall.setSpreadSafe(call.isSpreadSafe());
@@ -663,11 +688,15 @@ class TraitReceiverTransformer extends ClassCodeExpressionTransformer {
             }
         }
 
+        // GROOVY-12612: an explicit this.m(x) in a closure or lambda targets the
+        // implementing instance, never the delegate; only m(x) keeps the receiver
+        boolean implicitThisInClosure = inClosure && call.isImplicitThis();
+
         // this.m(x) --> (this or $self or $static$self).m(x)
-        MethodCallExpression newCall = callX(inClosure ? thisExpr : weaved, method, transform(arguments));
+        MethodCallExpression newCall = callX(implicitThisInClosure ? thisExpr : weaved, method, transform(arguments));
         newCall.setGenericsTypes(call.getGenericsTypes()); // GROOVY-11302: this.<T>m(x)
-        newCall.setImplicitThis(inClosure ? call.isImplicitThis() : false);
-        newCall.setSafe(inClosure ? call.isSafe() : false);
+        newCall.setImplicitThis(implicitThisInClosure);
+        newCall.setSafe(implicitThisInClosure ? call.isSafe() : false);
         newCall.setSpreadSafe(call.isSpreadSafe());
         newCall.setSourcePosition(call);
         return newCall;
