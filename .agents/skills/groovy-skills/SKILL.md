@@ -1,22 +1,20 @@
-<!--
-  Licensed to the Apache Software Foundation (ASF) under one
-  or more contributor license agreements.  See the NOTICE file
-  distributed with this work for additional information
-  regarding copyright ownership.  The ASF licenses this file
-  to you under the Apache License, Version 2.0 (the
-  "License"); you may not use this file except in compliance
-  with the License.  You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-  Unless required by applicable law or agreed to in writing,
-  software distributed under the License is distributed on an
-  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-  KIND, either express or implied.  See the License for the
-  specific language governing permissions and limitations
-  under the License.
--->
 ---
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
 name: groovy-skills
 description: Conventions for authoring or refactoring a SKILL.md under .agents/skills/ in the Apache Groovy repository — directory layout, required frontmatter, the standard section order (When to use / Read first / Top failure modes / Procedure / Validation checklist / References), the "failure modes are observed mistakes not aphorisms" rule, granularity heuristics for whether a topic deserves its own skill or belongs in an existing one, and the cross-skill linking and `AGENTS.md` table maintenance that keep the skill graph load-bearing. Use when adding a new skill, splitting an existing one, or reviewing a skill PR.
 license: Apache-2.0
@@ -191,14 +189,19 @@ One directory per skill, even when `SKILL.md` is the only file. The directory le
 
 ### License header
 
-Every `SKILL.md` opens with the ASF license header as an HTML comment, identical in wording to the existing skills. Copy from any existing skill — do not paraphrase.
+Every `SKILL.md` carries the ASF license header as `#` comment lines at the top of the YAML frontmatter, identical in wording to the existing skills. Copy from any existing skill — do not paraphrase.
+
+The `---` opening the frontmatter must be the very first line of the file. Skill loaders only recognise frontmatter that starts on line 1; a header placed before it (for example as an HTML comment) hides the frontmatter, and stricter loaders then reject the skill for having no `name` or `description`.
 
 ### Frontmatter
 
 ```yaml
 ---
+# Licensed to the Apache Software Foundation (ASF) under one
+# ... (the full header, copied from an existing skill)
+# under the License.
 name: <kebab-case, matches directory name>
-description: <one or more sentences naming the scope, with the natural-language trigger phrases a loader would match against. Mention the files/paths the skill applies to. Use when ... is a common closing pattern.>
+description: "<one or more sentences naming the scope, with the natural-language trigger phrases a loader would match against. Mention the files/paths the skill applies to. Use when ... is a common closing pattern.>"
 license: Apache-2.0
 compatibility: claude, codex, copilot, cursor, gemini, aider
 metadata:
@@ -301,8 +304,9 @@ The [`groovy-triage`](../groovy-triage/SKILL.md) → [`groovy-jira`](../groovy-j
 
 Before declaring a new or refactored skill ready:
 
-- [ ] ASF license header is present, copied (not paraphrased) from an existing skill.
-- [ ] License header closes with `-->` immediately before the `---` frontmatter delimiter (the common transcription typo is closing it with `---`).
+- [ ] ASF license header is present as `#` comments inside the frontmatter, copied (not paraphrased) from an existing skill.
+- [ ] The file's first line is the `---` frontmatter delimiter — nothing, not even a comment, before it.
+- [ ] The frontmatter is valid YAML. In particular, a `description:` containing `: ` (colon then space) must be quoted, or the YAML is invalid and strict loaders drop the skill.
 - [ ] Frontmatter has `name`, `description`, `license`, `compatibility`, `metadata.audience`, `metadata.scope`.
 - [ ] `name` matches the directory name.
 - [ ] `description` contains the natural-language trigger phrases an agent or loader would match against, derived from concrete invocation examples (not invented after the fact).

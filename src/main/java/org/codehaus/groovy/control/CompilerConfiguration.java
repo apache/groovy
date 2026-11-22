@@ -70,6 +70,32 @@ public class CompilerConfiguration {
     public static final String PARALLEL_PARSE = "parallelParse";
 
     /**
+     * Option for resolving a class of the default package that is on the class path, or on the source
+     * path of the Groovy class loader, before the default imports in a compilation unit of the default
+     * package, as a class of a named package is resolved for a compilation unit of the same package.
+     * Enabled by default. Disable it, or set the system property {@code groovy.resolve.default.package.first}
+     * to {@code false}, where a class or script next to a script, named like a default-import type such as
+     * {@code Node} or {@code Timer}, must not take the place of that type.
+     * Stored in {@link #getOptimizationOptions()} for consistency with other compiler feature flags.
+     *
+     * @since 7.0.0
+     */
+    public static final String DEFAULT_PACKAGE_FIRST = "defaultPackageFirst";
+
+    /**
+     * Option for including the {@code .groovy} sources on the source path of the Groovy class loader in the lookup
+     * that {@link #DEFAULT_PACKAGE_FIRST} enables, which then also takes in the classes the class loader has
+     * already compiled or loaded. Enabled by default, and ignored when {@link #DEFAULT_PACKAGE_FIRST} is disabled.
+     * Disable it, or set the system property {@code groovy.resolve.default.package.sources} to {@code false}, to
+     * look up only the {@code .class} files of the default package before the default imports; a source of the
+     * default package is then still found, but only after them, as before 7.0.
+     * Stored in {@link #getOptimizationOptions()} for consistency with other compiler feature flags.
+     *
+     * @since 7.0.0
+     */
+    public static final String DEFAULT_PACKAGE_SOURCES = "defaultPackageSources";
+
+    /**
      * Option for enabling ANTLR parser error recovery on the Parrot parser.
      * <p>
      * Disabled by default. When enabled (typically for IDE editing), the parser
@@ -113,6 +139,41 @@ public class CompilerConfiguration {
     public static final String MEM_STUB = "memStub";
 
     /**
+     * Joint compilation option for keeping javac {@code CLASS_OUTPUT} in memory.
+     * <p>
+     * Honored only together with {@link #MEM_STUB}. Setting this option without
+     * {@code memStub} fails the compile. When both are {@link Boolean#TRUE},
+     * joint compilation does not require {@code stubDir} or a filesystem
+     * target directory: javac class bytes stay on the heap and Groovy resolves
+     * them from the compilation class loader. When this option is absent or
+     * not {@code Boolean.TRUE}, class files are written to the target directory
+     * as before (the default for Ant and Gradle joint builds).
+     * <p>
+     * Only the default javac joint compiler implements this option. Each
+     * compilation unit publishes on the loader it is given. A later unit
+     * does not see those bytes unless the loader came from
+     * {@code MemClassOutputPublication} and the earlier output was published
+     * to it. Java sources in that later unit then resolve the classes on
+     * javac's classpath. {@code memStub} and this option are both read at
+     * the start of each compile. The publication does not append a URL to
+     * the long-lived parent,
+     * and the parent does not define the compiled classes. A class a loader
+     * has already defined is not replaced.
+     * {@code getResource} is parent-first and then searches URLs in insertion
+     * order, so a parent loader or an earlier classpath entry hides these
+     * bytes. Annotation processing is disabled unless the joint options
+     * request a processor.
+     * <p>
+     * The {@code groovy.mem.stub} system property enables {@link #MEM_STUB} only.
+     * It does not enable in-memory class output.
+     *
+     * @see #MEM_STUB
+     * @see #isMemClassOutput()
+     * @since 7.0.0
+     */
+    public static final String MEM_CLASS_OUTPUT = "memClassOutput";
+
+    /**
      * System-property name for the GEP-27 incubating option that automatically packs provably-safe
      * {@code @CompileStatic} closures (hoisting their bodies to a shared adapter instead of a class).
      * Incubating: this switch may change or be removed until the feature graduates.
@@ -134,31 +195,50 @@ public class CompilerConfiguration {
     @Incubating
     public static final String LAMBDA_HOISTING = "groovy.target.lambda.hoist";
 
-    /** This (<code>"1.4"</code>) is the value for targetBytecode to compile for a JDK 1.4. */
+    /**
+     * System-property name for the incubating option that converts a {@code @CompileStatic} closure literal
+     * to the functional interface it is passed, assigned, returned or cast to with a class generated at
+     * compile time, instead of a {@code java.lang.reflect.Proxy} created at run time. The generated class
+     * behaves as the proxy does, apart from the differences the invokedynamic chapter of the Groovy
+     * documentation lists, along with the conversions that still happen at run time. Among them: where the
+     * generated class calls the {@code doCall} method of the closure directly, a metaclass that intercepts
+     * {@code doCall} is not consulted; and a converted value serializes as an instance of the generated
+     * class, so values serialized with this option may not deserialize once the generated class changes.
+     * <p>
+     * Like {@link #CLOSURE_PACKING}, the option is read from the system properties of the compiling JVM
+     * whenever a closure is compiled; there is no {@code CompilerConfiguration} setting for it.
+     * Incubating: this switch may change or be removed until the feature graduates.
+     *
+     * @since 7.0.0
+     */
+    @Incubating
+    public static final String CLOSURE_SAM_CONVERSION = "groovy.target.closure.sam";
+
+    /** Historical bytecode level {@code "1.4"}. Not an accepted compilation target; accepted levels are 17 through 28. */
     @Deprecated public static final String JDK4 = "1.4";
-    /** This (<code>"1.5"</code>) is the value for targetBytecode to compile for a JDK 1.5. */
+    /** Historical bytecode level {@code "1.5"}. Not an accepted compilation target; accepted levels are 17 through 28. */
     @Deprecated public static final String JDK5 = "1.5";
-    /** This (<code>"1.6"</code>) is the value for targetBytecode to compile for a JDK 1.6. */
+    /** Historical bytecode level {@code "1.6"}. Not an accepted compilation target; accepted levels are 17 through 28. */
     @Deprecated public static final String JDK6 = "1.6";
-    /** This (<code>"1.7"</code>) is the value for targetBytecode to compile for a JDK 1.7. */
+    /** Historical bytecode level {@code "1.7"}. Not an accepted compilation target; accepted levels are 17 through 28. */
     @Deprecated public static final String JDK7 = "1.7";
-    /** This (<code>"1.8"</code>) is the value for targetBytecode to compile for a JDK 1.8. */
+    /** Historical bytecode level {@code "1.8"}. Not an accepted compilation target; accepted levels are 17 through 28. */
     @Deprecated public static final String JDK8 = "1.8";
-    /** This (<code>"9"</code>) is the value for targetBytecode to compile for a JDK 9. */
+    /** Historical bytecode level {@code "9"}. Not an accepted compilation target; accepted levels are 17 through 28. */
     @Deprecated public static final String JDK9 =   "9";
-    /** This (<code>"10"</code>) is the value for targetBytecode to compile for a JDK 10. */
+    /** Historical bytecode level {@code "10"}. Not an accepted compilation target; accepted levels are 17 through 28. */
     @Deprecated public static final String JDK10 = "10";
-    /** This (<code>"11"</code>) is the value for targetBytecode to compile for a JDK 11. */
+    /** Historical bytecode level {@code "11"}. Not an accepted compilation target; accepted levels are 17 through 28. */
     @Deprecated public static final String JDK11 = "11";
-    /** This (<code>"12"</code>) is the value for targetBytecode to compile for a JDK 12. */
+    /** Historical bytecode level {@code "12"}. Not an accepted compilation target; accepted levels are 17 through 28. */
     @Deprecated public static final String JDK12 = "12";
-    /** This (<code>"13"</code>) is the value for targetBytecode to compile for a JDK 13. */
+    /** Historical bytecode level {@code "13"}. Not an accepted compilation target; accepted levels are 17 through 28. */
     @Deprecated public static final String JDK13 = "13";
-    /** This (<code>"14"</code>) is the value for targetBytecode to compile for a JDK 14. */
+    /** Historical bytecode level {@code "14"}. Not an accepted compilation target; accepted levels are 17 through 28. */
     @Deprecated public static final String JDK14 = "14";
-    /** This (<code>"15"</code>) is the value for targetBytecode to compile for a JDK 15. */
+    /** Historical bytecode level {@code "15"}. Not an accepted compilation target; accepted levels are 17 through 28. */
     @Deprecated public static final String JDK15 = "15";
-    /** This (<code>"16"</code>) is the value for targetBytecode to compile for a JDK 16. */
+    /** Historical bytecode level {@code "16"}. Not an accepted compilation target; accepted levels are 17 through 28. */
     @Deprecated public static final String JDK16 = "16";
     /** This (<code>"17"</code>) is the value for targetBytecode to compile for a JDK 17. */
     public static final String JDK17 = "17";
@@ -203,6 +283,11 @@ public class CompilerConfiguration {
             JDK28, Opcodes.V28
     );
 
+    /**
+     * Target bytecode selected when none is configured.
+     * This is the running JVM's feature version when that version is a key of
+     * {@link #JDK_TO_BYTECODE_VERSION_MAP}, and {@link #JDK17} otherwise.
+     */
     public static final String DEFAULT_TARGET_BYTECODE = defaultTargetBytecode();
 
     /**
@@ -629,6 +714,8 @@ public class CompilerConfiguration {
      *   <tr><td><code>groovy.attach.runtime.groovydoc</code></td><td>{@link #getOptimizationOptions}</td></tr>
      *   <tr><td><code>groovy.parser.error.recovery</code></td><td>{@link #getOptimizationOptions} / {@link #isErrorRecoveryEnabled}</td></tr>
      *   <tr><td><code>groovy.runtime.package.check</code></td><td>{@link #getOptimizationOptions}</td></tr>
+     *   <tr><td><code>groovy.resolve.default.package.first</code></td><td>{@link #getOptimizationOptions}</td></tr>
+     *   <tr><td><code>groovy.resolve.default.package.sources</code></td><td>{@link #getOptimizationOptions}</td></tr>
      * </table>
      * </blockquote>
      * Additional language-compatibility system properties (not optimization options):
@@ -667,6 +754,8 @@ public class CompilerConfiguration {
         handleOptimizationOption(PARALLEL_PARSE, getSystemPropertySafe("groovy.parallel.parse", "true"));
         handleOptimizationOption(ERROR_RECOVERY, getSystemPropertySafe("groovy.parser.error.recovery"));
         handleOptimizationOption(RUNTIME_PACKAGE_CHECK, getSystemPropertySafe("groovy.runtime.package.check"));
+        handleOptimizationOption(DEFAULT_PACKAGE_FIRST, getSystemPropertySafe("groovy.resolve.default.package.first"));
+        handleOptimizationOption(DEFAULT_PACKAGE_SOURCES, getSystemPropertySafe("groovy.resolve.default.package.sources"));
 
         if (getBooleanSafe("groovy.mem.stub")) {
             jointCompilationOptions = new HashMap<>(2);
@@ -816,6 +905,7 @@ public class CompilerConfiguration {
     /**
      * Checks if the specified bytecode version string represents a JDK 1.5+ compatible
      * bytecode version.
+     *
      * @param bytecodeVersion The parameter can take one of the values in {@link #ALLOWED_JDKS}.
      * @return true if the bytecode version is JDK 1.5+
      */
@@ -827,6 +917,7 @@ public class CompilerConfiguration {
     /**
      * Checks if the specified bytecode version string represents a JDK 1.7+ compatible
      * bytecode version.
+     *
      * @param bytecodeVersion The parameter can take one of the values in {@link #ALLOWED_JDKS}.
      * @return true if the bytecode version is JDK 1.7+
      */
@@ -838,6 +929,7 @@ public class CompilerConfiguration {
     /**
      * Checks if the specified bytecode version string represents a JDK 1.8+ compatible
      * bytecode version.
+     *
      * @param bytecodeVersion The parameter can take one of the values in {@link #ALLOWED_JDKS}.
      * @return true if the bytecode version is JDK 1.8+
      */
@@ -849,6 +941,7 @@ public class CompilerConfiguration {
     /**
      * Checks if the specified bytecode version string represents a JDK 9+ compatible
      * bytecode version.
+     *
      * @param bytecodeVersion The parameter can take one of the values in {@link #ALLOWED_JDKS}.
      * @return true if the bytecode version is JDK 9+
      */
@@ -957,6 +1050,7 @@ public class CompilerConfiguration {
     /**
      * Method to configure a CompilerConfiguration by using Properties.
      * For a list of available properties look at {@link #CompilerConfiguration(Properties)}.
+     *
      * @param configuration The properties to get flag values from.
      */
     public void configure(final Properties configuration) throws ConfigurationException {
@@ -1109,6 +1203,7 @@ public class CompilerConfiguration {
 
     /**
      * Gets the currently configured output writer.
+     *
      * @deprecated not used anymore
      */
     @Deprecated
@@ -1118,6 +1213,7 @@ public class CompilerConfiguration {
 
     /**
      * Sets the output writer.
+     *
      * @deprecated not used anymore, has no effect
      */
     @Deprecated
@@ -1174,6 +1270,7 @@ public class CompilerConfiguration {
 
     /**
      * sets the classpath using a list of Strings
+     *
      * @param parts list of strings containing the classpath parts
      */
     public void setClasspathList(final List<String> parts) {
@@ -1565,6 +1662,7 @@ public class CompilerConfiguration {
 
     /**
      * Gets the joint compilation options for this configuration.
+     *
      * @return the options
      */
     public Map<String, Object> getJointCompilationOptions() {
@@ -1574,6 +1672,7 @@ public class CompilerConfiguration {
     /**
      * Sets the joint compilation options for this configuration.
      * Using null will disable joint compilation.
+     *
      * @param options the options
      */
     public void setJointCompilationOptions(final Map<String, Object> options) {
@@ -1581,7 +1680,25 @@ public class CompilerConfiguration {
     }
 
     /**
+     * Returns whether joint compilation keeps javac class files in memory.
+     * <p>
+     * True only when joint compilation is configured and both {@link #MEM_STUB}
+     * and {@link #MEM_CLASS_OUTPUT} are {@link Boolean#TRUE}. Disk
+     * {@code stubDir} and target-directory output stay the default otherwise.
+     *
+     * @return {@code true} when in-memory class output is enabled
+     * @since 7.0.0
+     */
+    public boolean isMemClassOutput() {
+        Map<String, Object> options = jointCompilationOptions;
+        return options != null
+                && Boolean.TRUE.equals(options.get(MEM_STUB))
+                && Boolean.TRUE.equals(options.get(MEM_CLASS_OUTPUT));
+    }
+
+    /**
      * Gets the optimization options for this configuration.
+     *
      * @return the options (always not null)
      */
     public Map<String, Boolean> getOptimizationOptions() {
@@ -1593,9 +1710,11 @@ public class CompilerConfiguration {
      * No entry or a true for that entry means to enable that optimization,
      * a false means the optimization is disabled.
      * Valid keys include {@code "all"}, {@code "int"}, {@link #INVOKEDYNAMIC},
-     * {@link #PARALLEL_PARSE}, {@link #GROOVYDOC}, and {@link #RUNTIME_GROOVYDOC}.
+     * {@link #PARALLEL_PARSE}, {@link #GROOVYDOC}, {@link #RUNTIME_GROOVYDOC}, {@link #DEFAULT_PACKAGE_FIRST},
+     * and {@link #DEFAULT_PACKAGE_SOURCES}.
      * For-in per-iteration capture (GROOVY-11792) is not an optimization option; use
      * {@link #setForInPerIterationCaptureEnabled(boolean)} instead.
+     *
      * @param options the options.
      * @throws IllegalArgumentException if the options are null
      */
@@ -1607,6 +1726,7 @@ public class CompilerConfiguration {
     /**
      * Adds compilation customizers to the compilation process. A compilation customizer is a class node
      * operation which performs various operations going from adding imports to access control.
+     *
      * @param customizers the list of customizers to be added
      * @return this configuration instance
      */
@@ -1618,6 +1738,7 @@ public class CompilerConfiguration {
 
     /**
      * Returns the list of compilation customizers.
+     *
      * @return the customizers (always not null)
      */
     public List<CompilationCustomizer> getCompilationCustomizers() {
@@ -1626,6 +1747,7 @@ public class CompilerConfiguration {
 
     /**
      * Returns the list of disabled global AST transformation class names.
+     *
      * @return a list of global AST transformation fully qualified class names
      */
     public Set<String> getDisabledGlobalASTTransformations() {

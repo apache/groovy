@@ -26,5 +26,11 @@ import org.codehaus.groovy.ast.ASTNode;
  * @see ASTTransformation
  */
 public interface ErrorCollecting {
+    /**
+     * Records {@code msg} against {@code expr}.
+     *
+     * @param msg the error text
+     * @param expr the node the error is attached to
+     */
     void addError(String msg, ASTNode expr);
 }

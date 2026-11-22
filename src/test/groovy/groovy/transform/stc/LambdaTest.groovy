@@ -1231,6 +1231,138 @@ final class LambdaTest {
         '''
     }
 
+    // GROOVY-12672
+    @Test
+    void testAccessingClosureProperties1() {
+        for (mode in ['', '@groovy.transform.TypeChecked', '@groovy.transform.CompileStatic']) {
+            assertScript """
+                import java.util.function.Supplier
+
+                $mode
+                class C {
+                    def m() {
+                        Supplier<Object> d = () -> delegate
+                        Supplier<Object> o = () -> owner
+                        Supplier<Object> t = () -> thisObject
+                        Supplier<Object> n = () -> maximumNumberOfParameters
+                        Supplier<Object> p = () -> parameterTypes
+                        Supplier<Object> r = () -> resolveStrategy
+                        Supplier<Object> x = () -> directive
+                        Supplier<Object> c = () -> metaClass
+                        [d.get(), o.get(), t.get(), n.get(), p.get(), r.get(), x.get(), c.get()]
+                    }
+                }
+
+                def c = new C()
+                def (d, o, t, n, p, r, x, mc) = c.m()
+                assert d === c
+                assert o === c
+                assert t === c
+                assert n == 0
+                assert p == []
+                assert r == Closure.OWNER_FIRST
+                assert x == 0
+                assert mc instanceof MetaClass
+            """
+        }
+    }
+
+    // GROOVY-12672
+    @Test
+    void testAccessingClosureProperties2() {
+        assertScript shell, '''
+            class C {
+                C m() {
+                    Supplier<C> s = () -> owner
+                    s.get()
+                }
+                String n() {
+                    Supplier<String> s = () -> delegate.toString()
+                    s.get()
+                }
+                def p() {
+                    int i = 1
+                    Supplier<Object> s = () -> [i, delegate, owner]
+                    s.get()
+                }
+                String toString() { 'C' }
+            }
+
+            def c = new C()
+            assert c.m() === c
+            assert c.n() == 'C'
+            assert c.p() == [1, c, c]
+        '''
+    }
+
+    // GROOVY-12672
+    @Test
+    void testAccessingClosureProperties3() {
+        assertScript shell, '''
+            class C {
+                static m() {
+                    Supplier<Object> d = () -> delegate
+                    Supplier<Object> o = () -> owner
+                    Supplier<Object> n = () -> maximumNumberOfParameters
+                    [d.get(), o.get(), n.get()]
+                }
+            }
+
+            assert C.m() == [C, C, 0]
+        '''
+    }
+
+    // GROOVY-12672
+    @Test
+    void testAccessingClosureProperties4() {
+        assertScript shell, '''
+            class C {
+                def m() {
+                    Supplier<Supplier<Object>> s = () -> (Supplier<Object>) (() -> owner)
+                    s.get().get()
+                }
+                def n() {
+                    Supplier<Object> s = () -> {
+                        Supplier<Object> t = () -> 1
+                        [t.get(), delegate]
+                    }
+                    s.get()
+                }
+                def p() {
+                    def c = { ->
+                        Supplier<Object> s = () -> owner
+                        s.get()
+                    }
+                    c()
+                }
+            }
+
+            def c = new C()
+            assert c.m() === c
+            assert c.n() == [1, c]
+            assert c.p() === c
+        '''
+    }
+
+    // GROOVY-12672
+    @Test
+    void testAccessingClosureProperties5() {
+        assertScript shell, '''
+            class C {
+                def m() {
+                    Supplier<Object> s = () -> {
+                        resolveStrategy = Closure.DELEGATE_FIRST
+                        directive = Closure.DONE
+                        [resolveStrategy, directive]
+                    }
+                    s.get()
+                }
+            }
+
+            assert new C().m() == [Closure.DELEGATE_FIRST, Closure.DONE]
+        '''
+    }
+
     @Test
     void testSerialize1() {
         assertScript shell, '''

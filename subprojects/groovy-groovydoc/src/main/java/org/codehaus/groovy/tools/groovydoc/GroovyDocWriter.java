@@ -92,9 +92,6 @@ public class GroovyDocWriter {
     }
 
     /**
-     * Writes the HTML page for a single class doc if its visibility matches the configured scope.
-     */
-    /**
      * Whether a destination built from a documentation-derived name would land outside the
      * destination directory. The name reaches here as a package path, and a {@code ..} segment
      * in it — from a source argument or a source-path-relative file name — would otherwise let
@@ -111,6 +108,13 @@ public class GroovyDocWriter {
         return !target.startsWith(root);
     }
 
+    /**
+     * Writes the HTML page for a single class doc if its visibility matches the configured scope.
+     *
+     * @param classDoc the class to render
+     * @param destdir the destination directory
+     * @throws Exception when a template or the output tool fails
+     */
     public void writeClassToOutput(GroovyClassDoc classDoc, String destdir) throws Exception {
         if (classDoc.isPublic() || classDoc.isProtected() && "true".equals(properties.getProperty("protectedScope")) ||
                 classDoc.isPackagePrivate() && "true".equals(properties.getProperty("packageScope")) || "true".equals(properties.getProperty("privateScope"))) {

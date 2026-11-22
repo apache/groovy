@@ -65,6 +65,16 @@ public class MethodVariantInheritanceASTTransformation implements ASTTransformat
 
     private static final ClassNode DECREASES_TYPE = ClassHelper.make(Decreases.class);
 
+    /**
+     * Copies a super-type {@link Decreases} measure onto each concrete method
+     * declared in {@code source} that does not already declare one. Parameter
+     * names in the measure are rewritten to the override's names before the
+     * measure is woven. A null source or a method whose ancestor measure is
+     * not a closure is skipped.
+     *
+     * @param nodes unused; this transform walks the whole source unit
+     * @param source the source unit being compiled
+     */
     @Override
     public void visit(final ASTNode[] nodes, final SourceUnit source) {
         if (source == null || source.getAST() == null) return;
@@ -118,6 +128,14 @@ public class MethodVariantInheritanceASTTransformation implements ASTTransformat
     /** Deep-copy {@code expr}, renaming any variable reference found in {@code rename}. */
     private static Expression renameVariables(final Expression expr, final Map<String, String> rename) {
         ExpressionTransformer transformer = new ExpressionTransformer() {
+            /**
+             * Renames a variable reference whose name is in the parameter map
+             * and keeps the original source position. Every other expression
+             * is copied through this transformer.
+             *
+             * @param e the expression to rename
+             * @return the renamed variable, or {@code e} rewritten in place
+             */
             @Override
             public Expression transform(final Expression e) {
                 if (e instanceof VariableExpression ve && rename.containsKey(ve.getName())) {
