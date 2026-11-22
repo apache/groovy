@@ -51,7 +51,15 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.propX;
 @GroovyASTTransformation(phase = CompilePhase.INSTRUCTION_SELECTION)
 public class StaticTypesTransformation implements ASTTransformation, CompilationUnitAware {
 
+    /**
+     * Prefix prepended to every static type-checking error.
+     * The text is {@code "[Static type checking] - "}.
+     */
     public static final String STATIC_ERROR_PREFIX = "[Static type checking] - ";
+    /**
+     * The compilation unit passed to the type-checking visitor and to extensions.
+     * Set by {@link #setCompilationUnit(CompilationUnit)}.
+     */
     protected CompilationUnit compilationUnit;
 
     @Override
@@ -126,6 +134,14 @@ public class StaticTypesTransformation implements ASTTransformation, Compilation
         }
     }
 
+    /**
+     * Adds the type-checking extensions named by {@code extensions}. A constant's
+     * text is one extension specification. A list is walked recursively. Any other
+     * expression, including {@code null}, adds nothing.
+     *
+     * @param visitor the visitor that receives the extensions
+     * @param extensions the {@code extensions} member of {@link TypeChecked}, or {@code null}
+     */
     protected void addTypeCheckingExtensions(StaticTypeCheckingVisitor visitor, Expression extensions) {
         if (extensions instanceof ConstantExpression) {
             visitor.addTypeCheckingExtension(new GroovyTypeCheckingExtensionSupport(

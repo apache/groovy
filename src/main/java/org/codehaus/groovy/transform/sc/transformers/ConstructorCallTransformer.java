@@ -35,7 +35,6 @@ import org.codehaus.groovy.classgen.BytecodeExpression;
 import org.codehaus.groovy.classgen.asm.BytecodeHelper;
 import org.codehaus.groovy.classgen.asm.CompileStack;
 import org.codehaus.groovy.classgen.asm.OperandStack;
-import org.codehaus.groovy.classgen.asm.sc.RuntimePackageCheck;
 import org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport;
 import org.codehaus.groovy.transform.stc.StaticTypeCheckingVisitor;
 import org.objectweb.asm.Label;
@@ -43,8 +42,10 @@ import org.objectweb.asm.MethodVisitor;
 
 import java.util.List;
 
+import static org.codehaus.groovy.ast.tools.GeneralUtils.args;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.assignX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.bytecodeX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.ctorX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.propX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
 import static org.codehaus.groovy.transform.stc.StaticTypesMarker.DIRECT_METHOD_CALL_TARGET;
@@ -182,19 +183,27 @@ public class ConstructorCallTransformer {
             }
             // create temporary variable to store new object instance
             int tmpObj = compileStack.defineTemporaryVariable("tmpObj", ctorType, false);
-            String ctorTypeName = BytecodeHelper.getClassInternalName(ctorType);
-            mv.visitTypeInsn(NEW, ctorTypeName);
-            mv.visitInsn(DUP);
-            String signature = "()V";
-            Parameter[] params = Parameter.EMPTY_ARRAY;
-            if (innerClassCall && ctorType.getOuterClass() != null) {
-                acg.visitVariableExpression(varX("this")); // GROOVY-11122
-                params = new Parameter[]{new Parameter(ctorType.getOuterClass(),"$p$")};
-                signature = BytecodeHelper.getMethodDescriptor(ClassHelper.VOID_TYPE, params);
-            }
+            boolean outer = innerClassCall && ctorType.getOuterClass() != null;
+            Parameter[] params = outer ? new Parameter[]{new Parameter(ctorType.getOuterClass(), "$p$")} : Parameter.EMPTY_ARRAY;
             ConstructorNode ctor = ctorType.getDeclaredConstructor(params);
-            if (ctor != null) RuntimePackageCheck.checkConstructor(acg.getController(), ctor, false, originalCall);
-            mv.visitMethodInsn(INVOKESPECIAL, ctorTypeName, "<init>", signature, false);
+            if (ctor != null && !ctor.isPublic()) {
+                // the invocation writer checks if the current class can call the constructor directly
+                ConstructorCallExpression newObject = outer ? ctorX(ctorType, args(varX("this"))) : ctorX(ctorType);
+                newObject.putNodeMetaData(DIRECT_METHOD_CALL_TARGET, ctor);
+                newObject.setSourcePosition(originalCall);
+                newObject.visit(acg);
+                acg.getController().getOperandStack().remove(1);
+            } else {
+                String ctorTypeName = BytecodeHelper.getClassInternalName(ctorType);
+                mv.visitTypeInsn(NEW, ctorTypeName);
+                mv.visitInsn(DUP);
+                String signature = "()V";
+                if (outer) {
+                    acg.visitVariableExpression(varX("this")); // GROOVY-11122
+                    signature = BytecodeHelper.getMethodDescriptor(ClassHelper.VOID_TYPE, params);
+                }
+                mv.visitMethodInsn(INVOKESPECIAL, ctorTypeName, "<init>", signature, false);
+            }
             mv.visitVarInsn(ASTORE, tmpObj);
 
             if (map instanceof MapExpression mapExpression) {

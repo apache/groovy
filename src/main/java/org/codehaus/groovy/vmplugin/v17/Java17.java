@@ -21,7 +21,7 @@ package org.codehaus.groovy.vmplugin.v17;
 import org.codehaus.groovy.vmplugin.v16.Java16;
 
 /**
- * Java 17 based functions. Groovy 6.0 requires JDK 17 as the minimum version.
+ * Java 17 based functions. Groovy 6 and later require JDK 17 as the minimum version.
  * <p>
  * This plugin subsumes all functionality from earlier version-specific plugins
  * (Java8 through Java16) into a single entry point for the VM plugin system.

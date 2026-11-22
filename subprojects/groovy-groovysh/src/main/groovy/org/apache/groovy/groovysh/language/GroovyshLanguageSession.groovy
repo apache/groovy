@@ -83,6 +83,11 @@ final class GroovyshLanguageSession implements AutoCloseable, Completer {
     private CompilerConfiguration boundConfiguration
     private boolean closed
 
+    /**
+     * Opens a language client for {@code groovy} and publishes the engine's loader.
+     *
+     * @param groovy the shell engine this session reads
+     */
     GroovyshLanguageSession(GroovyEngine groovy) {
         this.groovy = groovy
         this.language = GroovyLanguageClient.open(BUFFER_URI, '', true)
@@ -362,6 +367,14 @@ final class GroovyshLanguageSession implements AutoCloseable, Completer {
         lines.join('\n')
     }
 
+    /**
+     * Returns a type name the language compile can resolve for {@code value}.
+     * An array keeps its rank. A primitive uses its canonical name. A class
+     * the compile cannot resolve becomes {@code java.lang.Object}.
+     *
+     * @param value a non-null shell variable
+     * @return the type name, with {@code []} repeated for each array rank
+     */
     @PackageScope
     static String typeLiteral(Object value) {
         Class type = value.getClass()

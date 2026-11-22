@@ -50,6 +50,10 @@ public class FilteredNodeChildren extends NodeChildren {
     @Override
     public Iterator nodeIterator() {
         return new NodeIterator(this.parent.nodeIterator()) {
+            /**
+             * Returns the next child for which the filter closure is truthy,
+             * or {@code null} when the iterator is exhausted.
+             */
             @Override
             protected Object getNextNode(final Iterator iter) {
                 while (iter.hasNext()) {

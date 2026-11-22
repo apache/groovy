@@ -40,6 +40,9 @@ import static org.codehaus.groovy.ast.ClassHelper.make;
  */
 public abstract class Expression extends AnnotatedNode {
 
+    /**
+     * Zero-length array shared by callers that have no child expressions.
+     */
     public static final Expression[] EMPTY_ARRAY = new Expression[0];
 
     private static final ClassNode NULL_TYPE = make("null");
