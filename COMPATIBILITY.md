@@ -2228,6 +2228,27 @@ unaffected. An `instanceof` pattern such as `x instanceof String s` narrows
 `x` in the same guard positions as a plain `instanceof` check; the scoping of
 the pattern variable `s` is unchanged.
 
+### Groovy 7 — `super` reaches a static member the class hides (GROOVY-12519)
+
+When a class declared a static method or property with the same signature as
+one of its superclass, `super.sm()` within the class threw
+`MissingMethodException` in dynamic Groovy and under `@TypeChecked`, or called
+another overload of the superclass with `null`, and `super.sp` threw
+`MissingPropertyException`. They now reach the static member of the nearest
+superclass that declares one, as javac and `@CompileStatic` do. Under
+`@CompileStatic`, `super.sm()` in a closure or lambda failed with
+`IncompatibleClassChangeError` for any static method of the superclass, hidden
+or not, and an extension method called through `super` there, such as
+`super.first()` in a subclass of `ArrayList`, failed with `NoSuchMethodError`.
+Both now call the method.
+
+**Who is affected.** Code that relied on the old failure, or on the other
+overload being called. A private static method of the superclass stays out of
+reach. Calls through `this` or the class name and instance methods behave as
+before, and so does `super` with a static member the class does not hide,
+apart from the `@CompileStatic` closure and lambda case above. There are no
+API changes.
+
 ## The binary-compatibility check
 
 The [`subprojects/binary-compatibility/`](subprojects/binary-compatibility)
