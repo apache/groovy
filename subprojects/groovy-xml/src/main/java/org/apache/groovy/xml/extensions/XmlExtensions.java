@@ -47,16 +47,29 @@ public class XmlExtensions {
         return new Iterator<Node>() {
             private int current /* = 0 */;
 
+            /**
+             * Reports whether {@code current} is still inside the node list.
+             *
+             * @return {@code true} when another node remains
+             */
             @Override
             public boolean hasNext() {
                 return current < nodeList.getLength();
             }
 
+            /**
+             * Returns the node at {@code current} and then advances.
+             *
+             * @return the next node
+             */
             @Override
             public Node next() {
                 return nodeList.item(current++);
             }
 
+            /**
+             * Rejects removal. The iterator only walks the node list.
+             */
             @Override
             public void remove() {
                 throw new UnsupportedOperationException("Cannot remove() from a NodeList iterator");

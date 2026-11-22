@@ -183,6 +183,19 @@ final class IndyScopedSwitchPointTest {
     }
 
     @Test
+    void coldReflective_isValidFor_falseWhenMetaClassSwitchPointInvalidated() {
+        // the selected metaclass belongs to another class, whose changes retire that class's domain
+        def classSp = new SwitchPoint()
+        def metaClassSp = new SwitchPoint()
+        def cold = newColdWrapper(classSp, metaClassSp)
+        def args = [new ColdHost()] as Object[]
+        assertTrue(cold.isValidFor(args))
+        SwitchPoint.invalidateAll(metaClassSp)
+        assertFalse(classSp.hasBeenInvalidated())
+        assertFalse(cold.isValidFor(args))
+    }
+
+    @Test
     void coldReflective_isValidFor_falseOnArityMismatch() {
         def sp = ClassInfo.getClassInfo(ColdHost).indySwitchPoint
         def cold = newColdWrapper(sp)
@@ -219,20 +232,20 @@ final class IndyScopedSwitchPointTest {
     /**
      * Minimal cold wrapper for validity tests (same package as production class).
      */
-    private static ColdReflectiveMethodHandleWrapper newColdWrapper(SwitchPoint sp) {
+    private static ColdReflectiveMethodHandleWrapper newColdWrapper(SwitchPoint sp, SwitchPoint metaClassSp = null) {
         def javaMethod = ColdHost.getDeclaredMethod('ping')
         def metaMethod = CachedMethod.find(javaMethod)
         assert metaMethod != null
         def ctor = ColdReflectiveMethodHandleWrapper.getDeclaredConstructor(
                 MetaMethod, CacheableCallSite, Class, String, int,
-                Boolean, Boolean, Boolean, MetaClass, SwitchPoint, Class[])
+                Boolean, Boolean, Boolean, MetaClass, SwitchPoint, SwitchPoint, Class[])
         ctor.accessible = true
         def type = MethodType.methodType(Object, Object)
         def site = new CacheableCallSite(type, MethodHandles.lookup())
         def mc = GroovySystem.metaClassRegistry.getMetaClass(ColdHost)
         (ColdReflectiveMethodHandleWrapper) ctor.newInstance(
                 metaMethod, site, ColdHost, 'ping', IndyInterface.CallType.METHOD.orderNumber,
-                Boolean.FALSE, Boolean.FALSE, Boolean.FALSE, mc, sp, [ColdHost] as Class[])
+                Boolean.FALSE, Boolean.FALSE, Boolean.FALSE, mc, sp, metaClassSp, [ColdHost] as Class[])
     }
 
     static class ApplyHost {}

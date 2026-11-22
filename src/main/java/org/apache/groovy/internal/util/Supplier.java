@@ -24,8 +24,15 @@ import org.apache.groovy.lang.annotation.Incubating;
 /**
  * Backport of Java8 Supplier.
  * INTERNAL USE ONLY.
+ *
+ * @param <T> the supplied type
  */
 @Incubating
 public interface Supplier<T> {
+    /**
+     * Returns the supplied value.
+     *
+     * @return the value
+     */
     T get();
 }
