@@ -18,21 +18,43 @@
  */
 package bugs
 
-import org.junit.jupiter.api.Disabled
+import org.codehaus.groovy.control.MultipleCompilationErrorsException
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Timeout
 
-import static groovy.test.GroovyAssert.assertScript
+import java.util.concurrent.TimeUnit
 
+import static groovy.test.GroovyAssert.shouldFail
+
+/**
+ * GROOVY-9213: an unclosed parenthesis followed by many statements must
+ * produce a compilation error in bounded time rather than looping.
+ * (The ANTLR 2 parser is no longer supported; this covers the default parser.)
+ */
 final class Groovy9213 {
 
-    @Timeout(15000)
-    @Disabled
-    @Test
-    void testUnmatchedParenInLongScript4() {
-        assertScript '''
+    private static String unmatchedParenScript(int statements) {
+        '''
             int a = 0
             (
-        ''' + ('a = 0\n' * 50)
+        ''' + ('a = 0\n' * statements)
+    }
+
+    @Test
+    @Timeout(value = 15, unit = TimeUnit.SECONDS)
+    void testUnmatchedParenInLongScript50() {
+        def err = shouldFail(MultipleCompilationErrorsException) {
+            new GroovyShell().parse(unmatchedParenScript(50))
+        }
+        assert err.message.contains("Missing ')'")
+    }
+
+    @Test
+    @Timeout(value = 15, unit = TimeUnit.SECONDS)
+    void testUnmatchedParenInLongScript200() {
+        def err = shouldFail(MultipleCompilationErrorsException) {
+            new GroovyShell().parse(unmatchedParenScript(200))
+        }
+        assert err.message.contains("Missing ')'")
     }
 }
