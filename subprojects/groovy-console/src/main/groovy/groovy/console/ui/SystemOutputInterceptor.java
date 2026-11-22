@@ -33,6 +33,11 @@ public class SystemOutputInterceptor extends FilterOutputStream {
     private boolean output;
 
     private static final ThreadLocal<Integer> consoleId = new InheritableThreadLocal<Integer>() {
+        /**
+         * Returns {@code 0}, the console id used until a thread calls {@code setConsoleId}.
+         *
+         * @return {@code 0}
+         */
         @Override
         protected Integer initialValue() {
             return 0;

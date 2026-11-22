@@ -112,6 +112,70 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-12756
+    @Test
+    void testAssignmentToParameterizedClass() {
+        assertScript '''
+            import java.lang.reflect.ParameterizedType
+            import java.lang.reflect.Type
+
+            abstract class Editor<T> {
+                final Class<T> targetType
+                Editor() {
+                    Type[] types = ((ParameterizedType) getClass().genericSuperclass).actualTypeArguments
+                    targetType = types[0]
+                }
+            }
+            class StringEditor extends Editor<String> {}
+            assert new StringEditor().targetType == String
+
+            Class<String> c = 'java.lang.String'
+            assert c == String
+
+            Class<? extends Number> go(Object o) {
+                Class<? extends Number> n = o
+                n
+            }
+            assert go(Integer) == Integer
+
+            class C {
+                Class<String> init = 'java.lang.String'
+                Class<String> f
+                void viaProperty(C other, String name) {
+                    this.f = name
+                    other.f = name
+                }
+            }
+            def x = new C(), y = new C()
+            assert x.init == String
+            x.viaProperty(y, 'java.lang.String')
+            assert x.f == String
+            assert y.f == String
+        '''
+
+        shouldFailWithMessages '''
+            void test(Class<?> type) {
+                Class<? extends CharSequence> c = type
+            }
+        ''',
+        'Incompatible generic argument types. Cannot assign java.lang.Class<?> to: java.lang.Class<? extends java.lang.CharSequence>'
+
+        shouldFailWithMessages '''
+            class D {
+                static Class<?> any = Object
+                Class<? extends CharSequence> init = any
+                Class<? extends CharSequence> f
+                void viaProperty(D other, Class<?> type) {
+                    this.f = type
+                    other.f = type
+                }
+            }
+        ''',
+        'Incompatible generic argument types. Cannot assign java.lang.Class<?> to: java.lang.Class<? extends java.lang.CharSequence>',
+        'Incompatible generic argument types. Cannot assign java.lang.Class<?> to: java.lang.Class<? extends java.lang.CharSequence>',
+        'Incompatible generic argument types. Cannot assign java.lang.Class<?> to: java.lang.Class<? extends java.lang.CharSequence>'
+    }
+
     @Test
     void testAssignmentToString() {
         assertScript '''

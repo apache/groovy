@@ -192,6 +192,12 @@ import static groovy.lang.groovydoc.Groovydoc.EMPTY_GROOVYDOC;
  */
 public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
+    /**
+     * Generated meta-method classes registered alongside this class: numeric {@code plus}, {@code multiply},
+     * {@code minus}, and {@code div} ({@link NumberNumberPlus}, {@link NumberNumberMultiply},
+     * {@link NumberNumberMinus}, and {@link NumberNumberDiv}), and {@code getAt}/{@code putAt} for object and
+     * primitive arrays.
+     */
     public static final Class[] ADDITIONAL_CLASSES = {
             NumberNumberPlus.class,
             NumberNumberMultiply.class,
@@ -216,6 +222,16 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             DoubleArrayGetAtMetaMethod.class,
             DoubleArrayPutAtMetaMethod.class,
     };
+    /**
+     * Extension classes the DGM registry treats as part of the default method set. The initializer registers
+     * {@link ArrayGroovyMethods}, this class, {@link ParallelCollectionExtensions},
+     * {@link EncodingGroovyMethods}, {@link IOGroovyMethods}, {@link ProcessGroovyMethods},
+     * {@link ResourceGroovyMethods}, {@link SocketGroovyMethods}, {@link StreamGroovyMethods}, and
+     * {@link StringGroovyMethods}. The commented-out entries ({@code DateUtilExtensions},
+     * {@code DateTimeExtensions}, {@code DateTimeStaticExtensions}, {@code NioExtensions},
+     * {@code SqlExtensions}, {@code SwingGroovyMethods}, and {@code XmlExtensions}) are optional modules and
+     * are not registered here.
+     */
     public static final Class[] DGM_LIKE_CLASSES = {
             ArrayGroovyMethods.class,
             DefaultGroovyMethods.class,
@@ -246,6 +262,15 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     private static class NumberAwareValueComparator<K, V> implements Comparator<Map.Entry<K, V>> {
         private final Comparator<V> delegate = new NumberAwareComparator<>();
 
+        /**
+         * Orders the two entries by value. Comparison is delegated to {@link NumberAwareComparator}, which
+         * applies Groovy's ordering and coerces numeric types.
+         *
+         * @param e1 the first entry
+         * @param e2 the second entry
+         * @return a negative integer, zero, or a positive integer as the first value is less than, equal to,
+         *     or greater than the second
+         */
         @Override
         public int compare(Map.Entry<K, V> e1, Map.Entry<K, V> e2) {
             return delegate.compare(e1.getValue(), e2.getValue());
@@ -254,7 +279,15 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     private static final NumberAwareComparator<Comparable> COMPARABLE_NUMBER_AWARE_COMPARATOR = new NumberAwareComparator<>();
 
-    // internal helper method
+    /**
+     * Calls {@code closure} with the current line. When the closure declares two parameters, also passes
+     * {@code counter}; otherwise only the line is passed.
+     *
+     * @param closure the per-line closure
+     * @param line the line being processed
+     * @param counter a counter passed with the line when the closure accepts two arguments
+     * @return the value returned by {@code closure}
+     */
     protected static <T> T callClosureForLine(@ClosureParams(value=FromString.class, options={"String","String,Integer"}) Closure<T> closure, String line, int counter) {
         if (closure.getMaximumNumberOfParameters() == 2) {
             return closure.call(line, counter);
@@ -262,7 +295,14 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         return closure.call(line);
     }
 
-    // internal helper method
+    /**
+     * Calls {@code closure} for one map entry. When the closure declares two parameters, passes the entry's
+     * key and value; otherwise passes the entry itself.
+     *
+     * @param closure the closure to call
+     * @param entry the map entry
+     * @return the value returned by {@code closure}
+     */
     protected static <T, K, V> T callClosureForMapEntry(@ClosureParams(value=FromString.class, options={"K,V","Map.Entry<K,V>"}) Closure<T> closure, Map.Entry<K,V> entry) {
         if (closure.getMaximumNumberOfParameters() == 2) {
             return closure.call(entry.getKey(), entry.getValue());
@@ -270,7 +310,16 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         return closure.call(entry);
     }
 
-    // internal helper method
+    /**
+     * Calls {@code closure} for a map entry together with a counter. A three-parameter closure receives the
+     * key, the value, and {@code counter}; a two-parameter closure receives the entry and {@code counter};
+     * otherwise only the entry is passed.
+     *
+     * @param closure the closure to call
+     * @param entry the map entry
+     * @param counter a counter passed when the closure accepts it
+     * @return the value returned by {@code closure}
+     */
     protected static <T, K, V> T callClosureForMapEntryAndCounter(@ClosureParams(value=FromString.class, options={"K,V,Integer", "K,V","Map.Entry<K,V>"}) Closure<T> closure, Map.Entry<K,V> entry, int counter) {
         if (closure.getMaximumNumberOfParameters() == 3) {
             return closure.call(entry.getKey(), entry.getValue(), counter);
@@ -2120,11 +2169,24 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             this.chopSizes = chopSizes;
         }
 
+        /**
+         * Returns {@code true} when the chop-size iterator has a remaining size and, unless
+         * {@code returnEarly} is false, the source iterator still has an element.
+         *
+         * @return whether another chopped list can be produced
+         */
         @Override
         public boolean hasNext() {
             return chopSizes.hasNext() && (!returnEarly || delegate.hasNext());
         }
 
+        /**
+         * Takes the next chop size and returns up to that many elements from the source. The list is shorter
+         * when the source runs out before that size is filled.
+         *
+         * Throws {@code NoSuchElementException} if {@link #hasNext()} is false.
+         * @return the next chopped list of source elements
+         */
         @Override
         public List<T> next() {
             if (!hasNext()) throw new NoSuchElementException();
@@ -2136,6 +2198,11 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             return next;
         }
 
+        /**
+         * ChopIterator does not support removal.
+         *
+         * Throws {@code UnsupportedOperationException}.
+         */
         @Override
         public void remove() {
             throw new UnsupportedOperationException();
@@ -2412,6 +2479,12 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             this.keepRemainder = keepRemainder;
         }
 
+        /**
+         * Returns {@code true} when another collated sublist is available. The next group is loaded on the
+         * first query after each advance.
+         *
+         * @return whether another collated sublist will be returned
+         */
         @Override
         public boolean hasNext() {
             if (!loaded) {
@@ -2452,6 +2525,12 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             }
         }
 
+        /**
+         * Returns a copy of the next collated sublist.
+         *
+         * Throws {@code NoSuchElementException} when the iterator has been exhausted.
+         * @return the next group of source elements
+         */
         @Override
         public List<T> next() {
             hasNext();
@@ -2463,6 +2542,11 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             return ret;
         }
 
+        /**
+         * CollateIterator does not support removal.
+         *
+         * Throws {@code UnsupportedOperationException}.
+         */
         @Override
         public void remove() {
             throw new UnsupportedOperationException();
@@ -2631,16 +2715,31 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             this.transform = transform;
         }
 
+        /**
+         * Returns {@code true} when the source iterator has another element to transform.
+         *
+         * @return whether another transformed element will be returned
+         */
         @Override
         public boolean hasNext() {
             return source.hasNext();
         }
 
+        /**
+         * Returns the result of calling the transform closure on the next source element.
+         *
+         * @return the transformed element
+         */
         @Override
         public T next() {
             return transform.call(source.next());
         }
 
+        /**
+         * CollectIterator does not support removal.
+         *
+         * Throws {@code UnsupportedOperationException}.
+         */
         @Override
         public void remove() {
             throw new UnsupportedOperationException();
@@ -2656,16 +2755,31 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             this.transform = transform;
         }
 
+        /**
+         * Returns {@code true} when the source iterator has another element to transform.
+         *
+         * @return whether another transformed element will be returned
+         */
         @Override
         public boolean hasNext() {
             return source.hasNext();
         }
 
+        /**
+         * Returns the result of applying the function to the next source element.
+         *
+         * @return the transformed element
+         */
         @Override
         public T next() {
             return transform.apply(source.next());
         }
 
+        /**
+         * CollectingFunctionIterator does not support removal.
+         *
+         * Throws {@code UnsupportedOperationException}.
+         */
         @Override
         public void remove() {
             throw new UnsupportedOperationException();
@@ -2994,17 +3108,32 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             this.transform = transform;
         }
 
+        /**
+         * Returns {@code true} when the source iterator has another element to turn into a map entry.
+         *
+         * @return whether another entry will be returned
+         */
         @Override
         public boolean hasNext() {
             return source.hasNext();
         }
 
+        /**
+         * Transforms the next source element and returns the map entry produced from that result.
+         *
+         * @return the next map entry
+         */
         @SuppressWarnings({"unchecked"})
         @Override
         public Map.Entry<K, V> next() {
             return getEntry(transform.call(source.next()));
         }
 
+        /**
+         * CollectEntriesIterator does not support removal.
+         *
+         * Throws {@code UnsupportedOperationException}.
+         */
         @Override
         public void remove() {
             throw new UnsupportedOperationException();
@@ -3691,11 +3820,23 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             advance();
         }
 
+        /**
+         * Returns {@code true} when a flattened projected element is buffered and ready to return.
+         *
+         * @return whether another flattened element will be returned
+         */
         @Override
         public boolean hasNext() {
             return ready;
         }
 
+        /**
+         * Returns the next buffered element. When the buffer runs dry, later source elements are projected
+         * until one of them contributes a value.
+         *
+         * Throws {@code NoSuchElementException} when no projected element remains.
+         * @return the next flattened element
+         */
         @Override
         public T next() {
             if (!hasNext()) {
@@ -3717,6 +3858,11 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             }
         }
 
+        /**
+         * CollectManyIterator does not support removal.
+         *
+         * Throws {@code UnsupportedOperationException}.
+         */
         @Override
         public void remove() {
             throw new UnsupportedOperationException();
@@ -3735,11 +3881,23 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             advance();
         }
 
+        /**
+         * Returns {@code true} when a flattened projected element is buffered and ready to return.
+         *
+         * @return whether another flattened element will be returned
+         */
         @Override
         public boolean hasNext() {
             return ready;
         }
 
+        /**
+         * Returns the next buffered element. When the buffer runs dry, later source elements are projected
+         * with the function until one of them contributes a value.
+         *
+         * Throws {@code NoSuchElementException} when no projected element remains.
+         * @return the next flattened element
+         */
         @Override
         public T next() {
             if (!hasNext()) {
@@ -3761,6 +3919,11 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             }
         }
 
+        /**
+         * CollectManyFunctionIterator does not support removal.
+         *
+         * Throws {@code UnsupportedOperationException}.
+         */
         @Override
         public void remove() {
             throw new UnsupportedOperationException();
@@ -5095,11 +5258,22 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             advance();
         }
 
+        /**
+         * Returns {@code true} when an element remains that is not part of the trailing suffix held back.
+         *
+         * @return whether another yielded element remains
+         */
         @Override
         public boolean hasNext() {
             return !exhausted;
         }
 
+        /**
+         * Returns the next source element that is not one of the dropped trailing elements.
+         *
+         * Throws {@code NoSuchElementException} when the kept elements are exhausted.
+         * @return the next kept element
+         */
         @Override
         public E next() {
             if (exhausted) throw new NoSuchElementException();
@@ -5108,6 +5282,12 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             return result;
         }
 
+        /**
+         * DropRightIterator does not support removal. It reads ahead into a buffer of elements that may still
+         * be yielded, so removing from the source would drop the wrong element.
+         *
+         * Throws {@code UnsupportedOperationException}.
+         */
         @Override
         public void remove() {
             // unsupported: advance() reads ahead into the discards buffer, so delegate.remove() would remove the wrong element
@@ -5379,11 +5559,24 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             prepare();
         }
 
+        /**
+         * Returns {@code true} when the first element that failed the drop condition is still buffered, or the
+         * source iterator has a later element.
+         *
+         * @return whether another kept element will be returned
+         */
         @Override
         public boolean hasNext() {
             return buffering || delegate.hasNext();
         }
 
+        /**
+         * Returns the buffered first element that failed the drop condition, then later elements from the
+         * source. Elements that matched the condition were already skipped.
+         *
+         * Throws {@code NoSuchElementException} if {@link #hasNext()} is false.
+         * @return the next kept element
+         */
         @Override
         public E next() {
             if (buffering) {
@@ -5396,6 +5589,11 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             }
         }
 
+        /**
+         * When the first kept element is still sitting in the prefetch buffer, drops that buffer so the
+         * element is not returned. Once that element has been returned, removal is delegated to the source
+         * iterator.
+         */
         @Override
         public void remove() {
             if (buffering) {
@@ -6845,6 +7043,11 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             advance();
         }
 
+        /**
+         * Returns {@code true} when a source element accepted by the filter is waiting to be returned.
+         *
+         * @return whether another matching element will be returned
+         */
         @Override
         public boolean hasNext() {
             return found;
@@ -6860,6 +7063,12 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             }
         }
 
+        /**
+         * Returns the matching element found by the last search and looks ahead for the next match.
+         *
+         * Throws {@code NoSuchElementException} when no further match remains.
+         * @return the next element accepted by the filter
+         */
         @Override
         public T next() {
             if (!hasNext()) {
@@ -6871,6 +7080,11 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             return result;
         }
 
+        /**
+         * FindAllIterator does not support removal.
+         *
+         * Throws {@code UnsupportedOperationException}.
+         */
         @Override
         public void remove() {
             throw new UnsupportedOperationException();
@@ -6890,6 +7104,11 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             advance();
         }
 
+        /**
+         * Returns {@code true} when a source element accepted by the predicate is waiting to be returned.
+         *
+         * @return whether another matching element will be returned
+         */
         @Override
         public boolean hasNext() {
             return found;
@@ -6905,6 +7124,12 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             }
         }
 
+        /**
+         * Returns the matching element found by the last search and looks ahead for the next match.
+         *
+         * Throws {@code NoSuchElementException} when no further match remains.
+         * @return the next element accepted by the predicate
+         */
         @Override
         public T next() {
             if (!hasNext()) {
@@ -6916,6 +7141,11 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             return result;
         }
 
+        /**
+         * FindingAllPredicateIterator does not support removal.
+         *
+         * Throws {@code UnsupportedOperationException}.
+         */
         @Override
         public void remove() {
             throw new UnsupportedOperationException();
@@ -7186,6 +7416,12 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             advance();
         }
 
+        /**
+         * Returns {@code true} when another index at or after the start index has been found whose element
+         * matches the filter.
+         *
+         * @return whether another matching index will be returned
+         */
         @Override
         public boolean hasNext() {
             return !exhausted;
@@ -7205,6 +7441,12 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             exhausted = true;
         }
 
+        /**
+         * Returns that zero-based source index and continues the search after it.
+         *
+         * Throws {@code NoSuchElementException} when no further match remains.
+         * @return the next matching index
+         */
         @Override
         public Number next() {
             if (!hasNext()) {
@@ -7215,6 +7457,11 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             return result;
         }
 
+        /**
+         * FindIndexValuesIterator does not support removal.
+         *
+         * Throws {@code UnsupportedOperationException}.
+         */
         @Override
         public void remove() {
             throw new UnsupportedOperationException();
@@ -7731,6 +7978,12 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             advance();
         }
 
+        /**
+         * Returns {@code true} when the transform has produced a non-null result that has not yet been
+         * returned.
+         *
+         * @return whether another non-null transformed value will be returned
+         */
         @Override
         public boolean hasNext() {
             return found;
@@ -7746,6 +7999,13 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             }
         }
 
+        /**
+         * Returns the buffered non-null transformed value and searches for the next one. Null results are
+         * skipped.
+         *
+         * Throws {@code NoSuchElementException} when no further result remains.
+         * @return the next non-null transformed value
+         */
         @Override
         public T next() {
             if (!hasNext()) {
@@ -7757,6 +8017,11 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             return result;
         }
 
+        /**
+         * FindResultsIterator does not support removal.
+         *
+         * Throws {@code UnsupportedOperationException}.
+         */
         @Override
         public void remove() {
             throw new UnsupportedOperationException();
@@ -8027,11 +8292,24 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             }
         }
 
+        /**
+         * Returns {@code true} when another flattened value has been buffered.
+         *
+         * @return whether another flattened value will be returned
+         */
         @Override
         public boolean hasNext() {
             return !exhausted;
         }
 
+        /**
+         * Returns the buffered value and steps to the next one. Nested iterators, collections, and arrays are
+         * expanded. Empty optionals are skipped when optional flattening is enabled, and a flatten-using
+         * closure may expand a value further.
+         *
+         * Throws {@code NoSuchElementException} if {@link #hasNext()} is false.
+         * @return the next flattened value
+         */
         @Override
         public V next() {
             if (!hasNext()) throw new NoSuchElementException();
@@ -8040,6 +8318,11 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             return result;
         }
 
+        /**
+         * FlattenIterator does not support removal.
+         *
+         * Throws {@code UnsupportedOperationException}.
+         */
         @Override
         public void remove() {
             throw new UnsupportedOperationException();
@@ -9098,6 +9381,12 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             advance();
         }
 
+        /**
+         * Returns {@code true} when a source element for which the filter's {@code isCase} test passes is
+         * waiting to be returned.
+         *
+         * @return whether another matching element will be returned
+         */
         @Override
         public boolean hasNext() {
             return found;
@@ -9113,6 +9402,12 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             }
         }
 
+        /**
+         * Returns the element accepted by the last {@code isCase} test and looks ahead for the next match.
+         *
+         * Throws {@code NoSuchElementException} when no further match remains.
+         * @return the next element selected by the filter
+         */
         @Override
         public T next() {
             if (!hasNext()) {
@@ -9124,6 +9419,11 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             return result;
         }
 
+        /**
+         * GrepIterator does not support removal.
+         *
+         * Throws {@code UnsupportedOperationException}.
+         */
         @Override
         public void remove() {
             throw new UnsupportedOperationException();
@@ -9219,7 +9519,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             return first;
 
         final Object[] tail = new Object[closures.length - 1];
-        System.arraycopy(closures, 1, tail, 0, closures.length - 1); // Arrays.copyOfRange only since JDK 1.6
+        System.arraycopy(closures, 1, tail, 0, closures.length - 1);
 
         // inject([:]) { a,e {@code ->} a {@code <<} [(e.key): e.value.groupBy(tail)] }
         Map<Object, Map> acc = new LinkedHashMap<>();
@@ -9358,7 +9658,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             return first;
 
         final Object[] tail = new Object[closures.length - 1];
-        System.arraycopy(closures, 1, tail, 0, closures.length - 1); // Arrays.copyOfRange only since JDK 1.6
+        System.arraycopy(closures, 1, tail, 0, closures.length - 1);
 
         Map<Object, Map> acc = new LinkedHashMap<>();
         for (Map.Entry<Object, Map> item: first.entrySet()) {
@@ -9856,17 +10156,31 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             this.index = offset;
         }
 
+        /**
+         * Returns {@code true} when the source iterator has another element to pair with an index.
+         *
+         * @return whether another indexed pair will be returned
+         */
         @Override
         public boolean hasNext() {
             return delegate.hasNext();
         }
 
+        /**
+         * Returns a tuple of the current index and the next source element, then increments the index.
+         *
+         * Throws {@code NoSuchElementException} if {@link #hasNext()} is false.
+         * @return the next (index, element) pair
+         */
         @Override
         public Tuple2<Integer, E> next() {
             if (!hasNext()) throw new NoSuchElementException();
             return new Tuple2<>(index++, delegate.next());
         }
 
+        /**
+         * Removes the source element most recently returned by {@link #next()} from the underlying iterator.
+         */
         @Override
         public void remove() {
             delegate.remove();
@@ -9967,11 +10281,23 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             advance();
         }
 
+        /**
+         * Returns {@code true} when the prefetched element is not the last element of the source.
+         *
+         * @return whether another element except the final one will be returned
+         */
         @Override
         public boolean hasNext() {
             return !exhausted;
         }
 
+        /**
+         * Returns the prefetched element and prefetches the following one, so every source element except the
+         * last is yielded.
+         *
+         * Throws {@code NoSuchElementException} when the remaining element is the last one.
+         * @return the next element, excluding the final source element
+         */
         @Override
         public E next() {
             if (exhausted) throw new NoSuchElementException();
@@ -9980,6 +10306,11 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             return result;
         }
 
+        /**
+         * Throws {@link NoSuchElementException} when this iterator is exhausted. Otherwise discards the
+         * prefetched element, so it is not yielded, without calling {@code remove} on the source iterator.
+         *
+         */
         @Override
         public void remove() {
             if (exhausted) throw new NoSuchElementException();
@@ -10550,11 +10881,23 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             this.closure = closure;
         }
 
+        /**
+         * Returns {@code true} when the source iterator has another element to fold in.
+         *
+         * @return whether another accumulated value will be returned
+         */
         @Override
         public boolean hasNext() {
             return delegate.hasNext();
         }
 
+        /**
+         * Folds the next source element into the running value by calling the closure with the current value
+         * and that element, then returns the updated value.
+         *
+         * Throws {@code NoSuchElementException} if {@link #hasNext()} is false.
+         * @return the running value after absorbing the next element
+         */
         @SuppressWarnings("unchecked")
         @Override
         public T next() {
@@ -10566,6 +10909,11 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             return (T) value;
         }
 
+        /**
+         * InjectAllIterator does not support removal.
+         *
+         * Throws {@code UnsupportedOperationException}.
+         */
         @Override
         public void remove() {
             throw new UnsupportedOperationException();
@@ -10583,11 +10931,23 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             this.function = function;
         }
 
+        /**
+         * Returns {@code true} when the source iterator has another element to fold in.
+         *
+         * @return whether another accumulated value will be returned
+         */
         @Override
         public boolean hasNext() {
             return delegate.hasNext();
         }
 
+        /**
+         * Folds the next source element into the running value with the function and returns the updated
+         * value.
+         *
+         * Throws {@code NoSuchElementException} if {@link #hasNext()} is false.
+         * @return the running value after absorbing the next element
+         */
         @Override
         public U next() {
             if (!hasNext()) throw new NoSuchElementException();
@@ -10595,6 +10955,11 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             return value;
         }
 
+        /**
+         * InjectAllFunctionIterator does not support removal.
+         *
+         * Throws {@code UnsupportedOperationException}.
+         */
         @Override
         public void remove() {
             throw new UnsupportedOperationException();
@@ -10844,6 +11209,13 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             current = cast(delegate);
         }
 
+        /**
+         * Returns {@code true} when another element will be yielded. If {@code includeRemainder} is set, that
+         * is when either source iterator has an element; otherwise only while the iterator whose turn it is
+         * still has an element.
+         *
+         * @return whether another interleaved element will be returned
+         */
         @Override
         public boolean hasNext() {
             if (includeRemainder) {
@@ -10852,6 +11224,14 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             return current != null && current.hasNext();
         }
 
+        /**
+         * Returns the next element from the iterator whose turn it is, then gives the following turn to the
+         * other iterator when that iterator can supply it. When {@code includeRemainder} is false, iteration
+         * stops once a turn cannot be filled.
+         *
+         * Throws {@code NoSuchElementException} if {@link #hasNext()} is false.
+         * @return the next interleaved element
+         */
         @Override
         public T next() {
             if (!hasNext()) throw new NoSuchElementException();
@@ -10871,6 +11251,11 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             return (Iterator<T>) it;
         }
 
+        /**
+         * InterleaveIterator does not support removal.
+         *
+         * Throws {@code UnsupportedOperationException}.
+         */
         @Override
         public void remove() {
             throw new UnsupportedOperationException();
@@ -11740,16 +12125,31 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static <T> Iterator<T> iterator(final Enumeration<T> self) {
         return new Iterator<T>() {
+            /**
+             * Returns {@code true} when the enumeration has another element.
+             *
+             * @return whether another enumerated element will be returned
+             */
             @Override
             public boolean hasNext() {
                 return self.hasMoreElements();
             }
 
+            /**
+             * Returns the next element from the enumeration.
+             *
+             * @return the next enumerated element
+             */
             @Override
             public T next() {
                 return self.nextElement();
             }
 
+            /**
+             * This iterator does not support removal. An {@link Enumeration} provides no removal operation.
+             *
+             * Throws {@code UnsupportedOperationException}.
+             */
             @Override
             public void remove() {
                 throw new UnsupportedOperationException("Cannot remove() from an Enumeration");
@@ -13827,17 +14227,31 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             current = first;
         }
 
+        /**
+         * Returns {@code true} when either the first or the second iterator has an element.
+         *
+         * @return whether another element will be returned
+         */
         @Override
         public boolean hasNext() {
             return first.hasNext() || second.hasNext();
         }
 
+        /**
+         * Returns the next element from the first iterator while it has one, then from the second iterator.
+         *
+         * @return the next element of the concatenation
+         */
         @Override
         public E next() {
             current = first.hasNext() ? first : second;
             return current.next();
         }
 
+        /**
+         * Removes the element most recently returned by {@link #next()} from the source iterator that produced
+         * it.
+         */
         @Override
         public void remove() {
             current.remove();
@@ -14612,6 +15026,38 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * A helper method to allow maps to work with subscript operators and property
+     * writes when the type of the values is known. The value is converted to that
+     * type, as an assignment to a variable of that type converts it: a {@code GString}
+     * becomes a {@code String}, an {@code Integer} written to a map of {@code Long}
+     * values a {@code Long}. The map then holds values of the type it declares.
+     * <pre class="groovyTestCase">
+     * def name = 'Groovy'
+     * Map&lt;String, String&gt; greetings = [:]
+     * greetings.putAt('hello', "Hello, $name", String)
+     * assert greetings.hello instanceof String
+     * assert greetings.hello == 'Hello, Groovy'
+     * </pre>
+     * Under static type checking the type token is compiler-supplied from the map's
+     * value type: a property or subscript write, or a call of {@code putAt} without
+     * the token, selects this method in place of the other {@code putAt} methods, which
+     * store the value as it is. {@code greetings.hello = "Hello, $name"} on a
+     * {@code Map<String, String>} stores a {@code String}.
+     *
+     * @param self      a Map
+     * @param key       an Object as a key for the map
+     * @param value     the value to convert and put into the map
+     * @param valueType the type of the values of the map
+     * @return the converted value
+     * @since 7.0.0
+     */
+    public static <K,V> V putAt(Map<K,V> self, K key, Object value, @ClassTag(preempt=true) Class<V> valueType) {
+        V converted = valueType.cast(DefaultTypeTransformation.castToType(value, valueType));
+        self.put(key, converted);
+        return converted;
+    }
+
+    /**
      * Support assigning a range of values with a single assignment statement.
      *
      * @param self  a BitSet
@@ -14881,16 +15327,34 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             this.repeating = false;
         }
 
+        /**
+         * Returns {@code true} when the repetition is unbounded, when more than one pass remains, or when the
+         * current pass still has an element.
+         *
+         * @return whether another element will be returned
+         */
         @Override
         public boolean hasNext() {
             return FOREVER.equals(repeatCount) || repeatCount > 1 || parent.hasNext();
         }
 
+        /**
+         * RepeatIterator does not support removal.
+         *
+         * Throws {@code UnsupportedOperationException}.
+         */
         @Override
         public void remove() {
             throw new UnsupportedOperationException();
         }
 
+        /**
+         * Returns the next element of the current pass. When that pass is exhausted and another repetition is
+         * still due, replays the elements saved from the first pass.
+         *
+         * Throws {@code NoSuchElementException} when no repetition remains.
+         * @return the next element of the current or replayed pass
+         */
         @Override
         public T next() {
             if (!parent.hasNext()) {
@@ -15330,6 +15794,9 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static TimerTask runAfter(Timer timer, int delay, final Closure closure) {
         TimerTask timerTask = new TimerTask() {
+            /**
+             * Invokes the closure supplied to {@link #runAfter(Timer, int, Closure)} when the timer fires.
+             */
             @Override
             public void run() {
                 closure.call();
@@ -16830,11 +17297,22 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             this.num = num;
         }
 
+        /**
+         * Returns {@code true} when the remaining count is positive and the source iterator has an element.
+         *
+         * @return whether another taken element will be returned
+         */
         @Override
         public boolean hasNext() {
             return num > 0 && delegate.hasNext();
         }
 
+        /**
+         * Returns the next source element and decrements the remaining count.
+         *
+         * Throws {@code NoSuchElementException} when the requested count is already exhausted.
+         * @return the next taken element
+         */
         @Override
         public E next() {
             if (num <= 0) throw new NoSuchElementException();
@@ -16842,6 +17320,9 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             return delegate.next();
         }
 
+        /**
+         * Removes the element most recently returned by {@link #next()} from the source iterator.
+         */
         @Override
         public void remove() {
             delegate.remove();
@@ -17213,11 +17694,23 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             advance();
         }
 
+        /**
+         * Returns {@code true} when a prefetched element still satisfies the condition.
+         *
+         * @return whether another element matching the condition will be returned
+         */
         @Override
         public boolean hasNext() {
             return !exhausted;
         }
 
+        /**
+         * Returns the prefetched element and prefetches the following candidate, stopping once the condition
+         * fails.
+         *
+         * Throws {@code NoSuchElementException} when the condition has already failed.
+         * @return the next element that satisfied the condition
+         */
         @Override
         public E next() {
             if (exhausted) throw new NoSuchElementException();
@@ -17226,6 +17719,12 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             return result;
         }
 
+        /**
+         * TakeWhileIterator does not support removal. It prefetches the next candidate, so removing from the
+         * source would drop the wrong element.
+         *
+         * Throws {@code UnsupportedOperationException}.
+         */
         @Override
         public void remove() {
             // unsupported: advance() prefetches the next element, so delegate.remove() would remove the wrong one
@@ -17355,11 +17854,24 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             this.every = every;
         }
 
+        /**
+         * Returns {@code true} when the source iterator has another element.
+         *
+         * @return whether another element will be returned
+         */
         @Override
         public boolean hasNext() {
             return delegate.hasNext();
         }
 
+        /**
+         * Returns the next source element. The closure is invoked, with that element as the delegate and the
+         * argument, when the zero-based index is divisible by {@code every}, so the first element is always
+         * included.
+         *
+         * Throws {@code NoSuchElementException} if {@link #hasNext()} is false.
+         * @return the next source element
+         */
         @Override
         public T next() {
             if (!hasNext()) throw new NoSuchElementException();
@@ -17370,6 +17882,9 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             return next;
         }
 
+        /**
+         * Removes the element most recently returned by {@link #next()} from the source iterator.
+         */
         @Override
         public void remove() {
             delegate.remove();
@@ -18247,6 +18762,16 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * the class extends) and visible to Groovy.
      */
     private static final ClassValue<Boolean> DECLARES_TO_STRING = new ClassValue<>() {
+        /**
+         * Returns whether {@code type} declares an instance {@code toString()} that dynamic dispatch selects
+         * over the extension method. The search walks from {@code type} up to, but not including,
+         * {@link AbstractCollection}, {@link AbstractMap}, or {@link Object}, whichever of those is the
+         * nearest superclass bound, and accepts a non-static zero-argument {@code toString()}.
+         *
+         * @param type the class to inspect
+         * @return {@code true} when such a {@code toString()} is declared on {@code type} or an included
+         *     superclass
+         */
         @Override
         protected Boolean computeValue(final Class<?> type) {
             Class<?> bound = AbstractCollection.class.isAssignableFrom(type) ? AbstractCollection.class
@@ -18613,11 +19138,22 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             advance();
         }
 
+        /**
+         * Returns {@code true} when another element that the comparator has not already seen is available.
+         *
+         * @return whether another unique element will be returned
+         */
         @Override
         public boolean hasNext() {
             return !exhausted;
         }
 
+        /**
+         * Returns the next source element that was not already accepted into the seen set.
+         *
+         * Throws {@code NoSuchElementException} when no further unique element remains.
+         * @return the next unique element
+         */
         @Override
         public E next() {
             if (exhausted) throw new NoSuchElementException();
@@ -18626,6 +19162,12 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             return result;
         }
 
+        /**
+         * ToUniqueIterator does not support removal. It prefetches the next unique element, so removing from
+         * the source would drop the wrong element.
+         *
+         * Throws {@code UnsupportedOperationException}.
+         */
         @Override
         public void remove() {
             // unsupported: advance() prefetches the next unique element, so delegate.remove() would remove the wrong one
@@ -19569,6 +20111,11 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             this.self = self;
         }
 
+        /**
+         * Returns the iterator this adapter was built around.
+         *
+         * @return the wrapped iterator
+         */
         @Override
         public Iterator<T> iterator() {
             return self;
@@ -20459,17 +21006,31 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             this.index = offset;
         }
 
+        /**
+         * Returns {@code true} when the source iterator has another element to pair with an index.
+         *
+         * @return whether another indexed pair will be returned
+         */
         @Override
         public boolean hasNext() {
             return delegate.hasNext();
         }
 
+        /**
+         * Returns a tuple of the next source element and the current index, then increments the index.
+         *
+         * Throws {@code NoSuchElementException} if {@link #hasNext()} is false.
+         * @return the next (element, index) pair
+         */
         @Override
         public Tuple2<E, Integer> next() {
             if (!hasNext()) throw new NoSuchElementException();
             return new Tuple2<>(delegate.next(), index++);
         }
 
+        /**
+         * Removes the source element most recently returned by {@link #next()} from the underlying iterator.
+         */
         @Override
         public void remove() {
             delegate.remove();
@@ -20535,17 +21096,33 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             this.other = other;
         }
 
+        /**
+         * Returns {@code true} when both iterators have another element.
+         *
+         * @return whether another pair will be returned
+         */
         @Override
         public boolean hasNext() {
             return delegate.hasNext() && other.hasNext();
         }
 
+        /**
+         * Returns a tuple of the next element from each iterator.
+         *
+         * Throws {@code NoSuchElementException} if {@link #hasNext()} is false.
+         * @return the next pair
+         */
         @Override
         public Tuple2<U, V> next() {
             if (!hasNext()) throw new NoSuchElementException();
             return new Tuple2<>(delegate.next(), other.next());
         }
 
+        /**
+         * ZipIterator does not support removal.
+         *
+         * Throws {@code UnsupportedOperationException}.
+         */
         @Override
         public void remove() {
             throw new UnsupportedOperationException();
@@ -20617,11 +21194,23 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             this.rightDefault = rightDefault;
         }
 
+        /**
+         * Returns {@code true} when either iterator has another element.
+         *
+         * @return whether another padded pair will be returned
+         */
         @Override
         public boolean hasNext() {
             return left.hasNext() || right.hasNext();
         }
 
+        /**
+         * Returns a tuple of the next left element, or the left default when the left iterator is exhausted,
+         * and the next right element, or the right default.
+         *
+         * Throws {@code NoSuchElementException} if {@link #hasNext()} is false.
+         * @return the next pair, using a default for the exhausted side
+         */
         @Override
         public Tuple2<U, V> next() {
             if (!hasNext()) throw new NoSuchElementException();
@@ -20629,6 +21218,11 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
                                 right.hasNext() ? right.next() : rightDefault);
         }
 
+        /**
+         * ZipAllIterator does not support removal.
+         *
+         * Throws {@code UnsupportedOperationException}.
+         */
         @Override
         public void remove() {
             throw new UnsupportedOperationException();
@@ -20712,17 +21306,32 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     public static <T, R> Iterator<R> zipWithNext(Iterator<T> self, BiFunction<? super T, ? super T, ? extends R> combiner) {
         Iterator<Tuple2<T, T>> pairs = new ZipWithNextIterator<>(self);
         return new Iterator<R>() {
+            /**
+             * Returns {@code true} when another adjacent pair is available to combine.
+             *
+             * @return whether another combined value will be returned
+             */
             @Override
             public boolean hasNext() {
                 return pairs.hasNext();
             }
 
+            /**
+             * Applies the combiner to the two values of the next adjacent pair.
+             *
+             * @return the combiner's result for that pair
+             */
             @Override
             public R next() {
                 Tuple2<T, T> pair = pairs.next();
                 return combiner.apply(pair.getV1(), pair.getV2());
             }
 
+            /**
+             * This iterator does not support removal.
+             *
+             * Throws {@code UnsupportedOperationException}.
+             */
             @Override
             public void remove() {
                 throw new UnsupportedOperationException();
@@ -20743,11 +21352,24 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             }
         }
 
+        /**
+         * Returns {@code true} when a previous element has been read and the source iterator has a following
+         * element.
+         *
+         * @return whether another adjacent pair will be returned
+         */
         @Override
         public boolean hasNext() {
             return hasPrev && delegate.hasNext();
         }
 
+        /**
+         * Returns the pair of the previous element and the next source element, then slides the window
+         * forward.
+         *
+         * Throws {@code NoSuchElementException} if {@link #hasNext()} is false.
+         * @return the next adjacent pair
+         */
         @Override
         public Tuple2<T, T> next() {
             if (!hasNext()) throw new NoSuchElementException();
@@ -20757,6 +21379,11 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             return pair;
         }
 
+        /**
+         * ZipWithNextIterator does not support removal.
+         *
+         * Throws {@code UnsupportedOperationException}.
+         */
         @Override
         public void remove() {
             throw new UnsupportedOperationException();
@@ -20892,11 +21519,23 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             }
         }
 
+        /**
+         * Returns {@code true} when a pending element starts another run.
+         *
+         * @return whether another run will be returned
+         */
         @Override
         public boolean hasNext() {
             return hasPending;
         }
 
+        /**
+         * Returns the next run of adjacent elements for which the predicate accepts each successive pair. The
+         * element that breaks the run is kept as the start of the following run.
+         *
+         * Throws {@code NoSuchElementException} when no pending element remains.
+         * @return the next run
+         */
         @Override
         public List<T> next() {
             if (!hasPending) throw new NoSuchElementException();
@@ -20918,6 +21557,11 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             return run;
         }
 
+        /**
+         * GroupConsecutiveIterator does not support removal.
+         *
+         * Throws {@code UnsupportedOperationException}.
+         */
         @Override
         public void remove() {
             throw new UnsupportedOperationException();
@@ -20941,11 +21585,23 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             }
         }
 
+        /**
+         * Returns {@code true} when a pending element starts another run.
+         *
+         * @return whether another run will be returned
+         */
         @Override
         public boolean hasNext() {
             return hasPending;
         }
 
+        /**
+         * Returns the next run of adjacent elements whose keys compare equal under Groovy's coerced equality.
+         * Each element's key is computed once and reused when that element starts the following run.
+         *
+         * Throws {@code NoSuchElementException} when no pending element remains.
+         * @return the next run
+         */
         @Override
         public List<T> next() {
             if (!hasPending) throw new NoSuchElementException();
@@ -20969,6 +21625,11 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             return run;
         }
 
+        /**
+         * GroupConsecutiveByKeyIterator does not support removal.
+         *
+         * Throws {@code UnsupportedOperationException}.
+         */
         @Override
         public void remove() {
             throw new UnsupportedOperationException();
@@ -21134,926 +21795,2546 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     //--------------------------------------------------------------------------
     // attic
 
+    /**
+     * Deprecated overload retained for callers accepting a {@code T[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#any(Object[], Closure)}.
+     *
+     * @param self the {@code T[]} receiver
+     * @param predicate a predicate tested against each element
+     * @return the value returned by {@link ArrayGroovyMethods#any(Object[], Closure)}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#any(Object[], Closure)}
+     */
     @Deprecated(since = "5.0.0")
     public static <T> boolean any(T[] self, @ClosureParams(FirstParam.Component.class) Closure predicate) {
         return ArrayGroovyMethods.any(self, predicate);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting a {@code boolean[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#asBoolean(boolean[])}.
+     *
+     * @param self the {@code boolean[]} receiver
+     * @return the value returned by {@link ArrayGroovyMethods#asBoolean(boolean[])}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#asBoolean(boolean[])}
+     */
     @Deprecated(since = "5.0.0")
     public static boolean asBoolean(boolean[] self) {
         return ArrayGroovyMethods.asBoolean(self);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting a {@code byte[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#asBoolean(byte[])}.
+     *
+     * @param self the {@code byte[]} receiver
+     * @return the value returned by {@link ArrayGroovyMethods#asBoolean(byte[])}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#asBoolean(byte[])}
+     */
     @Deprecated(since = "5.0.0")
     public static boolean asBoolean(byte[] self) {
         return ArrayGroovyMethods.asBoolean(self);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting a {@code char[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#asBoolean(char[])}.
+     *
+     * @param self the {@code char[]} receiver
+     * @return the value returned by {@link ArrayGroovyMethods#asBoolean(char[])}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#asBoolean(char[])}
+     */
     @Deprecated(since = "5.0.0")
     public static boolean asBoolean(char[] self) {
         return ArrayGroovyMethods.asBoolean(self);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting a {@code short[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#asBoolean(short[])}.
+     *
+     * @param self the {@code short[]} receiver
+     * @return the value returned by {@link ArrayGroovyMethods#asBoolean(short[])}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#asBoolean(short[])}
+     */
     @Deprecated(since = "5.0.0")
     public static boolean asBoolean(short[] self) {
         return ArrayGroovyMethods.asBoolean(self);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting an {@code int[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#asBoolean(int[])}.
+     *
+     * @param self the {@code int[]} receiver
+     * @return the value returned by {@link ArrayGroovyMethods#asBoolean(int[])}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#asBoolean(int[])}
+     */
     @Deprecated(since = "5.0.0")
     public static boolean asBoolean(int[] self) {
         return ArrayGroovyMethods.asBoolean(self);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting a {@code long[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#asBoolean(long[])}.
+     *
+     * @param self the {@code long[]} receiver
+     * @return the value returned by {@link ArrayGroovyMethods#asBoolean(long[])}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#asBoolean(long[])}
+     */
     @Deprecated(since = "5.0.0")
     public static boolean asBoolean(long[] self) {
         return ArrayGroovyMethods.asBoolean(self);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting a {@code float[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#asBoolean(float[])}.
+     *
+     * @param self the {@code float[]} receiver
+     * @return the value returned by {@link ArrayGroovyMethods#asBoolean(float[])}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#asBoolean(float[])}
+     */
     @Deprecated(since = "5.0.0")
     public static boolean asBoolean(float[] self) {
         return ArrayGroovyMethods.asBoolean(self);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting a {@code double[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#asBoolean(double[])}.
+     *
+     * @param self the {@code double[]} receiver
+     * @return the value returned by {@link ArrayGroovyMethods#asBoolean(double[])}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#asBoolean(double[])}
+     */
     @Deprecated(since = "5.0.0")
     public static boolean asBoolean(double[] self) {
         return ArrayGroovyMethods.asBoolean(self);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting an {@code Object[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#asBoolean(Object[])}.
+     *
+     * @param self the {@code Object[]} receiver
+     * @return the value returned by {@link ArrayGroovyMethods#asBoolean(Object[])}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#asBoolean(Object[])}
+     */
     @Deprecated(since = "5.0.0")
     public static boolean asBoolean(Object[] self) {
         return ArrayGroovyMethods.asBoolean(self);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting an {@code Object[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#asType(Object[], Class)}.
+     *
+     * @param self the {@code Object[]} receiver
+     * @param type the type to convert the receiver to
+     * @return the value returned by {@link ArrayGroovyMethods#asType(Object[], Class)}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#asType(Object[], Class)}
+     */
     @Deprecated(since = "5.0.0")
     public static <T> T asType(Object[] self, Class<T> type) {
         return ArrayGroovyMethods.asType(self, type);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting a {@code byte[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#average(byte[])}.
+     *
+     * @param self the {@code byte[]} receiver
+     * @return the value returned by {@link ArrayGroovyMethods#average(byte[])}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#average(byte[])}
+     */
     @Deprecated(since = "5.0.0")
     public static BigDecimal average(byte[] self) {
         return ArrayGroovyMethods.average(self);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting a {@code short[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#average(short[])}.
+     *
+     * @param self the {@code short[]} receiver
+     * @return the value returned by {@link ArrayGroovyMethods#average(short[])}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#average(short[])}
+     */
     @Deprecated(since = "5.0.0")
     public static BigDecimal average(short[] self) {
         return ArrayGroovyMethods.average(self);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting an {@code int[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#average(int[])}.
+     *
+     * @param self the {@code int[]} receiver
+     * @return the value returned by {@link ArrayGroovyMethods#average(int[])}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#average(int[])}
+     */
     @Deprecated(since = "5.0.0")
     public static BigDecimal average(int[] self) {
         return ArrayGroovyMethods.average(self);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting a {@code long[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#average(long[])}.
+     *
+     * @param self the {@code long[]} receiver
+     * @return the value returned by {@link ArrayGroovyMethods#average(long[])}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#average(long[])}
+     */
     @Deprecated(since = "5.0.0")
     public static BigDecimal average(long[] self) {
         return ArrayGroovyMethods.average(self);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting a {@code float[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#average(float[])}.
+     *
+     * @param self the {@code float[]} receiver
+     * @return the value returned by {@link ArrayGroovyMethods#average(float[])}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#average(float[])}
+     */
     @Deprecated(since = "5.0.0")
     public static double average(float[] self) {
         return ArrayGroovyMethods.average(self);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting a {@code double[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#average(double[])}.
+     *
+     * @param self the {@code double[]} receiver
+     * @return the value returned by {@link ArrayGroovyMethods#average(double[])}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#average(double[])}
+     */
     @Deprecated(since = "5.0.0")
     public static double average(double[] self) {
         return ArrayGroovyMethods.average(self);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting an {@code Object[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#average(Object[])}.
+     *
+     * @param self the {@code Object[]} receiver
+     * @return the value returned by {@link ArrayGroovyMethods#average(Object[])}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#average(Object[])}
+     */
     @Deprecated(since = "5.0.0")
     public static Object average(Object[] self) {
         return ArrayGroovyMethods.average(self);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting a {@code T[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#average(Object[], Closure)}.
+     *
+     * @param self the {@code T[]} receiver
+     * @param closure a closure mapping each element before it is combined
+     * @return the value returned by {@link ArrayGroovyMethods#average(Object[], Closure)}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#average(Object[], Closure)}
+     */
     @Deprecated(since = "5.0.0")
     public static <T> Object average(T[] self, @ClosureParams(FirstParam.Component.class) Closure closure) {
         return ArrayGroovyMethods.average(self, closure);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting a {@code T[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#chop(Object[], int...)}.
+     *
+     * @param self the {@code T[]} receiver
+     * @param chopSizes the lengths of the successive pieces
+     * @return the value returned by {@link ArrayGroovyMethods#chop(Object[], int...)}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#chop(Object[], int...)}
+     */
     @Deprecated(since = "5.0.0")
     public static <T> List<List<T>> chop(T[] self, int... chopSizes) {
         return ArrayGroovyMethods.chop(self, chopSizes);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting a {@code T[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#collate(Object[], int)}.
+     *
+     * @param self the {@code T[]} receiver
+     * @param size the length of each group
+     * @return the value returned by {@link ArrayGroovyMethods#collate(Object[], int)}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#collate(Object[], int)}
+     */
     @Deprecated(since = "5.0.0")
     public static <T> List<List<T>> collate(T[] self, int size) {
         return ArrayGroovyMethods.collate(self, size);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting a {@code T[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#collate(Object[], int, int)}.
+     *
+     * @param self the {@code T[]} receiver
+     * @param size the length of each group
+     * @param step how many elements to advance before the next group starts
+     * @return the value returned by {@link ArrayGroovyMethods#collate(Object[], int, int)}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#collate(Object[], int, int)}
+     */
     @Deprecated(since = "5.0.0")
     public static <T> List<List<T>> collate(T[] self, int size, int step) {
         return ArrayGroovyMethods.collate(self, size, step);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting a {@code T[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#collate(Object[], int, boolean)}.
+     *
+     * @param self the {@code T[]} receiver
+     * @param size the length of each group
+     * @param keepRemainder whether a final group shorter than {@code size} is kept
+     * @return the value returned by {@link ArrayGroovyMethods#collate(Object[], int, boolean)}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#collate(Object[], int, boolean)}
+     */
     @Deprecated(since = "5.0.0")
     public static <T> List<List<T>> collate(T[] self, int size, boolean keepRemainder) {
         return ArrayGroovyMethods.collate(self, size, keepRemainder);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting a {@code T[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#collate(Object[], int, int, boolean)}.
+     *
+     * @param self the {@code T[]} receiver
+     * @param size the length of each group
+     * @param step how many elements to advance before the next group starts
+     * @param keepRemainder whether a final group shorter than {@code size} is kept
+     * @return the value returned by {@link ArrayGroovyMethods#collate(Object[], int, int, boolean)}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#collate(Object[], int, int, boolean)}
+     */
     @Deprecated(since = "5.0.0")
     public static <T> List<List<T>> collate(T[] self, int size, int step, boolean keepRemainder) {
         return ArrayGroovyMethods.collate(self, size, step, keepRemainder);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting an {@code E[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#collect(Object[], Closure)}.
+     *
+     * @param self the {@code E[]} receiver
+     * @param transform a closure applied to each element
+     * @return the value returned by {@link ArrayGroovyMethods#collect(Object[], Closure)}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#collect(Object[], Closure)}
+     */
     @Deprecated(since = "5.0.0")
     public static <E, T> List<T> collect(E[] self, @ClosureParams(FirstParam.Component.class) Closure<T> transform) {
         return ArrayGroovyMethods.collect(self, transform);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting an {@code E[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#collect(Object[], Collection, Closure)}.
+     *
+     * @param self the {@code E[]} receiver
+     * @param collector the target that receives the results
+     * @param transform a closure applied to each element
+     * @return the value returned by {@link ArrayGroovyMethods#collect(Object[], Collection, Closure)}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#collect(Object[], Collection, Closure)}
+     */
     @Deprecated(since = "5.0.0")
     public static <E, T, C extends Collection<T>> C collect(E[] self, C collector, @ClosureParams(FirstParam.Component.class) Closure<? extends T> transform) {
         return ArrayGroovyMethods.collect(self, collector, transform);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting an {@code E[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#collectEntries(Object[])}.
+     *
+     * @param self the {@code E[]} receiver
+     * @return the value returned by {@link ArrayGroovyMethods#collectEntries(Object[])}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#collectEntries(Object[])}
+     */
     @Deprecated(since = "5.0.0")
     public static <K, V, E> Map<K, V> collectEntries(E[] self) {
         return ArrayGroovyMethods.collectEntries(self);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting an {@code E[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#collectEntries(Object[], Map)}.
+     *
+     * @param self the {@code E[]} receiver
+     * @param collector the target that receives the results
+     * @return the value returned by {@link ArrayGroovyMethods#collectEntries(Object[], Map)}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#collectEntries(Object[], Map)}
+     */
     @Deprecated(since = "5.0.0")
     public static <K, V, E> Map<K, V> collectEntries(E[] self, Map<K, V> collector) {
         return ArrayGroovyMethods.collectEntries(self, collector);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting an {@code E[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#collectEntries(Object[], Closure)}.
+     *
+     * @param self the {@code E[]} receiver
+     * @param transform a closure applied to each element
+     * @return the value returned by {@link ArrayGroovyMethods#collectEntries(Object[], Closure)}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#collectEntries(Object[], Closure)}
+     */
     @Deprecated(since = "5.0.0")
     public static <K, V, E> Map<K, V> collectEntries(E[] self, @ClosureParams(FirstParam.Component.class) Closure<?> transform) {
         return ArrayGroovyMethods.collectEntries(self, transform);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting an {@code E[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#collectEntries(Object[], Map, Closure)}.
+     *
+     * @param self the {@code E[]} receiver
+     * @param collector the target that receives the results
+     * @param transform a closure applied to each element
+     * @return the value returned by {@link ArrayGroovyMethods#collectEntries(Object[], Map, Closure)}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#collectEntries(Object[], Map, Closure)}
+     */
     @Deprecated(since = "5.0.0")
     public static <K, V, E> Map<K, V> collectEntries(E[] self, Map<K, V> collector, @ClosureParams(FirstParam.Component.class) Closure<?> transform) {
         return ArrayGroovyMethods.collectEntries(self, collector, transform);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting an {@code E[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#collectMany(Object[], Closure)}.
+     *
+     * @param self the {@code E[]} receiver
+     * @param projection a closure returning a collection for each element
+     * @return the value returned by {@link ArrayGroovyMethods#collectMany(Object[], Closure)}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#collectMany(Object[], Closure)}
+     */
     @Deprecated(since = "5.0.0")
     public static <T, E> List<T> collectMany(E[] self, @ClosureParams(FirstParam.Component.class) Closure<? extends Collection<? extends T>> projection) {
         return ArrayGroovyMethods.collectMany(self, projection);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting an {@code E[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#collectMany(Object[], Collection, Closure)}.
+     *
+     * @param self the {@code E[]} receiver
+     * @param collector the target that receives the results
+     * @param projection a closure returning a collection for each element
+     * @return the value returned by {@link ArrayGroovyMethods#collectMany(Object[], Collection, Closure)}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#collectMany(Object[], Collection, Closure)}
+     */
     @Deprecated(since = "5.0.0")
     public static <T, E, C extends Collection<T>> C collectMany(E[] self, C collector, @ClosureParams(FirstParam.Component.class) Closure<? extends Collection<? extends T>> projection) {
         return ArrayGroovyMethods.collectMany(self, collector, projection);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting a {@link Map} receiver.
+     * Delegates to {@link #collectMany}.
+     *
+     * @param self the {@link Map} receiver
+     * @param projection a closure returning a collection for each map entry
+     * @return the collection returned by {@link #collectMany}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link #collectMany(Map, Closure)}
+     */
     @Deprecated
     public static <T, K, V> Collection<T> collectMany$$bridge(Map<K, V> self, @ClosureParams(MapEntryOrKeyValue.class) Closure<? extends Collection<? extends T>> projection) {
         return collectMany(self, projection);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting a {@code boolean[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#contains(boolean[], Object)}.
+     *
+     * @param self the {@code boolean[]} receiver
+     * @param value the value to search for
+     * @return the value returned by {@link ArrayGroovyMethods#contains(boolean[], Object)}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#contains(boolean[], Object)}
+     */
     @Deprecated(since = "5.0.0")
     public static boolean contains(boolean[] self, Object value) {
         return ArrayGroovyMethods.contains(self, value);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting a {@code byte[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#contains(byte[], Object)}.
+     *
+     * @param self the {@code byte[]} receiver
+     * @param value the value to search for
+     * @return the value returned by {@link ArrayGroovyMethods#contains(byte[], Object)}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#contains(byte[], Object)}
+     */
     @Deprecated(since = "5.0.0")
     public static boolean contains(byte[] self, Object value) {
         return ArrayGroovyMethods.contains(self, value);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting a {@code char[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#contains(char[], Object)}.
+     *
+     * @param self the {@code char[]} receiver
+     * @param value the value to search for
+     * @return the value returned by {@link ArrayGroovyMethods#contains(char[], Object)}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#contains(char[], Object)}
+     */
     @Deprecated(since = "5.0.0")
     public static boolean contains(char[] self, Object value) {
         return ArrayGroovyMethods.contains(self, value);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting a {@code short[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#contains(short[], Object)}.
+     *
+     * @param self the {@code short[]} receiver
+     * @param value the value to search for
+     * @return the value returned by {@link ArrayGroovyMethods#contains(short[], Object)}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#contains(short[], Object)}
+     */
     @Deprecated(since = "5.0.0")
     public static boolean contains(short[] self, Object value) {
         return ArrayGroovyMethods.contains(self, value);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting an {@code int[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#contains(int[], Object)}.
+     *
+     * @param self the {@code int[]} receiver
+     * @param value the value to search for
+     * @return the value returned by {@link ArrayGroovyMethods#contains(int[], Object)}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#contains(int[], Object)}
+     */
     @Deprecated(since = "5.0.0")
     public static boolean contains(int[] self, Object value) {
         return ArrayGroovyMethods.contains(self, value);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting a {@code long[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#contains(long[], Object)}.
+     *
+     * @param self the {@code long[]} receiver
+     * @param value the value to search for
+     * @return the value returned by {@link ArrayGroovyMethods#contains(long[], Object)}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#contains(long[], Object)}
+     */
     @Deprecated(since = "5.0.0")
     public static boolean contains(long[] self, Object value) {
         return ArrayGroovyMethods.contains(self, value);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting a {@code float[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#contains(float[], Object)}.
+     *
+     * @param self the {@code float[]} receiver
+     * @param value the value to search for
+     * @return the value returned by {@link ArrayGroovyMethods#contains(float[], Object)}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#contains(float[], Object)}
+     */
     @Deprecated(since = "5.0.0")
     public static boolean contains(float[] self, Object value) {
         return ArrayGroovyMethods.contains(self, value);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting a {@code double[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#contains(double[], Object)}.
+     *
+     * @param self the {@code double[]} receiver
+     * @param value the value to search for
+     * @return the value returned by {@link ArrayGroovyMethods#contains(double[], Object)}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#contains(double[], Object)}
+     */
     @Deprecated(since = "5.0.0")
     public static boolean contains(double[] self, Object value) {
         return ArrayGroovyMethods.contains(self, value);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting an {@code Object[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#contains(Object[], Object)}.
+     *
+     * @param self the {@code Object[]} receiver
+     * @param value the value to search for
+     * @return the value returned by {@link ArrayGroovyMethods#contains(Object[], Object)}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#contains(Object[], Object)}
+     */
     @Deprecated(since = "5.0.0")
     public static boolean contains(Object[] self, Object value) {
         return ArrayGroovyMethods.contains(self, value);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting a {@code boolean[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#count(boolean[], Object)}.
+     *
+     * @param self the {@code boolean[]} receiver
+     * @param value the value to search for
+     * @return the value returned by {@link ArrayGroovyMethods#count(boolean[], Object)}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#count(boolean[], Object)}
+     */
     @Deprecated(since = "5.0.0")
     public static Number count(boolean[] self, Object value) {
         return ArrayGroovyMethods.count(self, value);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting a {@code byte[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#count(byte[], Object)}.
+     *
+     * @param self the {@code byte[]} receiver
+     * @param value the value to search for
+     * @return the value returned by {@link ArrayGroovyMethods#count(byte[], Object)}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#count(byte[], Object)}
+     */
     @Deprecated(since = "5.0.0")
     public static Number count(byte[] self, Object value) {
         return ArrayGroovyMethods.count(self, value);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting a {@code char[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#count(char[], Object)}.
+     *
+     * @param self the {@code char[]} receiver
+     * @param value the value to search for
+     * @return the value returned by {@link ArrayGroovyMethods#count(char[], Object)}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#count(char[], Object)}
+     */
     @Deprecated(since = "5.0.0")
     public static Number count(char[] self, Object value) {
         return ArrayGroovyMethods.count(self, value);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting a {@code short[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#count(short[], Object)}.
+     *
+     * @param self the {@code short[]} receiver
+     * @param value the value to search for
+     * @return the value returned by {@link ArrayGroovyMethods#count(short[], Object)}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#count(short[], Object)}
+     */
     @Deprecated(since = "5.0.0")
     public static Number count(short[] self, Object value) {
         return ArrayGroovyMethods.count(self, value);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting an {@code int[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#count(int[], Object)}.
+     *
+     * @param self the {@code int[]} receiver
+     * @param value the value to search for
+     * @return the value returned by {@link ArrayGroovyMethods#count(int[], Object)}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#count(int[], Object)}
+     */
     @Deprecated(since = "5.0.0")
     public static Number count(int[] self, Object value) {
         return ArrayGroovyMethods.count(self, value);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting a {@code long[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#count(long[], Object)}.
+     *
+     * @param self the {@code long[]} receiver
+     * @param value the value to search for
+     * @return the value returned by {@link ArrayGroovyMethods#count(long[], Object)}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#count(long[], Object)}
+     */
     @Deprecated(since = "5.0.0")
     public static Number count(long[] self, Object value) {
         return ArrayGroovyMethods.count(self, value);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting a {@code float[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#count(float[], Object)}.
+     *
+     * @param self the {@code float[]} receiver
+     * @param value the value to search for
+     * @return the value returned by {@link ArrayGroovyMethods#count(float[], Object)}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#count(float[], Object)}
+     */
     @Deprecated(since = "5.0.0")
     public static Number count(float[] self, Object value) {
         return ArrayGroovyMethods.count(self, value);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting a {@code double[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#count(double[], Object)}.
+     *
+     * @param self the {@code double[]} receiver
+     * @param value the value to search for
+     * @return the value returned by {@link ArrayGroovyMethods#count(double[], Object)}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#count(double[], Object)}
+     */
     @Deprecated(since = "5.0.0")
     public static Number count(double[] self, Object value) {
         return ArrayGroovyMethods.count(self, value);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting an {@code Object[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#count(Object[], Object)}.
+     *
+     * @param self the {@code Object[]} receiver
+     * @param value the value to search for
+     * @return the value returned by {@link ArrayGroovyMethods#count(Object[], Object)}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#count(Object[], Object)}
+     */
     @Deprecated(since = "5.0.0")
     public static Number count(Object[] self, Object value) {
         return ArrayGroovyMethods.count(self, value);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting a {@code T[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#count(Object[], Closure)}.
+     *
+     * @param self the {@code T[]} receiver
+     * @param predicate a predicate tested against each element
+     * @return the value returned by {@link ArrayGroovyMethods#count(Object[], Closure)}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#count(Object[], Closure)}
+     */
     @Deprecated(since = "5.0.0")
     public static <T> Number count(T[] self, @ClosureParams(FirstParam.Component.class) Closure predicate) {
         return ArrayGroovyMethods.count(self, predicate);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting an {@code E[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#countBy(Object[], Closure)}.
+     *
+     * @param self the {@code E[]} receiver
+     * @param closure a closure that supplies the group key for each element
+     * @return the value returned by {@link ArrayGroovyMethods#countBy(Object[], Closure)}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#countBy(Object[], Closure)}
+     */
     @Deprecated(since = "5.0.0")
     public static <K,E> Map<K, Integer> countBy(E[] self, @ClosureParams(FirstParam.Component.class) Closure<K> closure) {
         return ArrayGroovyMethods.countBy(self, closure);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting a {@code T[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#drop(Object[], int)}.
+     *
+     * @param self the {@code T[]} receiver
+     * @param num how many leading elements to omit
+     * @return the value returned by {@link ArrayGroovyMethods#drop(Object[], int)}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#drop(Object[], int)}
+     */
     @Deprecated(since = "5.0.0")
     public static <T> T[] drop(T[] self, int num) {
         return ArrayGroovyMethods.drop(self, num);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting a {@code T[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#dropRight(Object[], int)}.
+     *
+     * @param self the {@code T[]} receiver
+     * @param num how many trailing elements to omit
+     * @return the value returned by {@link ArrayGroovyMethods#dropRight(Object[], int)}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#dropRight(Object[], int)}
+     */
     @Deprecated(since = "5.0.0")
     public static <T> T[] dropRight(T[] self, int num) {
         return ArrayGroovyMethods.dropRight(self, num);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting a {@code T[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#dropWhile(Object[], Closure)}.
+     *
+     * @param self the {@code T[]} receiver
+     * @param condition a condition tested against each element
+     * @return the value returned by {@link ArrayGroovyMethods#dropWhile(Object[], Closure)}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#dropWhile(Object[], Closure)}
+     */
     @Deprecated(since = "5.0.0")
     public static <T> T[] dropWhile(T[] self, @ClosureParams(FirstParam.Component.class) Closure<?> condition) {
         return ArrayGroovyMethods.dropWhile(self, condition);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting a {@code T[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#each(Object[], Closure)}.
+     *
+     * @param self the {@code T[]} receiver
+     * @param closure a closure invoked for each element
+     * @return the value returned by {@link ArrayGroovyMethods#each(Object[], Closure)}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#each(Object[], Closure)}
+     */
     @Deprecated(since = "5.0.0")
     public static <T> T[] each(T[] self, @ClosureParams(FirstParam.Component.class) Closure closure) {
         return ArrayGroovyMethods.each(self, closure);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting a {@code byte[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#eachByte(byte[], Closure)}.
+     *
+     * @param self the {@code byte[]} receiver
+     * @param closure a closure invoked for each element
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#eachByte(byte[], Closure)}
+     */
     @Deprecated(since = "5.0.0")
     public static void eachByte(byte[] self, @ClosureParams(FirstParam.Component.class) Closure closure) {
         ArrayGroovyMethods.eachByte(self, closure);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting a {@code Byte[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#each}.
+     *
+     * @param self the {@code Byte[]} receiver
+     * @param closure a closure invoked for each element
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#eachByte(Byte[], Closure)}
+     */
     @Deprecated(since = "5.0.0")
     public static void eachByte(Byte[] self, @ClosureParams(FirstParam.Component.class) Closure closure) {
         ArrayGroovyMethods.each(self, closure);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting a {@code T[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#eachWithIndex(Object[], Closure)}.
+     *
+     * @param self the {@code T[]} receiver
+     * @param closure a closure invoked for each element
+     * @return the value returned by {@link ArrayGroovyMethods#eachWithIndex(Object[], Closure)}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#eachWithIndex(Object[], Closure)}
+     */
     @Deprecated(since = "5.0.0")
     public static <T> T[] eachWithIndex(T[] self, @ClosureParams(value=FromString.class, options="T,Integer") Closure closure) {
         return ArrayGroovyMethods.eachWithIndex(self, closure);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting an {@code int[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#equals(int[], int[])}.
+     *
+     * @param left the left-hand {@code int[]}
+     * @param right the {@code int[]} compared with the receiver
+     * @return the value returned by {@link ArrayGroovyMethods#equals(int[], int[])}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#equals(int[], int[])}
+     */
     @Deprecated(since = "5.0.0")
     public static boolean equals(int[] left, int[] right) {
         return ArrayGroovyMethods.equals(left, right);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting an {@code Object[]} receiver.
+     * Compares the array and the list element by element using Groovy's coerced equality. Two null references
+     * compare equal, a null on only one side does not, and the sizes must match.
+     *
+     * @param left the left-hand {@code Object[]}
+     * @param right the {@link List} compared with the receiver
+     * @return {@code true} when the array and the list are equal element by element
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#equals(Object[], List)}
+     */
     @Deprecated(since = "5.0.0")
     public static boolean equals(Object[] left, List right) {
         return coercedEquals(left, right);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting a {@code T[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#every(Object[], Closure)}.
+     *
+     * @param self the {@code T[]} receiver
+     * @param predicate a predicate tested against each element
+     * @return the value returned by {@link ArrayGroovyMethods#every(Object[], Closure)}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#every(Object[], Closure)}
+     */
     @Deprecated(since = "5.0.0")
     public static <T> boolean every(T[] self, @ClosureParams(FirstParam.Component.class) Closure predicate) {
         return ArrayGroovyMethods.every(self, predicate);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting a {@code T[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#find(Object[], Closure)}.
+     *
+     * @param self the {@code T[]} receiver
+     * @param condition a condition tested against each element
+     * @return the value returned by {@link ArrayGroovyMethods#find(Object[], Closure)}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#find(Object[], Closure)}
+     */
     @Deprecated(since = "5.0.0")
     public static <T> T find(T[] self, @ClosureParams(FirstParam.Component.class) Closure condition) {
         return ArrayGroovyMethods.find(self, condition);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting a {@code T[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#findAll(Object[])}.
+     *
+     * @param self the {@code T[]} receiver
+     * @return the value returned by {@link ArrayGroovyMethods#findAll(Object[])}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#findAll(Object[])}
+     */
     @Deprecated(since = "5.0.0")
     public static <T> List<T> findAll(T[] self) {
         return ArrayGroovyMethods.findAll(self);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting a {@code T[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#findAll(Object[], Closure)}.
+     *
+     * @param self the {@code T[]} receiver
+     * @param condition a condition tested against each element
+     * @return the value returned by {@link ArrayGroovyMethods#findAll(Object[], Closure)}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#findAll(Object[], Closure)}
+     */
     @Deprecated(since = "5.0.0")
     public static <T> List<T> findAll(T[] self, @ClosureParams(FirstParam.Component.class) Closure condition) {
         return ArrayGroovyMethods.findAll(self, condition);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting an {@link Object} receiver.
+     * Delegates to {@link #findAll}.
+     *
+     * @param self the {@link Object} receiver
+     * @return the result returned by {@link #findAll}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link #findAll(Object)}
+     */
     @Deprecated
     public static Collection findAll$$bridge(Object self) {
         return findAll(self);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting a {@code T[]} receiver.
+     * Delegates to {@link #findAll}.
+     *
+     * @param self the {@code T[]} receiver
+     * @return the result returned by {@link #findAll}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link #findAll(Object[])}
+     */
     @Deprecated
     public static <T> Collection<T> findAll$$bridge(T[] self) {
         return findAll(self);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting an {@link Object} receiver.
+     * Delegates to {@link #findAll}.
+     *
+     * @param self the {@link Object} receiver
+     * @param closure a closure applied by the delegated call
+     * @return the result returned by {@link #findAll}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link #findAll(Object, Closure)}
+     */
     @Deprecated
     public static Collection findAll$$bridge(Object self, Closure closure) {
         return findAll(self, closure);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting a {@code T[]} receiver.
+     * Delegates to {@link #findAll}.
+     *
+     * @param self the {@code T[]} receiver
+     * @param condition a condition tested against each element
+     * @return the result returned by {@link #findAll}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link #findAll(Object[], Closure)}
+     */
     @Deprecated
     public static <T> Collection<T> findAll$$bridge(T[] self, @ClosureParams(FirstParam.Component.class) Closure condition) {
         return findAll(self, condition);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting a {@code T[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#findIndexValues(Object[], Closure)}, passing {@code 0} as the start index.
+     *
+     * @param self the {@code T[]} receiver
+     * @param condition a condition tested against each element
+     * @return the value returned by {@link ArrayGroovyMethods#findIndexValues(Object[], Closure)}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#findIndexValues(Object[], Closure)}
+     */
     @Deprecated(since = "5.0.0")
     public static <T> List<Number> findIndexValues(T[] self, @ClosureParams(FirstParam.Component.class) Closure condition) {
         return ArrayGroovyMethods.findIndexValues(self, 0, condition);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting a {@code T[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#findIndexValues(Object[], Number, Closure)}.
+     *
+     * @param self the {@code T[]} receiver
+     * @param startIndex the index at which the search starts
+     * @param condition a condition tested against each element
+     * @return the value returned by {@link ArrayGroovyMethods#findIndexValues(Object[], Number, Closure)}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#findIndexValues(Object[], Number, Closure)}
+     */
     @Deprecated(since = "5.0.0")
     public static <T> List<Number> findIndexValues(T[] self, Number startIndex, @ClosureParams(FirstParam.Component.class) Closure condition) {
         return ArrayGroovyMethods.findIndexValues(self, startIndex, condition);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting a {@code T[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#findIndexOf(Object[], Closure)}, passing {@code 0} as the start index.
+     *
+     * @param self the {@code T[]} receiver
+     * @param condition a condition tested against each element
+     * @return the value returned by {@link ArrayGroovyMethods#findIndexOf(Object[], Closure)}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#findIndexOf(Object[], Closure)}
+     */
     @Deprecated(since = "5.0.0")
     public static <T> int findIndexOf(T[] self, @ClosureParams(FirstParam.Component.class) Closure condition) {
         return ArrayGroovyMethods.findIndexOf(self, 0, condition);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting a {@code T[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#findIndexOf(Object[], int, Closure)}.
+     *
+     * @param self the {@code T[]} receiver
+     * @param startIndex the index at which the search starts
+     * @param condition a condition tested against each element
+     * @return the value returned by {@link ArrayGroovyMethods#findIndexOf(Object[], int, Closure)}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#findIndexOf(Object[], int, Closure)}
+     */
     @Deprecated(since = "5.0.0")
     public static <T> int findIndexOf(T[] self, int startIndex, @ClosureParams(FirstParam.Component.class) Closure condition) {
         return ArrayGroovyMethods.findIndexOf(self, startIndex, condition);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting a {@code T[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#findLastIndexOf(Object[], Closure)}, passing {@code 0} as the start index.
+     *
+     * @param self the {@code T[]} receiver
+     * @param condition a condition tested against each element
+     * @return the value returned by {@link ArrayGroovyMethods#findLastIndexOf(Object[], Closure)}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#findLastIndexOf(Object[], Closure)}
+     */
     @Deprecated(since = "5.0.0")
     public static <T> int findLastIndexOf(T[] self, @ClosureParams(FirstParam.Component.class) Closure condition) {
         return ArrayGroovyMethods.findLastIndexOf(self, 0, condition);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting a {@code T[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#findLastIndexOf(Object[], int, Closure)}.
+     *
+     * @param self the {@code T[]} receiver
+     * @param startIndex the index at which the search starts
+     * @param condition a condition tested against each element
+     * @return the value returned by {@link ArrayGroovyMethods#findLastIndexOf(Object[], int, Closure)}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#findLastIndexOf(Object[], int, Closure)}
+     */
     @Deprecated(since = "5.0.0")
     public static <T> int findLastIndexOf(T[] self, int startIndex, @ClosureParams(FirstParam.Component.class) Closure condition) {
         return ArrayGroovyMethods.findLastIndexOf(self, startIndex, condition);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting a {@code T[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#findResult(Object[])}.
+     *
+     * @param self the {@code T[]} receiver
+     * @return the value returned by {@link ArrayGroovyMethods#findResult(Object[])}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#findResult(Object[])}
+     */
     @Deprecated(since = "5.0.0")
     public static <T> T findResult(T[] self) {
         return ArrayGroovyMethods.findResult(self);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting an {@code U[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#findResult(Object[], Object)}.
+     *
+     * @param self the {@code U[]} receiver
+     * @param defaultResult the value returned when no element is selected
+     * @return the value returned by {@link ArrayGroovyMethods#findResult(Object[], Object)}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#findResult(Object[], Object)}
+     */
     @Deprecated(since = "5.0.0")
     public static <T, U extends T, V extends T> T findResult(U[] self, V defaultResult) {
         return ArrayGroovyMethods.findResult(self, defaultResult);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting a {@code S[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#findResult(Object[], Closure)}.
+     *
+     * @param self the {@code S[]} receiver
+     * @param condition a condition tested against each element
+     * @return the value returned by {@link ArrayGroovyMethods#findResult(Object[], Closure)}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#findResult(Object[], Closure)}
+     */
     @Deprecated(since = "5.0.0")
     public static <S, T> T findResult(S[] self, @ClosureParams(FirstParam.Component.class) Closure<T> condition) {
         return ArrayGroovyMethods.findResult(self, condition);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting a {@code S[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#findResult(Object[], Object, Closure)}.
+     *
+     * @param self the {@code S[]} receiver
+     * @param defaultResult the value returned when no element is selected
+     * @param condition a condition tested against each element
+     * @return the value returned by {@link ArrayGroovyMethods#findResult(Object[], Object, Closure)}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#findResult(Object[], Object, Closure)}
+     */
     @Deprecated(since = "5.0.0")
     public static <S, T, U extends T, V extends T> T findResult(S[] self, U defaultResult, @ClosureParams(FirstParam.Component.class) Closure<V> condition) {
         return ArrayGroovyMethods.findResult(self, defaultResult, condition);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting a {@code T[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#findResults(Object[])}.
+     *
+     * @param self the {@code T[]} receiver
+     * @return the value returned by {@link ArrayGroovyMethods#findResults(Object[])}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#findResults(Object[])}
+     */
     @Deprecated(since = "5.0.0")
     public static <T> Collection<T> findResults(T[] self) {
         return ArrayGroovyMethods.findResults(self);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting an {@code U[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#findResults(Object[], Closure)}.
+     *
+     * @param self the {@code U[]} receiver
+     * @param filteringTransform a closure applied to each element
+     * @return the value returned by {@link ArrayGroovyMethods#findResults(Object[], Closure)}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#findResults(Object[], Closure)}
+     */
     @Deprecated(since = "5.0.0")
     public static <T, U> Collection<T> findResults(U[] self, @ClosureParams(FirstParam.Component.class) Closure<T> filteringTransform) {
         return ArrayGroovyMethods.findResults(self, filteringTransform);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting a {@code T[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#first(Object[])}.
+     *
+     * @param self the {@code T[]} receiver
+     * @return the value returned by {@link ArrayGroovyMethods#first(Object[])}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#first(Object[])}
+     */
     @Deprecated(since = "5.0.0")
     public static <T> T first(T[] self) {
         return ArrayGroovyMethods.first(self);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting a {@code boolean[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#flatten(boolean[])}.
+     *
+     * @param self the {@code boolean[]} receiver
+     * @return the value returned by {@link ArrayGroovyMethods#flatten(boolean[])}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#flatten(boolean[])}
+     */
     @Deprecated(since = "5.0.0")
     public static Collection flatten(boolean[] self) {
         return ArrayGroovyMethods.flatten(self);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting a {@code byte[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#flatten(byte[])}.
+     *
+     * @param self the {@code byte[]} receiver
+     * @return the value returned by {@link ArrayGroovyMethods#flatten(byte[])}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#flatten(byte[])}
+     */
     @Deprecated(since = "5.0.0")
     public static Collection flatten(byte[] self) {
         return ArrayGroovyMethods.flatten(self);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting a {@code char[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#flatten(char[])}.
+     *
+     * @param self the {@code char[]} receiver
+     * @return the value returned by {@link ArrayGroovyMethods#flatten(char[])}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#flatten(char[])}
+     */
     @Deprecated(since = "5.0.0")
     public static Collection flatten(char[] self) {
         return ArrayGroovyMethods.flatten(self);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting a {@code short[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#flatten(short[])}.
+     *
+     * @param self the {@code short[]} receiver
+     * @return the value returned by {@link ArrayGroovyMethods#flatten(short[])}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#flatten(short[])}
+     */
     @Deprecated(since = "5.0.0")
     public static Collection flatten(short[] self) {
         return ArrayGroovyMethods.flatten(self);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting an {@code int[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#flatten(int[])}.
+     *
+     * @param self the {@code int[]} receiver
+     * @return the value returned by {@link ArrayGroovyMethods#flatten(int[])}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#flatten(int[])}
+     */
     @Deprecated(since = "5.0.0")
     public static Collection flatten(int[] self) {
         return ArrayGroovyMethods.flatten(self);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting a {@code long[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#flatten(long[])}.
+     *
+     * @param self the {@code long[]} receiver
+     * @return the value returned by {@link ArrayGroovyMethods#flatten(long[])}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#flatten(long[])}
+     */
     @Deprecated(since = "5.0.0")
     public static Collection flatten(long[] self) {
         return ArrayGroovyMethods.flatten(self);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting a {@code float[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#flatten(float[])}.
+     *
+     * @param self the {@code float[]} receiver
+     * @return the value returned by {@link ArrayGroovyMethods#flatten(float[])}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#flatten(float[])}
+     */
     @Deprecated(since = "5.0.0")
     public static Collection flatten(float[] self) {
         return ArrayGroovyMethods.flatten(self);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting a {@code double[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#flatten(double[])}.
+     *
+     * @param self the {@code double[]} receiver
+     * @return the value returned by {@link ArrayGroovyMethods#flatten(double[])}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#flatten(double[])}
+     */
     @Deprecated(since = "5.0.0")
     public static Collection flatten(double[] self) {
         return ArrayGroovyMethods.flatten(self);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting an {@code Object[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#flatten(Object[])}.
+     *
+     * @param self the {@code Object[]} receiver
+     * @return the value returned by {@link ArrayGroovyMethods#flatten(Object[])}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#flatten(Object[])}
+     */
     @Deprecated(since = "5.0.0")
     public static Collection flatten(Object[] self) {
         return ArrayGroovyMethods.flatten(self);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting a {@code boolean[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#getAt(boolean[], Range)}.
+     *
+     * @param self the {@code boolean[]} receiver
+     * @param range the range of indexes to read
+     * @return the value returned by {@link ArrayGroovyMethods#getAt(boolean[], Range)}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#getAt(boolean[], Range)}
+     */
     @Deprecated(since = "5.0.0")
     public static List<Boolean> getAt(boolean[] self, Range range) {
         return ArrayGroovyMethods.getAt(self, range);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting a {@code byte[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#getAt(byte[], Range)}.
+     *
+     * @param self the {@code byte[]} receiver
+     * @param range the range of indexes to read
+     * @return the value returned by {@link ArrayGroovyMethods#getAt(byte[], Range)}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#getAt(byte[], Range)}
+     */
     @Deprecated(since = "5.0.0")
     public static List<Byte> getAt(byte[] self, Range range) {
         return ArrayGroovyMethods.getAt(self, range);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting a {@code char[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#getAt(char[], Range)}.
+     *
+     * @param self the {@code char[]} receiver
+     * @param range the range of indexes to read
+     * @return the value returned by {@link ArrayGroovyMethods#getAt(char[], Range)}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#getAt(char[], Range)}
+     */
     @Deprecated(since = "5.0.0")
     public static List<Character> getAt(char[] self, Range range) {
         return ArrayGroovyMethods.getAt(self, range);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting a {@code short[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#getAt(short[], Range)}.
+     *
+     * @param self the {@code short[]} receiver
+     * @param range the range of indexes to read
+     * @return the value returned by {@link ArrayGroovyMethods#getAt(short[], Range)}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#getAt(short[], Range)}
+     */
     @Deprecated(since = "5.0.0")
     public static List<Short> getAt(short[] self, Range range) {
         return ArrayGroovyMethods.getAt(self, range);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting an {@code int[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#getAt(int[], Range)}.
+     *
+     * @param self the {@code int[]} receiver
+     * @param range the range of indexes to read
+     * @return the value returned by {@link ArrayGroovyMethods#getAt(int[], Range)}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#getAt(int[], Range)}
+     */
     @Deprecated(since = "5.0.0")
     public static List<Integer> getAt(int[] self, Range range) {
         return ArrayGroovyMethods.getAt(self, range);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting a {@code long[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#getAt(long[], Range)}.
+     *
+     * @param self the {@code long[]} receiver
+     * @param range the range of indexes to read
+     * @return the value returned by {@link ArrayGroovyMethods#getAt(long[], Range)}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#getAt(long[], Range)}
+     */
     @Deprecated(since = "5.0.0")
     public static List<Long> getAt(long[] self, Range range) {
         return ArrayGroovyMethods.getAt(self, range);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting a {@code float[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#getAt(float[], Range)}.
+     *
+     * @param self the {@code float[]} receiver
+     * @param range the range of indexes to read
+     * @return the value returned by {@link ArrayGroovyMethods#getAt(float[], Range)}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#getAt(float[], Range)}
+     */
     @Deprecated(since = "5.0.0")
     public static List<Float> getAt(float[] self, Range range) {
         return ArrayGroovyMethods.getAt(self, range);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting a {@code double[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#getAt(double[], Range)}.
+     *
+     * @param self the {@code double[]} receiver
+     * @param range the range of indexes to read
+     * @return the value returned by {@link ArrayGroovyMethods#getAt(double[], Range)}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#getAt(double[], Range)}
+     */
     @Deprecated(since = "5.0.0")
     public static List<Double> getAt(double[] self, Range range) {
         return ArrayGroovyMethods.getAt(self, range);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting a {@code T[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#getAt(Object[], Range)}.
+     *
+     * @param self the {@code T[]} receiver
+     * @param range the range of indexes to read
+     * @return the value returned by {@link ArrayGroovyMethods#getAt(Object[], Range)}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#getAt(Object[], Range)}
+     */
     @Deprecated(since = "5.0.0")
     public static <T> List<T> getAt(T[] self, Range range) {
         return ArrayGroovyMethods.getAt(self, range);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting a {@code boolean[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#getAt(boolean[], IntRange)}.
+     *
+     * @param self the {@code boolean[]} receiver
+     * @param range the range of indexes to read
+     * @return the value returned by {@link ArrayGroovyMethods#getAt(boolean[], IntRange)}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#getAt(boolean[], IntRange)}
+     */
     @Deprecated(since = "5.0.0")
     public static List<Boolean> getAt(boolean[] self, IntRange range) {
         return ArrayGroovyMethods.getAt(self, range);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting a {@code byte[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#getAt(byte[], IntRange)}.
+     *
+     * @param self the {@code byte[]} receiver
+     * @param range the range of indexes to read
+     * @return the value returned by {@link ArrayGroovyMethods#getAt(byte[], IntRange)}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#getAt(byte[], IntRange)}
+     */
     @Deprecated(since = "5.0.0")
     public static List<Byte> getAt(byte[] self, IntRange range) {
         return ArrayGroovyMethods.getAt(self, range);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting a {@code char[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#getAt(char[], IntRange)}.
+     *
+     * @param self the {@code char[]} receiver
+     * @param range the range of indexes to read
+     * @return the value returned by {@link ArrayGroovyMethods#getAt(char[], IntRange)}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#getAt(char[], IntRange)}
+     */
     @Deprecated(since = "5.0.0")
     public static List<Character> getAt(char[] self, IntRange range) {
         return ArrayGroovyMethods.getAt(self, range);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting a {@code short[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#getAt(short[], IntRange)}.
+     *
+     * @param self the {@code short[]} receiver
+     * @param range the range of indexes to read
+     * @return the value returned by {@link ArrayGroovyMethods#getAt(short[], IntRange)}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#getAt(short[], IntRange)}
+     */
     @Deprecated(since = "5.0.0")
     public static List<Short> getAt(short[] self, IntRange range) {
         return ArrayGroovyMethods.getAt(self, range);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting an {@code int[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#getAt(int[], IntRange)}.
+     *
+     * @param self the {@code int[]} receiver
+     * @param range the range of indexes to read
+     * @return the value returned by {@link ArrayGroovyMethods#getAt(int[], IntRange)}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#getAt(int[], IntRange)}
+     */
     @Deprecated(since = "5.0.0")
     public static List<Integer> getAt(int[] self, IntRange range) {
         return ArrayGroovyMethods.getAt(self, range);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting a {@code long[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#getAt(long[], IntRange)}.
+     *
+     * @param self the {@code long[]} receiver
+     * @param range the range of indexes to read
+     * @return the value returned by {@link ArrayGroovyMethods#getAt(long[], IntRange)}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#getAt(long[], IntRange)}
+     */
     @Deprecated(since = "5.0.0")
     public static List<Long> getAt(long[] self, IntRange range) {
         return ArrayGroovyMethods.getAt(self, range);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting a {@code float[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#getAt(float[], IntRange)}.
+     *
+     * @param self the {@code float[]} receiver
+     * @param range the range of indexes to read
+     * @return the value returned by {@link ArrayGroovyMethods#getAt(float[], IntRange)}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#getAt(float[], IntRange)}
+     */
     @Deprecated(since = "5.0.0")
     public static List<Float> getAt(float[] self, IntRange range) {
         return ArrayGroovyMethods.getAt(self, range);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting a {@code double[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#getAt(double[], IntRange)}.
+     *
+     * @param self the {@code double[]} receiver
+     * @param range the range of indexes to read
+     * @return the value returned by {@link ArrayGroovyMethods#getAt(double[], IntRange)}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#getAt(double[], IntRange)}
+     */
     @Deprecated(since = "5.0.0")
     public static List<Double> getAt(double[] self, IntRange range) {
         return ArrayGroovyMethods.getAt(self, range);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting a {@code T[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#getAt(Object[], IntRange)}.
+     *
+     * @param self the {@code T[]} receiver
+     * @param range the range of indexes to read
+     * @return the value returned by {@link ArrayGroovyMethods#getAt(Object[], IntRange)}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#getAt(Object[], IntRange)}
+     */
     @Deprecated(since = "5.0.0")
     public static <T> List<T> getAt(T[] self, IntRange range) {
         return ArrayGroovyMethods.getAt(self, range);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting a {@code boolean[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#getAt(boolean[], ObjectRange)}.
+     *
+     * @param self the {@code boolean[]} receiver
+     * @param range the range of indexes to read
+     * @return the value returned by {@link ArrayGroovyMethods#getAt(boolean[], ObjectRange)}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#getAt(boolean[], ObjectRange)}
+     */
     @Deprecated(since = "5.0.0")
     public static List<Boolean> getAt(boolean[] self, ObjectRange range) {
         return ArrayGroovyMethods.getAt(self, range);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting a {@code byte[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#getAt(byte[], ObjectRange)}.
+     *
+     * @param self the {@code byte[]} receiver
+     * @param range the range of indexes to read
+     * @return the value returned by {@link ArrayGroovyMethods#getAt(byte[], ObjectRange)}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#getAt(byte[], ObjectRange)}
+     */
     @Deprecated(since = "5.0.0")
     public static List<Byte> getAt(byte[] self, ObjectRange range) {
         return ArrayGroovyMethods.getAt(self, range);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting a {@code char[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#getAt(char[], ObjectRange)}.
+     *
+     * @param self the {@code char[]} receiver
+     * @param range the range of indexes to read
+     * @return the value returned by {@link ArrayGroovyMethods#getAt(char[], ObjectRange)}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#getAt(char[], ObjectRange)}
+     */
     @Deprecated(since = "5.0.0")
     public static List<Character> getAt(char[] self, ObjectRange range) {
         return ArrayGroovyMethods.getAt(self, range);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting a {@code short[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#getAt(short[], ObjectRange)}.
+     *
+     * @param self the {@code short[]} receiver
+     * @param range the range of indexes to read
+     * @return the value returned by {@link ArrayGroovyMethods#getAt(short[], ObjectRange)}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#getAt(short[], ObjectRange)}
+     */
     @Deprecated(since = "5.0.0")
     public static List<Short> getAt(short[] self, ObjectRange range) {
         return ArrayGroovyMethods.getAt(self, range);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting an {@code int[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#getAt(int[], ObjectRange)}.
+     *
+     * @param self the {@code int[]} receiver
+     * @param range the range of indexes to read
+     * @return the value returned by {@link ArrayGroovyMethods#getAt(int[], ObjectRange)}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#getAt(int[], ObjectRange)}
+     */
     @Deprecated(since = "5.0.0")
     public static List<Integer> getAt(int[] self, ObjectRange range) {
         return ArrayGroovyMethods.getAt(self, range);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting a {@code long[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#getAt(long[], ObjectRange)}.
+     *
+     * @param self the {@code long[]} receiver
+     * @param range the range of indexes to read
+     * @return the value returned by {@link ArrayGroovyMethods#getAt(long[], ObjectRange)}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#getAt(long[], ObjectRange)}
+     */
     @Deprecated(since = "5.0.0")
     public static List<Long> getAt(long[] self, ObjectRange range) {
         return ArrayGroovyMethods.getAt(self, range);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting a {@code float[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#getAt(float[], ObjectRange)}.
+     *
+     * @param self the {@code float[]} receiver
+     * @param range the range of indexes to read
+     * @return the value returned by {@link ArrayGroovyMethods#getAt(float[], ObjectRange)}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#getAt(float[], ObjectRange)}
+     */
     @Deprecated(since = "5.0.0")
     public static List<Float> getAt(float[] self, ObjectRange range) {
         return ArrayGroovyMethods.getAt(self, range);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting a {@code double[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#getAt(double[], ObjectRange)}.
+     *
+     * @param self the {@code double[]} receiver
+     * @param range the range of indexes to read
+     * @return the value returned by {@link ArrayGroovyMethods#getAt(double[], ObjectRange)}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#getAt(double[], ObjectRange)}
+     */
     @Deprecated(since = "5.0.0")
     public static List<Double> getAt(double[] self, ObjectRange range) {
         return ArrayGroovyMethods.getAt(self, range);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting a {@code T[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#getAt(Object[], ObjectRange)}.
+     *
+     * @param self the {@code T[]} receiver
+     * @param range the range of indexes to read
+     * @return the value returned by {@link ArrayGroovyMethods#getAt(Object[], ObjectRange)}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#getAt(Object[], ObjectRange)}
+     */
     @Deprecated(since = "5.0.0")
     public static <T> List<T> getAt(T[] self, ObjectRange range) {
         return ArrayGroovyMethods.getAt(self, range);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting a {@code T[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#getAt(Object[], EmptyRange)}.
+     *
+     * @param self the {@code T[]} receiver
+     * @param range the range of indexes to read
+     * @return the value returned by {@link ArrayGroovyMethods#getAt(Object[], EmptyRange)}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#getAt(Object[], EmptyRange)}
+     */
     @Deprecated(since = "5.0.0")
     public static <T> List<T> getAt(T[] self, EmptyRange range) {
         return ArrayGroovyMethods.getAt(self, range);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting a {@code boolean[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#getAt(boolean[], Collection)}.
+     *
+     * @param self the {@code boolean[]} receiver
+     * @param indices the indexes to read
+     * @return the value returned by {@link ArrayGroovyMethods#getAt(boolean[], Collection)}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#getAt(boolean[], Collection)}
+     */
     @Deprecated(since = "5.0.0")
     public static List<Boolean> getAt(boolean[] self, Collection indices) {
         return ArrayGroovyMethods.getAt(self, indices);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting a {@code byte[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#getAt(byte[], Collection)}.
+     *
+     * @param self the {@code byte[]} receiver
+     * @param indices the indexes to read
+     * @return the value returned by {@link ArrayGroovyMethods#getAt(byte[], Collection)}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#getAt(byte[], Collection)}
+     */
     @Deprecated(since = "5.0.0")
     public static List<Byte> getAt(byte[] self, Collection indices) {
         return ArrayGroovyMethods.getAt(self, indices);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting a {@code char[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#getAt(char[], Collection)}.
+     *
+     * @param self the {@code char[]} receiver
+     * @param indices the indexes to read
+     * @return the value returned by {@link ArrayGroovyMethods#getAt(char[], Collection)}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#getAt(char[], Collection)}
+     */
     @Deprecated(since = "5.0.0")
     public static List<Character> getAt(char[] self, Collection indices) {
         return ArrayGroovyMethods.getAt(self, indices);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting a {@code short[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#getAt(short[], Collection)}.
+     *
+     * @param self the {@code short[]} receiver
+     * @param indices the indexes to read
+     * @return the value returned by {@link ArrayGroovyMethods#getAt(short[], Collection)}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#getAt(short[], Collection)}
+     */
     @Deprecated(since = "5.0.0")
     public static List<Short> getAt(short[] self, Collection indices) {
         return ArrayGroovyMethods.getAt(self, indices);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting an {@code int[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#getAt(int[], Collection)}.
+     *
+     * @param self the {@code int[]} receiver
+     * @param indices the indexes to read
+     * @return the value returned by {@link ArrayGroovyMethods#getAt(int[], Collection)}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#getAt(int[], Collection)}
+     */
     @Deprecated(since = "5.0.0")
     public static List<Integer> getAt(int[] self, Collection indices) {
         return ArrayGroovyMethods.getAt(self, indices);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting a {@code long[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#getAt(long[], Collection)}.
+     *
+     * @param self the {@code long[]} receiver
+     * @param indices the indexes to read
+     * @return the value returned by {@link ArrayGroovyMethods#getAt(long[], Collection)}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#getAt(long[], Collection)}
+     */
     @Deprecated(since = "5.0.0")
     public static List<Long> getAt(long[] self, Collection indices) {
         return ArrayGroovyMethods.getAt(self, indices);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting a {@code float[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#getAt(float[], Collection)}.
+     *
+     * @param self the {@code float[]} receiver
+     * @param indices the indexes to read
+     * @return the value returned by {@link ArrayGroovyMethods#getAt(float[], Collection)}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#getAt(float[], Collection)}
+     */
     @Deprecated(since = "5.0.0")
     public static List<Float> getAt(float[] self, Collection indices) {
         return ArrayGroovyMethods.getAt(self, indices);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting a {@code double[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#getAt(double[], Collection)}.
+     *
+     * @param self the {@code double[]} receiver
+     * @param indices the indexes to read
+     * @return the value returned by {@link ArrayGroovyMethods#getAt(double[], Collection)}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#getAt(double[], Collection)}
+     */
     @Deprecated(since = "5.0.0")
     public static List<Double> getAt(double[] self, Collection indices) {
         return ArrayGroovyMethods.getAt(self, indices);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting a {@code T[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#getAt(Object[], Collection)}.
+     *
+     * @param self the {@code T[]} receiver
+     * @param indices the indexes to read
+     * @return the value returned by {@link ArrayGroovyMethods#getAt(Object[], Collection)}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#getAt(Object[], Collection)}
+     */
     @Deprecated(since = "5.0.0")
     public static <T> List<T> getAt(T[] self, Collection indices) {
         return ArrayGroovyMethods.getAt(self, indices);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting a {@code boolean[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#getIndices(boolean[])}.
+     *
+     * @param self the {@code boolean[]} receiver
+     * @return the value returned by {@link ArrayGroovyMethods#getIndices(boolean[])}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#getIndices(boolean[])}
+     */
     @Deprecated(since = "5.0.0")
     public static IntRange getIndices(boolean[] self) {
         return ArrayGroovyMethods.getIndices(self);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting a {@code byte[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#getIndices(byte[])}.
+     *
+     * @param self the {@code byte[]} receiver
+     * @return the value returned by {@link ArrayGroovyMethods#getIndices(byte[])}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#getIndices(byte[])}
+     */
     @Deprecated(since = "5.0.0")
     public static IntRange getIndices(byte[] self) {
         return ArrayGroovyMethods.getIndices(self);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting a {@code char[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#getIndices(char[])}.
+     *
+     * @param self the {@code char[]} receiver
+     * @return the value returned by {@link ArrayGroovyMethods#getIndices(char[])}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#getIndices(char[])}
+     */
     @Deprecated(since = "5.0.0")
     public static IntRange getIndices(char[] self) {
         return ArrayGroovyMethods.getIndices(self);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting a {@code short[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#getIndices(short[])}.
+     *
+     * @param self the {@code short[]} receiver
+     * @return the value returned by {@link ArrayGroovyMethods#getIndices(short[])}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#getIndices(short[])}
+     */
     @Deprecated(since = "5.0.0")
     public static IntRange getIndices(short[] self) {
         return ArrayGroovyMethods.getIndices(self);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting an {@code int[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#getIndices(int[])}.
+     *
+     * @param self the {@code int[]} receiver
+     * @return the value returned by {@link ArrayGroovyMethods#getIndices(int[])}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#getIndices(int[])}
+     */
     @Deprecated(since = "5.0.0")
     public static IntRange getIndices(int[] self) {
         return ArrayGroovyMethods.getIndices(self);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting a {@code long[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#getIndices(long[])}.
+     *
+     * @param self the {@code long[]} receiver
+     * @return the value returned by {@link ArrayGroovyMethods#getIndices(long[])}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#getIndices(long[])}
+     */
     @Deprecated(since = "5.0.0")
     public static IntRange getIndices(long[] self) {
         return ArrayGroovyMethods.getIndices(self);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting a {@code float[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#getIndices(float[])}.
+     *
+     * @param self the {@code float[]} receiver
+     * @return the value returned by {@link ArrayGroovyMethods#getIndices(float[])}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#getIndices(float[])}
+     */
     @Deprecated(since = "5.0.0")
     public static IntRange getIndices(float[] self) {
         return ArrayGroovyMethods.getIndices(self);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting a {@code double[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#getIndices(double[])}.
+     *
+     * @param self the {@code double[]} receiver
+     * @return the value returned by {@link ArrayGroovyMethods#getIndices(double[])}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#getIndices(double[])}
+     */
     @Deprecated(since = "5.0.0")
     public static IntRange getIndices(double[] self) {
         return ArrayGroovyMethods.getIndices(self);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting a {@code T[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#getIndices(Object[])}.
+     *
+     * @param self the {@code T[]} receiver
+     * @return the value returned by {@link ArrayGroovyMethods#getIndices(Object[])}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#getIndices(Object[])}
+     */
     @Deprecated(since = "5.0.0")
     public static <T> IntRange getIndices(T[] self) {
         return ArrayGroovyMethods.getIndices(self);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting a {@code T[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#grep(Object[])}.
+     *
+     * @param self the {@code T[]} receiver
+     * @return the value returned by {@link ArrayGroovyMethods#grep(Object[])}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#grep(Object[])}
+     */
     @Deprecated(since = "5.0.0")
     public static <T> Collection<T> grep(T[] self) {
         return ArrayGroovyMethods.grep(self);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting a {@code T[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#grep(Object[], Object)}.
+     *
+     * @param self the {@code T[]} receiver
+     * @param filter the case filter applied to each element
+     * @return the value returned by {@link ArrayGroovyMethods#grep(Object[], Object)}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#grep(Object[], Object)}
+     */
     @Deprecated(since = "5.0.0")
     public static <T> Collection<T> grep(T[] self, Object filter) {
         return ArrayGroovyMethods.grep(self, filter);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting a {@code T[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#groupBy(Object[], Closure)}.
+     *
+     * @param self the {@code T[]} receiver
+     * @param closure a closure that supplies the group key for each element
+     * @return the value returned by {@link ArrayGroovyMethods#groupBy(Object[], Closure)}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#groupBy(Object[], Closure)}
+     */
     @Deprecated(since = "5.0.0")
     public static <K, T> Map<K, List<T>> groupBy(T[] self, @ClosureParams(FirstParam.Component.class) Closure<K> closure) {
         return ArrayGroovyMethods.groupBy(self, closure);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting an {@code Object[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#groupBy(Object[], Object...)}.
+     *
+     * @param self the {@code Object[]} receiver
+     * @param closures the closures that supply group keys
+     * @return the value returned by {@link ArrayGroovyMethods#groupBy(Object[], Object...)}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#groupBy(Object[], Object...)}
+     */
     @Deprecated(since = "5.0.0")
     public static Map groupBy(Object[] self, Object... closures) {
         return ArrayGroovyMethods.groupBy(self, closures);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting an {@code Object[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#groupBy(Object[], List)}.
+     *
+     * @param self the {@code Object[]} receiver
+     * @param closures the closures that supply group keys
+     * @return the value returned by {@link ArrayGroovyMethods#groupBy(Object[], List)}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#groupBy(Object[], List)}
+     */
     @Deprecated(since = "5.0.0")
     public static Map groupBy(Object[] self, List<Closure> closures) {
         return ArrayGroovyMethods.groupBy(self, closures);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting a {@code T[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#head(Object[])}.
+     *
+     * @param self the {@code T[]} receiver
+     * @return the value returned by {@link ArrayGroovyMethods#head(Object[])}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#head(Object[])}
+     */
     @Deprecated(since = "5.0.0")
     public static <T> T head(T[] self) {
         return ArrayGroovyMethods.head(self);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting an {@code int[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#indexed(int[])}.
+     *
+     * @param self the {@code int[]} receiver
+     * @return the value returned by {@link ArrayGroovyMethods#indexed(int[])}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#indexed(int[])}
+     */
     @Deprecated(since = "5.0.0")
     public static Map<Integer, Integer> indexed(int[] self) {
         return ArrayGroovyMethods.indexed(self);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting a {@code long[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#indexed(long[])}.
+     *
+     * @param self the {@code long[]} receiver
+     * @return the value returned by {@link ArrayGroovyMethods#indexed(long[])}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#indexed(long[])}
+     */
     @Deprecated(since = "5.0.0")
     public static Map<Integer, Long> indexed(long[] self) {
         return ArrayGroovyMethods.indexed(self);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting a {@code double[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#indexed(double[])}.
+     *
+     * @param self the {@code double[]} receiver
+     * @return the value returned by {@link ArrayGroovyMethods#indexed(double[])}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#indexed(double[])}
+     */
     @Deprecated(since = "5.0.0")
     public static Map<Integer, Double> indexed(double[] self) {
         return ArrayGroovyMethods.indexed(self);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting an {@code int[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#indexed(int[], int)}.
+     *
+     * @param self the {@code int[]} receiver
+     * @param offset the index paired with the first element
+     * @return the value returned by {@link ArrayGroovyMethods#indexed(int[], int)}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#indexed(int[], int)}
+     */
     @Deprecated(since = "5.0.0")
     public static Map<Integer, Integer> indexed(int[] self, int offset) {
         return ArrayGroovyMethods.indexed(self, offset);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting a {@code long[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#indexed(long[], int)}.
+     *
+     * @param self the {@code long[]} receiver
+     * @param offset the index paired with the first element
+     * @return the value returned by {@link ArrayGroovyMethods#indexed(long[], int)}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#indexed(long[], int)}
+     */
     @Deprecated(since = "5.0.0")
     public static Map<Integer, Long> indexed(long[] self, int offset) {
         return ArrayGroovyMethods.indexed(self, offset);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting a {@code double[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#indexed(double[], int)}.
+     *
+     * @param self the {@code double[]} receiver
+     * @param offset the index paired with the first element
+     * @return the value returned by {@link ArrayGroovyMethods#indexed(double[], int)}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#indexed(double[], int)}
+     */
     @Deprecated(since = "5.0.0")
     public static Map<Integer, Double> indexed(double[] self, int offset) {
         return ArrayGroovyMethods.indexed(self, offset);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting a {@code T[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#init(Object[])}.
+     *
+     * @param self the {@code T[]} receiver
+     * @return the value returned by {@link ArrayGroovyMethods#init(Object[])}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#init(Object[])}
+     */
     @Deprecated(since = "5.0.0")
     public static <T> T[] init(T[] self) {
         return ArrayGroovyMethods.init(self);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting an {@code E[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#inject(Object[], Closure)}.
+     *
+     * @param self the {@code E[]} receiver
+     * @param closure a closure combining the running value with the next element
+     * @return the value returned by {@link ArrayGroovyMethods#inject(Object[], Closure)}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#inject(Object[], Closure)}
+     */
     @Deprecated(since = "5.0.0")
     public static <E extends T, T, V extends T> T inject(E[] self, @ClosureParams(value=FromString.class,options="T,E") Closure<V> closure) {
         return ArrayGroovyMethods.inject(self, closure);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting a {@link Collection} receiver.
+     * Casts the receiver to {@link Iterable} and delegates to {@link #inject}.
+     *
+     * @param self the {@link Collection} receiver
+     * @param closure a closure combining the running value with the next element
+     * @return the value returned by {@link #inject}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link #inject(Iterable, Closure)}
+     */
     @Deprecated(since = "5.0.0")
     public static <E extends T, T, V extends T> T inject(Collection<E> self, @ClosureParams(value=FromString.class,options="T,E") Closure<V> closure) {
         return inject((Iterable<E>) self, closure);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting an {@code E[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#inject(Object[], Object, Closure)}.
+     *
+     * @param self the {@code E[]} receiver
+     * @param initialValue the starting value of the accumulation
+     * @param closure a closure combining the running value with the next element
+     * @return the value returned by {@link ArrayGroovyMethods#inject(Object[], Object, Closure)}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#inject(Object[], Object, Closure)}
+     */
     @Deprecated(since = "5.0.0")
     public static <E, T, U extends T, V extends T> T inject(E[] self, U initialValue, @ClosureParams(value=FromString.class,options="T,E") Closure<V> closure) {
         return ArrayGroovyMethods.inject(self, initialValue, closure);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting a {@link Collection} receiver.
+     * Casts the receiver to {@link Iterable} and delegates to {@link #inject}.
+     *
+     * @param self the {@link Collection} receiver
+     * @param initialValue the starting value of the accumulation
+     * @param closure a closure combining the running value with the next element
+     * @return the value returned by {@link #inject}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link #inject(Iterable, Object, Closure)}
+     */
     @Deprecated(since = "5.0.0")
     public static <E, T, U extends T, V extends T> T inject(Collection<E> self, U initialValue, @ClosureParams(value=FromString.class,options="T,E") Closure<V> closure) {
         return inject((Iterable<E>) self, initialValue, closure);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting a {@code T[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#iterator(Object[])}.
+     *
+     * @param self the {@code T[]} receiver
+     * @return the value returned by {@link ArrayGroovyMethods#iterator(Object[])}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#iterator(Object[])}
+     */
     @Deprecated(since = "5.0.0")
     public static <T> Iterator<T> iterator(T[] self) {
         return ArrayGroovyMethods.iterator(self);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting a {@code boolean[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#join(boolean[], String)}.
+     *
+     * @param self the {@code boolean[]} receiver
+     * @param separator the text placed between elements
+     * @return the value returned by {@link ArrayGroovyMethods#join(boolean[], String)}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#join(boolean[], String)}
+     */
     @Deprecated(since = "5.0.0")
     public static String join(boolean[] self, String separator) {
         return ArrayGroovyMethods.join(self, separator);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting a {@code byte[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#join(byte[], String)}.
+     *
+     * @param self the {@code byte[]} receiver
+     * @param separator the text placed between elements
+     * @return the value returned by {@link ArrayGroovyMethods#join(byte[], String)}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#join(byte[], String)}
+     */
     @Deprecated(since = "5.0.0")
     public static String join(byte[] self, String separator) {
         return ArrayGroovyMethods.join(self, separator);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting a {@code char[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#join(char[], String)}.
+     *
+     * @param self the {@code char[]} receiver
+     * @param separator the text placed between elements
+     * @return the value returned by {@link ArrayGroovyMethods#join(char[], String)}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#join(char[], String)}
+     */
     @Deprecated(since = "5.0.0")
     public static String join(char[] self, String separator) {
         return ArrayGroovyMethods.join(self, separator);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting a {@code short[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#join(short[], String)}.
+     *
+     * @param self the {@code short[]} receiver
+     * @param separator the text placed between elements
+     * @return the value returned by {@link ArrayGroovyMethods#join(short[], String)}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#join(short[], String)}
+     */
     @Deprecated(since = "5.0.0")
     public static String join(short[] self, String separator) {
         return ArrayGroovyMethods.join(self, separator);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting an {@code int[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#join(int[], String)}.
+     *
+     * @param self the {@code int[]} receiver
+     * @param separator the text placed between elements
+     * @return the value returned by {@link ArrayGroovyMethods#join(int[], String)}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#join(int[], String)}
+     */
     @Deprecated(since = "5.0.0")
     public static String join(int[] self, String separator) {
         return ArrayGroovyMethods.join(self, separator);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting a {@code long[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#join(long[], String)}.
+     *
+     * @param self the {@code long[]} receiver
+     * @param separator the text placed between elements
+     * @return the value returned by {@link ArrayGroovyMethods#join(long[], String)}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#join(long[], String)}
+     */
     @Deprecated(since = "5.0.0")
     public static String join(long[] self, String separator) {
         return ArrayGroovyMethods.join(self, separator);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting a {@code float[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#join(float[], String)}.
+     *
+     * @param self the {@code float[]} receiver
+     * @param separator the text placed between elements
+     * @return the value returned by {@link ArrayGroovyMethods#join(float[], String)}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#join(float[], String)}
+     */
     @Deprecated(since = "5.0.0")
     public static String join(float[] self, String separator) {
         return ArrayGroovyMethods.join(self, separator);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting a {@code double[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#join(double[], String)}.
+     *
+     * @param self the {@code double[]} receiver
+     * @param separator the text placed between elements
+     * @return the value returned by {@link ArrayGroovyMethods#join(double[], String)}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#join(double[], String)}
+     */
     @Deprecated(since = "5.0.0")
     public static String join(double[] self, String separator) {
         return ArrayGroovyMethods.join(self, separator);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting a {@code T[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#join(Object[], String)}.
+     *
+     * @param self the {@code T[]} receiver
+     * @param separator the text placed between elements
+     * @return the value returned by {@link ArrayGroovyMethods#join(Object[], String)}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#join(Object[], String)}
+     */
     @Deprecated(since = "5.0.0")
     public static <T> String join(T[] self, String separator) {
         return ArrayGroovyMethods.join(self, separator);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting a {@code T[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#last(Object[])}.
+     *
+     * @param self the {@code T[]} receiver
+     * @return the value returned by {@link ArrayGroovyMethods#last(Object[])}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#last(Object[])}
+     */
     @Deprecated(since = "5.0.0")
     public static <T> T last(T[] self) {
         return ArrayGroovyMethods.last(self);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting an {@code int[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#max(int[])}.
+     *
+     * @param self the {@code int[]} receiver
+     * @return the value returned by {@link ArrayGroovyMethods#max(int[])}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#max(int[])}
+     */
     @Deprecated(since = "5.0.0")
     public static int max(int[] self) {
         return ArrayGroovyMethods.max(self);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting a {@code long[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#max(long[])}.
+     *
+     * @param self the {@code long[]} receiver
+     * @return the value returned by {@link ArrayGroovyMethods#max(long[])}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#max(long[])}
+     */
     @Deprecated(since = "5.0.0")
     public static long max(long[] self) {
         return ArrayGroovyMethods.max(self);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting a {@code double[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#max(double[])}.
+     *
+     * @param self the {@code double[]} receiver
+     * @return the value returned by {@link ArrayGroovyMethods#max(double[])}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#max(double[])}
+     */
     @Deprecated(since = "5.0.0")
     public static double max(double[] self) {
         return ArrayGroovyMethods.max(self);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting a {@code T[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#max(Object[])}.
+     *
+     * @param self the {@code T[]} receiver
+     * @return the value returned by {@link ArrayGroovyMethods#max(Object[])}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#max(Object[])}
+     */
     @Deprecated(since = "5.0.0")
     public static <T> T max(T[] self) {
         return ArrayGroovyMethods.max(self);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting a {@code T[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#max(Object[], Comparator)}.
+     *
+     * @param self the {@code T[]} receiver
+     * @param comparator the ordering used to compare elements
+     * @return the value returned by {@link ArrayGroovyMethods#max(Object[], Comparator)}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#max(Object[], Comparator)}
+     */
     @Deprecated(since = "5.0.0")
     public static <T> T max(T[] self, Comparator<? super T> comparator) {
         return ArrayGroovyMethods.max(self, comparator);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting a {@code T[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#max(Object[], Closure)}.
+     *
+     * @param self the {@code T[]} receiver
+     * @param closure a closure used to order elements
+     * @return the value returned by {@link ArrayGroovyMethods#max(Object[], Closure)}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#max(Object[], Closure)}
+     */
     @Deprecated(since = "5.0.0")
     public static <T> T max(T[] self, @ClosureParams(value=FromString.class, options={"T","T,T"}) Closure closure) {
         return ArrayGroovyMethods.max(self, closure);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting an {@code int[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#min(int[])}.
+     *
+     * @param self the {@code int[]} receiver
+     * @return the value returned by {@link ArrayGroovyMethods#min(int[])}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#min(int[])}
+     */
     @Deprecated(since = "5.0.0")
     public static int min(int[] self) {
         return ArrayGroovyMethods.min(self);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting a {@code long[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#min(long[])}.
+     *
+     * @param self the {@code long[]} receiver
+     * @return the value returned by {@link ArrayGroovyMethods#min(long[])}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#min(long[])}
+     */
     @Deprecated(since = "5.0.0")
     public static long min(long[] self) {
         return ArrayGroovyMethods.min(self);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting a {@code double[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#min(double[])}.
+     *
+     * @param self the {@code double[]} receiver
+     * @return the value returned by {@link ArrayGroovyMethods#min(double[])}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#min(double[])}
+     */
     @Deprecated(since = "5.0.0")
     public static double min(double[] self) {
         return ArrayGroovyMethods.min(self);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting a {@code T[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#min(Object[])}.
+     *
+     * @param self the {@code T[]} receiver
+     * @return the value returned by {@link ArrayGroovyMethods#min(Object[])}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#min(Object[])}
+     */
     @Deprecated(since = "5.0.0")
     public static <T> T min(T[] self) {
         return ArrayGroovyMethods.min(self);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting a {@code T[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#min(Object[], Comparator)}.
+     *
+     * @param self the {@code T[]} receiver
+     * @param comparator the ordering used to compare elements
+     * @return the value returned by {@link ArrayGroovyMethods#min(Object[], Comparator)}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#min(Object[], Comparator)}
+     */
     @Deprecated(since = "5.0.0")
     public static <T> T min(T[] self, Comparator<? super T> comparator) {
         return ArrayGroovyMethods.min(self, comparator);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting a {@code T[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#min(Object[], Closure)}.
+     *
+     * @param self the {@code T[]} receiver
+     * @param closure a closure used to order elements
+     * @return the value returned by {@link ArrayGroovyMethods#min(Object[], Closure)}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#min(Object[], Closure)}
+     */
     @Deprecated(since = "5.0.0")
     public static <T> T min(T[] self, @ClosureParams(value=FromString.class, options={"T","T,T"}) Closure closure) {
         return ArrayGroovyMethods.min(self, closure);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting a {@code T[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#minus(Object[], Iterable)}.
+     *
+     * @param self the {@code T[]} receiver
+     * @param removeMe the values to leave out of the result
+     * @return the value returned by {@link ArrayGroovyMethods#minus(Object[], Iterable)}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#minus(Object[], Iterable)}
+     */
     @Deprecated(since = "5.0.0")
     public static <T> T[] minus(T[] self, Iterable removeMe) {
         return ArrayGroovyMethods.minus(self, removeMe);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting a {@code T[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#minus(Object[], Object[])}.
+     *
+     * @param self the {@code T[]} receiver
+     * @param removeMe the values to leave out of the result
+     * @return the value returned by {@link ArrayGroovyMethods#minus(Object[], Object[])}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#minus(Object[], Object[])}
+     */
     @Deprecated(since = "5.0.0")
     public static <T> T[] minus(T[] self, Object[] removeMe) {
         return ArrayGroovyMethods.minus(self, removeMe);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting a {@code T[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#minus(Object[], Object)}.
+     *
+     * @param self the {@code T[]} receiver
+     * @param removeMe the values to leave out of the result
+     * @return the value returned by {@link ArrayGroovyMethods#minus(Object[], Object)}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#minus(Object[], Object)}
+     */
     @Deprecated(since = "5.0.0")
     public static <T> T[] minus(T[] self, Object removeMe) {
         return ArrayGroovyMethods.minus(self, removeMe);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting a {@code T[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#plus(Object[], Collection)}.
+     *
+     * @param left the left-hand {@code T[]}
+     * @param right the {@link Collection} appended to the receiver
+     * @return the value returned by {@link ArrayGroovyMethods#plus(Object[], Collection)}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#plus(Object[], Collection)}
+     */
     @Deprecated(since = "5.0.0")
     public static <T> T[] plus(T[] left, Collection<?> right) {
         return ArrayGroovyMethods.plus(left, right);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting a {@code T[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#plus(Object[], Iterable)}.
+     *
+     * @param left the left-hand {@code T[]}
+     * @param right the {@link Iterable} appended to the receiver
+     * @return the value returned by {@link ArrayGroovyMethods#plus(Object[], Iterable)}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#plus(Object[], Iterable)}
+     */
     @Deprecated(since = "5.0.0")
     public static <T> T[] plus(T[] left, Iterable<?> right) {
         return ArrayGroovyMethods.plus(left, right);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting a {@code T[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#plus(Object[], Object[])}.
+     *
+     * @param left the left-hand {@code T[]}
+     * @param right the {@code Object[]} appended to the receiver
+     * @return the value returned by {@link ArrayGroovyMethods#plus(Object[], Object[])}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#plus(Object[], Object[])}
+     */
     @Deprecated(since = "5.0.0")
     public static <T> T[] plus(T[] left, Object[] right) {
         return ArrayGroovyMethods.plus(left, right);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting a {@code T[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#plus(Object[], Object)}.
+     *
+     * @param left the left-hand {@code T[]}
+     * @param right the {@link Object} appended to the receiver
+     * @return the value returned by {@link ArrayGroovyMethods#plus(Object[], Object)}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#plus(Object[], Object)}
+     */
     @Deprecated(since = "5.0.0")
     public static <T> T[] plus(T[] left, Object right) {
         return ArrayGroovyMethods.plus(left, right);
@@ -22131,496 +24412,1344 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         return newValue;
     }
 
+    /**
+     * Deprecated overload retained for callers accepting a {@link List} receiver.
+     * Casts {@code values} to {@link Collection} and delegates to {@link #putAt(List, List, Collection)}.
+     *
+     * @param self the {@link List} receiver
+     * @param splice the indexes to replace
+     * @param values the replacement values
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link #putAt(List, List, Collection)}
+     */
     @Deprecated(since = "2.4.0")
     public static void putAt(List self, List splice, List values) {
         putAt(self, splice, (Collection) values);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting a {@code T[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#reverse(Object[])}.
+     *
+     * @param self the {@code T[]} receiver
+     * @return the value returned by {@link ArrayGroovyMethods#reverse(Object[])}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#reverse(Object[])}
+     */
     @Deprecated(since = "5.0.0")
     public static <T> T[] reverse(T[] self) {
         return ArrayGroovyMethods.reverse(self);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting a {@code T[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#reverse(Object[], boolean)}.
+     *
+     * @param self the {@code T[]} receiver
+     * @param mutate whether to update the receiver instead of returning a copy
+     * @return the value returned by {@link ArrayGroovyMethods#reverse(Object[], boolean)}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#reverse(Object[], boolean)}
+     */
     @Deprecated(since = "5.0.0")
     public static <T> T[] reverse(T[] self, boolean mutate) {
         return ArrayGroovyMethods.reverse(self, mutate);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting a {@code T[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#reverseEach(Object[], Closure)}.
+     *
+     * @param self the {@code T[]} receiver
+     * @param closure a closure invoked for each element
+     * @return the value returned by {@link ArrayGroovyMethods#reverseEach(Object[], Closure)}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#reverseEach(Object[], Closure)}
+     */
     @Deprecated(since = "5.0.0")
     public static <T> T[] reverseEach(T[] self, @ClosureParams(FirstParam.Component.class) Closure closure) {
         return ArrayGroovyMethods.reverseEach(self, closure);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting a {@code T[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#shuffle(Object[])}.
+     *
+     * @param self the {@code T[]} receiver
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#shuffle(Object[])}
+     */
     @Deprecated(since = "5.0.0")
     public static <T> void shuffle(T[] self) {
         ArrayGroovyMethods.shuffle(self);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting a {@code T[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#shuffle(Object[], Random)}.
+     *
+     * @param self the {@code T[]} receiver
+     * @param rnd the source of randomness
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#shuffle(Object[], Random)}
+     */
     @Deprecated(since = "5.0.0")
     public static <T> void shuffle(T[] self, Random rnd) {
         ArrayGroovyMethods.shuffle(self, rnd);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting a {@code T[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#shuffled(Object[])}.
+     *
+     * @param self the {@code T[]} receiver
+     * @return the value returned by {@link ArrayGroovyMethods#shuffled(Object[])}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#shuffled(Object[])}
+     */
     @Deprecated(since = "5.0.0")
     public static <T> T[] shuffled(T[] self) {
         return ArrayGroovyMethods.shuffled(self);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting a {@code T[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#shuffled(Object[], Random)}.
+     *
+     * @param self the {@code T[]} receiver
+     * @param rnd the source of randomness
+     * @return the value returned by {@link ArrayGroovyMethods#shuffled(Object[], Random)}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#shuffled(Object[], Random)}
+     */
     @Deprecated(since = "5.0.0")
     public static <T> T[] shuffled(T[] self, Random rnd) {
         return ArrayGroovyMethods.shuffled(self, rnd);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting a {@code boolean[]} receiver.
+     * Returns the number of elements in the array.
+     *
+     * @param self the {@code boolean[]} receiver
+     * @return the length of {@code self}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#size(boolean[])}
+     */
     @Deprecated(since = "5.0.0")
     public static int size(boolean[] self) {
         return self.length;
     }
 
+    /**
+     * Deprecated overload retained for callers accepting a {@code byte[]} receiver.
+     * Returns the number of elements in the array.
+     *
+     * @param self the {@code byte[]} receiver
+     * @return the length of {@code self}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#size(byte[])}
+     */
     @Deprecated(since = "5.0.0")
     public static int size(byte[] self) {
         return self.length;
     }
 
+    /**
+     * Deprecated overload retained for callers accepting a {@code char[]} receiver.
+     * Returns the number of elements in the array.
+     *
+     * @param self the {@code char[]} receiver
+     * @return the length of {@code self}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#size(char[])}
+     */
     @Deprecated(since = "5.0.0")
     public static int size(char[] self) {
         return self.length;
     }
 
+    /**
+     * Deprecated overload retained for callers accepting a {@code short[]} receiver.
+     * Returns the number of elements in the array.
+     *
+     * @param self the {@code short[]} receiver
+     * @return the length of {@code self}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#size(short[])}
+     */
     @Deprecated(since = "5.0.0")
     public static int size(short[] self) {
         return self.length;
     }
 
+    /**
+     * Deprecated overload retained for callers accepting an {@code int[]} receiver.
+     * Returns the number of elements in the array.
+     *
+     * @param self the {@code int[]} receiver
+     * @return the length of {@code self}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#size(int[])}
+     */
     @Deprecated(since = "5.0.0")
     public static int size(int[] self) {
         return self.length;
     }
 
+    /**
+     * Deprecated overload retained for callers accepting a {@code long[]} receiver.
+     * Returns the number of elements in the array.
+     *
+     * @param self the {@code long[]} receiver
+     * @return the length of {@code self}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#size(long[])}
+     */
     @Deprecated(since = "5.0.0")
     public static int size(long[] self) {
         return self.length;
     }
 
+    /**
+     * Deprecated overload retained for callers accepting a {@code float[]} receiver.
+     * Returns the number of elements in the array.
+     *
+     * @param self the {@code float[]} receiver
+     * @return the length of {@code self}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#size(float[])}
+     */
     @Deprecated(since = "5.0.0")
     public static int size(float[] self) {
         return self.length;
     }
 
+    /**
+     * Deprecated overload retained for callers accepting a {@code double[]} receiver.
+     * Returns the number of elements in the array.
+     *
+     * @param self the {@code double[]} receiver
+     * @return the length of {@code self}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#size(double[])}
+     */
     @Deprecated(since = "5.0.0")
     public static int size(double[] self) {
         return self.length;
     }
 
+    /**
+     * Deprecated overload retained for callers accepting an {@code Object[]} receiver.
+     * Returns the number of elements in the array.
+     *
+     * @param self the {@code Object[]} receiver
+     * @return the length of {@code self}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#size(Object[])}
+     */
     @Deprecated(since = "5.0.0")
     public static int size(Object[] self) {
         return self.length;
     }
 
+    /**
+     * Deprecated overload retained for callers accepting a {@code T[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#sort(Object[])}.
+     *
+     * @param self the {@code T[]} receiver
+     * @return the value returned by {@link ArrayGroovyMethods#sort(Object[])}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#sort(Object[])}
+     */
     @Deprecated(since = "5.0.0")
     public static <T> T[] sort(T[] self) {
         return ArrayGroovyMethods.sort(self);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting a {@code T[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#sort(Object[], boolean)}.
+     *
+     * @param self the {@code T[]} receiver
+     * @param mutate whether to update the receiver instead of returning a copy
+     * @return the value returned by {@link ArrayGroovyMethods#sort(Object[], boolean)}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#sort(Object[], boolean)}
+     */
     @Deprecated(since = "5.0.0")
     public static <T> T[] sort(T[] self, boolean mutate) {
         return ArrayGroovyMethods.sort(self, mutate);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting a {@code T[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#sort(Object[], Comparator)}.
+     *
+     * @param self the {@code T[]} receiver
+     * @param comparator the ordering used to compare elements
+     * @return the value returned by {@link ArrayGroovyMethods#sort(Object[], Comparator)}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#sort(Object[], Comparator)}
+     */
     @Deprecated(since = "5.0.0")
     public static <T> T[] sort(T[] self, Comparator<? super T> comparator) {
         return ArrayGroovyMethods.sort(self, comparator);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting a {@code T[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#sort(Object[], boolean, Comparator)}.
+     *
+     * @param self the {@code T[]} receiver
+     * @param mutate whether to update the receiver instead of returning a copy
+     * @param comparator the ordering used to compare elements
+     * @return the value returned by {@link ArrayGroovyMethods#sort(Object[], boolean, Comparator)}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#sort(Object[], boolean, Comparator)}
+     */
     @Deprecated(since = "5.0.0")
     public static <T> T[] sort(T[] self, boolean mutate, Comparator<? super T> comparator) {
         return ArrayGroovyMethods.sort(self, mutate, comparator);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting a {@code T[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#sort(Object[], Closure)}.
+     *
+     * @param self the {@code T[]} receiver
+     * @param closure a closure used to order elements
+     * @return the value returned by {@link ArrayGroovyMethods#sort(Object[], Closure)}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#sort(Object[], Closure)}
+     */
     @Deprecated(since = "5.0.0")
     public static <T> T[] sort(T[] self, @ClosureParams(value=FromString.class,options={"T","T,T"}) Closure closure) {
         return ArrayGroovyMethods.sort(self, closure);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting a {@code T[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#sort(Object[], boolean, Closure)}.
+     *
+     * @param self the {@code T[]} receiver
+     * @param mutate whether to update the receiver instead of returning a copy
+     * @param closure a closure used to order elements
+     * @return the value returned by {@link ArrayGroovyMethods#sort(Object[], boolean, Closure)}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#sort(Object[], boolean, Closure)}
+     */
     @Deprecated(since = "5.0.0")
     public static <T> T[] sort(T[] self, boolean mutate, @ClosureParams(value=FromString.class,options={"T","T,T"}) Closure closure) {
         return ArrayGroovyMethods.sort(self, mutate, closure);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting a {@code T[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#split(Object[], Closure)}.
+     *
+     * @param self the {@code T[]} receiver
+     * @param closure a closure applied by the delegated call
+     * @return the value returned by {@link ArrayGroovyMethods#split(Object[], Closure)}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#split(Object[], Closure)}
+     */
     @Deprecated(since = "5.0.0")
     public static <T> Collection<Collection<T>> split(T[] self, @ClosureParams(FirstParam.Component.class) Closure closure) {
         return ArrayGroovyMethods.split(self, closure);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting a {@code byte[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#sum(byte[])}.
+     *
+     * @param self the {@code byte[]} receiver
+     * @return the value returned by {@link ArrayGroovyMethods#sum(byte[])}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#sum(byte[])}
+     */
     @Deprecated(since = "5.0.0")
     public static byte sum(byte[] self) {
         return ArrayGroovyMethods.sum(self);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting a {@code char[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#sum(char[])}.
+     *
+     * @param self the {@code char[]} receiver
+     * @return the value returned by {@link ArrayGroovyMethods#sum(char[])}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#sum(char[])}
+     */
     @Deprecated(since = "5.0.0")
     public static char sum(char[] self) {
         return ArrayGroovyMethods.sum(self);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting a {@code short[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#sum(short[])}.
+     *
+     * @param self the {@code short[]} receiver
+     * @return the value returned by {@link ArrayGroovyMethods#sum(short[])}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#sum(short[])}
+     */
     @Deprecated(since = "5.0.0")
     public static short sum(short[] self) {
         return ArrayGroovyMethods.sum(self);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting an {@code int[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#sum(int[])}.
+     *
+     * @param self the {@code int[]} receiver
+     * @return the value returned by {@link ArrayGroovyMethods#sum(int[])}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#sum(int[])}
+     */
     @Deprecated(since = "5.0.0")
     public static int sum(int[] self) {
         return ArrayGroovyMethods.sum(self);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting a {@code long[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#sum(long[])}.
+     *
+     * @param self the {@code long[]} receiver
+     * @return the value returned by {@link ArrayGroovyMethods#sum(long[])}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#sum(long[])}
+     */
     @Deprecated(since = "5.0.0")
     public static long sum(long[] self) {
         return ArrayGroovyMethods.sum(self);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting a {@code float[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#sum(float[])}.
+     *
+     * @param self the {@code float[]} receiver
+     * @return the value returned by {@link ArrayGroovyMethods#sum(float[])}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#sum(float[])}
+     */
     @Deprecated(since = "5.0.0")
     public static float sum(float[] self) {
         return ArrayGroovyMethods.sum(self);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting a {@code double[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#sum(double[])}.
+     *
+     * @param self the {@code double[]} receiver
+     * @return the value returned by {@link ArrayGroovyMethods#sum(double[])}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#sum(double[])}
+     */
     @Deprecated(since = "5.0.0")
     public static double sum(double[] self) {
         return ArrayGroovyMethods.sum(self);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting an {@code Object[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#sum(Object[])}.
+     *
+     * @param self the {@code Object[]} receiver
+     * @return the value returned by {@link ArrayGroovyMethods#sum(Object[])}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#sum(Object[])}
+     */
     @Deprecated(since = "5.0.0")
     public static Object sum(Object[] self) {
         return ArrayGroovyMethods.sum(self);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting a {@code byte[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#sum(byte[], byte)}.
+     *
+     * @param self the {@code byte[]} receiver
+     * @param initialValue the starting value of the accumulation
+     * @return the value returned by {@link ArrayGroovyMethods#sum(byte[], byte)}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#sum(byte[], byte)}
+     */
     @Deprecated(since = "5.0.0")
     public static byte sum(byte[] self, byte initialValue) {
         return ArrayGroovyMethods.sum(self, initialValue);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting a {@code float[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#sum(float[], float)}.
+     *
+     * @param self the {@code float[]} receiver
+     * @param initialValue the starting value of the accumulation
+     * @return the value returned by {@link ArrayGroovyMethods#sum(float[], float)}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#sum(float[], float)}
+     */
     @Deprecated(since = "5.0.0")
     public static float sum(float[] self, float initialValue) {
         return ArrayGroovyMethods.sum(self, initialValue);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting a {@code short[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#sum(short[], short)}.
+     *
+     * @param self the {@code short[]} receiver
+     * @param initialValue the starting value of the accumulation
+     * @return the value returned by {@link ArrayGroovyMethods#sum(short[], short)}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#sum(short[], short)}
+     */
     @Deprecated(since = "5.0.0")
     public static short sum(short[] self, short initialValue) {
         return ArrayGroovyMethods.sum(self, initialValue);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting an {@code int[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#sum(int[], int)}.
+     *
+     * @param self the {@code int[]} receiver
+     * @param initialValue the starting value of the accumulation
+     * @return the value returned by {@link ArrayGroovyMethods#sum(int[], int)}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#sum(int[], int)}
+     */
     @Deprecated(since = "5.0.0")
     public static int sum(int[] self, int initialValue) {
         return ArrayGroovyMethods.sum(self, initialValue);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting a {@code long[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#sum(long[], long)}.
+     *
+     * @param self the {@code long[]} receiver
+     * @param initialValue the starting value of the accumulation
+     * @return the value returned by {@link ArrayGroovyMethods#sum(long[], long)}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#sum(long[], long)}
+     */
     @Deprecated(since = "5.0.0")
     public static long sum(long[] self, long initialValue) {
         return ArrayGroovyMethods.sum(self, initialValue);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting a {@code char[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#sum(char[], char)}.
+     *
+     * @param self the {@code char[]} receiver
+     * @param initialValue the starting value of the accumulation
+     * @return the value returned by {@link ArrayGroovyMethods#sum(char[], char)}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#sum(char[], char)}
+     */
     @Deprecated(since = "5.0.0")
     public static char sum(char[] self, char initialValue) {
         return ArrayGroovyMethods.sum(self, initialValue);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting a {@code double[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#sum(double[], double)}.
+     *
+     * @param self the {@code double[]} receiver
+     * @param initialValue the starting value of the accumulation
+     * @return the value returned by {@link ArrayGroovyMethods#sum(double[], double)}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#sum(double[], double)}
+     */
     @Deprecated(since = "5.0.0")
     public static double sum(double[] self, double initialValue) {
         return ArrayGroovyMethods.sum(self, initialValue);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting an {@code Object[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#sum(Object[], Object)}.
+     *
+     * @param self the {@code Object[]} receiver
+     * @param initialValue the starting value of the accumulation
+     * @return the value returned by {@link ArrayGroovyMethods#sum(Object[], Object)}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#sum(Object[], Object)}
+     */
     @Deprecated(since = "5.0.0")
     public static Object sum(Object[] self, Object initialValue) {
         return ArrayGroovyMethods.sum(self, initialValue);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting a {@code T[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#sum(Object[], Closure)}.
+     *
+     * @param self the {@code T[]} receiver
+     * @param closure a closure mapping each element before it is combined
+     * @return the value returned by {@link ArrayGroovyMethods#sum(Object[], Closure)}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#sum(Object[], Closure)}
+     */
     @Deprecated(since = "5.0.0")
     public static <T> Object sum(T[] self, @ClosureParams(FirstParam.Component.class) Closure closure) {
         return ArrayGroovyMethods.sum(self, closure);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting a {@code T[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#sum(Object[], Object, Closure)}.
+     *
+     * @param self the {@code T[]} receiver
+     * @param initialValue the starting value of the accumulation
+     * @param closure a closure mapping each element before it is combined
+     * @return the value returned by {@link ArrayGroovyMethods#sum(Object[], Object, Closure)}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#sum(Object[], Object, Closure)}
+     */
     @Deprecated(since = "5.0.0")
     public static <T> Object sum(T[] self, Object initialValue, @ClosureParams(FirstParam.Component.class) Closure closure) {
         return ArrayGroovyMethods.sum(self, initialValue, closure);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting a {@code boolean[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#swap(boolean[], int, int)}.
+     *
+     * @param self the {@code boolean[]} receiver
+     * @param i the index of one element to exchange
+     * @param j the index of the other element to exchange
+     * @return the value returned by {@link ArrayGroovyMethods#swap(boolean[], int, int)}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#swap(boolean[], int, int)}
+     */
     @Deprecated(since = "5.0.0")
     public static boolean[] swap(boolean[] self, int i, int j) {
         return ArrayGroovyMethods.swap(self, i,  j);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting a {@code byte[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#swap(byte[], int, int)}.
+     *
+     * @param self the {@code byte[]} receiver
+     * @param i the index of one element to exchange
+     * @param j the index of the other element to exchange
+     * @return the value returned by {@link ArrayGroovyMethods#swap(byte[], int, int)}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#swap(byte[], int, int)}
+     */
     @Deprecated(since = "5.0.0")
     public static byte[] swap(byte[] self, int i, int j) {
         return ArrayGroovyMethods.swap(self, i,  j);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting a {@code char[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#swap(char[], int, int)}.
+     *
+     * @param self the {@code char[]} receiver
+     * @param i the index of one element to exchange
+     * @param j the index of the other element to exchange
+     * @return the value returned by {@link ArrayGroovyMethods#swap(char[], int, int)}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#swap(char[], int, int)}
+     */
     @Deprecated(since = "5.0.0")
     public static char[] swap(char[] self, int i, int j) {
         return ArrayGroovyMethods.swap(self, i,  j);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting a {@code short[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#swap(short[], int, int)}.
+     *
+     * @param self the {@code short[]} receiver
+     * @param i the index of one element to exchange
+     * @param j the index of the other element to exchange
+     * @return the value returned by {@link ArrayGroovyMethods#swap(short[], int, int)}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#swap(short[], int, int)}
+     */
     @Deprecated(since = "5.0.0")
     public static short[] swap(short[] self, int i, int j) {
         return ArrayGroovyMethods.swap(self, i,  j);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting an {@code int[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#swap(int[], int, int)}.
+     *
+     * @param self the {@code int[]} receiver
+     * @param i the index of one element to exchange
+     * @param j the index of the other element to exchange
+     * @return the value returned by {@link ArrayGroovyMethods#swap(int[], int, int)}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#swap(int[], int, int)}
+     */
     @Deprecated(since = "5.0.0")
     public static int[] swap(int[] self, int i, int j) {
         return ArrayGroovyMethods.swap(self, i,  j);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting a {@code long[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#swap(long[], int, int)}.
+     *
+     * @param self the {@code long[]} receiver
+     * @param i the index of one element to exchange
+     * @param j the index of the other element to exchange
+     * @return the value returned by {@link ArrayGroovyMethods#swap(long[], int, int)}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#swap(long[], int, int)}
+     */
     @Deprecated(since = "5.0.0")
     public static long[] swap(long[] self, int i, int j) {
         return ArrayGroovyMethods.swap(self, i,  j);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting a {@code float[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#swap(float[], int, int)}.
+     *
+     * @param self the {@code float[]} receiver
+     * @param i the index of one element to exchange
+     * @param j the index of the other element to exchange
+     * @return the value returned by {@link ArrayGroovyMethods#swap(float[], int, int)}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#swap(float[], int, int)}
+     */
     @Deprecated(since = "5.0.0")
     public static float[] swap(float[] self, int i, int j) {
         return ArrayGroovyMethods.swap(self, i,  j);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting a {@code double[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#swap(double[], int, int)}.
+     *
+     * @param self the {@code double[]} receiver
+     * @param i the index of one element to exchange
+     * @param j the index of the other element to exchange
+     * @return the value returned by {@link ArrayGroovyMethods#swap(double[], int, int)}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#swap(double[], int, int)}
+     */
     @Deprecated(since = "5.0.0")
     public static double[] swap(double[] self, int i, int j) {
         return ArrayGroovyMethods.swap(self, i,  j);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting a {@code T[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#swap(Object[], int, int)}.
+     *
+     * @param self the {@code T[]} receiver
+     * @param i the index of one element to exchange
+     * @param j the index of the other element to exchange
+     * @return the value returned by {@link ArrayGroovyMethods#swap(Object[], int, int)}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#swap(Object[], int, int)}
+     */
     @Deprecated(since = "5.0.0")
     public static <T> T[] swap(T[] self, int i, int j) {
         return ArrayGroovyMethods.swap(self, i,  j);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting a {@code T[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#tail(Object[])}.
+     *
+     * @param self the {@code T[]} receiver
+     * @return the value returned by {@link ArrayGroovyMethods#tail(Object[])}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#tail(Object[])}
+     */
     @Deprecated(since = "5.0.0")
     public static <T> T[] tail(T[] self) {
         return ArrayGroovyMethods.tail(self);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting a {@code T[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#take(Object[], int)}.
+     *
+     * @param self the {@code T[]} receiver
+     * @param num how many leading elements to keep
+     * @return the value returned by {@link ArrayGroovyMethods#take(Object[], int)}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#take(Object[], int)}
+     */
     @Deprecated(since = "5.0.0")
     public static <T> T[] take(T[] self, int num) {
         return ArrayGroovyMethods.take(self, num);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting a {@code T[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#takeRight(Object[], int)}.
+     *
+     * @param self the {@code T[]} receiver
+     * @param num how many trailing elements to keep
+     * @return the value returned by {@link ArrayGroovyMethods#takeRight(Object[], int)}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#takeRight(Object[], int)}
+     */
     @Deprecated(since = "5.0.0")
     public static <T> T[] takeRight(T[] self, int num) {
         return ArrayGroovyMethods.takeRight(self, num);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting a {@code T[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#takeWhile(Object[], Closure)}.
+     *
+     * @param self the {@code T[]} receiver
+     * @param condition a condition tested against each element
+     * @return the value returned by {@link ArrayGroovyMethods#takeWhile(Object[], Closure)}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#takeWhile(Object[], Closure)}
+     */
     @Deprecated(since = "5.0.0")
     public static <T> T[] takeWhile(T[] self, @ClosureParams(FirstParam.Component.class) Closure condition) {
         return ArrayGroovyMethods.takeWhile(self, condition);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting an {@code Object[]} receiver.
+     * Delegates to {@link FormatHelper#toArrayString(Object[])}.
+     *
+     * @param self the {@code Object[]} receiver
+     * @return the string form produced by {@link FormatHelper#toArrayString(Object[])}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link FormatHelper#toArrayString(Object[])}
+     */
     @Deprecated(since = "5.0.0")
     public static String toArrayString(Object[] self) {
         return FormatHelper.toArrayString(self);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting a {@code boolean[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#toList(boolean[])}.
+     *
+     * @param self the {@code boolean[]} receiver
+     * @return the value returned by {@link ArrayGroovyMethods#toList(boolean[])}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#toList(boolean[])}
+     */
     @Deprecated(since = "5.0.0")
     public static List<Boolean> toList(boolean[] self) {
         return ArrayGroovyMethods.toList(self);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting a {@code byte[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#toList(byte[])}.
+     *
+     * @param self the {@code byte[]} receiver
+     * @return the value returned by {@link ArrayGroovyMethods#toList(byte[])}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#toList(byte[])}
+     */
     @Deprecated(since = "5.0.0")
     public static List<Byte> toList(byte[] self) {
         return ArrayGroovyMethods.toList(self);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting a {@code char[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#toList(char[])}.
+     *
+     * @param self the {@code char[]} receiver
+     * @return the value returned by {@link ArrayGroovyMethods#toList(char[])}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#toList(char[])}
+     */
     @Deprecated(since = "5.0.0")
     public static List<Character> toList(char[] self) {
         return ArrayGroovyMethods.toList(self);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting a {@code short[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#toList(short[])}.
+     *
+     * @param self the {@code short[]} receiver
+     * @return the value returned by {@link ArrayGroovyMethods#toList(short[])}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#toList(short[])}
+     */
     @Deprecated(since = "5.0.0")
     public static List<Short> toList(short[] self) {
         return ArrayGroovyMethods.toList(self);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting an {@code int[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#toList(int[])}.
+     *
+     * @param self the {@code int[]} receiver
+     * @return the value returned by {@link ArrayGroovyMethods#toList(int[])}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#toList(int[])}
+     */
     @Deprecated(since = "5.0.0")
     public static List<Integer> toList(int[] self) {
         return ArrayGroovyMethods.toList(self);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting a {@code long[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#toList(long[])}.
+     *
+     * @param self the {@code long[]} receiver
+     * @return the value returned by {@link ArrayGroovyMethods#toList(long[])}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#toList(long[])}
+     */
     @Deprecated(since = "5.0.0")
     public static List<Long> toList(long[] self) {
         return ArrayGroovyMethods.toList(self);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting a {@code float[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#toList(float[])}.
+     *
+     * @param self the {@code float[]} receiver
+     * @return the value returned by {@link ArrayGroovyMethods#toList(float[])}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#toList(float[])}
+     */
     @Deprecated(since = "5.0.0")
     public static List<Float> toList(float[] self) {
         return ArrayGroovyMethods.toList(self);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting a {@code double[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#toList(double[])}.
+     *
+     * @param self the {@code double[]} receiver
+     * @return the value returned by {@link ArrayGroovyMethods#toList(double[])}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#toList(double[])}
+     */
     @Deprecated(since = "5.0.0")
     public static List<Double> toList(double[] self) {
         return ArrayGroovyMethods.toList(self);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting a {@code T[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#toList(Object[])}.
+     *
+     * @param self the {@code T[]} receiver
+     * @return the value returned by {@link ArrayGroovyMethods#toList(Object[])}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#toList(Object[])}
+     */
     @Deprecated(since = "5.0.0")
     public static <T> List<T> toList(T[] self) {
         return ArrayGroovyMethods.toList(self);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting a {@code boolean[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#toSet(boolean[])}.
+     *
+     * @param self the {@code boolean[]} receiver
+     * @return the value returned by {@link ArrayGroovyMethods#toSet(boolean[])}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#toSet(boolean[])}
+     */
     @Deprecated(since = "5.0.0")
     public static Set<Boolean> toSet(boolean[] self) {
         return ArrayGroovyMethods.toSet(self);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting a {@code byte[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#toSet(byte[])}.
+     *
+     * @param self the {@code byte[]} receiver
+     * @return the value returned by {@link ArrayGroovyMethods#toSet(byte[])}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#toSet(byte[])}
+     */
     @Deprecated(since = "5.0.0")
     public static Set<Byte> toSet(byte[] self) {
         return ArrayGroovyMethods.toSet(self);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting a {@code char[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#toSet(char[])}.
+     *
+     * @param self the {@code char[]} receiver
+     * @return the value returned by {@link ArrayGroovyMethods#toSet(char[])}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#toSet(char[])}
+     */
     @Deprecated(since = "5.0.0")
     public static Set<Character> toSet(char[] self) {
         return ArrayGroovyMethods.toSet(self);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting a {@code short[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#toSet(short[])}.
+     *
+     * @param self the {@code short[]} receiver
+     * @return the value returned by {@link ArrayGroovyMethods#toSet(short[])}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#toSet(short[])}
+     */
     @Deprecated(since = "5.0.0")
     public static Set<Short> toSet(short[] self) {
         return ArrayGroovyMethods.toSet(self);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting an {@code int[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#toSet(int[])}.
+     *
+     * @param self the {@code int[]} receiver
+     * @return the value returned by {@link ArrayGroovyMethods#toSet(int[])}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#toSet(int[])}
+     */
     @Deprecated(since = "5.0.0")
     public static Set<Integer> toSet(int[] self) {
         return ArrayGroovyMethods.toSet(self);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting a {@code long[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#toSet(long[])}.
+     *
+     * @param self the {@code long[]} receiver
+     * @return the value returned by {@link ArrayGroovyMethods#toSet(long[])}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#toSet(long[])}
+     */
     @Deprecated(since = "5.0.0")
     public static Set<Long> toSet(long[] self) {
         return ArrayGroovyMethods.toSet(self);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting a {@code float[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#toSet(float[])}.
+     *
+     * @param self the {@code float[]} receiver
+     * @return the value returned by {@link ArrayGroovyMethods#toSet(float[])}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#toSet(float[])}
+     */
     @Deprecated(since = "5.0.0")
     public static Set<Float> toSet(float[] self) {
         return ArrayGroovyMethods.toSet(self);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting a {@code double[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#toSet(double[])}.
+     *
+     * @param self the {@code double[]} receiver
+     * @return the value returned by {@link ArrayGroovyMethods#toSet(double[])}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#toSet(double[])}
+     */
     @Deprecated(since = "5.0.0")
     public static Set<Double> toSet(double[] self) {
         return ArrayGroovyMethods.toSet(self);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting a {@code T[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#toSorted(Object[])}.
+     *
+     * @param self the {@code T[]} receiver
+     * @return the value returned by {@link ArrayGroovyMethods#toSorted(Object[])}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#toSorted(Object[])}
+     */
     @Deprecated(since = "5.0.0")
     public static <T> T[] toSorted(T[] self) {
         return ArrayGroovyMethods.toSorted(self);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting a {@code T[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#toSorted(Object[], Comparator)}.
+     *
+     * @param self the {@code T[]} receiver
+     * @param comparator the ordering used to compare elements
+     * @return the value returned by {@link ArrayGroovyMethods#toSorted(Object[], Comparator)}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#toSorted(Object[], Comparator)}
+     */
     @Deprecated(since = "5.0.0")
     public static <T> T[] toSorted(T[] self, Comparator<? super T> comparator) {
         return ArrayGroovyMethods.toSorted(self, comparator);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting a {@code T[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#toSorted(Object[], Closure)}.
+     *
+     * @param self the {@code T[]} receiver
+     * @param closure a closure used to order elements
+     * @return the value returned by {@link ArrayGroovyMethods#toSorted(Object[], Closure)}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#toSorted(Object[], Closure)}
+     */
     @Deprecated(since = "5.0.0")
     public static <T> T[] toSorted(T[] self, @ClosureParams(value=FromString.class,options={"T","T,T"}) Closure closure) {
         return ArrayGroovyMethods.toSorted(self, closure);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting an {@code Object[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#toSpreadMap(Object[])}.
+     *
+     * @param self the {@code Object[]} receiver
+     * @return the value returned by {@link ArrayGroovyMethods#toSpreadMap(Object[])}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#toSpreadMap(Object[])}
+     */
     @Deprecated(since = "5.0.0")
     public static SpreadMap toSpreadMap(Object[] self) {
         return ArrayGroovyMethods.toSpreadMap(self);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting a {@code boolean[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#toString(boolean[])}.
+     *
+     * @param self the {@code boolean[]} receiver
+     * @return the value returned by {@link ArrayGroovyMethods#toString(boolean[])}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#toString(boolean[])}
+     */
     @Deprecated(since = "5.0.0")
     public static String toString(boolean[] self) {
         return ArrayGroovyMethods.toString(self);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting a {@code byte[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#toString(byte[])}.
+     *
+     * @param self the {@code byte[]} receiver
+     * @return the value returned by {@link ArrayGroovyMethods#toString(byte[])}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#toString(byte[])}
+     */
     @Deprecated(since = "5.0.0")
     public static String toString(byte[] self) {
         return ArrayGroovyMethods.toString(self);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting a {@code char[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#toString(char[])}.
+     *
+     * @param self the {@code char[]} receiver
+     * @return the value returned by {@link ArrayGroovyMethods#toString(char[])}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#toString(char[])}
+     */
     @Deprecated(since = "5.0.0")
     public static String toString(char[] self) {
         return ArrayGroovyMethods.toString(self);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting a {@code short[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#toString(short[])}.
+     *
+     * @param self the {@code short[]} receiver
+     * @return the value returned by {@link ArrayGroovyMethods#toString(short[])}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#toString(short[])}
+     */
     @Deprecated(since = "5.0.0")
     public static String toString(short[] self) {
         return ArrayGroovyMethods.toString(self);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting an {@code int[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#toString(int[])}.
+     *
+     * @param self the {@code int[]} receiver
+     * @return the value returned by {@link ArrayGroovyMethods#toString(int[])}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#toString(int[])}
+     */
     @Deprecated(since = "5.0.0")
     public static String toString(int[] self) {
         return ArrayGroovyMethods.toString(self);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting a {@code long[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#toString(long[])}.
+     *
+     * @param self the {@code long[]} receiver
+     * @return the value returned by {@link ArrayGroovyMethods#toString(long[])}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#toString(long[])}
+     */
     @Deprecated(since = "5.0.0")
     public static String toString(long[] self) {
         return ArrayGroovyMethods.toString(self);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting a {@code float[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#toString(float[])}.
+     *
+     * @param self the {@code float[]} receiver
+     * @return the value returned by {@link ArrayGroovyMethods#toString(float[])}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#toString(float[])}
+     */
     @Deprecated(since = "5.0.0")
     public static String toString(float[] self) {
         return ArrayGroovyMethods.toString(self);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting a {@code double[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#toString(double[])}.
+     *
+     * @param self the {@code double[]} receiver
+     * @return the value returned by {@link ArrayGroovyMethods#toString(double[])}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#toString(double[])}
+     */
     @Deprecated(since = "5.0.0")
     public static String toString(double[] self) {
         return ArrayGroovyMethods.toString(self);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting an {@code Object[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#toString(Object[])}.
+     *
+     * @param self the {@code Object[]} receiver
+     * @return the value returned by {@link ArrayGroovyMethods#toString(Object[])}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#toString(Object[])}
+     */
     @Deprecated(since = "5.0.0")
     public static String toString(Object[] self) {
         return ArrayGroovyMethods.toString(self);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting a {@code T[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#toUnique(Object[])}.
+     *
+     * @param self the {@code T[]} receiver
+     * @return the value returned by {@link ArrayGroovyMethods#toUnique(Object[])}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#toUnique(Object[])}
+     */
     @Deprecated(since = "5.0.0")
     public static <T> T[] toUnique(T[] self) {
         return ArrayGroovyMethods.toUnique(self);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting a {@code T[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#toUnique(Object[], Comparator)}.
+     *
+     * @param self the {@code T[]} receiver
+     * @param comparator the ordering used to compare elements
+     * @return the value returned by {@link ArrayGroovyMethods#toUnique(Object[], Comparator)}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#toUnique(Object[], Comparator)}
+     */
     @Deprecated(since = "5.0.0")
     public static <T> T[] toUnique(T[] self, Comparator<? super T> comparator) {
         return ArrayGroovyMethods.toUnique(self, comparator);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting a {@code T[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#toUnique(Object[], Closure)}.
+     *
+     * @param self the {@code T[]} receiver
+     * @param closure a closure used to order elements
+     * @return the value returned by {@link ArrayGroovyMethods#toUnique(Object[], Closure)}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#toUnique(Object[], Closure)}
+     */
     @Deprecated(since = "5.0.0")
     public static <T> T[] toUnique(T[] self, @ClosureParams(value=FromString.class, options={"T","T,T"}) Closure closure) {
         return ArrayGroovyMethods.toUnique(self, closure);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting an {@code int[][]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#transpose(int[][])}.
+     *
+     * @param self the {@code int[][]} receiver
+     * @return the value returned by {@link ArrayGroovyMethods#transpose(int[][])}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#transpose(int[][])}
+     */
     @Deprecated(since = "5.0.0")
     public static int[][] transpose(int[][] self) {
         return ArrayGroovyMethods.transpose(self);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting a {@code long[][]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#transpose(long[][])}.
+     *
+     * @param self the {@code long[][]} receiver
+     * @return the value returned by {@link ArrayGroovyMethods#transpose(long[][])}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#transpose(long[][])}
+     */
     @Deprecated(since = "5.0.0")
     public static long[][] transpose(long[][] self) {
         return ArrayGroovyMethods.transpose(self);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting a {@code double[][]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#transpose(double[][])}.
+     *
+     * @param self the {@code double[][]} receiver
+     * @return the value returned by {@link ArrayGroovyMethods#transpose(double[][])}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#transpose(double[][])}
+     */
     @Deprecated(since = "5.0.0")
     public static double[][] transpose(double[][] self) {
         return ArrayGroovyMethods.transpose(self);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting an {@code Object[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#union(Object[], Collection)}.
+     *
+     * @param left the left-hand {@code Object[]}
+     * @param right the {@link Collection} combined with the receiver
+     * @return the value returned by {@link ArrayGroovyMethods#union(Object[], Collection)}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#union(Object[], Collection)}
+     */
     @Deprecated(since = "5.0.0")
     public static Object[] union(Object[] left, Collection<?> right) {
         return ArrayGroovyMethods.union(left, right);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting an {@code Object[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#union(Object[], Iterable)}.
+     *
+     * @param left the left-hand {@code Object[]}
+     * @param right the {@link Iterable} combined with the receiver
+     * @return the value returned by {@link ArrayGroovyMethods#union(Object[], Iterable)}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#union(Object[], Iterable)}
+     */
     @Deprecated(since = "5.0.0")
     public static Object[] union(Object[] left, Iterable<?> right) {
         return ArrayGroovyMethods.union(left, right);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting an {@code Object[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#union(Object[], Object[])}.
+     *
+     * @param left the left-hand {@code Object[]}
+     * @param right the {@code Object[]} combined with the receiver
+     * @return the value returned by {@link ArrayGroovyMethods#union(Object[], Object[])}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#union(Object[], Object[])}
+     */
     @Deprecated(since = "5.0.0")
     public static Object[] union(Object[] left, Object[] right) {
         return ArrayGroovyMethods.union(left, right);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting an {@code Object[]} receiver.
+     * Delegates to {@link ArrayGroovyMethods#union(Object[], Object)}.
+     *
+     * @param left the left-hand {@code Object[]}
+     * @param right the {@link Object} combined with the receiver
+     * @return the value returned by {@link ArrayGroovyMethods#union(Object[], Object)}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ArrayGroovyMethods#union(Object[], Object)}
+     */
     @Deprecated(since = "5.0.0")
     public static Object[] union(Object[] left, Object right) {
         return ArrayGroovyMethods.union(left, right);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting a {@link List} receiver.
+     * Delegates to {@link #withDefault(List, Closure)}.
+     *
+     * @param self the {@link List} receiver
+     * @param init a closure that produces the default element for an index
+     * @return the list returned by {@link #withDefault(List, Closure)}
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link #withDefault(List, Closure)}
+     */
     @Deprecated
     public static <T> List<T> withDefault$$bridge(List<T> self, @ClosureParams(value=SimpleType.class, options = "int") Closure<T> init) {
         return withDefault(self, init);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting a {@link List} receiver.
+     * Returns a {@link ListWithDefault} that fills indexes outside the current bounds lazily, via
+     * {@link ListWithDefault#newInstance(List, boolean, Closure)} with lazy defaults enabled.
+     *
+     * @param self the {@link List} receiver
+     * @param init a closure that produces the default element for an index
+     * @return a list whose missing elements are computed on demand
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ListWithDefault#newInstance(List, boolean, Closure)}
+     */
     @Deprecated
     public static <T> List<T> withLazyDefault$$bridge(List<T> self, @ClosureParams(value=SimpleType.class, options = "int") Closure<T> init) {
         return ListWithDefault.newInstance(self, true, init);
     }
 
+    /**
+     * Deprecated overload retained for callers accepting a {@link List} receiver.
+     * Returns a {@link ListWithDefault} that fills indexes outside the current bounds eagerly, via
+     * {@link ListWithDefault#newInstance(List, boolean, Closure)} with lazy defaults disabled.
+     *
+     * @param self the {@link List} receiver
+     * @param init a closure that produces the default element for an index
+     * @return a list whose grown slots are filled immediately
+     * @deprecated since 5.0.0; retained for binary compatibility, use {@link ListWithDefault#newInstance(List, boolean, Closure)}
+     */
     @Deprecated
     public static <T> List<T> withEagerDefault$$bridge(List<T> self, @ClosureParams(value=SimpleType.class, options = "int") Closure<T> init) {
         return ListWithDefault.newInstance(self, false, init);

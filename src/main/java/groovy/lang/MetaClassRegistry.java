@@ -143,6 +143,15 @@ public interface MetaClassRegistry {
 
         private MetaClass createWithCustomLookup(Class theClass, MetaClassRegistry registry) {
             try {
+                // Class.forName records every name it is asked for. Skip that
+                // lookup only for a name Groovy itself generated: no companion
+                // was defined for it. A caller-chosen name, including a script
+                // file name and a class declared in a script, is resolved with
+                // Class.forName as usual. A missing class resource is not
+                // treated as proof that the companion is absent.
+                if (GroovyClassLoader.isGeneratedClassName(theClass)) {
+                    return createNormalMetaClass(theClass, registry);
+                }
                 final Class customMetaClass = Class.forName("groovy.runtime.metaclass." + theClass.getName() + "MetaClass");
                 if (DelegatingMetaClass.class.isAssignableFrom(customMetaClass)) {
                     final Constructor customMetaClassConstructor = customMetaClass.getConstructor(MetaClass.class);

@@ -54,6 +54,12 @@ public class ElvisOperatorExpression extends TernaryExpression {
 
     private final boolean nullCoalescing;
 
+    /**
+     * Creates the Groovy-truth form {@code base ?: falseValue}.
+     *
+     * @param base the expression evaluated once and returned when it passes the Groovy Truth test
+     * @param falseValue the expression evaluated and returned when {@code base} fails that test
+     */
     public ElvisOperatorExpression(final Expression base, final Expression falseValue) {
         this(base, falseValue, false);
     }

@@ -53,9 +53,10 @@ import java.util.List;
  * <p>
  * Dispatch goes through the hosting class's {@link GeneratedDispatcher} tables: the adapter
  * holds the class's shared dispatchers, the hoisted method's compile-time id, and its own
- * dispatch receiver (captured at construction, so {@code dehydrate()}/{@code rehydrate()}
- * leave the closure callable). A target taking one or two values beyond the receiver — the
- * overwhelmingly common closure shapes — dispatches through the array-free per-arity tables,
+ * dispatch receiver (captured at construction, so {@code dehydrate()} leaves the closure
+ * callable; {@code rehydrate()} can hand a new this object on as the copy's receiver). A target
+ * taking one or two values beyond the receiver — the overwhelmingly common closure shapes —
+ * dispatches through the array-free per-arity tables,
  * passing the receiver, captured values and arguments as plain parameters; anything else
  * packs {@code [receiver, captured..., args...]} into one array for the general table.
  * Either way the chain is ordinary, JIT-friendly bytecode — no reflection, and no
@@ -90,19 +91,117 @@ public abstract class PackedClosure extends Closure<Object> {
     public static final class Fixed0 extends PackedClosure implements GeneratedClosure {
         @Serial
         private static final long serialVersionUID = 1L;
+
+        /**
+         * Initializes the zero-parameter packed closure. {@link #doCall()} then
+         * forwards a shared empty argument array to {@link #dispatchAll}.
+         * <p>
+         * The arguments are forwarded to {@link PackedClosure}. {@code owner} is
+         * stored as the closure owner, the delegate, and the {@code this} object,
+         * and as the receiver each later dispatch passes to the hoisted method.
+         * The general, one-value, and two-value dispatchers are taken from
+         * {@code dispatchers}. {@code id} and {@code method} are stored.
+         * {@code captured} is kept by reference, and a null array is replaced with
+         * an empty one. {@link Closure} first fills the parameter metadata by
+         * reflecting this member's {@code doCall}; that metadata is then replaced
+         * by {@code visibleTypes}, which is also kept by reference.
+         *
+         * @param owner the object stored as the closure owner, the delegate, and the
+         *     {@code this} object, and as the receiver passed to the hoisted method.
+         *     A static hoisted method is given the enclosing class
+         * @param dispatchers the hosting class's {@link GeneratedDispatcher} tables.
+         *     The general, one-value, and two-value dispatchers are read from this bundle
+         * @param id index of the hoisted method in those tables
+         * @param method name of the hoisted method, kept for diagnostics
+         * @param captured values closed over from the enclosing scope and passed ahead
+         *     of the call arguments. {@code null} is stored as an empty array; a
+         *     non-null array is retained by reference
+         * @param visibleTypes declared parameter types, retained by reference and
+         *     installed as this closure's parameter metadata in place of the types
+         *     reflected from {@code doCall}
+         * @param strict value stored for the delegate and resolve-strategy guards.
+         *     {@code true} makes a non-null delegate other than the owner, or a strategy other
+         *     than owner-first or owner-only, fail when it is set
+         */
         public Fixed0(final Object owner, final GeneratedDispatcher.Bundle dispatchers, final int id, final String method, final Object[] captured, final Class[] visibleTypes, final boolean strict) {
             super(owner, dispatchers, id, method, captured, visibleTypes, strict);
         }
+
+        /**
+         * Invokes the hoisted method with no call arguments.
+         * <p>
+         * Passes the shared empty array to {@link #dispatchAll}, so this entry
+         * allocates no argument array. A stored parameter count of zero packs the
+         * receiver and the captured values and invokes the hoisted method. A single
+         * non-array parameter is bound to null, and a single array parameter is
+         * bound to an empty array of its component type. A stored count above one
+         * raises {@link MissingMethodException}. An exception thrown by the
+         * hoisted method propagates to the caller.
+         *
+         * @return the value returned by the hoisted method, or {@code null} when that method is void
+         */
         public Object doCall() { return dispatchAll(EMPTY); }
     }
 
+    /** Packed closure whose only {@code doCall} takes one argument and passes it to {@link #dispatchOne} after coercion. */
     public static final class Fixed1 extends PackedClosure implements GeneratedClosure {
         @Serial
         private static final long serialVersionUID = 1L;
+
+        /**
+         * Initializes the one-parameter packed closure. {@link #doCall(Object)}
+         * coerces that argument and dispatches the one value.
+         * <p>
+         * The arguments are forwarded to {@link PackedClosure}. {@code owner} is
+         * stored as the closure owner, the delegate, and the {@code this} object,
+         * and as the receiver each later dispatch passes to the hoisted method.
+         * The general, one-value, and two-value dispatchers are taken from
+         * {@code dispatchers}. {@code id} and {@code method} are stored.
+         * {@code captured} is kept by reference, and a null array is replaced with
+         * an empty one. {@link Closure} first fills the parameter metadata by
+         * reflecting this member's {@code doCall}; that metadata is then replaced
+         * by {@code visibleTypes}, which is also kept by reference.
+         *
+         * @param owner the object stored as the closure owner, the delegate, and the
+         *     {@code this} object, and as the receiver passed to the hoisted method.
+         *     A static hoisted method is given the enclosing class
+         * @param dispatchers the hosting class's {@link GeneratedDispatcher} tables.
+         *     The general, one-value, and two-value dispatchers are read from this bundle
+         * @param id index of the hoisted method in those tables
+         * @param method name of the hoisted method, kept for diagnostics
+         * @param captured values closed over from the enclosing scope and passed ahead
+         *     of the call arguments. {@code null} is stored as an empty array; a
+         *     non-null array is retained by reference
+         * @param visibleTypes declared parameter types, retained by reference and
+         *     installed as this closure's parameter metadata in place of the types
+         *     reflected from {@code doCall}
+         * @param strict value stored for the delegate and resolve-strategy guards.
+         *     {@code true} makes a non-null delegate other than the owner, or a strategy other
+         *     than owner-first or owner-only, fail when it is set
+         */
         public Fixed1(final Object owner, final GeneratedDispatcher.Bundle dispatchers, final int id, final String method, final Object[] captured, final Class[] visibleTypes, final boolean strict) {
             super(owner, dispatchers, id, method, captured, visibleTypes, strict);
         }
-        public Object doCall(final Object a) { return dispatchAll(new Object[]{a}); }
+
+        /**
+         * Coerces {@code a} to the first stored parameter type and invokes
+         * the hoisted method with that one value.
+         * <p>
+         * A parameter type of {@code Object}, a null argument, or an argument
+         * that is already an instance of the parameter type is passed through.
+         * Every other value is coerced with the metaclass rules used for a
+         * generated closure, and a value that cannot be coerced raises
+         * {@link MissingMethodException}. No captured values use the
+         * one-value dispatch table, one captured value uses the two-value
+         * table with the capture before the argument, and any further
+         * captures are packed with the receiver and the argument for the
+         * general table. An exception thrown by the
+         * hoisted method propagates to the caller.
+         *
+         * @param a value supplied for the closure's parameter
+         * @return the value returned by the hoisted method, or {@code null} when that method is void
+         */
+        public Object doCall(final Object a) { return dispatchOne(coerceArg(a, parameterTypes[0])); }
     }
 
     /**
@@ -114,37 +213,252 @@ public abstract class PackedClosure extends Closure<Object> {
     public static final class FixedIt extends PackedClosure implements GeneratedClosure {
         @Serial
         private static final long serialVersionUID = 1L;
+
+        /**
+         * Initializes the implicit-parameter packed closure. This member
+         * declares both {@link #doCall()} and {@link #doCall(Object)}.
+         * <p>
+         * The arguments are forwarded to {@link PackedClosure}. {@code owner} is
+         * stored as the closure owner, the delegate, and the {@code this} object,
+         * and as the receiver each later dispatch passes to the hoisted method.
+         * The general, one-value, and two-value dispatchers are taken from
+         * {@code dispatchers}. {@code id} and {@code method} are stored.
+         * {@code captured} is kept by reference, and a null array is replaced with
+         * an empty one. {@link Closure} first fills the parameter metadata by
+         * reflecting this member's {@code doCall}; that metadata is then replaced
+         * by {@code visibleTypes}, which is also kept by reference.
+         *
+         * @param owner the object stored as the closure owner, the delegate, and the
+         *     {@code this} object, and as the receiver passed to the hoisted method.
+         *     A static hoisted method is given the enclosing class
+         * @param dispatchers the hosting class's {@link GeneratedDispatcher} tables.
+         *     The general, one-value, and two-value dispatchers are read from this bundle
+         * @param id index of the hoisted method in those tables
+         * @param method name of the hoisted method, kept for diagnostics
+         * @param captured values closed over from the enclosing scope and passed ahead
+         *     of the call arguments. {@code null} is stored as an empty array; a
+         *     non-null array is retained by reference
+         * @param visibleTypes declared parameter types, retained by reference and
+         *     installed as this closure's parameter metadata in place of the types
+         *     reflected from {@code doCall}
+         * @param strict value stored for the delegate and resolve-strategy guards.
+         *     {@code true} makes a non-null delegate other than the owner, or a strategy other
+         *     than owner-first or owner-only, fail when it is set
+         */
         public FixedIt(final Object owner, final GeneratedDispatcher.Bundle dispatchers, final int id, final String method, final Object[] captured, final Class[] visibleTypes, final boolean strict) {
             super(owner, dispatchers, id, method, captured, visibleTypes, strict);
         }
+
+        /**
+         * Invokes the implicit-parameter body with no supplied argument.
+         * <p>
+         * Passes the shared empty array to {@link #dispatchAll}, so this entry
+         * allocates no argument array. A stored parameter count of zero packs the
+         * receiver and the captured values and invokes the hoisted method. A single
+         * non-array parameter is bound to null, and a single array parameter is
+         * bound to an empty array of its component type. A stored count above one
+         * raises {@link MissingMethodException}. An exception thrown by the
+         * hoisted method propagates to the caller.
+         *
+         * @return the value returned by the hoisted method, or {@code null} when that method is void
+         */
         public Object doCall() { return dispatchAll(EMPTY); }
-        public Object doCall(final Object a) { return dispatchAll(new Object[]{a}); }
+
+        /**
+         * Coerces the implicit parameter and invokes the hoisted method with it.
+         * <p>
+         * A parameter type of {@code Object}, a null argument, or an argument
+         * that is already an instance of the parameter type is passed through.
+         * Every other value is coerced with the metaclass rules used for a
+         * generated closure, and a value that cannot be coerced raises
+         * {@link MissingMethodException}. No captured values use the
+         * one-value dispatch table, one captured value uses the two-value
+         * table with the capture before the argument, and any further
+         * captures are packed with the receiver and the argument for the
+         * general table. An exception thrown by the
+         * hoisted method propagates to the caller.
+         *
+         * @param a value supplied for the implicit parameter
+         * @return the value returned by the hoisted method, or {@code null} when that method is void
+         */
+        public Object doCall(final Object a) { return dispatchOne(coerceArg(a, parameterTypes[0])); }
     }
 
+    /** Packed closure whose only {@code doCall} takes two arguments and passes them to {@link #dispatchTwo}. */
     public static final class Fixed2 extends PackedClosure implements GeneratedClosure {
         @Serial
         private static final long serialVersionUID = 1L;
+
+        /**
+         * Initializes the two-parameter packed closure.
+         * {@link #doCall(Object, Object)} coerces the pair and dispatches them.
+         * <p>
+         * The arguments are forwarded to {@link PackedClosure}. {@code owner} is
+         * stored as the closure owner, the delegate, and the {@code this} object,
+         * and as the receiver each later dispatch passes to the hoisted method.
+         * The general, one-value, and two-value dispatchers are taken from
+         * {@code dispatchers}. {@code id} and {@code method} are stored.
+         * {@code captured} is kept by reference, and a null array is replaced with
+         * an empty one. {@link Closure} first fills the parameter metadata by
+         * reflecting this member's {@code doCall}; that metadata is then replaced
+         * by {@code visibleTypes}, which is also kept by reference.
+         *
+         * @param owner the object stored as the closure owner, the delegate, and the
+         *     {@code this} object, and as the receiver passed to the hoisted method.
+         *     A static hoisted method is given the enclosing class
+         * @param dispatchers the hosting class's {@link GeneratedDispatcher} tables.
+         *     The general, one-value, and two-value dispatchers are read from this bundle
+         * @param id index of the hoisted method in those tables
+         * @param method name of the hoisted method, kept for diagnostics
+         * @param captured values closed over from the enclosing scope and passed ahead
+         *     of the call arguments. {@code null} is stored as an empty array; a
+         *     non-null array is retained by reference
+         * @param visibleTypes declared parameter types, retained by reference and
+         *     installed as this closure's parameter metadata in place of the types
+         *     reflected from {@code doCall}
+         * @param strict value stored for the delegate and resolve-strategy guards.
+         *     {@code true} makes a non-null delegate other than the owner, or a strategy other
+         *     than owner-first or owner-only, fail when it is set
+         */
         public Fixed2(final Object owner, final GeneratedDispatcher.Bundle dispatchers, final int id, final String method, final Object[] captured, final Class[] visibleTypes, final boolean strict) {
             super(owner, dispatchers, id, method, captured, visibleTypes, strict);
         }
-        public Object doCall(final Object a, final Object b) { return dispatchAll(new Object[]{a, b}); }
+
+        /**
+         * Coerces both arguments and invokes the hoisted method with them.
+         * <p>
+         * When nothing was captured, each argument is coerced to the matching
+         * stored parameter type and the two-value table is used. Otherwise
+         * the two arguments are packed with the receiver and the captured
+         * values and coerced on the way into the general table. A value that
+         * cannot be coerced raises {@link MissingMethodException}. An exception thrown by the
+         * hoisted method propagates to the caller.
+         *
+         * @param a value supplied for the first parameter
+         * @param b value supplied for the second parameter
+         * @return the value returned by the hoisted method, or {@code null} when that method is void
+         */
+        public Object doCall(final Object a, final Object b) { return dispatchTwo(a, b); }
     }
 
+    /** Packed closure whose only {@code doCall} takes three arguments and forwards them to {@link #dispatchAll}. */
     public static final class Fixed3 extends PackedClosure implements GeneratedClosure {
         @Serial
         private static final long serialVersionUID = 1L;
+
+        /**
+         * Initializes the three-parameter packed closure.
+         * {@link #doCall(Object, Object, Object)} copies the three values into
+         * an array and passes that array to {@link #dispatchAll}.
+         * <p>
+         * The arguments are forwarded to {@link PackedClosure}. {@code owner} is
+         * stored as the closure owner, the delegate, and the {@code this} object,
+         * and as the receiver each later dispatch passes to the hoisted method.
+         * The general, one-value, and two-value dispatchers are taken from
+         * {@code dispatchers}. {@code id} and {@code method} are stored.
+         * {@code captured} is kept by reference, and a null array is replaced with
+         * an empty one. {@link Closure} first fills the parameter metadata by
+         * reflecting this member's {@code doCall}; that metadata is then replaced
+         * by {@code visibleTypes}, which is also kept by reference.
+         *
+         * @param owner the object stored as the closure owner, the delegate, and the
+         *     {@code this} object, and as the receiver passed to the hoisted method.
+         *     A static hoisted method is given the enclosing class
+         * @param dispatchers the hosting class's {@link GeneratedDispatcher} tables.
+         *     The general, one-value, and two-value dispatchers are read from this bundle
+         * @param id index of the hoisted method in those tables
+         * @param method name of the hoisted method, kept for diagnostics
+         * @param captured values closed over from the enclosing scope and passed ahead
+         *     of the call arguments. {@code null} is stored as an empty array; a
+         *     non-null array is retained by reference
+         * @param visibleTypes declared parameter types, retained by reference and
+         *     installed as this closure's parameter metadata in place of the types
+         *     reflected from {@code doCall}
+         * @param strict value stored for the delegate and resolve-strategy guards.
+         *     {@code true} makes a non-null delegate other than the owner, or a strategy other
+         *     than owner-first or owner-only, fail when it is set
+         */
         public Fixed3(final Object owner, final GeneratedDispatcher.Bundle dispatchers, final int id, final String method, final Object[] captured, final Class[] visibleTypes, final boolean strict) {
             super(owner, dispatchers, id, method, captured, visibleTypes, strict);
         }
+
+        /**
+         * Copies the three arguments into a new array and dispatches that list.
+         * <p>
+         * When the stored parameter count is three, each value is coerced to
+         * the matching parameter type and packed with the receiver and the
+         * captured values for the general dispatcher. A different stored
+         * count is adapted by {@link #dispatchAll}. An argument list that
+         * still does not fit, or a value that cannot be coerced, raises
+         * {@link MissingMethodException}. An exception thrown by the
+         * hoisted method propagates to the caller.
+         *
+         * @param a value supplied for the first parameter
+         * @param b value supplied for the second parameter
+         * @param c value supplied for the third parameter
+         * @return the value returned by the hoisted method, or {@code null} when that method is void
+         */
         public Object doCall(final Object a, final Object b, final Object c) { return dispatchAll(new Object[]{a, b, c}); }
     }
 
+    /** Packed closure whose only {@code doCall} takes four arguments and forwards them to {@link #dispatchAll}. */
     public static final class Fixed4 extends PackedClosure implements GeneratedClosure {
         @Serial
         private static final long serialVersionUID = 1L;
+
+        /**
+         * Initializes the four-parameter packed closure.
+         * {@link #doCall(Object, Object, Object, Object)} copies the four
+         * values into an array and passes that array to {@link #dispatchAll}.
+         * <p>
+         * The arguments are forwarded to {@link PackedClosure}. {@code owner} is
+         * stored as the closure owner, the delegate, and the {@code this} object,
+         * and as the receiver each later dispatch passes to the hoisted method.
+         * The general, one-value, and two-value dispatchers are taken from
+         * {@code dispatchers}. {@code id} and {@code method} are stored.
+         * {@code captured} is kept by reference, and a null array is replaced with
+         * an empty one. {@link Closure} first fills the parameter metadata by
+         * reflecting this member's {@code doCall}; that metadata is then replaced
+         * by {@code visibleTypes}, which is also kept by reference.
+         *
+         * @param owner the object stored as the closure owner, the delegate, and the
+         *     {@code this} object, and as the receiver passed to the hoisted method.
+         *     A static hoisted method is given the enclosing class
+         * @param dispatchers the hosting class's {@link GeneratedDispatcher} tables.
+         *     The general, one-value, and two-value dispatchers are read from this bundle
+         * @param id index of the hoisted method in those tables
+         * @param method name of the hoisted method, kept for diagnostics
+         * @param captured values closed over from the enclosing scope and passed ahead
+         *     of the call arguments. {@code null} is stored as an empty array; a
+         *     non-null array is retained by reference
+         * @param visibleTypes declared parameter types, retained by reference and
+         *     installed as this closure's parameter metadata in place of the types
+         *     reflected from {@code doCall}
+         * @param strict value stored for the delegate and resolve-strategy guards.
+         *     {@code true} makes a non-null delegate other than the owner, or a strategy other
+         *     than owner-first or owner-only, fail when it is set
+         */
         public Fixed4(final Object owner, final GeneratedDispatcher.Bundle dispatchers, final int id, final String method, final Object[] captured, final Class[] visibleTypes, final boolean strict) {
             super(owner, dispatchers, id, method, captured, visibleTypes, strict);
         }
+
+        /**
+         * Copies the four arguments into a new array and dispatches that list.
+         * <p>
+         * When the stored parameter count is four, each value is coerced to
+         * the matching parameter type and packed with the receiver and the
+         * captured values for the general dispatcher. A different stored
+         * count is adapted by {@link #dispatchAll}. An argument list that
+         * still does not fit, or a value that cannot be coerced, raises
+         * {@link MissingMethodException}. An exception thrown by the
+         * hoisted method propagates to the caller.
+         *
+         * @param a value supplied for the first parameter
+         * @param b value supplied for the second parameter
+         * @param c value supplied for the third parameter
+         * @param d value supplied for the fourth parameter
+         * @return the value returned by the hoisted method, or {@code null} when that method is void
+         */
         public Object doCall(final Object a, final Object b, final Object c, final Object d) { return dispatchAll(new Object[]{a, b, c, d}); }
     }
 
@@ -162,9 +476,61 @@ public abstract class PackedClosure extends Closure<Object> {
     public static final class FixedN extends PackedClosure implements GeneratedClosure {
         @Serial
         private static final long serialVersionUID = 1L;
+
+        /**
+         * Initializes the packed closure used for five or more parameters and
+         * for a trailing array parameter. {@link #doCall(Object...)} forwards
+         * its array to {@link #dispatchAll}.
+         * <p>
+         * The arguments are forwarded to {@link PackedClosure}. {@code owner} is
+         * stored as the closure owner, the delegate, and the {@code this} object,
+         * and as the receiver each later dispatch passes to the hoisted method.
+         * The general, one-value, and two-value dispatchers are taken from
+         * {@code dispatchers}. {@code id} and {@code method} are stored.
+         * {@code captured} is kept by reference, and a null array is replaced with
+         * an empty one. {@link Closure} first fills the parameter metadata by
+         * reflecting this member's {@code doCall}; that metadata is then replaced
+         * by {@code visibleTypes}, which is also kept by reference.
+         *
+         * @param owner the object stored as the closure owner, the delegate, and the
+         *     {@code this} object, and as the receiver passed to the hoisted method.
+         *     A static hoisted method is given the enclosing class
+         * @param dispatchers the hosting class's {@link GeneratedDispatcher} tables.
+         *     The general, one-value, and two-value dispatchers are read from this bundle
+         * @param id index of the hoisted method in those tables
+         * @param method name of the hoisted method, kept for diagnostics
+         * @param captured values closed over from the enclosing scope and passed ahead
+         *     of the call arguments. {@code null} is stored as an empty array; a
+         *     non-null array is retained by reference
+         * @param visibleTypes declared parameter types, retained by reference and
+         *     installed as this closure's parameter metadata in place of the types
+         *     reflected from {@code doCall}
+         * @param strict value stored for the delegate and resolve-strategy guards.
+         *     {@code true} makes a non-null delegate other than the owner, or a strategy other
+         *     than owner-first or owner-only, fail when it is set
+         */
         public FixedN(final Object owner, final GeneratedDispatcher.Bundle dispatchers, final int id, final String method, final Object[] captured, final Class[] visibleTypes, final boolean strict) {
             super(owner, dispatchers, id, method, captured, visibleTypes, strict);
         }
+
+        /**
+         * Forwards the varargs array to the hoisted method.
+         * <p>
+         * A null array is treated as no arguments. A caller that passes one
+         * {@code Object[]} supplies that array as {@code args}, so its
+         * elements are the call arguments. An exact stored parameter count
+         * coerces each value and dispatches. When the argument list holds one
+         * {@link List} and the stored count is not one, that list is spread.
+         * A trailing array parameter collects extra arguments, and a call one
+         * argument short of that signature supplies an empty array for it.
+         * A non-array one-parameter call with no arguments binds null.
+         * An argument list that still does not fit, or a value that cannot
+         * be coerced, raises {@link MissingMethodException}. An exception
+         * thrown by the hoisted method propagates to the caller.
+         *
+         * @param args call arguments already packed into one array. {@code null} means none
+         * @return the value returned by the hoisted method, or {@code null} when that method is void
+         */
         public Object doCall(final Object... args) { return dispatchAll(args); }
     }
 
@@ -177,6 +543,24 @@ public abstract class PackedClosure extends Closure<Object> {
      * {@code doCall} that only {@code FixedIt}/{@code FixedN} declare.
      */
     public static PackedClosure create(final Object owner, final GeneratedDispatcher.Bundle dispatchers,
+            final int id, final String method, final Object[] captured, final Class[] visibleTypes,
+            final boolean strict, final boolean implicit, final boolean vararg) {
+        return create(owner, dispatchers, id, method, captured, visibleTypes, strict, implicit, vararg, false);
+    }
+
+    /**
+     * As {@link #create(Object, GeneratedDispatcher.Bundle, int, String, Object[], Class[], boolean, boolean, boolean)},
+     * with {@code usesReceiver} marking a hoisted body that uses its receiver (see {@link #rehydrate}).
+     */
+    public static PackedClosure create(final Object owner, final GeneratedDispatcher.Bundle dispatchers,
+            final int id, final String method, final Object[] captured, final Class[] visibleTypes,
+            final boolean strict, final boolean implicit, final boolean vararg, final boolean usesReceiver) {
+        PackedClosure closure = member(owner, dispatchers, id, method, captured, visibleTypes, strict, implicit, vararg);
+        closure.usesReceiver = usesReceiver;
+        return closure;
+    }
+
+    private static PackedClosure member(final Object owner, final GeneratedDispatcher.Bundle dispatchers,
             final int id, final String method, final Object[] captured, final Class[] visibleTypes,
             final boolean strict, final boolean implicit, final boolean vararg) {
         if (implicit) return new FixedIt(owner, dispatchers, id, method, captured, visibleTypes, strict);
@@ -196,11 +580,19 @@ public abstract class PackedClosure extends Closure<Object> {
     /**
      * The hoisted method's receiver, captured at construction. Dispatch uses this — never
      * {@code getOwner()} — so {@code dehydrate()} (which nulls the visible owner for its
-     * disconnect contract) and {@code rehydrate(...)} (which installs a different one) leave the
-     * closure callable, exactly as a generated closure class whose body never touches the owner.
+     * disconnect contract) leaves the closure callable, exactly as a generated closure class whose
+     * body never touches the owner. Only {@link #rehydrate} replaces it, on the copy it returns,
+     * and only where that method's guard allows it.
      * Serialization stays blocked either way ({@link #writeObject}).
      */
-    private final Object receiver;
+    private Object receiver;
+    /**
+     * Whether the compiler found that the hoisted body uses its receiver, which it can only use as
+     * an instance of the enclosing class ({@code this}, an instance member, an inner class
+     * creation). {@code false} for a body that does not, and for classes compiled before the
+     * compiler passed it.
+     */
+    private boolean usesReceiver;
     private final GeneratedDispatcher dispatcher;
     private final GeneratedDispatcher.Arity1 arity1;
     private final GeneratedDispatcher.Arity2 arity2;
@@ -208,6 +600,11 @@ public abstract class PackedClosure extends Closure<Object> {
     private final String method;
     private final Object[] captured;
     private final boolean strict;
+    // GEP-27 open closures: the live resolver an open closure's free names go through (also
+    // its captured[0]), attached by OpenClosure#create; null for an ordinary packed closure.
+    // It replaces the strict guard rather than coexisting with it: OpenClosure#create, the only
+    // caller of openOver, always passes strict=false, so classic and strict exclude each other.
+    private OpenClosure.ClassicResolver classic;
     // Lazy: only the adapted (arity-mismatch) path needs it, and building it in the constructor
     // would put an allocation on every closure creation and push <init> past the JIT's inline budget.
     private ParameterTypes paramInfo;
@@ -227,7 +624,8 @@ public abstract class PackedClosure extends Closure<Object> {
      *                     exactly as with a generated closure class
      * @param strict       whether the delegate guard throws. {@code true} for the dynamic trust path
      *                     (an unverifiable {@code @PackedClosures} assertion must fail fast on misuse);
-     *                     {@code false} when the type checker PROVED every free name owner-resolved.
+     *                     {@code false} when the type checker PROVED every free name owner-resolved,
+     *                     or the body has no free name at all.
      */
     public PackedClosure(final Object owner, final GeneratedDispatcher.Bundle dispatchers, final int id, final String method, final Object[] captured, final Class[] visibleTypes, final boolean strict) {
         super(owner, owner);
@@ -243,6 +641,12 @@ public abstract class PackedClosure extends Closure<Object> {
         this.parameterTypes = visibleTypes;
     }
 
+    /** Attaches the open body's resolver, so delegate/strategy changes reconfigure name resolution. */
+    void openOver(final OpenClosure.ClassicResolver resolver) {
+        this.classic = resolver;
+        resolver.bind(this);
+    }
+
     // GEP-27 runtime guard: a hoisted body binds free names to the owner at compile time, so it
     // cannot honour a caller-set delegate. Rather than silently mis-resolve (returning the owner's
     // member where a normal closure would reach the delegate), fail fast at the point of misuse.
@@ -250,13 +654,81 @@ public abstract class PackedClosure extends Closure<Object> {
     @Override
     public void setDelegate(final Object delegate) {
         if (strict && delegate != null && delegate != getOwner()) {
-            throw new UnsupportedOperationException(
-                    "Cannot set a delegate on a @PackedClosures closure (hoisted method '" + method
-                    + "'): its free names were bound to the owner at compile time, so an external "
-                    + "delegate cannot be honoured. Remove @PackedClosures from this scope, or "
-                    + "exclude this closure, if it relies on delegate-based resolution.");
+            throw delegateRefused();
         }
+        // checked first, so a rejected delegate changes nothing (classic is null when strict)
+        if (classic != null) classic.setDelegate(delegate);
         super.setDelegate(delegate);
+    }
+
+    // GROOVY-12661: Closure.rehydrate writes delegate, owner and thisObject on the copy directly,
+    // past setDelegate, while the hoisted body keeps calling the receiver captured at construction.
+    // So the same guard applies here: on the dynamic trust path refuse a delegate, owner or this
+    // object other than that receiver. null (the dehydrate() disconnect) and the receiver itself
+    // stay allowed, so rehydrating onto the original owner keeps working. A body with no free name
+    // is not strict: it cannot observe the new objects, so rehydrating it anywhere keeps working.
+    // GROOVY-12666: a @CompileStatic closure class runs its body against getThisObject(), so a copy
+    // rehydrated with another this object calls that object's members, or throws
+    // ClassCastException when called if the object is not an instance of the enclosing class. The
+    // hoisted body runs against the receiver, so the copy takes the new this object as its receiver
+    // when that is sound or the body needs it: always for a body that uses its receiver (the
+    // dispatch table's checkcast then throws the same ClassCastException for a foreign object), and
+    // for any other body only when the object is an instance of the receiver's class or of the
+    // enclosing class (the receiver may be a subclass instance running an inherited method). A body
+    // that does not use its receiver keeps the old one for a foreign object, so rehydrating it onto a
+    // builder or other unrelated this object (the DSL idiom) keeps working. A null this object, the
+    // dehydrate() disconnect, keeps the receiver too.
+    @Override
+    public Closure<Object> rehydrate(final Object delegate, final Object owner, final Object thisObject) {
+        if (strict) {
+            if (delegate != null && delegate != receiver) {
+                throw delegateRefused();
+            }
+            if ((owner != null && owner != receiver) || (thisObject != null && thisObject != receiver)) {
+                throw new UnsupportedOperationException(
+                        "Cannot rehydrate a @PackedClosures closure (hoisted method '" + method
+                        + "') with a different owner or this object: its free names were bound to the "
+                        + "owner at compile time, so a new owner cannot be honoured. Remove "
+                        + "@PackedClosures from this scope, or exclude this closure, if it relies on "
+                        + "owner- or delegate-based resolution.");
+            }
+        }
+        PackedClosure result = (PackedClosure) super.rehydrate(delegate, owner, thisObject);
+        if (!strict && thisObject != null && thisObject != receiver
+                && (usesReceiver || receiver.getClass().isInstance(thisObject) || isEnclosingClassInstance(thisObject))) {
+            result.receiver = thisObject;
+        }
+        return result;
+    }
+
+    /**
+     * Whether the object is an instance of the class hosting the hoisted method. The dispatch
+     * tables are lambdas spun in that class, so they are its nestmates, but their nest host is the
+     * top-level class, not a nested hosting class. The receiver is an instance of the hosting
+     * class, so the first nestmate among the receiver's class and its superclasses is the hosting
+     * class or a subclass of it, and an instance of that is always one of the hosting class. Where
+     * the lambdas are ordinary classes (native images) they are their own nest host and have no
+     * such nestmate; that, or a failed lookup, leaves only the receiver's class to count.
+     */
+    private boolean isEnclosingClassInstance(final Object thisObject) {
+        if (dispatcher == null) return false;
+        try {
+            Class<?> table = dispatcher.getClass();
+            for (Class<?> c = receiver.getClass(); c != null; c = c.getSuperclass()) {
+                if (c.isNestmateOf(table)) return c.isInstance(thisObject);
+            }
+            return false;
+        } catch (RuntimeException e) {
+            return false;
+        }
+    }
+
+    private UnsupportedOperationException delegateRefused() {
+        return new UnsupportedOperationException(
+                "Cannot set a delegate on a @PackedClosures closure (hoisted method '" + method
+                + "'): its free names were bound to the owner at compile time, so an external "
+                + "delegate cannot be honoured. Remove @PackedClosures from this scope, or "
+                + "exclude this closure, if it relies on delegate-based resolution.");
     }
 
     @Override
@@ -272,6 +744,8 @@ public abstract class PackedClosure extends Closure<Object> {
                     + "OWNER_FIRST/OWNER_ONLY are supported. Remove @PackedClosures from this "
                     + "scope, or exclude this closure.");
         }
+        // checked first, so a rejected strategy changes nothing (classic is null when strict)
+        if (classic != null) classic.setResolveStrategy(resolveStrategy);
         super.setResolveStrategy(resolveStrategy);
     }
 
@@ -302,6 +776,7 @@ public abstract class PackedClosure extends Closure<Object> {
      * message naming the closure and the opt-out. Note {@code Closure#dehydrate()} — the classed
      * closure's route to serializability — does not help a packed closure: the dispatch fields
      * remain, so opting the declaring scope out of packing is the remedy.
+     *
      */
     @Serial
     private void writeObject(final ObjectOutputStream out) throws IOException {
@@ -319,17 +794,13 @@ public abstract class PackedClosure extends Closure<Object> {
     // Dispatch call() straight to dispatchAll: a varargs doCall would be vararg-ambiguous
     // through the metaclass when a single argument is itself an Object[] (the metaclass would treat
     // the element as the whole argument list and spread it) — which is exactly why dispatchAll is
-    // NOT named doCall. Unwrap invoker exceptions exactly as Closure.call does, so user exceptions
-    // surface unwrapped.
+    // NOT named doCall. No reflective step lies between this lane and the hoisted body, so there is
+    // no invoker wrapping to undo: body exceptions propagate as-is, as on Closure.call's cached
+    // handle path (only mopCall, which goes through the metaclass, unwraps).
     @Override
     public final Object call(final Object... args) {
         if (!mopUnperturbed()) return mopCall((args != null) ? args : EMPTY);
-        try {
-            return dispatchAll((args != null) ? args : EMPTY);
-        } catch (InvokerInvocationException e) {
-            UncheckedThrow.rethrow(e.getCause());
-            return null; // unreachable
-        }
+        return dispatchAll((args != null) ? args : EMPTY);
     }
 
     // Fast lane for the ubiquitous one-argument call (each/collect on an arity-1 closure): the base
@@ -343,12 +814,7 @@ public abstract class PackedClosure extends Closure<Object> {
         // cool call sites (and its own standalone compilation lean): the argument-wrapping
         // fallbacks allocate, so they live out-of-line in callGeneral
         if (maximumNumberOfParameters != 1 || !mopUnperturbed()) return callGeneral(arguments);
-        try {
-            return dispatchOne(coerceArg(arguments, parameterTypes[0]));
-        } catch (InvokerInvocationException e) {
-            UncheckedThrow.rethrow(e.getCause());
-            return null; // unreachable
-        }
+        return dispatchOne(coerceArg(arguments, parameterTypes[0]));
     }
 
     private Object callGeneral(final Object arguments) {
@@ -377,6 +843,8 @@ public abstract class PackedClosure extends Closure<Object> {
      * MOP-routed dispatch, exact-match a single {@code Object[]} argument, beat
      * {@code doCall(Object)}, and spread the array — a generated closure class declares no such
      * method, so a classed closure never spreads.
+     *
+     * @param args the arguments passed to the call
      */
     public final Object dispatchAll(final Object[] args) {
         // Like call(Object), the exact-arity paths here must stay small enough to inline.
@@ -399,8 +867,10 @@ public abstract class PackedClosure extends Closure<Object> {
      * Dispatches a single value: through the array-free tables while the captured values fit
      * ({@code dispatch1} for none, {@code dispatch2} for one — together the overwhelmingly
      * common closure shapes), else through the general array table.
+     *
+     * @param arg the value passed to the wrapped closure
      */
-    private Object dispatchOne(final Object arg) {
+    final Object dispatchOne(final Object arg) {
         Object[] captured = this.captured;
         int caps = captured.length;
         if (caps == 0) return arity1.dispatch1(id, receiver, arg);
@@ -410,6 +880,13 @@ public abstract class PackedClosure extends Closure<Object> {
         System.arraycopy(captured, 0, all, 1, caps);
         all[1 + caps] = arg;
         return dispatcher.dispatch(id, all);
+    }
+
+    /** Two values: the array-free table when nothing is captured, else the general array table. */
+    final Object dispatchTwo(final Object a, final Object b) {
+        Class<?>[] types = parameterTypes;
+        if (captured.length == 0) return arity2.dispatch2(id, receiver, coerceArg(a, types[0]), coerceArg(b, types[1]));
+        return dispatchArray(new Object[]{a, b}, 2);
     }
 
     /** The general shape: coerce and pack {@code [owner, captured..., args...]} for the array table. */
@@ -432,7 +909,7 @@ public abstract class PackedClosure extends Closure<Object> {
     // implicit-it and untyped param) exit on one comparison. Primitive parameters are checked
     // against their wrapper, exactly as metaclass selection autoboxes ({ int x -> } accepts an
     // Integer, coerces a compatible number shape, and rejects a Long with MME).
-    private Object coerceArg(final Object arg, final Class<?> t) {
+    final Object coerceArg(final Object arg, final Class<?> t) {
         // hot-path shape matters: this inlines into the call lanes, so it is three cheap tests
         // with everything rare out-of-line (a primitive parameter fails isInstance and re-checks
         // against its wrapper in the tail, exactly as metaclass selection autoboxes)

@@ -2188,14 +2188,12 @@ public class ConcurrentReferenceHashMap<K, V> extends AbstractMap<K, V> implemen
 
         /** {@inheritDoc} */
         @Override
-        /** {@inheritDoc} */
         public K getKey() {
             return key;
         }
 
         /** {@inheritDoc} */
         @Override
-        /** {@inheritDoc} */
         public V getValue() {
             return value;
         }
@@ -2215,7 +2213,6 @@ public class ConcurrentReferenceHashMap<K, V> extends AbstractMap<K, V> implemen
 
         /** {@inheritDoc} */
         @Override
-        /** {@inheritDoc} */
         public V setValue(V value) {
             throw new UnsupportedOperationException();
         }

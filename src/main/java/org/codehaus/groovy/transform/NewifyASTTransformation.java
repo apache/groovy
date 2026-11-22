@@ -131,6 +131,13 @@ public class NewifyASTTransformation extends ClassCodeExpressionTransformer impl
 
     private static final Pattern extractNamePattern = Pattern.compile("^(?:.*\\$|)(.*)$");
 
+    /**
+     * Returns the simple name after the last {@code $} in {@code s}.
+     * A name with no {@code $} is returned unchanged.
+     *
+     * @param s binary or source name, possibly containing {@code $}
+     * @return the trailing simple name
+     */
     public static String extractName(final String s) {
         return extractNamePattern.matcher(s).replaceFirst("$1");
     }
@@ -509,11 +516,24 @@ public class NewifyASTTransformation extends ClassCodeExpressionTransformer impl
         final ClassNode type;
         List<ClassNode> types;
 
+        /**
+         * Records one class under the simple name used for lookup.
+         *
+         * @param name simple name after the last {@code $}
+         * @param type class node stored for that name
+         */
         public NewifyClassData(final String name, final ClassNode type) {
             this.name = name;
             this.type = type;
         }
 
+        /**
+         * Records another class that shares this simple name. The original
+         * type is kept, and both are listed so a later lookup can report
+         * the ambiguity.
+         *
+         * @param additionalType another class with the same simple name
+         */
         public void addAdditionalType(final ClassNode additionalType) {
             if (types == null) {
                 types = new LinkedList<>();
