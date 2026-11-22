@@ -646,6 +646,61 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
         }
     }
 
+    /**
+     * Uses a private method of Box through a variable declared as Box, which flow
+     * typing narrows to Sub, in the place of {@code code}.
+     */
+    protected static String privateMethodOfNarrowedVariable(String code) {
+        """
+            import groovy.transform.stc.ClassTag
+
+            class Outer {
+                static class Box<T> {
+                    String log = ''
+                    private String plus(String s) { 'plus' + s }
+                    private String negative() { 'negative' }
+                    private String bitwiseNegate() { 'negate' }
+                    private Box<T> next() { log += 'next'; this }
+                    private String getAt(int i) { 'getAt' + i }
+                    private void putAt(int i, String v) { log += 'putAt' + i + v }
+                    private boolean isCase(Object o) { o == 'in' }
+                    private void plusAssign(String s) { log += 'plusAssign' + s }
+                    private Class<T> token(@ClassTag Class<T> type) { type }
+                }
+                static class Sub extends Box<String> {
+                }
+                static class Sub2 extends Sub {
+                }
+                static test() { Box<String> b = new Sub(); $code }
+            }
+        """
+    }
+
+    // GROOVY-12513: operators, a compiler-supplied @ClassTag token and a closure that
+    // shares the variable with a later assignment; one use per script, so that each
+    // one is rejected
+    @Test
+    void testPrivateOperatorMethodsThroughNarrowedVariable() {
+        [
+            'b + "x"'                                         : 'Cannot find matching method Outer$Sub#plus(java.lang.String)',
+            'b++'                                             : 'Cannot find matching method Outer$Sub#next()',
+            'b[1]'                                            : 'Cannot find matching method Outer$Sub#getAt(int)',
+            'b += "y"'                                        : 'Cannot find matching method Outer$Sub#plus(java.lang.String)',
+            'b.token()'                                       : 'Cannot find matching method Outer$Sub#token()',
+            'def c = { -> b.plus("x") }; b = new Sub2(); c()' : 'Cannot find matching method Outer$Sub#plus(java.lang.String)',
+            'def c = { -> b + "y" }; b = new Sub2(); c()'     : 'Cannot find matching method Outer$Sub#plus(java.lang.String)',
+        ].each { code, message ->
+            shouldFailWithMessages privateMethodOfNarrowedVariable(code), message
+        }
+    }
+
+    // GROOVY-12513: static compilation also calls the method of -x and ~x dynamically
+    @Test
+    void testPrivateUnaryOperatorMethodsThroughNarrowedVariable() {
+        shouldFailWithMessages privateMethodOfNarrowedVariable('-b'), 'Cannot find matching method Outer$Sub#negative()'
+        shouldFailWithMessages privateMethodOfNarrowedVariable('~b'), 'Cannot find matching method Outer$Sub#bitwiseNegate()'
+    }
+
     // GROOVY-12510: an enum constant body and an anonymous subclass are nested in
     // the declaring class, so they find the private method on their enclosing class
     @Test

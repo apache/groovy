@@ -18,6 +18,7 @@
  */
 package org.codehaus.groovy.transform.stc;
 
+import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.expr.Expression;
 
 import java.util.Objects;
@@ -30,15 +31,28 @@ import java.util.Objects;
 class SecondPassExpression<T> {
     private final Expression expression;
     private final T data;
+    private final ClassNode declaredReceiverType;
 
     SecondPassExpression(final Expression expression) {
-        this.expression = expression;
-        this.data = null;
+        this(expression, null, null);
     }
 
     SecondPassExpression(final Expression expression, final T data) {
+        this(expression, data, null);
+    }
+
+    SecondPassExpression(final Expression expression, final T data, final ClassNode declaredReceiverType) {
         this.data = data;
         this.expression = expression;
+        this.declaredReceiverType = declaredReceiverType;
+    }
+
+    /**
+     * Returns the declared type of the receiver variable through which the first
+     * pass found a private member of that type, or {@code null}.
+     */
+    ClassNode getDeclaredReceiverType() {
+        return declaredReceiverType;
     }
 
     /**

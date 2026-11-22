@@ -117,6 +117,26 @@ final class MethodCallsStaticCompilationTest extends MethodCallsSTCTest implemen
         '''
     }
 
+    // GROOVY-12513
+    @Override @Test
+    void testPrivateOperatorMethodsThroughNarrowedVariable() {
+        [
+            'b + "x"'                                                     : "'plusx'",
+            'b++; b.log'                                                  : "'next'",
+            'b[1]'                                                        : "'getAt1'",
+            'b += "y"; b.log'                                             : "'plusAssigny'",
+            '"in" in b'                                                   : 'true',
+            'b.token()'                                                   : 'String',
+            'def c = { -> b.plus("x") + (b + "y") }; b = new Sub2(); c()' : "'plusxplusy'",
+        ].each { code, value ->
+            assertScript privateMethodOfNarrowedVariable(code) + "assert Outer.test() == $value"
+        }
+
+        // static compilation calls putAt for x[i] = v dynamically
+        shouldFailWithMessages privateMethodOfNarrowedVariable('b[2] = "v"'),
+            'Cannot find matching method Outer\$Sub#putAt(int, java.lang.String)'
+    }
+
     // GROOVY-12510: dynamic Groovy and @TypeChecked reject a class that mixes private
     // and public methods of one name. Through the subclass only the public method is
     // a member; through a variable declared with the superclass type both are

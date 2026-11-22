@@ -1252,7 +1252,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                         ClassNode rhsType = isNullConstant(rightExpression)
                                 ? UNKNOWN_PARAMETER_TYPE
                                 : getInferredTypeFromTempInfo(rightExpression, getType(rightExpression));
-                        List<MethodNode> candidates = findMethod(lhsType, assignName, rhsType);
+                        List<MethodNode> candidates = findMethodThrough(leftExpression, lhsType, assignName, rhsType);
                         if (candidates.size() == 1) {
                             MethodNode target = candidates.get(0);
                             expression.putNodeMetaData(COMPOUND_ASSIGN_TARGET, target);
@@ -1502,7 +1502,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
             // GROOVY-5874: if left expression is a closure shared variable, a second pass should be done
             if (leftExpression instanceof VariableExpression vexp && vexp.isClosureSharedVariable()) {
-                typeCheckingContext.secondPassExpressions.add(new SecondPassExpression<>(expression));
+                typeCheckingContext.secondPassExpressions.add(new SecondPassExpression<>(expression, null, getDeclaredReceiverType(vexp)));
             }
         } finally {
             typeCheckingContext.popEnclosingBinaryExpression();
@@ -6861,12 +6861,7 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
                     for (Receiver<String> currentReceiver : receivers) {
                         ClassNode receiverType = currentReceiver.getType();
                         if (isClassType(receiverType)) receiverType = receiverType.getPlainNodeReference();
-                        declaredReceiverType = getDeclaredReceiverType(objectExpression);
-                        try {
-                            mn = findMethod(receiverType, name, args);
-                        } finally {
-                            declaredReceiverType = null;
-                        }
+                        mn = findMethodThrough(objectExpression, receiverType, name, args);
                         if (!mn.isEmpty()) {
                             first = mn.get(0); // capture for error reporting
                             chosenReceiver = currentReceiver;
@@ -6889,14 +6884,21 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
                     // selection binds a method on the matched receiver, so a failed match leaves the
                     // call - and its error reporting - exactly as written.
                     if (mn.isEmpty() || ClassTagSupport.isPreemptionPossible(this)) {
-                        ClassTagSupport.ClassTagMatch tagged = mn.isEmpty()
+                        ClassTagSupport.ClassTagMatch tagged;
+                        ClassNode previousDeclaredType = declaredReceiverType;
+                        declaredReceiverType = getDeclaredReceiverType(objectExpression); // candidates as findMethod sees them
+                        try {
+                            tagged = mn.isEmpty()
                                 ? ClassTagSupport.matchAdditive(this, receivers, name, args)
                                 : ClassTagSupport.matchPreemption(this, chosenReceiver, mn, name, args);
+                        } finally {
+                            declaredReceiverType = previousDeclaredType;
+                        }
                         if (tagged != null) {
                             ClassNode[] taggedArgs = tagged.expandArgumentTypes(args);
                             ClassNode taggedReceiverType = tagged.receiver.getType();
                             if (isClassType(taggedReceiverType)) taggedReceiverType = taggedReceiverType.getPlainNodeReference();
-                            List<MethodNode> taggedMn = findMethod(taggedReceiverType, name, taggedArgs);
+                            List<MethodNode> taggedMn = findMethodThrough(objectExpression, taggedReceiverType, name, taggedArgs);
                             // the tagged overload must accept the call with its generics, else the call stays as written
                             taggedMn.removeIf(taggedMethod -> !typeCheckMethodsWithGenerics(tagged.receiver.getType(), taggedArgs, taggedMethod));
                             if (!taggedMn.isEmpty()) {
@@ -7048,7 +7050,7 @@ out:                if (mn.size() != 1) {
 
                             if (objectExpression instanceof VariableExpression variable && variable.isClosureSharedVariable()) {
                                 // if the object expression is a closure shared variable we will have to perform a second pass
-                                typeCheckingContext.secondPassExpressions.add(new SecondPassExpression<>(call, args));
+                                typeCheckingContext.secondPassExpressions.add(new SecondPassExpression<>(call, args, getDeclaredReceiverType(variable)));
                             }
                         } else {
                             call.removeNodeMetaData(DIRECT_METHOD_CALL_TARGET);
@@ -9021,7 +9023,7 @@ trying: for (ClassNode[] signature : signatures) {
      * Finds a matching method or reports a static type error when none is available.
      */
     protected MethodNode findMethodOrFail(final Expression expr, final ClassNode receiver, final String name, final ClassNode... args) {
-        List<MethodNode> methods = findMethod(receiver, name, args);
+        List<MethodNode> methods = findMethodThrough(getOperatorReceiver(expr), receiver, name, args);
         if (methods.isEmpty() && (expr instanceof BinaryExpression be)) {
             MethodCallExpression call = callX(be.getLeftExpression(), name, be.getRightExpression());
             methods = extension.handleMissingMethod(receiver, name, args(be.getLeftExpression()), args, call);
@@ -9317,6 +9319,44 @@ trying: for (ClassNode[] signature : signatures) {
      */
     private ClassNode getDeclaredReceiverType(final Expression expression) {
         return isStaticDispatchScope() ? getDeclaredType(expression) : null;
+    }
+
+    /**
+     * Finds the methods for a call through {@code objectExpression}, which may
+     * reach a private method of its declared type, see {@link #getDeclaredReceiverType}.
+     */
+    private List<MethodNode> findMethodThrough(final Expression objectExpression, final ClassNode receiver, final String name, final ClassNode... args) {
+        return findMethodWithDeclaredType(getDeclaredReceiverType(objectExpression), receiver, name, args);
+    }
+
+    private List<MethodNode> findMethodWithDeclaredType(final ClassNode declaredType, final ClassNode receiver, final String name, final ClassNode... args) {
+        ClassNode previous = declaredReceiverType;
+        declaredReceiverType = declaredType;
+        try {
+            return findMethod(receiver, name, args);
+        } finally {
+            declaredReceiverType = previous;
+        }
+    }
+
+    /**
+     * Returns the operand on which an operator calls its method: the left operand
+     * of a binary operator, or the operand itself, as {@link #findMethodOrFail} is
+     * given for {@code ++} and {@code --}. For {@code -x}, {@code +x} and {@code ~x}
+     * it is the unary expression, which has no declared type: static compilation
+     * calls their methods dynamically, as it does {@code putAt} for {@code x[i] = v}.
+     */
+    private static Expression getOperatorReceiver(final Expression expr) {
+        return expr instanceof BinaryExpression be ? be.getLeftExpression() : expr;
+    }
+
+    /**
+     * Returns the methods of {@code type} that a call through the current receiver
+     * may use: those of {@link #findMethodsWithGenerated} without a private method
+     * that {@code type} only inherits, as {@link #findMethod} selects them.
+     */
+    List<MethodNode> findCallableMethodsWithGenerated(final ClassNode type, final String name) {
+        return removeInheritedPrivateMethods(findMethodsWithGenerated(type, name), type, declaredReceiverType, true);
     }
 
     /**
@@ -10528,7 +10568,7 @@ trying: for (ClassNode[] signature : signatures) {
                             ClassNode type = lowestUpperBound(classNodes);
                             String message = getOperationName(((BinaryExpression) expression).getOperation().getType());
                             if (message != null) {
-                                List<MethodNode> methods = findMethod(type, message, getType(((BinaryExpression) expression).getRightExpression()));
+                                List<MethodNode> methods = findMethodWithDeclaredType(wrapper.getDeclaredReceiverType(), type, message, getType(((BinaryExpression) expression).getRightExpression()));
                                 if (methods.isEmpty()) {
                                     String methSpec = toMethodParametersString(message, getType(((BinaryExpression) expression).getRightExpression()));
                                     String stcError = String.format("The closure shared variable \"%s\" has been assigned with various types and the method %s does not exist in the lowest upper bound of those types: %s", target.getName(), methSpec, prettyPrintTypeName(type));
@@ -10549,7 +10589,7 @@ trying: for (ClassNode[] signature : signatures) {
                             ClassNode type = lowestUpperBound(classNodes);
                             MethodNode mct = call.getNodeMetaData(DIRECT_METHOD_CALL_TARGET);
                             // we must check that such a method exists for the common type(s)
-                            List<MethodNode> methods = findMethod(type, mct.getName(), (ClassNode[]) wrapper.getData());
+                            List<MethodNode> methods = findMethodWithDeclaredType(wrapper.getDeclaredReceiverType(), type, mct.getName(), (ClassNode[]) wrapper.getData());
                             if (methods.size() != 1) {
                                 String methSpec = toMethodParametersString(mct.getName(), extractTypesFromParameters(mct.getParameters()));
                                 String stcError = String.format("The closure shared variable \"%s\" has been assigned with various types and the method %s does not exist in the lowest upper bound of those types: %s", target.getName(), methSpec, prettyPrintTypeName(type));
