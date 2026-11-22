@@ -398,6 +398,7 @@ import static org.codehaus.groovy.transform.stc.StaticTypesMarker.DECLARATION_IN
 import static org.codehaus.groovy.transform.stc.StaticTypesMarker.DELEGATION_METADATA;
 import static org.codehaus.groovy.transform.stc.StaticTypesMarker.DIRECT_METHOD_CALL_TARGET;
 import static org.codehaus.groovy.transform.stc.StaticTypesMarker.DYNAMIC_RESOLUTION;
+import static org.codehaus.groovy.transform.stc.StaticTypesMarker.ENCLOSING_INSTANCE_OF_RECEIVER;
 import static org.codehaus.groovy.transform.stc.StaticTypesMarker.IMPLICIT_RECEIVER;
 import static org.codehaus.groovy.transform.stc.StaticTypesMarker.INFERRED_RETURN_TYPE;
 import static org.codehaus.groovy.transform.stc.StaticTypesMarker.INFERRED_TYPE;
@@ -6758,6 +6759,7 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
                 // inferred type should be a list of what sub-call returns
                 storeType(call, extension.buildListType(getType(subcall)));
                 storeTargetMethod(call, subcall.getNodeMetaData(DIRECT_METHOD_CALL_TARGET));
+                call.putNodeMetaData(ENCLOSING_INSTANCE_OF_RECEIVER, subcall.getNodeMetaData(ENCLOSING_INSTANCE_OF_RECEIVER));
             }
             typeCheckingContext.popEnclosingMethodCall();
             return;
@@ -7051,6 +7053,8 @@ out:                if (mn.size() != 1) {
                             // the chosen method is supposed to be a call on delegate, owner, or thisObject
                             // so store the delegation information for the static compiler
                             storeReceiverData(call, chosenReceiver);
+                            call.putNodeMetaData(ENCLOSING_INSTANCE_OF_RECEIVER, // not kept from an earlier visit
+                                    isPrivateMethodOfEnclosingInstanceOfReceiver(targetMethod, objectExpression, chosenReceiver.getType()) ? targetMethod.getDeclaringClass() : null);
 
                             receiver = chosenReceiver.getType();
                             if (mergeType || call.getNodeMetaData(INFERRED_TYPE) == null)
@@ -9315,6 +9319,27 @@ trying: for (ClassNode[] signature : signatures) {
         List<MethodNode> result = new ArrayList<>(methods);
         result.removeIf(inherited);
         return result;
+    }
+
+    /**
+     * Determines if a call through {@code objectExpression}, other than "this",
+     * selects a private method of an outer class that the receiver type only
+     * inherits (JLS 8.2): {@link #findMethod} offers the methods of the outer
+     * classes in code of the receiver's own class. The receiver itself has no
+     * such method, so dynamic Groovy calls it on the receiver's enclosing
+     * instance. It stays a member of the receiver in its declaring class, and
+     * through a variable declared with the declaring class under static
+     * compilation, see {@link #removeInheritedPrivateMethods}.
+     */
+    private boolean isPrivateMethodOfEnclosingInstanceOfReceiver(final MethodNode method, final Expression objectExpression, final ClassNode receiverType) {
+        if (!method.isPrivate() || method.isStatic() || isThisExpression(objectExpression)
+                || isSuperExpression(objectExpression) || objectExpression instanceof ClassExpression) {
+            return false;
+        }
+        ClassNode declaringClass = method.getDeclaringClass();
+        return !receiverType.equals(declaringClass) && receiverType.isDerivedFrom(declaringClass)
+                && receiverType.getOuterClasses().contains(declaringClass)
+                && removeInheritedPrivateMethods(List.of(method), receiverType, getDeclaredReceiverType(objectExpression), true).isEmpty();
     }
 
     /**

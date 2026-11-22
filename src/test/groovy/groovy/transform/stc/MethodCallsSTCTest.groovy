@@ -788,6 +788,48 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-12511: through a receiver other than "this", the private method of the
+    // enclosing class is the method of that receiver's enclosing instance, as in dynamic
+    // Groovy; in the declaring class itself it is the method of the receiver
+    @Test
+    void testCallToPrivateMethodOfEnclosingClassThroughOtherReceiverInInnerSubclass() {
+        assertScript '''
+            import java.util.function.Supplier
+
+            class Box {
+                String id
+                Box(String id) { this.id = id }
+                private String im() { 'im:' + id }
+                class Sub extends Box {
+                    Sub() { super('self') }
+                    String implicit() { im() }
+                    String explicit() { this.im() }
+                    String qualified() { Sub.this.im() }
+                    String onNew() { new Sub().im() }
+                    String onOther(Sub other) { other.im() }
+                    String inClosure(Sub other) { def c = { -> other.im() }; c() }
+                    String inLambda(Sub other) { Supplier<String> s = () -> other.im(); s.get() }
+                    String safe(Sub other) { other?.im() }
+                    List<String> spread(List<Sub> others) { others*.im() }
+                    class In {
+                        String deeper(Sub other) { other.im() }
+                    }
+                }
+                Sub make() { new Sub() }
+                String inBox(Sub sub) { sub.im() + ',' + new Sub().im() }
+            }
+            def a = new Box('A'), b = new Box('B')
+            def sa = a.make(), sb = b.make()
+            assert [sa.implicit(), sa.explicit(), sa.qualified(), sa.onNew()] == ['im:A'] * 4
+            assert [sa.onOther(sb), sb.onOther(sa)] == ['im:B', 'im:A']
+            assert [sa.inClosure(sb), sa.inLambda(sb), sa.safe(sb)] == ['im:B'] * 3
+            assert sa.safe(null) == null
+            assert sa.spread([sb, sa]) == ['im:B', 'im:A']
+            assert new Box.Sub.In(sa).deeper(sb) == 'im:B'
+            assert a.inBox(sb) == 'im:self,im:self'
+        '''
+    }
+
     // GROOVY-12511: this.m() in an inner class may name a method of the enclosing
     // class, as in dynamic Groovy
     @Test

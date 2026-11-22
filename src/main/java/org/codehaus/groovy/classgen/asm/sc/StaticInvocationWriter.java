@@ -18,6 +18,7 @@
  */
 package org.codehaus.groovy.classgen.asm.sc;
 
+import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
@@ -298,6 +299,22 @@ public class StaticInvocationWriter extends InvocationWriter {
 
 
     /**
+     * Returns the expression for the enclosing instance of {@code receiver}, of
+     * type {@code receiverType}, that is an instance of {@code outer}: the chain
+     * of {@code this$0} fields from the receiver's class out to {@code outer}.
+     */
+    private static Expression enclosingInstanceExpression(final Expression receiver, final ClassNode receiverType, final ClassNode outer) {
+        Expression expr = receiver;
+        for (ClassNode type = receiverType; !type.equals(outer); type = type.getOuterClass()) {
+            FieldNode thisZero = type.getDeclaredField("this$0");
+            if (thisZero == null) throw new GroovyBugError("no enclosing instance of " + outer.getName() + " for " + receiverType.getName());
+            expr = attrX(expr, "this$0");
+            expr.setType(thisZero.getType());
+        }
+        return expr;
+    }
+
+    /**
      * Attempts to make a direct method call on a bridge method, if it exists.
      */
     @Deprecated
@@ -475,6 +492,10 @@ public class StaticInvocationWriter extends InvocationWriter {
                 }
                 if (!(theReceiver instanceof VariableExpression)) isThisImplicit = false;
                 theReceiver.putNodeMetaData(StaticTypesMarker.INFERRED_TYPE, theTarget.getDeclaringClass());
+            } else if (receiver != null && currentCall != null && declaringClass.equals(currentCall.getNodeMetaData(StaticTypesMarker.ENCLOSING_INSTANCE_OF_RECEIVER))) {
+                // GROOVY-12511: the receiver only inherits this private method of an outer class
+                theReceiver = enclosingInstanceExpression(receiver, receiverType, declaringClass);
+                theReceiver.putNodeMetaData(StaticTypesMarker.INFERRED_TYPE, declaringClass);
             }
             if (theReceiver != null && !target.isStatic() && !isSuperExpression(receiver) && !isClassWithSuper(receiver)
                     && currentCall.getNodeMetaData(StaticTypesMarker.IMPLICIT_RECEIVER) == null) {
@@ -853,6 +874,7 @@ public class StaticInvocationWriter extends InvocationWriter {
                 newMCE.setImplicitThis(false);
                 MethodNode target = oldMCE.getMethodTarget();
                 newMCE.setMethodTarget(target);
+                newMCE.putNodeMetaData(StaticTypesMarker.ENCLOSING_INSTANCE_OF_RECEIVER, oldMCE.getNodeMetaData(StaticTypesMarker.ENCLOSING_INSTANCE_OF_RECEIVER));
                 if (target == null || !target.isVoidMethod())
                     newMCE.setNodeMetaData(StaticTypesMarker.INFERRED_TYPE, valuesType);
                 newMCE.setSafe(true);
