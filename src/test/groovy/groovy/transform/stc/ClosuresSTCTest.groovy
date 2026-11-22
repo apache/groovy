@@ -683,6 +683,65 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-12821: when the closure runs, the variable may hold a value of any type it is
+    // assigned, so the closure uses it through their common type, as dynamic Groovy does
+    @Test
+    void testClosureSharedVariable9() {
+        assertScript """
+            class Box {
+                String id = 'box'
+                public String f = 'field'
+                String pm() { 'pm:' + id }
+                String over() { 'box' }
+                static String take(Sub1 x) { 'take(Sub1)' }
+                static String take(Box x) { 'take(Box)' }
+                String cmp(Box x) { 'cmp(Box)' }
+            }
+            class Sub extends Box { }
+            class Sub1 extends Sub { Sub1() { id = 'sub1'; f = 'f1' }; String over() { 'sub1' }; String cmp(Sub1 x) { 'cmp(Sub1)' } }
+            class Sub2 extends Sub { Sub2() { id = 'sub2'; f = 'f2' } }
+            interface I { String im() }
+            class A1 implements I { String im() { 'a1' } }
+            class A2 implements I { String im() { 'a2' } }
+
+            Sub s = new Sub1(), t = new Sub1()
+            def call = { -> s.pm() }
+            java.util.function.Supplier<String> lambda = () -> s.pm()
+            def property = { -> s.id }
+            def write = { -> s.id = 'w' }
+            def attribute = { -> s.@f }
+            def override = { -> s.over() }
+            def argument = { -> Box.take(s) }
+            def both = { -> s.cmp(t) }
+            assert call() == 'pm:sub1'
+            s = new Sub2(); t = new Sub2()
+            assert [call(), lambda.get(), property(), attribute(), override(), argument(), both()] == ['pm:sub2', 'pm:sub2', 'sub2', 'f2', 'box', 'take(Box)', 'cmp(Box)']
+            write()
+            assert s.id == 'w'
+
+            def i = new A1()
+            def interfaceCall = { -> i.im() }
+            i = new A2()
+            assert interfaceCall() == 'a2'
+        """
+    }
+
+    // GROOVY-12821: no method accepts every value the variable may hold when the closure runs
+    @Test
+    void testClosureSharedVariable10() {
+        shouldFailWithMessages """
+            class Box { static String only1(Sub1 x) { 'only1' } }
+            class Sub extends Box { }
+            class Sub1 extends Sub { }
+            class Sub2 extends Sub { }
+
+            Sub s = new Sub1()
+            def c = { -> Box.only1(s) }
+            s = new Sub2()
+        """,
+        'The closure shared variable "s" has been assigned with various types and the method only1(Sub) does not accept the lowest upper bound of those types: Sub'
+    }
+
     // GROOVY-10052
     @Test
     void testNotClosureSharedVariable() {

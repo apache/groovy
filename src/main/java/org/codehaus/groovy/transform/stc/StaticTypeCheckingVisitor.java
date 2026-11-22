@@ -579,6 +579,24 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
      * class and member visit gets its own set, dropped when the visit ends, see {@link #pushInstanceOfGuards()}.
      */
     private Set<Expression> instanceOfGuards = Collections.newSetFromMap(new IdentityHashMap<>());
+    /**
+     * The calls and property expressions on a closure shared variable that a closure or lambda
+     * makes, where the variable may hold a value of any type it is assigned, each with the class
+     * whose code makes it, see {@link #performSecondPass()}.
+     */
+    private final Map<Expression, ClassNode> sharedVariableUsesInClosures = new IdentityHashMap<>();
+    /**
+     * The calls that a closure or lambda makes with a closure shared variable as an argument, see
+     * {@link #performSecondPass()}.
+     */
+    private final Map<MethodCallExpression, SharedVariableArguments> sharedVariableArgumentCalls = new IdentityHashMap<>();
+
+    /**
+     * The receiver type and argument types a call was selected for, and the class whose code makes it.
+     */
+    @SuppressWarnings("java:S6218") // internal data carrier; equals/hashCode/toString are never used
+    private record SharedVariableArguments(ClassNode receiver, ClassNode[] argumentTypes, ClassNode enclosingClass) {
+    }
 
     /**
      * Creates a static type-checking visitor for the supplied source and class.
@@ -1025,6 +1043,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     expression.putNodeMetaData(INFERRED_TYPE, temporaryType);
                 }
             }
+            recordSharedVariablePropertyInClosure(expression, readOnly);
             return; // resolved or excused
         }
         recordMissingProperty(expression);
@@ -1036,9 +1055,22 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         boolean readOnly = true;
         if (existsProperty(expression, readOnly)
                 || extension.handleUnresolvedAttribute(expression)) {
+            recordSharedVariablePropertyInClosure(expression, !typeCheckingContext.isTargetOfEnclosingAssignment(expression));
             return; // resolved or excused
         }
         recordMissingProperty(expression);
+    }
+
+    /**
+     * Records a property or attribute expression on a closure shared variable in a closure or
+     * lambda for the second pass, which gives it the type the variable has whatever it is assigned.
+     */
+    private void recordSharedVariablePropertyInClosure(final PropertyExpression expression, final boolean readOnly) {
+        if (expression.getObjectExpression() instanceof VariableExpression variable && variable.isClosureSharedVariable()
+                && typeCheckingContext.getEnclosingClosure() != null) {
+            typeCheckingContext.secondPassExpressions.add(new SecondPassExpression<>(expression, readOnly));
+            sharedVariableUsesInClosures.put(expression, typeCheckingContext.getEnclosingClassNode());
+        }
     }
 
     private void recordMissingProperty(final PropertyExpression expression) {
@@ -6901,6 +6933,11 @@ out:                if (mn.size() != 1) {
                             if (objectExpression instanceof VariableExpression variable && variable.isClosureSharedVariable()) {
                                 // if the object expression is a closure shared variable we will have to perform a second pass
                                 typeCheckingContext.secondPassExpressions.add(new SecondPassExpression<>(call, args));
+                                if (typeCheckingContext.getEnclosingClosure() != null) sharedVariableUsesInClosures.put(call, typeCheckingContext.getEnclosingClassNode());
+                            }
+                            if (typeCheckingContext.getEnclosingClosure() != null && argumentList.getExpressions().stream()
+                                    .anyMatch(argument -> argument instanceof VariableExpression variable && variable.isClosureSharedVariable())) {
+                                sharedVariableArgumentCalls.put(call, new SharedVariableArguments(receiver, args.clone(), typeCheckingContext.getEnclosingClassNode()));
                             }
                         } else {
                             call.removeNodeMetaData(DIRECT_METHOD_CALL_TARGET);
@@ -10340,6 +10377,24 @@ trying: for (ClassNode[] signature : signatures) {
                         }
                     }
                 }
+            } else if (expression instanceof PropertyExpression pexp && pexp.getObjectExpression() instanceof VariableExpression variable) {
+                // GROOVY-12821: when a closure runs, the variable may hold a value of any type it is assigned, so
+                // where their common type has the property, the property is read or written through that type
+                if (findTargetVariable(variable) instanceof VariableExpression target) {
+                    List<ClassNode> classNodes = typeCheckingContext.closureSharedVariablesAssignmentTypes.get(target);
+                    if (classNodes != null && classNodes.size() > 1) {
+                        ClassNode type = lowestUpperBound(classNodes);
+                        if (type instanceof WideningCategories.LowestUpperBoundClassNode) type = type.getUnresolvedSuperClass(); // a class, not an intersection
+                        PropertyExpression copy = pexp instanceof AttributeExpression
+                                ? new AttributeExpression(varX("_", type), pexp.getProperty()) : propX(varX("_", type), pexp.getProperty());
+                        typeCheckingContext.pushEnclosingClassNode(sharedVariableUsesInClosures.get(pexp));
+                        try {
+                            if (existsProperty(copy, (Boolean) wrapper.getData())) variable.putNodeMetaData(INFERRED_TYPE, type);
+                        } finally {
+                            typeCheckingContext.popEnclosingClassNode();
+                        }
+                    }
+                }
             } else if (expression instanceof MethodCallExpression call) {
                 Expression objectExpression = call.getObjectExpression();
                 if (objectExpression instanceof VariableExpression) {
@@ -10356,14 +10411,85 @@ trying: for (ClassNode[] signature : signatures) {
                                 String methSpec = toMethodParametersString(mct.getName(), extractTypesFromParameters(mct.getParameters()));
                                 String stcError = String.format("The closure shared variable \"%s\" has been assigned with various types and the method %s does not exist in the lowest upper bound of those types: %s", target.getName(), methSpec, prettyPrintTypeName(type));
                                 addStaticTypeError(stcError + ". In general, this style of variable reuse is a bad practice because the compiler cannot determine safely what is the type of the variable at the moment of the call in a multi-threaded context.", expression );
+                            } else if (sharedVariableUsesInClosures.containsKey(call)) {
+                                // GROOVY-12821: when a closure runs, the variable may hold a value of any type it is assigned,
+                                // so the call is made through the method of their common type, not of the type when it was created
+                                MethodNode method = methods.get(0);
+                                call.putNodeMetaData(DIRECT_METHOD_CALL_TARGET, method);
+                                if (call.getMethodTarget() != null) call.setMethodTarget(method); // statically compiled
+                                objectExpression.putNodeMetaData(INFERRED_TYPE, method instanceof ExtensionMethodNode emn
+                                        ? emn.getExtensionMethodNode().getParameters()[0].getType() : method.getDeclaringClass());
                             }
                         }
                     }
                 }
             }
         }
+        sharedVariableArgumentCalls.forEach(this::checkSharedVariableArguments);
         // give a chance to type checker extensions to throw errors based on information gathered afterwards
         extension.finish();
+    }
+
+    /**
+     * Selects the method again for a call that a closure or lambda makes with a closure shared
+     * variable as an argument (GROOVY-12821): when the closure runs, the variable may hold a value
+     * of any type it is assigned, so the call takes the method for their common type, as dynamic
+     * Groovy selects one for the value, not the method for the type when the closure was created.
+     */
+    private void checkSharedVariableArguments(final MethodCallExpression call, final SharedVariableArguments selected) {
+        String name = call.getMethodAsString();
+        if (name == null) return; // a dynamic method name
+        List<Expression> arguments = InvocationWriter.makeArgumentList(call.getArguments()).getExpressions();
+        ClassNode[] types = selected.argumentTypes().clone();
+        Map<VariableExpression, Integer> shared = new IdentityHashMap<>();
+        for (int i = 0, n = Math.min(arguments.size(), types.length); i < n; i += 1) {
+            ClassNode type = commonTypeOfSharedVariable(arguments.get(i));
+            if (type != null) {
+                types[i] = type;
+                shared.put((VariableExpression) arguments.get(i), i);
+            }
+        }
+        if (shared.isEmpty()) return;
+        ClassNode receiver = commonTypeOfSharedVariable(call.getObjectExpression()); // the receiver may be one too
+        if (receiver == null) receiver = selected.receiver();
+
+        List<MethodNode> methods;
+        typeCheckingContext.pushEnclosingClassNode(selected.enclosingClass());
+        try {
+            methods = findMethod(receiver, name, types);
+        } finally {
+            typeCheckingContext.popEnclosingClassNode();
+        }
+        if (methods.size() == 1) {
+            MethodNode method = methods.get(0);
+            call.putNodeMetaData(DIRECT_METHOD_CALL_TARGET, method);
+            if (call.getMethodTarget() != null) call.setMethodTarget(method); // statically compiled
+            Parameter[] parameters = method.getParameters();
+            shared.forEach((variable, i) -> {
+                ClassNode type = types[i];
+                if (type instanceof WideningCategories.LowestUpperBoundClassNode) { // a class or interface, not an intersection
+                    type = i < parameters.length ? parameters[i].getType() : type.getUnresolvedSuperClass();
+                }
+                variable.putNodeMetaData(INFERRED_TYPE, type);
+            });
+        } else if (methods.isEmpty()) {
+            VariableExpression variable = shared.keySet().iterator().next();
+            String stcError = String.format("The closure shared variable \"%s\" has been assigned with various types and the method %s does not accept the lowest upper bound of those types: %s",
+                    variable.getName(), toMethodParametersString(name, types), prettyPrintTypeName(types[shared.get(variable)]));
+            addStaticTypeError(stcError + ". In general, this style of variable reuse is a bad practice because the compiler cannot determine safely what is the type of the variable at the moment of the call in a multi-threaded context.", call);
+        }
+    }
+
+    /**
+     * Returns the common type of the types assigned to a closure shared variable, if the
+     * expression is one that is assigned more than one type, or else {@code null}.
+     */
+    private ClassNode commonTypeOfSharedVariable(final Expression expression) {
+        if (expression instanceof VariableExpression variable && findTargetVariable(variable) instanceof VariableExpression target) {
+            List<ClassNode> classNodes = typeCheckingContext.closureSharedVariablesAssignmentTypes.get(target);
+            if (classNodes != null && classNodes.size() > 1) return lowestUpperBound(classNodes);
+        }
+        return null;
     }
 
     /**
