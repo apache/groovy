@@ -3374,7 +3374,7 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
             }
         }
 
-        if (isThisExpression(objectExpression)) {
+        if (isThisExpression(objectExpression) && !(pexp instanceof AttributeExpression)) { // this.@name is a field of this class
             Iterator<ClassNode> iter = enclosingTypes.iterator(); // first enclosing is "this" type
             ClassNode thisType = iter.next(); // an enum constant body has no enclosing instance either
             boolean staticOnly = hasNoEnclosingInstance(thisType) || thisType.redirect() instanceof EnumConstantClassNode || typeCheckingContext.isInStaticContext;

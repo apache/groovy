@@ -2253,6 +2253,21 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-12511: this.@name is a field of this class, not the enclosing instance's
+    // property, so a private getter of the enclosing superclass does not stand in for it
+    @Test
+    void testPrivateGetterOfEnclosingSuperclassViaThisAttributeInInnerSubclass() {
+        shouldFailWithMessages '''
+            class Outer {
+                private String getP() { 'p' }
+                class Sub extends Outer {
+                    def t() { this.@p }
+                }
+            }
+        ''',
+        'No such attribute: p for class: Outer$Sub'
+    }
+
     /**
      * Reads f through a static nested subclass of Base, where the private field
      * f of Base hides the public field f of Parent, with {@code sub} in Sub and
