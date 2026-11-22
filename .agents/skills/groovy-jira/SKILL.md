@@ -1,24 +1,22 @@
-<!--
-  Licensed to the Apache Software Foundation (ASF) under one
-  or more contributor license agreements.  See the NOTICE file
-  distributed with this work for additional information
-  regarding copyright ownership.  The ASF licenses this file
-  to you under the Apache License, Version 2.0 (the
-  "License"); you may not use this file except in compliance
-  with the License.  You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-  Unless required by applicable law or agreed to in writing,
-  software distributed under the License is distributed on an
-  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-  KIND, either express or implied.  See the License for the
-  specific language governing permissions and limitations
-  under the License.
--->
 ---
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
 name: groovy-jira
-description: AI-tooling guardrails for working with JIRA on the GROOVY project — points at the project's JIRA conventions in CONTRIBUTING.md (states, fields, components, JQL recipes, the commit ↔ JIRA link), and adds the AI-specific constraints on top: never propose a workflow transition, never set committer-owned fields, never post comments or open formal issue links autonomously, refetch live state rather than citing trained memory, hand drafts back to a human for review. Use when constructing a JQL query, suggesting a Component, drafting a JIRA comment, or producing any AI output that touches JIRA.
+description: "AI-tooling guardrails for working with JIRA on the GROOVY project — points at the project's JIRA conventions in CONTRIBUTING.md (states, fields, components, JQL recipes, the commit ↔ JIRA link), and adds the AI-specific constraints on top: never propose a workflow transition, never set committer-owned fields, never post comments or open formal issue links autonomously, refetch live state rather than citing trained memory, hand drafts back to a human for review. Use when constructing a JQL query, suggesting a Component, drafting a JIRA comment, or producing any AI output that touches JIRA."
 license: Apache-2.0
 compatibility: claude, codex, copilot, cursor, gemini, aider
 metadata:
