@@ -37,6 +37,10 @@ import java.util.concurrent.CompletableFuture
  * <p>
  * Redirect following is opt-in; see {@link Config#followRedirects(boolean)} for the
  * policy applied to headers when a redirect leaves the origin of the first request.
+ * <p>
+ * A buffered response body sent with a {@code gzip} or {@code deflate}
+ * {@code Content-Encoding} is decoded. Requesting compressed responses is opt-in;
+ * see {@link Config#compression(boolean)}.
  *
  * @since 6.0.0
  */
@@ -48,6 +52,7 @@ final class HttpBuilder {
     private final Duration defaultRequestTimeout
     private final boolean confineToBaseUri
     private final boolean followRedirectsManually
+    private final boolean compression
 
     /** Maximum number of redirects followed by the manual redirect loop. */
     private static final int MAX_REDIRECTS = 5
@@ -77,6 +82,7 @@ final class HttpBuilder {
         defaultHeaders = Collections.unmodifiableMap(new LinkedHashMap<>(config.headers))
         defaultRequestTimeout = config.requestTimeout
         confineToBaseUri = config.confineToBaseUri
+        compression = config.compression
         if (confineToBaseUri && baseUri == null) {
             throw new IllegalArgumentException('confineToBaseUri requires a baseUri to be configured')
         }
@@ -193,12 +199,13 @@ final class HttpBuilder {
         URI resolvedUri = resolveUri(uri, requestSpec.queryParameters)
         Map<String, String> headers = combinedHeaders(requestSpec)
         HttpRequest httpRequest = buildHopRequest(method, resolvedUri, headers, requestSpec.body, requestSpec.timeout)
-        HttpResponse<String> response = send(method, httpRequest, requestSpec.bodyHandler)
+        HttpResponse.BodyHandler<String> bodyHandler = ContentDecoding.decoding(requestSpec.bodyHandler)
+        HttpResponse<String> response = send(method, httpRequest, bodyHandler)
         if (followRedirectsManually) {
             response = followRedirects(method, httpRequest.uri(), response, headers,
-                    requestSpec.body, requestSpec.timeout, requestSpec.bodyHandler)
+                    requestSpec.body, requestSpec.timeout, bodyHandler)
         }
-        return new HttpResult(response)
+        return result(response)
     }
 
     /**
@@ -217,15 +224,16 @@ final class HttpBuilder {
         URI resolvedUri = resolveUri(uri, requestSpec.queryParameters)
         Map<String, String> headers = combinedHeaders(requestSpec)
         HttpRequest httpRequest = buildHopRequest(method, resolvedUri, headers, requestSpec.body, requestSpec.timeout)
-        CompletableFuture<HttpResponse<String>> future = client.sendAsync(httpRequest, requestSpec.bodyHandler)
+        HttpResponse.BodyHandler<String> bodyHandler = ContentDecoding.decoding(requestSpec.bodyHandler)
+        CompletableFuture<HttpResponse<String>> future = client.sendAsync(httpRequest, bodyHandler)
         if (followRedirectsManually) {
             future = future.thenCompose { HttpResponse<String> response ->
                 followRedirectsAsync(method, httpRequest.uri(), response, headers,
-                        requestSpec.body, requestSpec.timeout, requestSpec.bodyHandler, 0,
+                        requestSpec.body, requestSpec.timeout, bodyHandler, 0,
                         httpRequest.uri(), false)
             }
         }
-        return future.thenApply { HttpResponse<String> response -> new HttpResult(response) }
+        return future.thenApply { HttpResponse<String> response -> result(response) }
     }
 
     /**
@@ -302,6 +310,9 @@ final class HttpBuilder {
      * <p>
      * Streaming always uses {@code HttpResponse.BodyHandlers.ofPublisher()};
      * any {@code bodyHandler} configured on the {@code RequestSpec} is ignored.
+     * The body is delivered as received: a compressed body is not decoded, and
+     * {@link Config#compression(boolean)} does not request compression for a
+     * streaming request.
      * <p>
      * Streaming requests never follow redirects, whatever
      * {@link Config#followRedirects} is set to: a 3xx response is returned
@@ -354,7 +365,7 @@ final class HttpBuilder {
         // also means no hop can escape the gates above, at the cost of transparency.
         RequestSpec requestSpec = evalSpec(spec)
         URI resolvedUri = resolveUri(uri, requestSpec.queryParameters)
-        return buildHopRequest(method, resolvedUri, combinedHeaders(requestSpec), requestSpec.body, requestSpec.timeout)
+        return buildHopRequest(method, resolvedUri, combinedHeaders(requestSpec), requestSpec.body, requestSpec.timeout, false)
     }
 
     private RequestSpec evalSpec(final Closure<?> spec) {
@@ -376,7 +387,8 @@ final class HttpBuilder {
 
     private HttpRequest buildHopRequest(final String method, final URI uri,
                                         final Map<String, String> headers,
-                                        final Object body, final Duration requestTimeout) {
+                                        final Object body, final Duration requestTimeout,
+                                        final boolean buffered = true) {
         HttpRequest.Builder requestBuilder = HttpRequest.newBuilder(uri)
         Duration timeout = requestTimeout ?: defaultRequestTimeout
         if (timeout != null) {
@@ -385,8 +397,17 @@ final class HttpBuilder {
         headers.each { String name, String value ->
             requestBuilder.setHeader(name, value)
         }
+        // added on every hop: a header the client owns is not one of the caller's headers
+        // that a hop leaving the first origin sheds
+        if (compression && buffered && !headers.keySet().any { it.equalsIgnoreCase('Accept-Encoding') }) {
+            requestBuilder.setHeader('Accept-Encoding', ContentDecoding.ACCEPT_ENCODING)
+        }
         requestBuilder.method(method, bodyPublisher(method, body))
         return requestBuilder.build()
+    }
+
+    private static HttpResult result(final HttpResponse<String> response) {
+        return new HttpResult(response.statusCode(), response.body(), ContentDecoding.decodedHeaders(response), response)
     }
 
     private <T> HttpResponse<T> send(final String method, final HttpRequest httpRequest,
@@ -751,6 +772,13 @@ final class HttpBuilder {
          */
         boolean confineToBaseUri
         /**
+         * Whether buffered requests ask for a compressed response; see
+         * {@link #compression(boolean)}. Defaults to {@code false}.
+         *
+         * @since 6.0.1
+         */
+        boolean compression
+        /**
          * Headers added to every request created by the builder.
          */
         final Map<String, String> headers = [:]
@@ -820,6 +848,25 @@ final class HttpBuilder {
          */
         void confineToBaseUri(final boolean value) {
             confineToBaseUri = value
+        }
+
+        /**
+         * Asks for a compressed response: buffered requests send
+         * {@code Accept-Encoding: gzip, deflate}, unless the request sets its own
+         * {@code Accept-Encoding} header. The header is sent on every redirect hop.
+         * <p>
+         * Whether or not this is enabled, a buffered response body sent with a
+         * {@code gzip} or {@code deflate} {@code Content-Encoding} is decoded before
+         * it reaches the body handler, and the result's headers then omit
+         * {@code Content-Encoding} and {@code Content-Length}; the raw JDK response
+         * keeps them. A body with any other content coding is passed on as received.
+         * Streaming requests neither ask for nor decode compressed content.
+         *
+         * @param value {@code true} to ask for compressed responses
+         * @since 6.0.1
+         */
+        void compression(final boolean value) {
+            compression = value
         }
 
         /**

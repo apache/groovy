@@ -24,6 +24,7 @@ import org.codehaus.groovy.control.CompilerConfiguration
 import org.codehaus.groovy.control.MultipleCompilationErrorsException
 import org.codehaus.groovy.control.Phases
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.io.TempDir
 
 import static org.junit.jupiter.api.Assertions.assertEquals
 import static org.junit.jupiter.api.Assertions.assertThrows
@@ -163,6 +164,218 @@ final class PackedClosuresTransformTest {
         assertEquals([3, 6, 9], e.maps([1, 2, 3]))
     }
 
+    // GROOVY-12651
+    @Test
+    void compoundAssignmentEscapesAreDeclined() {
+        // ?= and ??= store the literal, <<= and >>= compose it into a closure that keeps a clone of
+        // it, <<= appends it to a list and += adds it to a new one. Into a field/property/index each
+        // escapes the method, so each is declined and a delegate set on the stored value works as it
+        // does without packing. -= and a store into a local still pack.
+        ['', '@groovy.transform.TypeChecked'].each { mode ->
+            String src = """class Holder { Closure handler; List<Closure> handlers = [] }
+                @groovy.transform.PackedClosures $mode
+                class E {
+                    Closure field = null
+                    void elvis(Holder h)          { h.handler ?= { Integer x -> x * 2 } }     // property
+                    void nullCoalesce(Holder h)   { h.@handler ??= { Integer x -> x * 2 } }   // attribute
+                    void composeLeft(Closure[] a) { a[0] <<= { Integer x -> x + 1 } }         // index
+                    void composeRight()           { field >>= { Integer x -> x + 1 } }        // field
+                    void append(Holder h)         { h.handlers <<= { Integer x -> x - 1 } }   // appended
+                    void plus(Holder h)           { h.handlers += { Integer x -> x - 2 } }    // added
+                    int local(int n)              { Closure c = null; c ?= { Integer x -> x * 3 }; (int) c(n) }
+                    List minus(List xs)           { xs -= { x -> x }; xs }
+                }"""
+            def names = generatedClassNames(src)
+            assertEquals(6, closureClassCount(names), "[$mode] compound escapes should be declined: $names")
+
+            def (e, h) = instance(src + '\n [new E(), new Holder()]')
+            e.elvis(h); h.handler.delegate = 'd'
+            assertEquals(42, h.handler(21))
+            h.handler = null; e.nullCoalesce(h); h.handler.delegate = 'd'
+            assertEquals(42, h.handler(21))
+            Closure[] a = [{ x -> x * 10 }]; e.composeLeft(a); a[0].delegate = 'd'
+            assertEquals(30, a[0](2))                    // a[0] << c: c runs first
+            e.field = { x -> x * 10 }; e.composeRight(); e.field.delegate = 'd'
+            assertEquals(21, e.field(2))                 // field >> c: c runs second
+            e.append(h); e.plus(h); h.handlers*.delegate = 'd'
+            assertEquals([9, 8], h.handlers*.call(10))
+            assertEquals(12, e.local(4))
+            assertEquals([1, 2], e.minus([1, 2]))
+        }
+    }
+
+    // GROOVY-12651
+    @Test
+    void compileStaticCompoundStoresAreDeclined() {
+        // ?= and ??= keep their assignment shape under @CompileStatic, so the escape gate sees them
+        String src = '''class Holder { Closure handler }
+            @groovy.transform.CompileStatic
+            @groovy.transform.PackedClosures
+            class S {
+                Closure field = null
+                void property(Holder h)  { h.handler ?= { Integer x -> x * 2 } }
+                void attribute(Holder h) { h.@handler ??= { Integer x -> x * 2 } }
+                void index(Closure[] a)  { a[0] ?= { Integer x -> x * 2 } }
+                void toField()           { field ??= { Integer x -> x * 2 } }
+                int local(int n)         { Closure c = null; c ?= { Integer x -> x * 3 }; (int) c(n) }
+            }'''
+        def names = generatedClassNames(src)
+        assertEquals(4, closureClassCount(names), "compound stores should be declined: $names")
+
+        def (s, h) = instance(src + '\n [new S(), new Holder()]')
+        s.property(h); h.handler.delegate = 'd'
+        assertEquals(42, h.handler(21))
+        h.handler = null; s.attribute(h); h.handler.delegate = 'd'
+        assertEquals(42, h.handler(21))
+        Closure[] a = new Closure[1]; s.index(a); a[0].delegate = 'd'
+        assertEquals(42, a[0](21))
+        s.toField(); s.field.delegate = 'd'
+        assertEquals(42, s.field(21))
+        assertEquals(12, s.local(4))
+    }
+
+    // GROOVY-12652
+    @Test
+    void escapingClosuresInConstructorsAndInitializersAreDeclined() {
+        // the escape gate also covers constructors and instance initializer blocks
+        // (inlined into every constructor); a declined closure keeps its class, so setting a
+        // delegate on it works instead of failing the packed adapter's runtime guard
+        String src = '''@groovy.transform.PackedClosures
+            class K {
+                Closure fromCtor, fromInit;
+                { fromInit = { x -> x + 1 } }                                              // field store
+                K(List<Closure> sink) { sink << { x -> x * 2 }; fromCtor = { x -> x - 1 } } // appended, field store
+                K(Map attrs) { attrs.handler = { x -> x * 3 } }                             // property store
+                K(List<Integer> xs, int n) { xs.each { x -> n += x } }                      // local -> packs
+            }'''
+        def names = generatedClassNames(src)
+        assertEquals(4, closureClassCount(names), "escaping closures should be declined: $names")
+
+        def (sink, attrs) = [[], [:]]
+        def k = instance(src + '\n return { s, a -> new K(a); new K(s) }')(sink, attrs)
+        [k.fromCtor, k.fromInit, sink[0], attrs.handler].each { it.delegate = 'd' } // no packed-adapter guard
+        assertEquals([9, 11, 10, 30], [k.fromCtor(10), k.fromInit(10), sink[0](5), attrs.handler(10)])
+    }
+
+    // GROOVY-12650, GROOVY-12652
+    @Test
+    void compileStaticConstructorAndInitializerEscapesHiddenByARewriteAreDeclined() {
+        // under @CompileStatic an append and a setter-backed store in a
+        // constructor or an instance initializer block are rewritten to method calls before class
+        // generation; the escape walk runs ahead of that rewrite there too, whether the scope comes
+        // from the class or from a constructor
+        String src = '''import groovy.transform.CompileStatic
+            import groovy.transform.PackedClosures
+            @CompileStatic @PackedClosures
+            class K {
+                Holder held = new Holder();
+                { held.handler = { Integer x -> x + 1 } }                                     // setter store
+                K(List<Closure> sink, Holder h) { sink << { Integer x -> x * 2 }; h.handler = { Integer x -> x * 3 } }
+                K(List<Integer> xs) { xs.each { Integer x -> x } }                             // local -> packs
+            }
+            @CompileStatic
+            class L {
+                List<Closure> sink = [];
+                { sink << { Integer x -> x - 1 } }                                             // appended
+                @PackedClosures L() { }
+            }
+            class Holder { Closure handler }'''
+        def names = generatedClassNames(src)
+        assertEquals(4, closureClassCount(names), "escaping closures should be declined: $names")
+
+        def (sink, h) = [[], null]
+        def made = instance(src + '\n return { s -> def h = new Holder(); [new K(s, h), h, new L()] }')(sink)
+        def (k, holder, l) = made
+        [k.held.handler, sink[0], holder.handler, l.sink[0]].each { it.delegate = 'd' } // no packed-adapter guard
+        assertEquals([11, 10, 30, 9], [k.held.handler(10), sink[0](5), holder.handler(10), l.sink[0](10)])
+    }
+
+    // GROOVY-12650
+    @Test
+    void escapingClosuresAreDeclinedTheSameUnderCompileStatic() {
+        // Static compilation rewrites `<<`, subscript stores and setter-backed property stores into
+        // method calls before class generation; the closures they store still escape and must be
+        // declined exactly as in dynamic code. An explicit leftShift(...) call is not an escape site
+        // in either mode, so that closure packs, as does the owner-local one.
+        String src = '''@groovy.transform.PackedClosures
+            ANNOTATION
+            class E {
+                Closure prop
+                static Closure sprop
+                void appended(List<Closure> sink)          { sink << { x -> x } }
+                void toSetter(E other)                     { other.prop = { x -> x } }
+                void toBeanSetter(Holder h)                { h.g = { x -> x } }
+                void toThisSetter()                        { this.prop = { x -> x } }
+                void toImplicitSetter()                    { prop = { x -> x } }
+                static void toStaticSetter()               { sprop = { x -> x } }
+                void toListIndex(List<Closure> sink)       { sink[0] = { x -> x } }
+                void toArrayIndex(Closure[] sink)          { sink[0] = { x -> x } }
+                void toMapKey(Map<String, Closure> sink)   { sink.k = { x -> x } }
+                void toMapIndex(Map<String, Closure> sink) { sink['k'] = { x -> x } }
+                void toField(Holder h)                     { h.@f = { x -> x } }
+                Holder named()                             { new Holder(g: { x -> x }) }
+                void called(List<Closure> sink)            { sink.leftShift({ x -> x }) } // a call: packs
+                List<Integer> maps(List<Integer> xs)       { xs.collect { x -> x * 3 } }  // owner-local: packs
+            }
+            class Holder { public Closure f; Closure g }'''
+        ['', '@groovy.transform.TypeChecked', '@groovy.transform.CompileStatic'].each { ann ->
+            String mode = ann ?: 'dynamic'
+            String code = src.replace('ANNOTATION', ann)
+            def names = generatedClassNames(code)
+            assertEquals(12, closureClassCount(names), "[$mode] escaping closures should be declined: $names")
+
+            def e = instance(code + '\n new E()')
+            def list = []; e.appended(list); e.called(list)
+            assertEquals(1, list[0](1))
+            assertEquals(2, list[1](2))
+            e.toImplicitSetter(); assertEquals(4, e.prop(4))
+            def h = e.named(); e.toBeanSetter(h); assertEquals(3, h.g(3))
+            def map = [:]; e.toMapKey(map); assertEquals(5, map.k(5))
+            assertEquals(6, e.named().g(6))
+            assertEquals([3, 6], e.maps([1, 2]))
+        }
+    }
+
+    // GROOVY-12650
+    @Test
+    void compileStaticReportsAnEscapeHiddenByARewrite() {
+        String src = '''import groovy.transform.CompileStatic
+            import groovy.transform.PackedClosures
+            import groovy.transform.PackedClosures.PackMode
+            @CompileStatic @PackedClosures(mode = PackMode.WARN)
+            class W {
+                void appended(List<Closure> sink) { sink << { String s -> s } }
+                void toSetter(Bean b)             { b.prop = { String s -> s } }
+            }
+            class Bean { Closure prop }'''
+        def ws = warnings(src)
+        assertEquals(2, ws.size(), "expected one warning per escaping closure, got: ${ws*.message}")
+        ws.each { assertTrue(it.message.contains('escapes its method'), "warning should name the escape: $it.message") }
+    }
+
+    // GROOVY-12650
+    @Test
+    void compileStaticFlagPathDeclinesAnEscapeHiddenByARewrite() {
+        String src = '''import groovy.transform.CompileStatic
+            @CompileStatic
+            class F {
+                void appended(List<Closure> sink) { sink << { String s -> s } }
+                void toSetter(Bean b)             { b.prop = { String s -> s } }
+                List<String> local(List<String> xs) { xs.collect { String s -> s.toUpperCase() } }
+            }
+            class Bean { Closure prop }'''
+        String prev = System.getProperty(CompilerConfiguration.CLOSURE_PACKING)
+        System.setProperty(CompilerConfiguration.CLOSURE_PACKING, 'true')
+        try {
+            def names = generatedClassNames(src)
+            assertEquals(['F$_appended_closure1', 'F$_toSetter_closure2'], names.findAll { it.contains('_closure') },
+                    'the escaping closures stay classes; the owner-local one packs')
+        } finally {
+            if (prev != null) System.setProperty(CompilerConfiguration.CLOSURE_PACKING, prev)
+            else System.clearProperty(CompilerConfiguration.CLOSURE_PACKING)
+        }
+    }
+
     /**
      * Under {@code @CompileStatic} the transform applies a cast-to-context heuristic: the hoisted
      * method is marked {@code @CompileStatic(SKIP)} (so its Object-typed body is checked dynamically),
@@ -236,6 +449,100 @@ final class PackedClosuresTransformTest {
         assertEquals(36, d.total([1, 2, 3], 10))
     }
 
+    // GROOVY-12661
+    @Test
+    void rehydrateGoesThroughTheDelegateGuard() {
+        // Closure.rehydrate writes delegate, owner and thisObject on the copy directly, past
+        // setDelegate's guard, and the hoisted body kept calling the original owner: the new
+        // delegate or owner was silently ignored. On the dynamic trust path it now fails fast like
+        // setDelegate. null and the original owner stay allowed (dehydrate, and the round trip).
+        String src = '''
+            class Del { String foo() { 'delegate' } }
+            @groovy.transform.PackedClosures
+            class O {
+                String name
+                String foo() { 'owner ' + name }
+                static String attempt(Closure c, d, o, t) {
+                    try { c.rehydrate(d, o, t)() } catch (UnsupportedOperationException e) { e.message }
+                }
+                List run(Del d, O other) {
+                    def c = { -> foo() }
+                    assert c instanceof org.codehaus.groovy.runtime.PackedClosure
+                    [attempt(c, d, this, this), attempt(c, null, other, other), attempt(c, null, this, other),
+                     attempt(c, null, other, this), attempt(c, d, d, d),
+                     attempt(c, null, this, this), attempt(c, this, this, this), attempt(c, null, this, null),
+                     attempt(c.dehydrate(), null, this, this), c.dehydrate()()]
+                }
+                @groovy.transform.PackedClosures(mode = groovy.transform.PackedClosures.PackMode.DISABLED)
+                List unpacked(Del d, O other) {
+                    def c = { -> foo() }
+                    [attempt(c, d, this, this), attempt(c, null, other, other), attempt(c, d, d, d)]
+                }
+                static List check() {
+                    def a = new O(name: 'a')
+                    [a.run(new Del(), new O(name: 'b')), a.unpacked(new Del(), new O(name: 'b'))]
+                }
+            }
+            O.check()
+        '''
+        def (packed, unpacked) = instance(src)
+        [packed[0], packed[4]].each {
+            assertTrue(it.startsWith('Cannot set a delegate on a @PackedClosures closure'), it)
+        }
+        packed[1..3].each {
+            assertTrue(it.startsWith('Cannot rehydrate a @PackedClosures closure') && it.contains('different owner'), it)
+        }
+        assertEquals(['owner a'] * 5, packed[5..9])
+        // the class-based closure honours the new owner, which the packed body cannot
+        assertEquals(['owner a', 'owner b', 'delegate'], unpacked)
+    }
+
+    // GROOVY-12661
+    @Test
+    void compileStaticRehydrateStoresAndIgnoresADelegate() {
+        // a @CompileStatic packed closure is proven owner-resolved, so, as with a @CompileStatic
+        // closure class, a delegate passed to rehydrate is stored and ignored rather than refused
+        String src = '''
+            class Del { String foo() { 'delegate' } }
+            @groovy.transform.CompileStatic
+            @groovy.transform.PackedClosures
+            class O {
+                String foo() { 'owner' }
+                List run(Del d) {
+                    Closure c = { -> foo() }
+                    assert c instanceof org.codehaus.groovy.runtime.PackedClosure
+                    Closure r = c.rehydrate(d, this, this)
+                    [r.delegate.is(d), r()]
+                }
+            }
+            new O().run(new Del())
+        '''
+        assertEquals([true, 'owner'], instance(src))
+    }
+
+    // GROOVY-12661
+    @Test
+    void closureWithNoFreeNameCanBeRehydratedElsewhere() {
+        // a body with no free name cannot observe a new delegate, owner or this object, so on the
+        // dynamic trust path, as on the flag's syntactic path, rehydrating it onto another object
+        // (the DSL builder idiom) keeps working and a set delegate is stored and ignored
+        String src = '''
+            @groovy.transform.PackedClosures
+            class O {
+                List run() {
+                    def c = { x -> x + 1 }
+                    assert c instanceof org.codehaus.groovy.runtime.PackedClosure
+                    def other = new Object()
+                    Closure r = c.rehydrate(other, other, other)
+                    c.delegate = other
+                    [r(41), r.owner.is(other), r.thisObject.is(other), c(1), c.delegate.is(other)]
+                }
+            }
+            new O().run()
+        '''
+        assertEquals([42, true, true, 2, true], instance(src))
+    }
+
     @Test
     void inheritedPackedClosureResolvesToItsOwnDeclaringClass() {
         // A superclass's packed closure must not dispatch to a same-named hoisted method that a
@@ -252,6 +559,221 @@ final class PackedClosuresTransformTest {
         assertEquals([101], b.bar())
     }
 
+    // GROOVY-12666
+    @Test
+    void compileStaticRehydrateDispatchesToTheNewThisObject() {
+        // a @CompileStatic closure class runs its body against getThisObject(), so a copy rehydrated
+        // with another this object reads that object's members, and throws ClassCastException when
+        // called if the object is not an instance of the enclosing class; the packed body kept
+        // running against the receiver it was created with. Each shape is compared with the
+        // closure class compiled from the same literal.
+        String src = '''
+            import groovy.transform.CompileStatic
+            import groovy.transform.PackedClosures
+            class D { String toString() { 'D' } }
+            @CompileStatic
+            @PackedClosures
+            class O {
+                static final String CONST = 'const'
+                String name
+                String foo() { 'foo ' + name }
+                static String sfoo() { 'sfoo' }
+                String toString() { 'O:' + name }
+                class Inner { String toString() { 'inner ' + O.this.name } }
+                static Object attempt(Closure c, Object t, List args) {
+                    Closure r = c.rehydrate(null, t, t)
+                    try {
+                        switch (args.size()) {
+                            case 0: return r.call()
+                            case 1: return r.call(args[0])
+                            case 2: return r.call(args[0], args[1])
+                            default: return r.call(args[0], args[1], args[2])
+                        }
+                    } catch (ClassCastException e) {
+                        'CCE'
+                    }
+                }
+                Map<String, Closure> packed() {
+                    int n = 0
+                    Closure c1 = { -> foo() }, c2 = { -> name }, c3 = { -> this }, c4 = { -> n++; foo() + n }
+                    Closure c5 = { String x -> x + foo() }, c6 = { String x, String y -> x + y + name }
+                    Closure c7 = { String x, String y, String z -> x + y + z + name }, c8 = { it.toString() + name }
+                    Closure c9 = { -> [1].collect { Integer i -> name } }, c10 = { -> new Inner().toString() }
+                    Closure c11 = { -> toString() }, c12 = { -> inspect() }, c13 = { -> sfoo() }, c14 = { -> CONST + 42 }
+                    Closure c15 = { -> [1, 2].collect { Integer i -> i * 2 } }, c16 = { -> sprintf('%s', 'x') }
+                    [foo: c1, name: c2, self: c3, written: c4, one: c5, two: c6, three: c7, it: c8, nested: c9,
+                     inner: c10, objectMethod: c11, extension: c12, staticCall: c13, constant: c14, nestedFree: c15,
+                     printf: c16]
+                }
+                @PackedClosures(mode = PackedClosures.PackMode.DISABLED)
+                Map<String, Closure> unpacked() {
+                    int n = 0
+                    Closure c1 = { -> foo() }, c2 = { -> name }, c3 = { -> this }, c4 = { -> n++; foo() + n }
+                    Closure c5 = { String x -> x + foo() }, c6 = { String x, String y -> x + y + name }
+                    Closure c7 = { String x, String y, String z -> x + y + z + name }, c8 = { it.toString() + name }
+                    Closure c9 = { -> [1].collect { Integer i -> name } }, c10 = { -> new Inner().toString() }
+                    Closure c11 = { -> toString() }, c12 = { -> inspect() }, c13 = { -> sfoo() }, c14 = { -> CONST + 42 }
+                    Closure c15 = { -> [1, 2].collect { Integer i -> i * 2 } }, c16 = { -> sprintf('%s', 'x') }
+                    [foo: c1, name: c2, self: c3, written: c4, one: c5, two: c6, three: c7, it: c8, nested: c9,
+                     inner: c10, objectMethod: c11, extension: c12, staticCall: c13, constant: c14, nestedFree: c15,
+                     printf: c16]
+                }
+            }
+            class P extends O {}
+            def a = new O(name: 'a')
+            def targets = [new O(name: 'b'), new P(name: 'p'), new D()]
+            def args = [one: ['x'], two: ['x', 'y'], three: ['x', 'y', 'z'], it: ['i']]
+            def packed = a.packed(), unpacked = a.unpacked()
+            assert packed.values().every { it instanceof org.codehaus.groovy.runtime.PackedClosure }
+            assert !unpacked.values().any { it instanceof org.codehaus.groovy.runtime.PackedClosure }
+            def results = { Map<String, Closure> cs -> cs.collectEntries { k, c -> [k, targets.collect { O.attempt(c, it, args[k] ?: []) }] } }
+            [results(packed), results(unpacked)]
+        '''
+        def (packed, unpacked) = instance(src)
+        assertEquals(['foo b', 'foo p', 'CCE'], packed.foo)
+        assertEquals(['b', 'p', 'CCE'], packed.name)
+        assertEquals(['const42', 'const42', 'const42'], packed.constant)
+        assertEquals(['O:b', 'O:p', 'D'], unpacked.extension)
+        unpacked.each { k, v ->
+            if (k == 'objectMethod') {
+                // the closure class calls a method of Object on a foreign this object uncast; the
+                // hoisted body can only call it on an instance of the enclosing class, so it fails
+                assertEquals(v[0..1] + 'CCE', packed[k], k)
+            } else if (k == 'extension') {
+                // an extension method also takes the this object uncast; for a foreign one the
+                // hoisted body keeps its receiver, as the println family must keep working
+                assertEquals(v[0..1] + 'O:a', packed[k], k)
+            } else {
+                assertEquals(v, packed[k], k)
+            }
+        }
+    }
+
+    // GROOVY-12666
+    @Test
+    void rehydratedCompileStaticPackedClosureKeepsItsReceiverForNullThisObject() {
+        // dehydrate() and a null this object disconnect the closure without making it uncallable;
+        // the round trip back onto the original owner restores it
+        String src = '''
+            @groovy.transform.CompileStatic
+            @groovy.transform.PackedClosures
+            class O {
+                String name
+                String foo() { 'foo ' + name }
+                List run(O b) {
+                    Closure c = { -> foo() }
+                    assert c instanceof org.codehaus.groovy.runtime.PackedClosure
+                    Closure r = c.rehydrate(null, b, b)
+                    [c(), r(), r.dehydrate()(), c.rehydrate(null, b, null)(), r.rehydrate(null, this, this)(),
+                     r.thisObject.is(b), r.owner.is(b), c.thisObject.is(this)]
+                }
+            }
+            new O(name: 'a').run(new O(name: 'b'))
+        '''
+        assertEquals(['foo a', 'foo b', 'foo b', 'foo a', 'foo a', true, true, true], instance(src))
+    }
+
+    // GROOVY-12666
+    @Test
+    void packedClosureFromTheEarlierFactoryRehydratesOntoAnInstanceOfItsReceiverClass() {
+        // class files compiled before the compiler passed usesReceiver call the nine-argument
+        // factory: their copy takes a new this object as its receiver only when that is an instance
+        // of the receiver's class, which is always sound, and keeps the receiver otherwise
+        String src = '''
+            import org.codehaus.groovy.runtime.GeneratedDispatcher
+            import org.codehaus.groovy.runtime.ScriptBytecodeAdapter
+            class O { String name }
+            def table = { int id, Object[] all -> ((O) all[0]).name }
+            def bundle = new GeneratedDispatcher.Bundle(table as GeneratedDispatcher, null, null)
+            def make = { boolean usesReceiver ->
+                usesReceiver
+                    ? ScriptBytecodeAdapter.packedClosure(new O(name: 'a'), bundle, 0, 'm', null, new Class[0], false, false, false, true)
+                    : ScriptBytecodeAdapter.packedClosure(new O(name: 'a'), bundle, 0, 'm', null, new Class[0], false, false, false)
+            }
+            def b = new O(name: 'b'), d = new Object()
+            def attempt = { Closure c, Object t -> try { c.rehydrate(null, t, t)() } catch (ClassCastException e) { 'CCE' } }
+            [attempt(make(false), b), attempt(make(false), d), attempt(make(true), b), attempt(make(true), d)]
+        '''
+        assertEquals(['b', 'a', 'b', 'CCE'], instance(src))
+    }
+
+    // GROOVY-12666
+    @Test
+    void closureCreatedOnASubclassInstanceRehydratesOntoAnInstanceOfTheEnclosingClass() {
+        // a closure created by an inherited method of a subclass instance has that instance as its
+        // receiver; rehydrated onto an instance of the enclosing class that is not a subclass
+        // instance, the closure class uses the new this object, so the copy must take it even where
+        // the body is not marked as using its receiver (an extension method on the implicit this)
+        String src = '''
+            import groovy.transform.CompileStatic
+            import groovy.transform.PackedClosures
+            @CompileStatic
+            @PackedClosures
+            class O {
+                String name
+                String foo() { 'foo ' + name }
+                String toString() { 'O:' + name }
+                Map<String, Closure> packed() {
+                    Closure c1 = { -> foo() }, c2 = { -> name }, c3 = { -> inspect() }
+                    [foo: c1, name: c2, extension: c3]
+                }
+                @PackedClosures(mode = PackedClosures.PackMode.DISABLED)
+                Map<String, Closure> unpacked() {
+                    Closure c1 = { -> foo() }, c2 = { -> name }, c3 = { -> inspect() }
+                    [foo: c1, name: c2, extension: c3]
+                }
+            }
+            class P extends O {}
+            def a = new P(name: 'a'), b = new O(name: 'b')
+            def packed = a.packed(), unpacked = a.unpacked()
+            assert packed.values().every { it instanceof org.codehaus.groovy.runtime.PackedClosure }
+            assert !unpacked.values().any { it instanceof org.codehaus.groovy.runtime.PackedClosure }
+            def results = { Map<String, Closure> cs -> cs.collectEntries { k, c -> [k, c.rehydrate(null, b, b)()] } }
+            [results(packed), results(unpacked)]
+        '''
+        def (packed, unpacked) = instance(src)
+        assertEquals([foo: 'foo b', name: 'b', extension: 'O:b'], unpacked)
+        assertEquals(unpacked, packed)
+    }
+
+    // GROOVY-12666
+    @Test
+    void rehydrateKeepsTheReceiverForAThisObjectThatIsNotAnInstanceOfTheHostingClass() {
+        // the class hosting the hoisted method is the nested class, not its top-level class, so an
+        // instance of the top-level class is not one of it; and creating an instance of a static
+        // nested class does not use the receiver. Rehydrated onto either object, the closure class
+        // never touches its this object, so the copy must keep running against its receiver
+        String src = '''
+            import groovy.transform.CompileStatic
+            import groovy.transform.PackedClosures
+            class Outer {
+                @CompileStatic
+                @PackedClosures
+                static class N {
+                    static class S { String toString() { 'S' } }
+                    Map<String, Closure> packed() {
+                        Closure c1 = { -> [1, 2].collect { Integer i -> i * 2 } }, c2 = { -> new S().toString() }
+                        [free: c1, staticNested: c2]
+                    }
+                    @PackedClosures(mode = PackedClosures.PackMode.DISABLED)
+                    Map<String, Closure> unpacked() {
+                        Closure c1 = { -> [1, 2].collect { Integer i -> i * 2 } }, c2 = { -> new S().toString() }
+                        [free: c1, staticNested: c2]
+                    }
+                }
+            }
+            def n = new Outer.N(), targets = [new Outer(), new Object()]
+            def packed = n.packed(), unpacked = n.unpacked()
+            assert packed.values().every { it instanceof org.codehaus.groovy.runtime.PackedClosure }
+            assert !unpacked.values().any { it instanceof org.codehaus.groovy.runtime.PackedClosure }
+            def results = { Map<String, Closure> cs -> cs.collectEntries { k, c -> [k, targets.collect { c.rehydrate(it, it, it)() }] } }
+            [results(packed), results(unpacked)]
+        '''
+        def (packed, unpacked) = instance(src)
+        assertEquals([free: [[2, 4], [2, 4]], staticNested: ['S', 'S']], unpacked)
+        assertEquals(unpacked, packed)
+    }
+
     @Test
     void capturedLocalShadowingAFieldIsReboundToTheLocalNotTheField() {
         // The captured 'base' is a local that shadows the field of the same name (the one form of
@@ -264,6 +786,260 @@ final class PackedClosuresTransformTest {
             }'''
         assertEquals(['C'], generatedClassNames(src))          // the closure packs (no closure class)
         assertEquals([101, 102], instance(src + '\n new C()').m())  // captured local 100, not field 999
+    }
+
+    /** Dynamic packing owner with helpers that call a closure argument and report whether it was packed. */
+    private static final String DYNAMIC_CLOSURE_RECEIVER_OWNER = '''
+        import org.codehaus.groovy.runtime.PackedClosure
+        @groovy.transform.PackedClosures
+        class R {
+            String toString() { 'R' }
+            static List call0(Closure c) { [c(), c] }
+            static List call1(Closure c) { [c(2), c] }
+            static List packed(List results) { results.collect { it[1] instanceof PackedClosure } }
+    '''
+
+    // GROOVY-12663
+    @Test
+    void dynamicClosuresCallingClosureMethodsDecline() {
+        // ClosureMetaClass resolves the methods Closure declares (and doCall) against the closure
+        // itself; a hoisted body called them on R (MissingMethodException, or Object.clone()). The
+        // same holds for the maximumNumberOfParameters and parameterTypes properties.
+        def r = instance(DYNAMIC_CLOSURE_RECEIVER_OWNER + '''
+            List m() {
+                def a = call0 { -> memoize() }
+                def b = call1 { x -> curry(1) }
+                def c = call0 { -> dehydrate() }
+                def d = call0 { -> rehydrate(null, null, null) }
+                def e = call0 { -> asWritable() }
+                def f = call0 { -> clone() }
+                def g = call0 { -> trampoline() }
+                def h = call0 { -> rightShift { it } }
+                def i = call1 { int x -> x > 0 ? call(x - 1) : 'done' }
+                def j = call1 { int x -> x > 0 ? doCall(x - 1) : 'done' }
+                def k = call1 { int x -> maximumNumberOfParameters }
+                def l = call1 { int x -> parameterTypes }
+                [[a[0] instanceof Closure, b[0] instanceof Closure, c[0].getClass() == c[1].getClass(),
+                  d[0].getClass() == d[1].getClass(), e[0] instanceof Writable, f[0].getClass() == f[1].getClass(),
+                  g[0] instanceof Closure, h[0] instanceof Closure, i[0], j[0], k[0], l[0] as List],
+                 packed([a, b, c, d, e, f, g, h, i, j, k, l])]
+            }
+        }
+        new R()
+        ''')
+        assertEquals([[true] * 8 + ['done', 'done', 1, [int]], [false] * 12], r.m())
+    }
+
+    // GROOVY-12663
+    @Test
+    void dynamicClosuresCallingObjectMethodsInANestedClosureDecline() {
+        // In a nested closure, toString(), hashCode(), equals(), getClass() and the GDK methods try the
+        // owner first, the enclosing closure, which answers them itself. A nested closure in a hoisted
+        // body has R as its owner, so they reached R. Those outer closures stay classes; calls that
+        // resolve to R anyway still pack.
+        def r = instance(DYNAMIC_CLOSURE_RECEIVER_OWNER + '''
+            List nested() {
+                def a = call0 { -> { -> toString() }() }
+                def b = call0 { -> { -> hashCode() }() }
+                def c = call0 { -> { -> equals(this) }() }
+                def d = call0 { -> { -> getClass() }() }
+                def e = call0 { -> { -> with { it } }() }
+                def f = call0 { -> { -> is(this) }() }
+                def g = call0 { -> [1].collect { toString() }[0] }
+                [[a[0] == a[1].toString(), b[0] == b[1].hashCode(), c[0], d[0] == d[1].getClass(), e[0].is(e[1]), f[0],
+                  g[0] == g[1].toString()], packed([a, b, c, d, e, f, g])]
+            }
+            List ownerResolved() {
+                def a = call0 { -> toString() }
+                def b = call0 { -> getClass() }
+                def c = call0 { -> is(this) }
+                def d = call0 { -> { -> memoize() }() }
+                def e = call0 { -> { -> { -> toString() }() }() }
+                def f = call0 { -> [1].each { print('') }; 'p' }
+                [[a[0], b[0], c[0], d[0] instanceof Closure, e[0] != 'R', f[0]], packed([a, b, c, d, e, f])]
+            }
+        }
+        new R()
+        ''')
+        assertEquals([[true, true, false, true, true, false, true], [false] * 7], r.nested())
+        assertEquals([['R', r.getClass(), true, true, true, 'p'], [true] * 6], r.ownerResolved())
+    }
+
+    // GROOVY-12663
+    @Test
+    void strictModeReportsDynamicClosureReceiverDecline() {
+        String src = '''import groovy.transform.PackedClosures
+            import groovy.transform.PackedClosures.PackMode
+            @PackedClosures(mode = PackMode.STRICT)
+            class X { def m() { def c = { -> memoize() }; c() } }'''
+        def e = assertThrows(MultipleCompilationErrorsException) { generatedClassNames(src) }
+        assertTrue(e.message.contains('calls a method on a closure object'), e.message)
+    }
+
+    // GROOVY-12658
+    @Test
+    void packedClosureReadsAndWritesOwnerPropertiesThroughAccessors() {
+        // the hoisted body is a method of the owner, but "e" and "this.e" must still go through
+        // getE()/setE() as in the closure class, not straight to the field; "this.@e" stays direct
+        def bodies = [
+            '{ -> e }()'          : '[1, 1, 1, 0]',
+            '{ -> this.e }()'     : '[1, 1, 1, 0]',
+            '[1].collect { e }[0]': '[1, 1, 1, 0]',
+            '{ -> e = 5 }()'      : '[5, 5, 0, 1]',
+            '{ -> this.e = 5 }()' : '[5, 5, 0, 1]',
+            '{ -> e += 1 }()'     : '[2, 2, 1, 1]',
+            '{ -> this.e += 1 }()': '[2, 2, 1, 1]',
+            '{ -> e++ }()'        : '[1, 2, 1, 1]',
+            '{ -> ++e }()'        : '[2, 2, 1, 1]',
+            '{ -> this.e-- }()'   : '[1, 0, 1, 1]',
+            '{ -> --this.e }()'   : '[0, 0, 1, 1]',
+            '{ -> this.@e }()'    : '[1, 1, 0, 0]',
+            '{ -> this.@e++ }()'  : '[1, 2, 0, 0]',
+        ]
+        ['', '@groovy.transform.CompileStatic'].each { mode ->
+            bodies.each { body, expected ->
+                String src = """$mode
+                    @groovy.transform.PackedClosures
+                    class Box {
+                        int gets, sets
+                        BigDecimal e = 1
+                        BigDecimal getE() { gets++; e }
+                        void setE(BigDecimal v) { sets++; e = v }
+                        def m() { def r = $body; [r, this.@e, gets, sets] }
+                    }"""
+                assertEquals(['Box'], generatedClassNames(src), "[$mode] $body should pack")
+                assertEquals(expected, instance(src + '\n new Box().m()').toString(), "[$mode] $body")
+            }
+        }
+    }
+
+    // GROOVY-12658
+    @Test
+    void packedClosureReachesAccessorsOverriddenOrDeclaredElsewhere() {
+        // a subclass override of a generated accessor, a static property and a boolean "is" getter
+        // are reached exactly as from the closure class
+        ['', '@groovy.transform.CompileStatic'].each { mode ->
+            String src = """$mode
+                @groovy.transform.PackedClosures
+                class A {
+                    BigDecimal x = 1
+                    def m() { [{ -> x }(), { -> this.x }(), { -> x = 3 }(), this.@x] }
+                }
+                $mode
+                class B extends A {
+                    BigDecimal getX() { 2 }
+                    void setX(BigDecimal v) { super.setX(v * 10) }
+                }
+                $mode
+                @groovy.transform.PackedClosures
+                class S {
+                    static int gets, sets
+                    static BigDecimal e = 1
+                    static BigDecimal getE() { gets++; e }
+                    static void setE(BigDecimal v) { sets++; e = v }
+                    static m() { def r = { -> e++ }(); [r, e, gets, sets] }
+                }
+                $mode
+                @groovy.transform.PackedClosures
+                class C {
+                    int gets
+                    boolean ok = true
+                    boolean isOk() { gets++; ok }
+                    def m() { def r = { -> ok }(); [r, gets] }
+                }"""
+            assertEquals(['A', 'B', 'C', 'S'], generatedClassNames(src), "[$mode] every closure should pack")
+            assertEquals('[2, 2, 3, 30]', instance(src + '\n new B().m()').toString(), "[$mode] subclass accessors")
+            assertEquals('[1, 2, 1, 1]', instance(src + '\n S.m()').toString(), "[$mode] static accessors")
+            assertEquals([true, 1], instance(src + '\n new C().m()'), "[$mode] is-getter")
+        }
+    }
+
+    // GROOVY-12658
+    @Test
+    void dynamicPackedClosureReadsOwnerPropertyThroughGetProperty() {
+        String src = '''@groovy.transform.PackedClosures
+            class G {
+                def x = 1
+                def getProperty(String name) { name == 'x' ? 42 : super.getProperty(name) }
+                def m() { [{ -> x }(), { -> this.x }()] }
+            }'''
+        assertEquals(['G'], generatedClassNames(src))
+        assertEquals([42, 42], instance(src + '\n new G().m()'))
+    }
+
+    // GROOVY-12655
+    @Test
+    void bindingAndDynamicPropertyStoresAreDeclinedAtCompileTime() {
+        // A bare name that is not a local is stored through the MOP: to the script binding (also
+        // where a script method stores an @Field), or to a dynamic property of the owner. Code
+        // outside the method reads it there, so the store is an escape like a field store, and
+        // setting a delegate on the stored closure must not fail. A store to a local still packs.
+        String script = '''import groovy.transform.Field
+            @Field Closure fieldHandler
+            @groovy.transform.PackedClosures
+            int install() {
+                handler = { x -> x + 1 }        // binding variable
+                fieldHandler = { x -> x + 2 }   // @Field from a script method
+                def local = { x -> x * 2 }      // local -> packs
+                local(3)
+            }
+            assert install() == 6
+            handler.delegate = 'd'
+            fieldHandler.delegate = 'd'
+            [handler(1), fieldHandler(1)]'''
+        assertEquals(2, closureClassCount(generatedClassNames(script)), 'the two binding stores should be declined')
+        assertEquals([2, 3], instance(script))
+
+        String src = '''@groovy.transform.PackedClosures
+            class P {
+                Map store = [:]
+                def propertyMissing(String name, value) { store[name] = value }
+                int install() {
+                    handler = { x -> x + 1 }    // dynamic property of the owner
+                    def local = { x -> x * 2 }  // local -> packs
+                    local(3)
+                }
+            }'''
+        assertEquals(1, closureClassCount(generatedClassNames(src)), 'the dynamic property store should be declined')
+        def p = instance(src + '\n new P()')
+        assertEquals(6, p.install())
+        p.store.handler.delegate = 'd'
+        assertEquals(2, p.store.handler(1))
+    }
+
+    // GROOVY-12655
+    @Test
+    void flagPathDeclinesBindingStores(@TempDir File dir) {
+        // the flag packs no-free-name closures in a script's run() and in @CompileStatic code; a
+        // binding store there is an escape too (under @CompileStatic, a binding variable compiles
+        // only when a type checking extension makes it dynamic)
+        String script = '''handler = { x -> x + 1 }   // binding variable
+            def local = { x -> x * 2 }                 // local -> packs
+            [handler.getClass().name, local.getClass().name]'''
+        new File(dir, 'BindingVariables.groovy').text = 'unresolvedVariable { var -> makeDynamic(var, CLOSURE_TYPE) }'
+        String csScript = '''@groovy.transform.CompileStatic(extensions = 'BindingVariables.groovy')
+            List install() {
+                handler = { int x -> x + 1 }       // binding variable
+                def local = { int x -> x * 2 }     // local -> packs
+                [handler.getClass().name, local.getClass().name]
+            }
+            install()'''
+        String prev = System.getProperty(CompilerConfiguration.CLOSURE_PACKING)
+        System.setProperty(CompilerConfiguration.CLOSURE_PACKING, 'true')
+        try {
+            def names = instance(script)
+            assertTrue(names[0].contains('_run_closure'), "the binding store should keep its class: $names")
+            assertTrue(names[1].contains('PackedClosure'), "the local store should pack: $names")
+
+            def shell = new GroovyShell()
+            shell.classLoader.addClasspath(dir.path)
+            names = shell.evaluate(csScript)
+            assertTrue(names[0].contains('_install_closure'), "the binding store should keep its class: $names")
+            assertTrue(names[1].contains('PackedClosure'), "the local store should pack: $names")
+        } finally {
+            if (prev != null) System.setProperty(CompilerConfiguration.CLOSURE_PACKING, prev)
+            else System.clearProperty(CompilerConfiguration.CLOSURE_PACKING)
+        }
     }
 
     /** Source with one closure that packs and one that declines (a with{} delegate DSL), at the given mode. */
@@ -357,6 +1133,49 @@ final class PackedClosuresTransformTest {
             if (prev != null) System.setProperty(CompilerConfiguration.CLOSURE_PACKING, prev)
             else System.clearProperty(CompilerConfiguration.CLOSURE_PACKING)
         }
+    }
+
+    // GROOVY-12652
+    @Test
+    void modeOnAConstructorGovernsItsBodyAndInitializers() {
+        // a constructor is a scope of its own, like a method (most specific wins),
+        // and its scope includes the instance initializer blocks inlined into it
+        ['', '@groovy.transform.TypeChecked', '@groovy.transform.CompileStatic'].each { annotation ->
+            String src = """import groovy.transform.PackedClosures
+                import groovy.transform.PackedClosures.PackMode
+                $annotation
+                class A {
+                    List<Integer> r
+                    @PackedClosures A(List<Integer> xs) { r = xs.collect { Integer x -> x * 2 } } // packs
+                    A() { r = [1].collect { Integer x -> x } }                                    // not in scope
+                }
+                $annotation
+                @PackedClosures
+                class D {
+                    List<Integer> r
+                    @PackedClosures(mode = PackMode.DISABLED) D(List<Integer> xs) { r = xs.collect { Integer x -> x } }
+                }"""
+            assertEquals(['A$_closure1', 'D$_closure1'], generatedClassNames(src).findAll { it.contains('_closure') },
+                    "[$annotation] only the out-of-scope and DISABLED constructors' closures keep a class")
+            assertEquals([2, 4], instance(src + '\n new A([1, 2])').r)
+        }
+
+        String strict = '''import groovy.transform.PackedClosures
+            import groovy.transform.PackedClosures.PackMode
+            class S { @PackedClosures(mode = PackMode.STRICT) S(List<Closure> sink) { sink << { x -> x } } }'''
+        def e = assertThrows(MultipleCompilationErrorsException) { generatedClassNames(strict) }
+        assertTrue(e.message.contains('not packed') && e.message.contains('escapes'), e.message)
+
+        def ws = warnings('''import groovy.transform.PackedClosures
+            import groovy.transform.PackedClosures.PackMode
+            @PackedClosures(mode = PackMode.WARN)
+            class W {
+                Closure f, g = { x -> x };
+                { f = { x -> x } }
+            }''')*.message
+        assertEquals(2, ws.size(), "expected the initializer block and field initializer declines: $ws")
+        assertTrue(ws.any { it.contains('escapes its method') }, "the block's field store escapes: $ws")
+        assertTrue(ws.any { it.contains('initialises a field') }, "the field initializer keeps its reason: $ws")
     }
 
     @Test
@@ -523,6 +1342,215 @@ final class PackedClosuresTransformTest {
         assertEquals(42, instance(src + '\n new C()').result)
     }
 
+    // GROOVY-12659
+    @Test
+    void conditionalAndWrappedClosuresEscapeWhereTheirValueDoes() {
+        // A literal that is a branch of a ternary or elvis is the value whenever that branch is taken.
+        // curry/rcurry/ncurry, asWritable, trampoline and the memoize family wrap it and may pass a
+        // delegate set on the wrapper on to it; clone, dehydrate and rehydrate copy it, and a copy of
+        // a packed closure is still packed. So the literal escapes wherever the conditional or the
+        // call result does. A coercion to a SAM type that Closure does not implement yields a proxy,
+        // not a closure, so it still packs, as does a conditional or curried literal that is only
+        // called in the method.
+        ['', '@groovy.transform.TypeChecked'].each { mode ->
+            String src = """class Holder { Closure handler; List<Closure> list = [] }
+                @groovy.transform.PackedClosures $mode
+                class E {
+                    Closure field
+                    Object any
+                    Comparator order
+                    void ternary(Holder h, boolean b) { h.handler = b ? { Integer x -> x + 1 } : null }           // property
+                    void elvis(Holder h, Closure c)   { h.handler = c ?: { Integer x -> x + 1 } }                 // property
+                    Closure returned(boolean b)       { return b ? { Integer x -> x + 1 } : null }               // returned
+                    Closure implicit(Closure c)       { c ?: { Integer x -> x + 1 } }                             // implicit return
+                    void nested(boolean b)            { field = b ? (b ? { Integer x -> x + 1 } : null) : null }  // nested, field
+                    void appended(Holder h, boolean b){ h.list << (b ? { Integer x -> x + 1 } : null) }           // appended
+                    List inList(boolean b)            { [b ? { Integer x -> x + 1 } : null] }                     // list literal
+                    Map inMap(Closure c)              { [k: c ?: { Integer x -> x + 1 }] }                        // map literal
+                    Closure curried()                 { return { Integer x, Integer y -> x + y }.curry(1) }      // returned
+                    void rcurried(Holder h)           { h.handler = { Integer x, Integer y -> x + y }.rcurry(1) } // property
+                    List ncurried()                   { [{ Integer x, Integer y -> x + y }.ncurry(0, 1)] }       // list literal
+                    Closure writable()                { { Integer x -> x + 1 }.asWritable() }                     // implicit return
+                    Closure cloned()                  { (Closure) { Integer x -> x + 1 }.clone() }                // cast of a copy
+                    Closure dehydrated()              { { Integer x -> x + 1 }.dehydrate() }
+                    Closure rehydrated()              { { Integer x -> x + 1 }.rehydrate(null, this, this) }
+                    void curriedBranch(boolean b)     { field = b ? { Integer x, Integer y -> x + y }.curry(1) : null } // branch, field
+                    void toObject()                   { any = (Object) { Integer x -> x + 1 } }                   // cast, field
+                    Closure trampolined()             { { Integer x -> x + 1 }.trampoline() }                     // implicit return
+                    Closure memoized()                { { Integer x -> x + 1 }.memoize() }
+                    Closure memoizedAtMost()          { { Integer x -> x + 1 }.memoizeAtMost(2) }
+                    void coerced()                    { order = { a, b -> 0 } as Comparator }                     // -> packs
+                    def local(boolean b)              { (b ? { Integer x -> x + 1 } : { Integer x -> x - 1 })(1) } // -> both pack
+                    def localCurry()                  { { Integer x, Integer y -> x + y }.curry(1)(2) }          // -> packs
+                }"""
+            def names = generatedClassNames(src)
+            assertEquals(20, closureClassCount(names), "[$mode] conditional and wrapped escapes should be declined: $names")
+
+            def (e, h) = instance(src + '\n [new E(), new Holder()]')
+            e.ternary(h, true); h.handler.delegate = 'd'
+            assertEquals(4, h.handler(3))
+            e.elvis(h, null); h.handler.delegate = 'd'
+            assertEquals(4, h.handler(3))
+            def r = e.returned(true); r.delegate = 'd'
+            assertEquals(4, r(3))
+            r = e.implicit(null); r.delegate = 'd'
+            assertEquals(4, r(3))
+            e.nested(true); e.field.delegate = 'd'
+            assertEquals(4, e.field(3))
+            e.appended(h, true); h.list*.delegate = 'd'
+            assertEquals([4], h.list*.call(3))
+            r = e.inList(true)[0]; r.delegate = 'd'
+            assertEquals(4, r(3))
+            r = e.inMap(null).k; r.delegate = 'd'
+            assertEquals(4, r(3))
+            r = e.curried(); r.delegate = 'd'
+            assertEquals(4, r(3))
+            e.rcurried(h); h.handler.delegate = 'd'
+            assertEquals(4, h.handler(3))
+            r = e.ncurried()[0]; r.delegate = 'd'
+            assertEquals(4, r(3))
+            [e.writable(), e.cloned(), e.dehydrated(), e.rehydrated()].each {
+                it.delegate = 'd'
+                assertEquals(4, it(3))
+            }
+            e.curriedBranch(true); e.field.delegate = 'd'
+            assertEquals(4, e.field(3))
+            e.toObject(); e.any.delegate = 'd'
+            assertEquals(4, e.any(3))
+            [e.trampolined(), e.memoized(), e.memoizedAtMost()].each {
+                it.delegate = 'd'
+                assertEquals(4, it(3))
+            }
+            assertEquals(2, e.local(true))
+            assertEquals(3, e.localCurry())
+        }
+    }
+
+    // GROOVY-12659
+    @Test
+    void compileStaticConditionalAndWrappedEscapesAreDeclined() {
+        String src = '''@groovy.transform.CompileStatic
+            @groovy.transform.PackedClosures
+            class S {
+                Closure field
+                Closure returned(boolean b)   { return b ? { Integer x -> x + 1 } : null }
+                Closure implicit(Closure c)   { c ?: { Integer x -> x + 1 } }
+                void toField(boolean b)       { field = b ? { Integer x -> x + 1 } : null }
+                List inList(Closure c)        { [c ?: { Integer x -> x + 1 }] }
+                Closure curried()             { return { Integer x, Integer y -> x + y }.curry(1) }
+                void writable()               { field = { Integer x -> x + 1 }.asWritable() }
+                Closure cloned()              { (Closure) { Integer x -> x + 1 }.clone() }
+                Closure memoized()            { { Integer x -> x + 1 }.memoize() }
+                int local(boolean b)          { (int) (b ? { Integer x -> x + 1 } : { Integer x -> x - 1 })(1) } // -> both pack
+                int localCurry()              { (int) { Integer x, Integer y -> x + y }.curry(1)(2) }    // -> packs
+            }'''
+        def names = generatedClassNames(src)
+        assertEquals(8, closureClassCount(names), "conditional and wrapped escapes should be declined: $names")
+
+        def s = instance(src + '\n new S()')
+        [s.returned(true), s.implicit(null), s.inList(null)[0], s.curried(), s.cloned(), s.memoized()].each {
+            it.delegate = 'd'
+            assertEquals(4, it(3))
+        }
+        s.toField(true); s.field.delegate = 'd'
+        assertEquals(4, s.field(3))
+        s.writable(); s.field.delegate = 'd'
+        assertEquals(4, s.field(3))
+        assertEquals(2, s.local(true))
+        assertEquals(3, s.localCurry())
+    }
+
+    // GROOVY-12656, GROOVY-12659
+    @Test
+    void conditionalAndWrappedOperandsOfAnEscapingCompositionAreDeclined() {
+        // A composition keeps its operands, and a ternary, cast or wrapping call in an operand keeps
+        // the literal in it, so the literal escapes wherever the composition does. The same
+        // composition only called in the method still packs.
+        ['', '@groovy.transform.TypeChecked', '@groovy.transform.CompileStatic'].each { mode ->
+            String src = """class Holder { Closure handler }
+                @groovy.transform.PackedClosures $mode
+                class E {
+                    void ternary(Holder h, Closure c, boolean b) { h.handler = c >> (b ? { Integer x -> x + 1 } : { Integer x -> x - 1 }) }
+                    Closure elvis(Closure c, Closure d)         { return (d ?: { Integer x -> x + 1 }) << c }
+                    Closure curried(Closure c)                 { c >> { Integer x, Integer y -> x + y }.curry(1) }
+                    Closure cast(Closure c)                    { c >> (Closure) { Integer x -> x + 1 } }
+                    int local(Closure c, boolean b)            { (int) (c >> (b ? { Integer x -> x + 1 } : { Integer x -> x - 1 }))(1) } // -> both pack
+                }"""
+            String name = mode ?: 'dynamic'
+            def names = generatedClassNames(src)
+            assertEquals(5, closureClassCount(names), "[$name] composed conditional and wrapped escapes should be declined: $names")
+
+            def (e, h) = instance(src + '\n [new E(), new Holder()]')
+            Closure twice = { x -> x * 2 }
+            e.ternary(h, twice, true)
+            [h.handler, e.elvis(twice, null), e.curried(twice), e.cast(twice)].each {
+                it.delegate = 'd'                        // no packed-adapter guard
+                assertEquals(7, it(3))
+            }
+            assertEquals(3, e.local(twice, true))
+        }
+    }
+
+    // GROOVY-12659
+    @Test
+    void closuresKeptByACoercionOrAnAssignmentValueEscapeWhereTheValueDoes() {
+        // as or a cast to a type the closure already is, such as Runnable or Callable (interfaces
+        // Closure implements), yields the closure itself, and the value of an assignment is its right
+        // operand. Either keeps the literal, so the literal escapes wherever the value does. A
+        // coercion to another SAM type wraps the closure in a proxy, which is not a closure, so it
+        // still packs, as does an assignment chained through locals only.
+        ['', '@groovy.transform.TypeChecked', '@groovy.transform.CompileStatic'].each { mode ->
+            String src = """import java.util.concurrent.Callable
+                class Holder { Closure handler }
+                @groovy.transform.PackedClosures $mode
+                class E {
+                    Runnable task
+                    Callable<Object> job
+                    Comparator<Integer> order
+                    void coerced()         { task = { -> 'ran' } as Runnable }                            // field
+                    void cast()            { job = (Callable<Object>) { -> 'done' } }                      // field
+                    void chained(Holder h) { Closure c; h.handler = c = { Integer x -> x + 1 } }           // property
+                    Closure returned()     { Closure c; return c = { Integer x -> x + 1 } }                // returned
+                    void sam()             { order = { Integer a, Integer b -> b <=> a } as Comparator<Integer> } // -> packs
+                    int locals(int n)      { Closure c; Closure d = c = { Integer x -> x + 1 }; (int) d(n) } // -> packs
+                }"""
+            String name = mode ?: 'dynamic'
+            def names = generatedClassNames(src)
+            assertEquals(4, closureClassCount(names), "[$name] kept closures should be declined: $names")
+
+            def (e, h) = instance(src + '\n [new E(), new Holder()]')
+            e.coerced(); e.cast(); e.chained(h); e.sam()
+            assertTrue(e.task instanceof Closure && e.job instanceof Closure, "[$name] the closure itself is stored")
+            [e.task, e.job].each { it.delegate = 'd' }   // no packed-adapter guard
+            assertEquals(['ran', 'done'], [e.task.call(), e.job.call()])
+            [h.handler, e.returned()].each {
+                it.delegate = 'd'
+                assertEquals(4, it(3))
+            }
+            assertEquals([3, 2, 1], [1, 2, 3].sort(false, e.order))
+            assertEquals(4, e.locals(3))
+        }
+    }
+
+    // GROOVY-12653
+    @Test
+    void captureWrittenAfterTheLiteralInAConstructorOrInitializerIsShared() {
+        // a capture written anywhere in the constructor -- here after the literal --
+        // is threaded as the shared Reference, not copied by value when the literal is created
+        ['', '@groovy.transform.TypeChecked', '@groovy.transform.CompileStatic'].each { annotation ->
+            def r = instance("""$annotation
+                @groovy.transform.PackedClosures
+                class H {
+                    Object fromCtor, fromInit;
+                    { Closure c; c = { x -> c == null ? 'stale' : 'set' }; fromInit = c(0) }
+                    H() { Closure c; c = { x -> c == null ? 'stale' : 'set' }; fromCtor = c(0) }
+                }
+                def h = new H()
+                [h.fromCtor, h.fromInit]""")
+            assertEquals(['set', 'set'], r, "[$annotation]")
+        }
+    }
+
     @Test
     void nestedClosureRecapturingReadOnlyCaptureGetsTheSharedReference() {
         // a nested closure that stays a class takes the shared groovy.lang.Reference for every
@@ -549,5 +1577,258 @@ final class PackedClosuresTransformTest {
         assertTrue(names.count { it.contains('packed') && it.contains('_closure') } >= 2,
                 "the nested map-value closures keep their classes: $names")
         assertEquals([3, 0], instance(src + '\n new N()').m())
+    }
+
+    /** Statically compiled packing owner with helpers that call a closure under a given resolve strategy. */
+    private static final String CLOSURE_RECEIVER_OWNER = '''
+        import groovy.transform.CompileStatic
+        import groovy.transform.PackedClosures
+        import java.util.function.Supplier
+        import org.codehaus.groovy.runtime.PackedClosure
+        @CompileStatic @PackedClosures
+        class R {
+            String toString() { 'R' }
+            static List<Object> self(@DelegatesTo(value=String, strategy=Closure.TO_SELF) Closure c) {
+                c.resolveStrategy = Closure.TO_SELF; c.delegate = 'd'; [c(), c]
+            }
+            static List<Object> ownerOnly(@DelegatesTo(value=String, strategy=Closure.OWNER_ONLY) Closure c) {
+                c.resolveStrategy = Closure.OWNER_ONLY; c.delegate = 'd'; [c(), c]
+            }
+            static List<Object> call0(Closure c) { [c(), c] }
+            static List<Boolean> packed(List<List<Object>> results) { results.collect { List<Object> r -> r[1] instanceof PackedClosure } }
+    '''
+
+    // GROOVY-12660
+    @Test
+    void closuresCallingObjectMethodsOnAClosureDecline() {
+        // STC resolves toString(), hashCode(), equals() and getClass() against the closure itself under
+        // TO_SELF, and against the enclosing closure in a nested closure (OWNER_FIRST, OWNER_ONLY). A
+        // hoisted body is a method of R, where the call reached R's method (TO_SELF, nested) or the
+        // nested closure got R instead of the closure as its owner (MissingPropertyException: owner).
+        // Those closures stay classes; a top-level call, resolved against R, still packs.
+        def r = instance(CLOSURE_RECEIVER_OWNER + '''
+            List<Object> toSelf() {
+                def a = self { -> toString() }
+                def b = self { -> hashCode() }
+                def c = self { -> equals(this) }
+                def d = self { -> getClass() }
+                [[a[0] == a[1].toString(), b[0] == b[1].hashCode(), c[0], d[0] == d[1].getClass()], packed([a, b, c, d])]
+            }
+            List<Object> nested() {
+                def a = call0 { -> { -> toString() }() }
+                def b = call0 { -> { -> hashCode() }() }
+                def c = call0 { -> { -> equals(this) }() }
+                def d = call0 { -> { -> getClass() }() }
+                def e = ownerOnly { -> { -> toString() }() }
+                def f = call0 { -> { -> { -> toString() }() }() }
+                [[a[0] == a[1].toString(), b[0] == b[1].hashCode(), c[0], d[0] == d[1].getClass(), e[0] == e[1].toString(),
+                  f[0] != 'R'], packed([a, b, c, d, e, f])]
+            }
+            List<Object> nestedProperties() {
+                def a = call0 { -> { -> owner }() }
+                def b = call0 { -> { -> delegate }() }
+                def c = call0 { -> { -> thisObject }() }
+                [[a[0].is(a[1]), b[0].is(b[1]), c[0].is(this)], packed([a, b, c])]
+            }
+            List<Object> ownerResolved() {
+                def a = call0 { -> toString() }
+                def b = call0 { -> getClass() }
+                def c = call0 { -> Supplier<String> s = () -> toString(); s.get() }
+                [[a[0], b[0], c[0]], packed([a, b, c])]
+            }
+        }
+        new R()
+        ''')
+        assertEquals([[true, true, false, true], [false] * 4], r.toSelf())
+        assertEquals([[true, true, false, true, true, true], [false] * 6], r.nested())
+        assertEquals([[true, true, true], [false] * 3], r.nestedProperties())
+        assertEquals([['R', r.getClass(), 'R'], [true] * 3], r.ownerResolved())
+    }
+
+    // GROOVY-12660
+    @Test
+    void closuresCallingClosureMethodsDecline() {
+        // memoize(), dehydrate() and the other methods Closure declares resolve against the closure
+        // itself; a hoisted body called them on R (VerifyError: R is not assignable to Closure)
+        def r = instance(CLOSURE_RECEIVER_OWNER + '''
+            List<Object> m() {
+                def a = call0 { -> memoize() }
+                def b = call0 { -> dehydrate() }
+                def c = call0 { -> rehydrate(null, null, null) }
+                def d = call0 { -> asWritable() }
+                def e = call0 { -> clone() }
+                def f = self { -> memoizeAtMost(2) }
+                [[a[0] instanceof Closure, b[0].getClass() == b[1].getClass(), c[0].getClass() == c[1].getClass(),
+                  d[0] instanceof Writable, e[0].getClass() == e[1].getClass(), f[0] instanceof Closure],
+                 packed([a, b, c, d, e, f])]
+            }
+        }
+        new R()
+        ''')
+        assertEquals([[true] * 6, [false] * 6], r.m())
+    }
+
+    // GROOVY-12660
+    @Test
+    void strictModeReportsClosureReceiverDecline() {
+        String src = '''import groovy.transform.CompileStatic
+            import groovy.transform.PackedClosures
+            import groovy.transform.PackedClosures.PackMode
+            @CompileStatic @PackedClosures(mode = PackMode.STRICT)
+            class X {
+                static Object self(@DelegatesTo(value=String, strategy=Closure.TO_SELF) Closure c) { c() }
+                Object m() { self { -> toString() } }
+            }'''
+        def e = assertThrows(MultipleCompilationErrorsException) { generatedClassNames(src) }
+        assertTrue(e.message.contains('calls a method on a closure object'), e.message)
+    }
+
+    // GROOVY-12656
+    @Test
+    void composedClosuresEscapeWhereTheCompositionDoes() {
+        // c >> { ... } and { ... } << c build a ComposedClosure that keeps a clone of the literal (a
+        // clone of a packed closure is still packed) and passes a delegate set on it on to the clone.
+        // A composition stored, returned, appended or placed in a collection literal therefore takes
+        // the literal with it, so the literal is declined; a composition used only locally still packs.
+        ['', '@groovy.transform.TypeChecked'].each { mode ->
+            String src = """class Holder { Closure handler; List<Closure> list = [] }
+                @groovy.transform.PackedClosures $mode
+                class E {
+                    Closure field
+                    void right(Holder h, Closure c)    { h.handler = c >> { Integer x -> x + 1 } }         // property, right operand
+                    void left(Holder h, Closure c)     { h.handler = { Integer x -> x + 1 } << c }         // property, left of <<
+                    Closure returned(Closure c)        { return { Integer x -> x + 1 } << c }              // returned
+                    Closure implicit(Closure c)        { c >> { Integer x -> x + 1 } }                     // implicit return
+                    void nested(Closure c)             { field = c >> ({ Integer x -> x + 1 } >> c) }      // nested, field
+                    void appended(Holder h, Closure c) { h.list << (c >> { Integer x -> x + 1 }) }         // appended
+                    List inList(Closure c)             { [c >> { Integer x -> x + 1 }] }                   // list literal
+                    Map inMap(Closure c)               { [k: c >> { Integer x -> x + 1 }] }                // map literal
+                    void call(Holder h, Closure c)     { h.handler = c.rightShift { Integer x -> x + 1 } } // method form
+                    int local(Closure c, int n)        { (int) (c >> { Integer x -> x + 1 })(n) }         // local -> packs
+                    int localVar(Closure c, int n)     { Closure d = { Integer x -> x + 1 } << c; (int) d(n) } // local -> packs
+                }"""
+            def names = generatedClassNames(src)
+            assertEquals(9, closureClassCount(names), "[$mode] composed escapes should be declined: $names")
+
+            def (e, h) = instance(src + '\n [new E(), new Holder()]')
+            Closure twice = { x -> x * 2 }
+            e.right(h, twice); h.handler.delegate = 'd'
+            assertEquals(7, h.handler(3))                // twice, then + 1
+            e.left(h, twice); h.handler.delegate = 'd'
+            assertEquals(7, h.handler(3))
+            def r = e.returned(twice); r.delegate = 'd'
+            assertEquals(7, r(3))
+            r = e.implicit(twice); r.delegate = 'd'
+            assertEquals(7, r(3))
+            e.nested(twice); e.field.delegate = 'd'
+            assertEquals(14, e.field(3))                 // twice, + 1, twice
+            e.appended(h, twice); h.list*.delegate = 'd'
+            assertEquals([7], h.list*.call(3))
+            r = e.inList(twice)[0]; r.delegate = 'd'
+            assertEquals(7, r(3))
+            r = e.inMap(twice).k; r.delegate = 'd'
+            assertEquals(7, r(3))
+            e.call(h, twice); h.handler.delegate = 'd'
+            assertEquals(7, h.handler(3))
+            assertEquals(7, e.local(twice, 3))
+            assertEquals(7, e.localVar(twice, 3))
+        }
+    }
+
+    // GROOVY-12656
+    @Test
+    void compileStaticComposedEscapesAreDeclined() {
+        // static compilation turns c >> { ... } into c.rightShift({ ... }) before class generation;
+        // the escape walk follows that form into a return, a field store and a collection literal
+        String src = '''@groovy.transform.CompileStatic
+            @groovy.transform.PackedClosures
+            class S {
+                Closure field
+                Closure returned(Closure c) { return { Integer x -> x + 1 } << c }
+                Closure implicit(Closure c) { c >> { Integer x -> x + 1 } }
+                void toField(Closure c)     { field = c >> { Integer x -> x + 1 } }
+                List inList(Closure c)      { [c >> { Integer x -> x + 1 }] }
+                int local(Closure c, int n) { (int) (c >> { Integer x -> x + 1 })(n) }
+            }'''
+        def names = generatedClassNames(src)
+        assertEquals(4, closureClassCount(names), "composed escapes should be declined: $names")
+
+        def s = instance(src + '\n new S()')
+        Closure twice = { x -> x * 2 }
+        def r = s.returned(twice); r.delegate = 'd'
+        assertEquals(7, r(3))
+        r = s.implicit(twice); r.delegate = 'd'
+        assertEquals(7, r(3))
+        s.toField(twice); s.field.delegate = 'd'
+        assertEquals(7, s.field(3))
+        r = s.inList(twice)[0]; r.delegate = 'd'
+        assertEquals(7, r(3))
+        assertEquals(7, s.local(twice, 3))
+    }
+
+    // GROOVY-12656
+    @Test
+    void namedCompositionMethodsEscapeWhereTheCompositionDoes() {
+        // andThen and compose are the named forms of >> and <<, and andThenSelf and composeSelf
+        // compose the receiver with itself; each result keeps the literal, so the literal escapes
+        // wherever the result does. The same composition only called in the method still packs.
+        ['', '@groovy.transform.TypeChecked', '@groovy.transform.CompileStatic'].each { mode ->
+            String src = """class Holder { Closure handler }
+                @groovy.transform.PackedClosures $mode
+                class E {
+                    void andThen(Holder h, Closure c) { h.handler = c.andThen { Integer x -> x + 1 } }  // property, argument
+                    Closure compose(Closure c)        { { Integer x -> x + 1 }.compose(c) }             // implicit return, receiver
+                    Closure andThenSelf()             { return { Integer x -> x + 1 }.andThenSelf() }   // returned
+                    List composeSelf()                { [{ Integer x -> x + 1 }.composeSelf(2)] }       // list literal
+                    int local(Closure c, int n)       { (int) c.andThen({ Integer x -> x + 1 })(n) }    // -> packs
+                }"""
+            String name = mode ?: 'dynamic'
+            def names = generatedClassNames(src)
+            assertEquals(4, closureClassCount(names), "[$name] named composition escapes should be declined: $names")
+
+            def (e, h) = instance(src + '\n [new E(), new Holder()]')
+            Closure twice = { x -> x * 2 }
+            e.andThen(h, twice)
+            [h.handler, e.compose(twice)].each {
+                it.delegate = 'd'                        // no packed-adapter guard
+                assertEquals(7, it(3))                   // twice, then + 1
+            }
+            def r = e.andThenSelf(); r.delegate = 'd'
+            assertEquals(5, r(3))
+            r = e.composeSelf()[0]; r.delegate = 'd'
+            assertEquals(6, r(3))                        // + 1 three times
+            assertEquals(7, e.local(twice, 3))
+        }
+    }
+
+    // GROOVY-12654
+    @Test
+    void compileStaticPackedClosureInStaticMethodCallsClassMethodsOnTheClass() {
+        // a closure in a static method has the class as its owner, so toString(), getName() and
+        // the other methods of Class are called on it; the hoisted body is a static method, where
+        // the call loaded local slot 0 (a VerifyError, or a captured value) instead of the class
+        String src = '''import groovy.transform.CompileStatic
+            @CompileStatic
+            @groovy.transform.PackedClosures
+            class S {
+                String toString() { 'S' }
+                static Object string()               { { -> toString() }() }
+                static Object name()                 { { -> getName() }() }
+                static Object captured(String s)     { { -> getSimpleName() + s }() }
+                static Object parameter()            { { String p -> getSimpleName() + p }('!') }
+                static Object implicit(List<String> xs) { xs.collect { getSimpleName() + it } }
+                static Object objectMethods()        { { -> [getClass(), hashCode() == S.hashCode()] }() }
+                Object instance()                    { { -> toString() }() }
+            }'''
+        assertEquals(['S'], generatedClassNames(src))   // every closure packs, no class remains
+
+        def s = instance(src + '\n new S()')
+        assertEquals('class S', s.string())
+        assertEquals('S', s.name())
+        assertEquals('Sx', s.captured('x'))
+        assertEquals('S!', s.parameter())
+        assertEquals(['Sa', 'Sb'], s.implicit(['a', 'b']))
+        assertEquals([Class, true], s.objectMethods())
+        assertEquals('S', s.instance())
     }
 }

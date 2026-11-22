@@ -30,6 +30,9 @@ import javafx.scene.chart.PieChart
  */
 class PieChartFactory extends NodeFactory {
 
+    /**
+     * Creates a factory for {@link PieChart}.
+     */
     PieChartFactory() {
         super(PieChart)
     }
@@ -43,6 +46,13 @@ class PieChartFactory extends NodeFactory {
         super.onHandleNodeAttributes(builder, node, attributes)
     }
 
+    /**
+     * Converts {@code data} to pie slices. A map uses the keys as names and the
+     * values as numbers. A list uses each item as a slice.
+     *
+     * @param data a map or a list
+     * @return the slices
+     */
     static List<PieChart.Data> toData(Object data) {
         if (data instanceof Map) {
             return data.collect { Object name, Object value -> new PieChart.Data(name.toString(), (value as Number).doubleValue()) }

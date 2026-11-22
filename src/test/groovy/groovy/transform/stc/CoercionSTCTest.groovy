@@ -756,6 +756,42 @@ class CoercionSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-12748
+    @Test
+    void testCoerceToFunctionalInterfaceImplicitParameterCheckedAgain1() {
+        // a loop or closure body checked a second time still prefers the one-parameter interface
+        for (body in [
+            'for (i in 0..1) { result = C.m { it }; x = "a" }',
+            'while (x != "a") { result = C.m { it }; x = "a" }',
+            '[0].each { result = C.m { it }; x = "a" }'
+        ]) {
+            assertScript """
+                class C {
+                    static String m(Function<Integer, Integer> f) { 'function' }
+                    static String m(BinaryOperator<Integer> f) { 'binary' }
+                }
+                def x = 1
+                String result = null
+                $body
+                assert result == 'function'
+            """
+        }
+    }
+
+    // GROOVY-12748
+    @Test
+    void testCoerceToFunctionalInterfaceImplicitParameterCheckedAgain2() {
+        // a missing method on the result is the only error, though the call is checked again
+        shouldFailWithMessages '''
+            class C {
+                static Object m(Function<Integer, Integer> f) { 'function' }
+                static Object m(BinaryOperator<Integer> f) { 'binary' }
+            }
+            C.m { it }.length()
+        ''',
+        'Cannot find matching method java.lang.Object#length()'
+    }
+
     // GROOVY-11051
     @Test
     void testCoerceToFunctionalInterface16() {

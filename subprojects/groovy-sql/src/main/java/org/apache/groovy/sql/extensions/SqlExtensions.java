@@ -102,6 +102,10 @@ public final class SqlExtensions {
             this.target = target;
         }
 
+        /**
+         * Returns whether {@code index} has not passed the column count.
+         * A failure reading the count is wrapped in a {@link GroovyRuntimeException}.
+         */
         @Override
         public boolean hasNext() {
             try {
@@ -112,11 +116,19 @@ public final class SqlExtensions {
             }
         }
 
+        /**
+         * Returns a wrapper for the column at the current index and then advances
+         * the index.
+         */
         @Override
         public ResultSetMetaDataWrapper next() {
             return new ResultSetMetaDataWrapper(target, index++);
         }
 
+        /**
+         * Throws {@link UnsupportedOperationException}; columns cannot be removed
+         * from result-set metadata.
+         */
         @Override
         public void remove() {
             throw new UnsupportedOperationException("Cannot remove from ResultSetMetaData");

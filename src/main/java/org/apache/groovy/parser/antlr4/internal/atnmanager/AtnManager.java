@@ -60,6 +60,11 @@ public abstract class AtnManager {
     // read side while an in-place cache clear held the write side. An over-limit cache is
     // now replaced rather than cleared, so nothing acquires these locks any more.
     private static final ReentrantReadWriteLock RRWL = new ReentrantReadWriteLock(true);
+    /**
+     * Read lock of the fair lock kept for binary compatibility.
+     * Parsing does not acquire it. An over-limit cache is replaced rather than cleared
+     * under the matching write lock.
+     */
     public static final ReentrantReadWriteLock.ReadLock READ_LOCK = RRWL.readLock();
 
     private static final String DFA_CACHE_THRESHOLD_OPT = "groovy.antlr4.cache.threshold";
@@ -151,12 +156,32 @@ public abstract class AtnManager {
         return CACHE_DROPPING_ENABLED && shouldClearDfaCache();
     }
 
+    /**
+     * Returns the ATN from the current wrapper.
+     * {@link AtnWrapper#checkAndReplace()} may publish a fresh wrapper for a later
+     * call, but the ATN returned here is still the one that was current. Parses
+     * already holding it keep using it.
+     *
+     * @return the current wrapper's ATN
+     */
     public ATN getATN() {
         return getAtnWrapper().checkAndReplace();
     }
 
+    /**
+     * Creates the wrapper installed when {@link #getAtnWrapper()} finds no live reference.
+     *
+     * @return a wrapper owning a fresh ATN
+     */
     protected abstract AtnWrapper createAtnWrapper();
 
+    /**
+     * Returns the softly referenced wrapper, creating one when the reference is
+     * missing or has been cleared. The check outside the lock is repeated inside
+     * it, so concurrent misses install a single wrapper.
+     *
+     * @return the live wrapper, never a cleared reference
+     */
     protected AtnWrapper getAtnWrapper() {
         SoftReference<AtnWrapper> ref = atnWrapperSoftReference;
         AtnWrapper atnWrapper = (null == ref) ? null : ref.get();
@@ -188,17 +213,48 @@ public abstract class AtnManager {
         }
     }
 
+    /**
+     * Whether this manager participates in cache dropping.
+     * Dropping also requires the global policy: a negative
+     * {@code groovy.antlr4.cache.threshold} switches it off.
+     *
+     * @return {@code true} when this manager's caches may be retired
+     */
     protected abstract boolean shouldClearDfaCache();
 
+    /**
+     * One ATN and the counters that decide when to retire it.
+     * The manager holds the wrapper in a {@link SoftReference}. Replacement
+     * publishes another wrapper; this instance and its ATN are left as they are
+     * so parses already using them can finish.
+     */
     protected class AtnWrapper {
         private final ATN atn;
         private final AtomicLong counter = new AtomicLong(0);
         private final AtomicBoolean replacing = new AtomicBoolean();
 
+        /**
+         * Retains {@code atn}. The parse counter starts at zero and the retirement
+         * flag starts clear.
+         *
+         * @param atn the ATN whose decision DFAs this wrapper owns
+         */
         public AtnWrapper(ATN atn) {
             this.atn = atn;
         }
 
+        /**
+         * Returns this wrapper's ATN. When dropping is off, that is all this does.
+         * When the parse-counter threshold is positive, the counter is incremented
+         * and a multiple of the threshold retires this wrapper before the size
+         * check. When the DFA-state ceiling is enabled and the summed
+         * {@code states.size()} of the decision DFAs is over it, one thread retires
+         * this wrapper; the flag is not cleared, so a later call does not retire it
+         * again. Retirement publishes a new wrapper for a later {@link AtnManager#getATN()}.
+         * This call still returns {@code atn}.
+         *
+         * @return this wrapper's ATN
+         */
         public ATN checkAndReplace() {
             if (!droppingEnabled()) {
                 return atn;

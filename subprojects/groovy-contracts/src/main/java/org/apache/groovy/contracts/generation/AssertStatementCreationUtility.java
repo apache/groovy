@@ -161,6 +161,11 @@ public final class AssertStatementCreationUtility {
     private static void ensureReturnStatementInBlock(BlockStatement root, final ReturnStatement returnStatement) {
         final VariableScope scope = root.getVariableScope();
         ClassCodeVisitorSupport normalizer = new ClassCodeVisitorSupport() {
+            /**
+             * This visitor is source-independent.
+             *
+             * @return {@code null}
+             */
             @Override
             protected SourceUnit getSourceUnit() {
                 return null;
@@ -170,6 +175,12 @@ public final class AssertStatementCreationUtility {
                 return branch == returnStatement ? block(new VariableScope(scope), returnStatement) : branch;
             }
 
+            /**
+             * Wraps the target return when it is the {@code if} or {@code else}
+             * branch itself, then continues the visit.
+             *
+             * @param ifElse the conditional being visited
+             */
             @Override
             public void visitIfElse(IfStatement ifElse) {
                 ifElse.setIfBlock(wrapIfTarget(ifElse.getIfBlock()));
@@ -177,24 +188,44 @@ public final class AssertStatementCreationUtility {
                 super.visitIfElse(ifElse);
             }
 
+            /**
+             * Wraps the target return when it is the loop body itself, then continues the visit.
+             *
+             * @param loop the loop being visited
+             */
             @Override
             public void visitWhileLoop(WhileStatement loop) {
                 loop.setLoopBlock(wrapIfTarget(loop.getLoopBlock()));
                 super.visitWhileLoop(loop);
             }
 
+            /**
+             * Wraps the target return when it is the loop body itself, then continues the visit.
+             *
+             * @param loop the loop being visited
+             */
             @Override
             public void visitForLoop(ForStatement loop) {
                 loop.setLoopBlock(wrapIfTarget(loop.getLoopBlock()));
                 super.visitForLoop(loop);
             }
 
+            /**
+             * Wraps the target return when it is the loop body itself, then continues the visit.
+             *
+             * @param loop the loop being visited
+             */
             @Override
             public void visitDoWhileLoop(DoWhileStatement loop) {
                 loop.setLoopBlock(wrapIfTarget(loop.getLoopBlock()));
                 super.visitDoWhileLoop(loop);
             }
 
+            /**
+             * Does not visit the closure body, so a return inside a closure is left unchanged.
+             *
+             * @param expression the closure to skip
+             */
             @Override
             public void visitClosureExpression(ClosureExpression expression) {
                 // returns inside closures belong to the closure, not the surrounding method
