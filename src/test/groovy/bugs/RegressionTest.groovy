@@ -198,7 +198,7 @@ final class RegressionTest {
     }
 
     // GROOVY-3351: Curried MethodClosure with default parameters wont work
-    @NotYetImplemented @Test
+    @Test
     void testGroovy3351() {
         assertScript '''
             class Foo {
