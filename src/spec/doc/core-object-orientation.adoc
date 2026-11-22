@@ -248,12 +248,14 @@ include::../test/ClassTest.groovy[tags=inner_class,indent=0]
 <3> even being private, a field of the enclosing class is accessed by the inner class
 
 As in Java, the classes nested in the same top-level class can also use each other's private members.
-Private members are not inherited, though, and the meta-class of a subclass offers none of its superclass.
-When `Sub` extends `Base`, a private instance method of `Base` cannot be called through a `Sub` receiver, such as `new Sub().secret()`, except in `Base` itself, and outside `Base` `sub.@name` does not reach a private field of `Base` either.
-Within `Sub`, `this.@name` and `super.@name` reach such a field of the current instance directly.
-With static compilation, a receiver whose static type is `Base`, such as `((Base) sub).@name` or a variable declared as `Base`, reaches the private members of `Base`, and `sub.name` reads the field in `Base` and in the classes nested in it.
-Dynamic code, `@TypeChecked` code included, finds the field through `sub.name` only in `Base` or in an inner class whose enclosing instance is a `Base`.
-In an inner class of `Base` that also extends `Base`, `secret()`, `this.secret()`, `name` and `this.name` for a private member of `Base` therefore use the enclosing `Base` instance.
+Private members are not inherited, though, and the meta-class of a subclass offers none of the private members of its superclass.
+When `Sub` extends `Base`, a private instance method of `Base` cannot be called through a `Sub` receiver, such as `new Sub().secret()`, except in `Base` itself, and in an enum constant body or an anonymous subclass of `Base` created in a static context, which have no enclosing instance and call the method on themselves.
+Outside `Base`, `sub.@name` does not reach a private field of `Base` either; within `Sub`, `this.@name` and `super.@name` reach such a field of the current instance directly.
+With static compilation, a receiver whose static type is `Base`, such as `((Base) sub).@name` or a variable declared as `Base`, reaches the private members of `Base`, also where flow typing knows that the variable holds a `Sub`, as in Java.
+`sub.name` reads the private field there only in `Base` and in the classes nested in `Base`; from another class of the same top-level class it is rejected.
+Dynamic code looks a member up on the meta-class of the object's class, so it does not find a private member of `Base` through a variable that holds a `Sub`, and `@TypeChecked` rejects such a use where flow typing knows that the variable holds a `Sub`.
+It finds the field through `sub.name` only in `Base` or in an inner class whose enclosing instance is a `Base`.
+In an inner class of `Base` that also extends `Base`, `secret()`, `this.secret()`, `name` and `this.name` for a private member of `Base` therefore use the enclosing `Base` instance, and `other.secret()`, for another instance `other` of that inner class, uses the enclosing instance of `other`.
 
 There are some reasons for using inner classes:
 
