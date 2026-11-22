@@ -234,6 +234,17 @@ public class StaticCompilationVisitor extends StaticTypeCheckingVisitor {
         visitConstructorOrMethod(node);
     }
 
+    /**
+     * Calls in statically compiled code are dispatched statically.
+     *
+     * @return {@code true} unless the current position is dynamically compiled
+     * @since 6.0.1
+     */
+    @Override
+    protected boolean isStaticDispatchScope() {
+        return isStaticallyCompiled(getEnclosingDeclaration());
+    }
+
     private AnnotatedNode getEnclosingDeclaration() {
         ClassNode  cn = typeCheckingContext.getEnclosingClassNode();
         MethodNode mn = typeCheckingContext.getEnclosingMethod();

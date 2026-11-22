@@ -3080,6 +3080,16 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
         return false;
     }
 
+    /**
+     * Indicates whether calls at the current position are dispatched statically,
+     * as they are in statically compiled code.
+     *
+     * @since 6.0.1
+     */
+    protected boolean isStaticDispatchScope() {
+        return false;
+    }
+
     private boolean storeField(final FieldNode field, final PropertyExpression expression, final Receiver<String> receiver, final ClassCodeVisitorSupport visitor, final boolean lhsOfAssignment) {
         boolean accessible = isFieldAccessible(field, receiver.getType(), expression, receiver.getData(), lhsOfAssignment);
         if (!accessible) {

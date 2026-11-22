@@ -19,7 +19,6 @@
 package org.codehaus.groovy.transform.stc;
 
 import groovy.transform.Virtual;
-import org.codehaus.groovy.ast.AnnotatedNode;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.MethodNode;
@@ -32,7 +31,6 @@ import org.codehaus.groovy.ast.expr.PropertyExpression;
 import org.codehaus.groovy.ast.expr.SpreadExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.ast.tools.GenericsUtils;
-import org.codehaus.groovy.transform.sc.StaticCompilationVisitor;
 import org.codehaus.groovy.transform.trait.TraitASTTransformation;
 import org.codehaus.groovy.transform.trait.Traits;
 
@@ -171,24 +169,10 @@ public class TraitTypeCheckingExtension extends AbstractTypeCheckingExtension {
             if (isDelegateCall(closureCall)) {
                 typeCheckingVisitor.visitMethodCallExpression(closureCall);
                 storeType(mce, getType(closureCall));
-            } else if (isStaticDispatchScope()) {
+            } else if (typeCheckingVisitor.isStaticDispatchScope()) {
                 mce.removeNodeMetaData(TraitASTTransformation.POST_TYPECHECKING_REPLACEMENT);
             }
         }
-    }
-
-    /**
-     * Indicates whether calls at the current position are dispatched statically,
-     * as they are in statically compiled code.
-     */
-    private boolean isStaticDispatchScope() {
-        if (!(typeCheckingVisitor instanceof StaticCompilationVisitor)) {
-            return false;
-        }
-        ClassNode cn = context.getEnclosingClassNode();
-        MethodNode mn = context.getEnclosingMethod();
-        AnnotatedNode enclosing = (cn != null && cn.getEnclosingMethod() == mn) ? cn : mn;
-        return StaticCompilationVisitor.isStaticallyCompiled(enclosing);
     }
 
     /**
