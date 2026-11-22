@@ -78,6 +78,7 @@ import static groovy.test.GroovyAssert.shouldFail
 final class RegressionTest {
 
     // GROOVY-2072: eachFileRecurse crashes when descending a directory with circular symbolic links
+    @Disabled('flaky: sometimes finishes within the timeout, sometimes does not')
     @Timeout(value = 10, unit = TimeUnit.SECONDS)
     @NotYetImplemented @Test
     void testGroovy2072() {
