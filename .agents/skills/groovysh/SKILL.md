@@ -1,24 +1,22 @@
-<!--
-  Licensed to the Apache Software Foundation (ASF) under one
-  or more contributor license agreements.  See the NOTICE file
-  distributed with this work for additional information
-  regarding copyright ownership.  The ASF licenses this file
-  to you under the Apache License, Version 2.0 (the
-  "License"); you may not use this file except in compliance
-  with the License.  You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-  Unless required by applicable law or agreed to in writing,
-  software distributed under the License is distributed on an
-  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-  KIND, either express or implied.  See the License for the
-  specific language governing permissions and limitations
-  under the License.
--->
 ---
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
 name: groovysh
-description: AI-tooling guardrails for changes in subprojects/groovy-groovysh/ — points at the subproject's canonical architecture doc (vendored JLine forks, three-layer test infrastructure, terminal-aware test patterns, command-specific quirks, JLine bump procedure), then adds the AI-specific constraints on top: no fabricated JLine API names, terminal tests must use `dumb(true).streams(...)`, no full-string ANSI assertions, fork-sync diffs go against the fork-base tag, no reformatting of fork files, hand-back for review. Use when modifying anything in that subproject's tree, bumping JLine, or syncing vendored fork files.
+description: "AI-tooling guardrails for changes in subprojects/groovy-groovysh/ — points at the subproject's canonical architecture doc (vendored JLine forks, three-layer test infrastructure, terminal-aware test patterns, command-specific quirks, JLine bump procedure), then adds the AI-specific constraints on top: no fabricated JLine API names, terminal tests must use `dumb(true).streams(...)`, no full-string ANSI assertions, fork-sync diffs go against the fork-base tag, no reformatting of fork files, hand-back for review. Use when modifying anything in that subproject's tree, bumping JLine, or syncing vendored fork files."
 license: Apache-2.0
 compatibility: claude, codex, copilot, cursor, gemini, aider
 metadata:
