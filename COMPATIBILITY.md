@@ -970,6 +970,39 @@ their declared return type, as since GROOVY-6401.
 
 The method descriptors are unchanged, so `japicmp` does not report this.
 
+### Groovy 7 — a property's accessor is chosen over an interface's abstract accessor (GROOVY-12552)
+
+When an interface declares an abstract getter or setter for a property that a
+class declares, and a call's receiver is inferred to be a subclass of that
+class (`Base b = new Impl()` is inferred to be an `Impl`), static type
+checking chose the interface's method if the class was compiled together with
+the call, and the class's accessor if the class was already compiled. It now
+chooses the class's accessor either way, so the same source compiles to the
+same class file whether or not the class is compiled with it.
+
+- **`obj.x = v` calls the class's setter again.** From 5.0.0, the interface's
+  setter was called when compiled together (GROOVY-11381); Groovy 4 called
+  the class's setter.
+- **`obj.getX()` and `obj.setX(v)` call the class's accessor.** Every earlier
+  version called the interface's method when compiled together.
+- **A getter call can have a narrower type.** Where the interface declares a
+  wider type than the property, such as `Object getName()` for a `String name`
+  property, or `T getValue()` of `Holder<Number>` for an `Integer value`
+  property, a call of the getter now has the property's type, as reading the
+  property (`obj.name`) already did. `obj.getName().toUpperCase()` now type
+  checks. Statically compiled overload selection can change with no compile
+  error: `h(obj.getName())` with `h(Object)` and `h(String)` overloads selects
+  `h(String)` where it used to select `h(Object)`.
+
+**Who is affected.** `@CompileStatic` code compiled together with such a class
+now calls the class's accessor with `invokevirtual` rather than the
+interface's method with `invokeinterface`. The same method runs, unless a
+different overload is selected. Type checked (dynamically dispatched) code
+selects its overload by the runtime type, so only its inferred type changes.
+A call compiled against the class file, a receiver inferred to be the class
+that declares the property, and dynamic Groovy behave as before. There are no
+API changes.
+
 ### Groovy 7 — `PlaceholderVisitor` is removed (GROOVY-11744)
 
 `org.codehaus.groovy.control.PlaceholderVisitor` marked a `_` repeated in a
@@ -2138,6 +2171,113 @@ a raw bound has the erasure of its type, as in Java: for a raw `Holder`
 declared as `Holder<T extends List>`, a field `Class<? extends T> type` is a
 `Class`, so `Class<? extends List<String>> c = holder.type` is an unchecked
 conversion.
+
+### Groovy 7 — an `instanceof` check narrows a variable only where it guards the code (GROOVY-12562)
+
+Under `@TypeChecked` and `@CompileStatic`, an `instanceof` check used to narrow
+the variable it checks for the rest of the expression or condition, wherever
+the check was. It now narrows only where its outcome decides what is evaluated
+next: in the condition of an `if`, `while`, `for`, `assert` or conditional
+expression, in an operand of `&&`, `||`, `|` or `!`, and when the check is compared
+with a boolean literal, assigned in a condition or cast to `boolean`. The
+condition of a loop narrows inside the loop only.
+
+```groovy
+@CompileStatic
+def f(Object x) { '' + (x instanceof String) + x.length() }
+// before: compiled; f(new StringBuilder('ab')) threw ClassCastException
+// now:    Cannot find matching method java.lang.Object#length()
+
+@CompileStatic
+def g(Object x) { x instanceof String ? 'true' + x.length() : 'false' }
+// before and now: compiles, the check guards the call
+```
+
+**Who is affected.** Code that compiled before and now fails with an error
+such as "Cannot find matching method", because it relied on a narrowing that
+nothing ensured:
+- a check that is an operand of any other operator, a method argument or a
+  list element: `'' + (x instanceof String) + x.length()`,
+  `foo(x instanceof String, x.length())`, `[x instanceof String, x.length()]`,
+  `(x instanceof String) == x.isEmpty()`, and the right operand of `&` in
+  `x instanceof String & x.length() > 0`;
+- a variable used after a loop whose condition checked it:
+  `while (x instanceof String) { break }; x.length()`, and the same for a
+  classic `for` and a `do`/`while` loop;
+- the branch of a check compared with `false`, or with `true` using `!=`:
+  `if ((x instanceof String) == false) x.length()` used to narrow `x` to
+  `String` in the branch where it is not one.
+
+Under `@CompileStatic` such code threw `ClassCastException` whenever the check
+was false. Under `@TypeChecked` the call is dispatched dynamically, so it may
+have run correctly. Move the check into a condition that guards the use, or
+cast the variable.
+
+**More programs compile.** The `else` branch of
+`if ((x instanceof String) == false)` and the code after
+`if ((x instanceof String) == false) return` are now narrowed to `String`, as
+for `!(x instanceof String)`.
+
+**What is unchanged.** A check that is a statement of its own,
+`x instanceof String; x.length()`, or that is only stored,
+`boolean b = x instanceof String; x.length()`, did not narrow the following
+statements before and does not now. `assert x instanceof String` and
+`if (!(x instanceof String)) return` still narrow the code after them.
+`case String:` in a `switch`, `catch` parameters, and dynamic code are
+unaffected. An `instanceof` pattern such as `x instanceof String s` narrows
+`x` in the same guard positions as a plain `instanceof` check; the scoping of
+the pattern variable `s` is unchanged.
+
+### Groovy 7 — `super` reaches a static member the class hides (GROOVY-12519)
+
+When a class declared a static method or property with the same signature as
+one of its superclass, `super.sm()` within the class threw
+`MissingMethodException` in dynamic Groovy and under `@TypeChecked`, or called
+another overload of the superclass with `null`, and `super.sp` threw
+`MissingPropertyException`. They now reach the static member of the nearest
+superclass that declares one, as javac and `@CompileStatic` do. Under
+`@CompileStatic`, `super.sm()` in a closure or lambda failed with
+`IncompatibleClassChangeError` for any static method of the superclass, hidden
+or not, and an extension method called through `super` there, such as
+`super.first()` in a subclass of `ArrayList`, failed with `NoSuchMethodError`.
+Both now call the method.
+
+**Who is affected.** Code that relied on the old failure, or on the other
+overload being called. A private static method of the superclass stays out of
+reach. Calls through `this` or the class name and instance methods behave as
+before, and so does `super` with a static member the class does not hide,
+apart from the `@CompileStatic` closure and lambda case above. There are no
+API changes.
+
+### Groovy 7 — `N.super.name` and `Outer.super.name` reach the member of the superclass (GROOVY-12514, GROOVY-12517)
+
+Within a nested class `N`, `N.super` is now `super`. Within a class nested in
+`Outer`, `Outer.super` is the enclosing instance of `Outer` seen as an instance
+of `Outer`'s superclass, as in Java. In dynamic Groovy, a property read or
+write through either — `N.super.p`, `Outer.super.p = v`, `Outer.super.p++` —
+and a field access — `N.super.@f`, `Outer.super.@f = v` — used to reach the
+instance's own member: the one `N` or `Outer` declares, or, for an enclosing
+instance of a subclass of `Outer`, the subclass's. It now reaches the
+superclass's property, accessor or field, as `super.p` and `super.@f` do.
+`Outer.super.m()` already called the superclass's method, except for an
+enclosing instance of a subclass of `Outer`, where it called the method that
+`super.m()` in the subclass would call (`Outer`'s, if `Outer` overrides `m`);
+it now calls the method of `Outer`'s superclass. Under `@TypeChecked` and
+`@CompileStatic`, these property and field forms failed to compile ("No such
+property: super") and now compile with the same meaning.
+
+**Who is affected.** Dynamic code that reads or writes a property or field
+through `N.super` or `Outer.super` where `N` or `Outer`, or the class of the
+enclosing instance, declares or overrides that member. The access now reaches
+the superclass's member; use `this.p`, `N.this.p` or `Outer.this.p` where the
+class's own member is intended. Classes compiled by an earlier release keep
+the old behaviour until they are recompiled.
+
+**What is unchanged.** Unqualified `super`, `Outer.this`, `Iface.super.m()`
+for interface default methods, method calls through `N.super` and through
+`Outer.super` on an instance of `Outer` itself, and members that no class
+below the superclass declares. `ExpressionUtils.isOuterSuperExpression` is
+new; there are no other API changes.
 
 ## The binary-compatibility check
 

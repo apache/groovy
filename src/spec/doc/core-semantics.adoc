@@ -995,16 +995,17 @@ closure outside the parenthesis, improving the readability of your code.
 A method may declare the parameter a closure is passed for with a type parameter, such as `E` of `List.add(E)` or `V`
 of `Map.put(K, V)`, whose erasure is `Object`. When statically compiled code binds that type parameter to a SAM
 interface, for instance `Function<String, String>` for a `Map<String, Function<String, String>>`, the class generated
-for a closure literal implements the interface, so the closure is stored as an instance of it. A lambda or method
-reference is compiled for the interface:
+for a closure literal implements the interface, so the closure is stored as an instance of it. A method reference is
+compiled for the interface:
 
 [source,groovy]
 ----
 include::../test/CoercionTest.groovy[tags=functional_literal_for_type_parameter,indent=0]
 ----
 
-The closure is still a closure, so dynamically compiled code can call it either way. A lambda or method reference is
-only an instance of the interface, as when it is assigned to a variable of the interface type:
+The closure is still a closure, so dynamically compiled code can call it either way. A method reference is only an
+instance of the interface, as when it is assigned to a variable of the interface type, and dynamically compiled code
+calls it through the interface's method:
 
 [source,groovy]
 ----
@@ -1023,9 +1024,24 @@ include::../test/CoercionTest.groovy[tags=closure_value_for_type_parameter,inden
 
 A closure literal is passed as it is for an interface that `Closure` already implements, such as `Runnable` or
 `Callable`, for an interface whose method has the name of a method of `Closure`, such as `call`, for a sealed
-interface, a trait, a non-public interface not compiled with the closure, and for an abstract class. Closure packing (`@PackedClosures`) does not pack a closure that implements an interface this way. Dynamically
-compiled and type-checked (`@TypeChecked`) code pass a closure, lambda or method reference for a type parameter as it
-is.
+interface, a trait, a non-public interface not compiled with the closure, and for an abstract class. Closure packing
+(`@PackedClosures`) does not pack a closure that implements an interface this way.
+
+A lambda for such a parameter is compiled as a closure that does not implement the interface, unless the code is
+compiled with the incubating `-Dgroovy.target.lambda.typearg=true` option. With the option, the lambda is compiled for
+the interface:
+
+[source,groovy]
+----
+include::../test/CoercionTest.groovy[tags=lambda_for_type_parameter,indent=0]
+----
+
+Callers can tell the difference: the stored lambda is then an instance of the interface only, not a closure, so
+dynamically compiled code can no longer call it as one, with `commands().shout('Hi')` or
+`commands().shout.call('Hi')`, as with `Supplier<String> s = () -> 'y'`.
+
+Dynamically compiled and type-checked (`@TypeChecked`) code are unchanged, with or without the option: there a closure
+or lambda for such a parameter is passed as a closure, and type-checked code rejects a method reference for it.
 
 ==== Closure to arbitrary type coercion
 

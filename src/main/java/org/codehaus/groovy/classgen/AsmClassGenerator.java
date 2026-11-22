@@ -116,6 +116,7 @@ import org.codehaus.groovy.classgen.asm.PeepholeOptimizingMethodVisitor;
 import org.codehaus.groovy.classgen.asm.WriterController;
 import org.codehaus.groovy.classgen.asm.WriterControllerFactory;
 import org.codehaus.groovy.classgen.asm.sc.RuntimePackageCheck;
+import org.codehaus.groovy.classgen.asm.sc.StaticInvocationWriter;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.runtime.IntersectionCastSupport;
 import org.codehaus.groovy.runtime.ScriptBytecodeAdapter;
@@ -148,6 +149,7 @@ import java.util.function.Consumer;
 import static org.apache.groovy.ast.tools.ClassNodeUtils.getField;
 import static org.apache.groovy.ast.tools.ClassNodeUtils.getNestHost;
 import static org.apache.groovy.ast.tools.ExpressionUtils.isNullConstant;
+import static org.apache.groovy.ast.tools.ExpressionUtils.isOuterSuperExpression;
 import static org.apache.groovy.ast.tools.ExpressionUtils.isSuperExpression;
 import static org.codehaus.groovy.ast.ClassHelper.isClassType;
 import static org.codehaus.groovy.ast.ClassHelper.isObjectType;
@@ -1431,6 +1433,14 @@ public class AsmClassGenerator extends ClassGenerator {
         );
     }
 
+    /**
+     * Determines if an expression is "super" or "Outer.super" for a class: a
+     * property of it is a property of the superclass of the instance.
+     */
+    private static boolean isSuperOrOuterSuper(final Expression expression) {
+        return isSuperExpression(expression) || isOuterSuperExpression(expression);
+    }
+
     private void visitAttributeOrProperty(final PropertyExpression pexp, final MethodCallerMultiAdapter adapter) {
         ClassNode classNode = controller.getClassNode();
         String propertyName = pexp.getPropertyAsString();
@@ -1569,7 +1579,7 @@ public class AsmClassGenerator extends ClassGenerator {
                 } else {
                     fieldNode = classNode.getSuperClass().getDeclaredField(name);
                     // GROOVY-4497, GROOVY-11764: do not visit super class field if it is private or package-private
-                    if (fieldNode != null && (fieldNode.isPrivate() || !(fieldNode.isPublic() || fieldNode.isProtected() || inSamePackage(classNode, classNode.getSuperClass())))) {
+                    if (fieldNode != null && (fieldNode.isPrivate() || !(fieldNode.isPublic() || fieldNode.isProtected() || inSamePackage(classNode, classNode.getSuperClass())) || isDynamicAccessOfAnotherRuntimePackage(fieldNode))) {
                         fieldNode = null;
                     }
                 }
@@ -1584,9 +1594,9 @@ public class AsmClassGenerator extends ClassGenerator {
         if (!visited) {
             MethodCallerMultiAdapter adapter;
             if (controller.getCompileStack().isLHS()) {
-                adapter = isSuperExpression(objectExpression) ? setPropertyOnSuper : isGroovyObject(expression) ? setGroovyObjectProperty : setProperty;
+                adapter = isSuperOrOuterSuper(objectExpression) ? setPropertyOnSuper : isGroovyObject(expression) ? setGroovyObjectProperty : setProperty;
             } else {
-                adapter = isSuperExpression(objectExpression) ? getPropertyOnSuper : isGroovyObject(expression) ? getGroovyObjectProperty : getProperty;
+                adapter = isSuperOrOuterSuper(objectExpression) ? getPropertyOnSuper : isGroovyObject(expression) ? getGroovyObjectProperty : getProperty;
             }
             visitAttributeOrProperty(expression, adapter);
         }
@@ -1618,7 +1628,7 @@ public class AsmClassGenerator extends ClassGenerator {
                 boolean generated = controller.isInGeneratedFunction();
                 ClassNode current = generated ? controller.getThisType() : classNode;
                 FieldNode fieldNode = getDeclaredFieldOfCurrentClassOrAccessibleFieldOfSuper(classNode, current, name, isSuperExpression(objectExpression));
-                if (fieldNode != null && (fieldNode.isStatic() || !isStatic(objectExpression))) {
+                if (fieldNode != null && (fieldNode.isStatic() || !isStatic(objectExpression)) && !isDynamicAccessOfAnotherRuntimePackage(fieldNode)) {
                     // A private field of a superclass is dropped from the subclass meta-class
                     // index, so the closure's runtime attribute lookup cannot see it. Direct
                     // access is legal for a nestmate (a nested subclass). Other fields stay on
@@ -1639,9 +1649,9 @@ public class AsmClassGenerator extends ClassGenerator {
         if (!visited) {
             MethodCallerMultiAdapter adapter;
             if (controller.getCompileStack().isLHS()) {
-                adapter = isSuperExpression(objectExpression) ? setFieldOnSuper : isGroovyObject(expression) ? setGroovyObjectField : setField;
+                adapter = isSuperOrOuterSuper(objectExpression) ? setFieldOnSuper : isGroovyObject(expression) ? setGroovyObjectField : setField;
             } else {
-                adapter = isSuperExpression(objectExpression) ? getFieldOnSuper : isGroovyObject(expression) ? getGroovyObjectField : getField;
+                adapter = isSuperOrOuterSuper(objectExpression) ? getFieldOnSuper : isGroovyObject(expression) ? getGroovyObjectField : getField;
             }
             visitAttributeOrProperty(expression, adapter);
         }
@@ -1651,6 +1661,18 @@ public class AsmClassGenerator extends ClassGenerator {
         } else {
             controller.getAssertionWriter().record(expression.getProperty());
         }
+    }
+
+    /**
+     * Determines if dynamic code accesses a package-private field of another
+     * run-time package (see {@link #isInSameRuntimePackage}). The JVM refuses
+     * direct access to it, so such code uses the field through the meta-class.
+     * Static compilation does not select a member at run time.
+     */
+    private boolean isDynamicAccessOfAnotherRuntimePackage(final FieldNode field) {
+        return !field.isPublic() && !field.isProtected() && !field.isPrivate()
+            && !isInSameRuntimePackage(field.getDeclaringClass(), controller.getClassNode())
+            && !(controller.getInvocationWriter() instanceof StaticInvocationWriter);
     }
 
     /**

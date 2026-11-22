@@ -19,10 +19,12 @@
 package org.codehaus.groovy.ast;
 
 import org.apache.groovy.ast.tools.ClassNodeUtils;
+import org.codehaus.groovy.ast.expr.BinaryExpression;
 import org.codehaus.groovy.ast.expr.ConstructorCallExpression;
 import org.codehaus.groovy.ast.expr.DeclarationExpression;
+import org.codehaus.groovy.ast.expr.EmptyExpression;
 import org.codehaus.groovy.ast.expr.Expression;
-import org.codehaus.groovy.ast.expr.ListExpression;
+import org.codehaus.groovy.ast.expr.TupleExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.ast.stmt.ExpressionStatement;
@@ -626,6 +628,10 @@ public class ModuleNode extends ASTNode {
 
         boolean hasUncontainedStatements = false;
         List<FieldNode> fields = new ArrayList<>();
+        // a multiple assignment is kept as an assignment, so that every form of it (a rest binding, map
+        // style, any right-hand side) behaves as it does elsewhere; field initializers run before the
+        // object initializer, so the declarations after it are assigned there too, to keep their order
+        List<Statement> initializers = new ArrayList<>();
         // check for uncontained statements (excluding decl statements)
         for (Statement statement : statementBlock.getStatements()) {
             if (!(statement instanceof ExpressionStatement es)) {
@@ -638,17 +644,28 @@ public class ModuleNode extends ASTNode {
                 break;
             }
             if (de.isMultipleAssignmentDeclaration()) {
-                List<Expression> variables = de.getTupleExpression().getExpressions();
-                if (!(de.getRightExpression() instanceof ListExpression)) break;
-                List<Expression> values = ((ListExpression)de.getRightExpression()).getExpressions();
-                for (int i = 0; i < variables.size(); i++) {
-                    VariableExpression var = (VariableExpression) variables.get(i);
-                    Expression val = i >= values.size() ? null : values.get(i);
-                    fields.add(new FieldNode(var.getName(), var.getModifiers(), var.getType(), null, val));
+                List<Expression> targets = new ArrayList<>();
+                for (Expression e : de.getTupleExpression().getExpressions()) {
+                    VariableExpression var = (VariableExpression) e;
+                    fields.add(new FieldNode(var.getName(), var.getModifiers(), var.getType(), null, null));
+                    VariableExpression target = new VariableExpression(var.getName(), var.getType());
+                    target.setSourcePosition(var);
+                    target.copyNodeMetaData(var); // the rest binding and map key
+                    targets.add(target);
                 }
+                BinaryExpression assignment = new BinaryExpression(new TupleExpression(targets), de.getOperation(), de.getRightExpression());
+                assignment.setSourcePosition(de);
+                initializers.add(stmt(assignment));
             } else {
                 VariableExpression ve = de.getVariableExpression();
-                fields.add(new FieldNode(ve.getName(), ve.getModifiers(), ve.getType(), null, de.getRightExpression()));
+                if (initializers.isEmpty() || de.getRightExpression() instanceof EmptyExpression) {
+                    fields.add(new FieldNode(ve.getName(), ve.getModifiers(), ve.getType(), null, de.getRightExpression()));
+                } else {
+                    fields.add(new FieldNode(ve.getName(), ve.getModifiers(), ve.getType(), null, null));
+                    BinaryExpression assignment = new BinaryExpression(varX(ve.getName(), ve.getType()), de.getOperation(), de.getRightExpression());
+                    assignment.setSourcePosition(de);
+                    initializers.add(stmt(assignment));
+                }
             }
         }
 
@@ -662,6 +679,7 @@ public class ModuleNode extends ASTNode {
             existingMain.putNodeMetaData("_SKIPPABLE_ANNOTATIONS", Boolean.TRUE);
             methods.forEach(result::addMethod);
             fields.forEach(result::addField);
+            initializers.forEach(result::addObjectInitializerStatements);
             return result;
         }
 
@@ -705,6 +723,7 @@ public class ModuleNode extends ASTNode {
             .visit(statementBlock);
         } else {
             fields.forEach(classNode::addField);
+            initializers.forEach(classNode::addObjectInitializerStatements);
             // the method's annotations apply to the script class, except those that may go on a
             // method but not on a type, which stay on run() only (GROOVY-12720); the known ones are
             // left off here, before any Java stub is generated, and ExtendedVerifier skips the rest

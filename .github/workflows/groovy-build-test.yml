@@ -55,7 +55,7 @@ jobs:
       - name: "📥 Checkout repository"
         uses: actions/checkout@v7.0.1
       - name: "☕️ Setup JDK"
-        uses: actions/setup-java@v6.2.0
+        uses: actions/setup-java@v6.3.0
         with:
           distribution: 'zulu'
           java-version: |
@@ -246,7 +246,7 @@ jobs:
       - name: "📥 Checkout repository"
         uses: actions/checkout@v7.0.1
       - name: "☕️ Setup JDK"
-        uses: actions/setup-java@v6.2.0
+        uses: actions/setup-java@v6.3.0
         with:
           distribution: 'zulu'
           java-version: |
@@ -516,7 +516,7 @@ jobs:
           path: ${{ runner.temp }}/jdk-page.html
           if-no-files-found: ignore
       - name: "☕️ Setup EA JDK (test target)"
-        uses: actions/setup-java@v6.2.0
+        uses: actions/setup-java@v6.3.0
         with:
           distribution: 'jdkfile'
           jdk-file: ${{ steps.openjdk.outputs.jdk-file }}
@@ -528,7 +528,7 @@ jobs:
       - name: "☕️ Setup build JDK"
         # Last setup-java wins, so Gradle runs on this stable LTS JDK while the
         # tests target the EA JDK captured above via -Ptarget.java.home.
-        uses: actions/setup-java@v6.2.0
+        uses: actions/setup-java@v6.3.0
         with:
           distribution: 'zulu'
           java-version: '21'

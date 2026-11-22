@@ -22,6 +22,8 @@ import org.codehaus.groovy.control.CompilationUnit
 import org.codehaus.groovy.control.CompilerConfiguration
 import org.codehaus.groovy.control.Phases
 import org.codehaus.groovy.control.messages.WarningMessage
+import org.junit.jupiter.api.AfterEach
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 
 import static groovy.test.GroovyAssert.assertScript
@@ -30,10 +32,37 @@ import static groovy.test.GroovyAssert.shouldFail
 /**
  * A closure, lambda or method reference written for a slot declared with a type parameter, such as {@code E} of
  * {@code List.add(E)} or {@code V} of {@code putAt(Map<K, V>, K, V)}, where the call or assignment binds the type
- * parameter to a functional interface: statically compiled code compiles a lambda or method reference for that
- * interface, and the class of a closure literal implements it. Dynamic and type-checked code pass them as they did.
+ * parameter to a functional interface: statically compiled code compiles a method reference for that interface,
+ * and a lambda too with the incubating {@code groovy.target.lambda.typearg} option, which these tests set unless
+ * they say otherwise; the class of a closure literal implements it. Dynamic and type-checked code pass them as
+ * they did.
  */
 final class FunctionalTypeArgumentTest {
+
+    private static final String PROP = CompilerConfiguration.LAMBDA_TYPE_ARGUMENT
+
+    private String previous
+
+    @BeforeEach
+    void setUp() {
+        previous = System.getProperty(PROP)
+        System.setProperty(PROP, 'true')
+    }
+
+    @AfterEach
+    void tearDown() {
+        if (previous != null) System.setProperty(PROP, previous) else System.clearProperty(PROP)
+    }
+
+    /** Runs the work with the option cleared; the property is read whenever a call is type checked. */
+    private static <T> T withoutLambdaTypeArgument(Closure<T> work) {
+        String value = System.clearProperty(PROP)
+        try {
+            work.call()
+        } finally {
+            if (value != null) System.setProperty(PROP, value)
+        }
+    }
 
     private final GroovyShell shell = GroovyShell.withConfig {
         imports {
@@ -89,6 +118,51 @@ final class FunctionalTypeArgumentTest {
     }
 
     @Test
+    void testLambdaIsCompiledAsAClosureWithoutTheOption() {
+        withoutLambdaTypeArgument {
+            assertScript shell, '''
+                @CompileStatic
+                class C {
+                    static List<Supplier<String>> suppliers() {
+                        List<Supplier<String>> list = []
+                        list.add(() -> 'add')
+                        list << (() -> 'shift')
+                        list
+                    }
+                    static Map<String, Function<String, String>> functions() {
+                        Map<String, Function<String, String>> map = [:]
+                        map.put('shout', (String s) -> s.toUpperCase())
+                        map.put('reference', String::toUpperCase)
+                        map
+                    }
+                    static List<Function<String, String>> references() {
+                        List<Function<String, String>> list = []
+                        list.add(String::toUpperCase)
+                        list << String::trim
+                        list
+                    }
+                }
+
+                // a lambda is compiled as a closure, as before, and dynamic code calls it as one
+                def suppliers = C.suppliers()
+                assert suppliers.every { it instanceof Closure }
+                assert suppliers.collect { it() } == ['add', 'shift']
+                def functions = C.functions()
+                assert functions.shout instanceof Closure
+                assert functions.shout('hi') == 'HI'
+                assert functions.shout.call('hi') == 'HI'
+
+                // a method reference is compiled for the interface whether or not the option is set
+                assert !(functions.reference instanceof Closure)
+                assert functions.reference.apply('hi') == 'HI'
+                def references = C.references()
+                assert references*.apply(' ab ') == [' AB ', 'ab']
+                assert references.every { it instanceof Function && !(it instanceof Closure) }
+            '''
+        }
+    }
+
+    @Test
     void testDynamicCodeReadingALambdaStoredByStaticallyCompiledCode() {
         assertScript shell, '''
             @CompileStatic
@@ -98,16 +172,32 @@ final class FunctionalTypeArgumentTest {
                 list
             }
 
+            @CompileStatic
+            Map<String, Function<String, String>> commands() {
+                Map<String, Function<String, String>> commands = [:]
+                commands.put('shout', (String s) -> s.toUpperCase())
+                commands
+            }
+
             def list = make()
             assert list[0].get() == 'x'
             // a lambda is an instance of the interface, not a closure
             groovy.test.GroovyAssert.shouldFail(MissingMethodException) { list[0]() }
             groovy.test.GroovyAssert.shouldFail(MissingMethodException) { list[0].call() }
+            def commands = commands()
+            assert commands.shout.apply('hi') == 'HI'
+            groovy.test.GroovyAssert.shouldFail(MissingMethodException) { commands.shout('hi') }
+            groovy.test.GroovyAssert.shouldFail(MissingMethodException) { commands.shout.call('hi') }
         '''
     }
 
     @Test
     void testTypeCheckedCodePassesALambdaOrMethodReferenceAsBefore() {
+        typeCheckedCodePassesALambdaOrMethodReferenceAsBefore()
+        withoutLambdaTypeArgument { typeCheckedCodePassesALambdaOrMethodReferenceAsBefore() }
+    }
+
+    private void typeCheckedCodePassesALambdaOrMethodReferenceAsBefore() {
         def err = shouldFail shell, '''
             @TypeChecked
             void test() {

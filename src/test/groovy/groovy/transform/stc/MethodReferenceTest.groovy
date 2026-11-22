@@ -842,6 +842,53 @@ final class MethodReferenceTest {
         assert err.message =~ /Possible loss of precision from java.lang.Long to int/
     }
 
+    // GROOVY-12716: only the overloads that the parameter types can select are checked
+    @Test
+    void testMethodPointerToOverloadsSelectedByParameterTypes() {
+        assertScript shell, '''
+            @CompileStatic
+            class C {
+                Function<Integer,Integer> returned() { Math.&abs }
+                static void test() {
+                    Function<Integer,Integer> f = Math.&abs
+                    assert f.apply(-3) == 3
+                    Function<Long,Long> g = Math.&abs
+                    assert g.apply(-4L) == 4L
+                    ToIntFunction<Integer> h = Math.&abs
+                    assert h.applyAsInt(-5) == 5
+                    BiFunction<Integer,Integer,Integer> i = Math.&max
+                    assert i.apply(1, 2) == 2
+                    Function<Number,Number> j = Math.&abs
+                    assert j.apply(-6) == 6
+                    assert j.apply(-7.5d) == 7.5d
+                }
+            }
+            C.test()
+            assert new C().returned().apply(-8) == 8
+        '''
+
+        // a Number may be a Double, which selects abs(double)
+        def err = shouldFail shell, '''
+            @CompileStatic
+            class C {
+                static void test() {
+                    ToIntFunction<Number> f = Math.&abs
+                }
+            }
+        '''
+        assert err.message =~ /Possible loss of precision from double to int/
+
+        err = shouldFail shell, '''
+            @CompileStatic
+            class C {
+                static void test() {
+                    ToIntFunction<Long> f = Math.&abs
+                }
+            }
+        '''
+        assert err.message =~ /Possible loss of precision from long to int/
+    }
+
     // GROOVY-12623: a method pointer still selects its method at run time
     @Test
     void testMethodPointerFromTypeParameterReturnType() {
@@ -2451,6 +2498,71 @@ final class MethodReferenceTest {
             }
         '''
         assert err.message =~ /Invalid return type: java.lang.String is not convertible to java.lang.Number/
+    }
+
+    // GROOVY-12607
+    @ParameterizedTest
+    @ValueSource(strings=['@TypeChecked','@CompileStatic'])
+    void testIncompatibleReturnType2(String tag) {
+        for (op in ['::','.&']) {
+            for (spec in [['String','int','1'], ['Long','int','1'], ['Boolean','String',"'x'"], ['String','Object',"'x'"]]) {
+                def (type, returnType, value) = spec
+                for (use in ["Supplier<$type> f() { this${op}m }",
+                             "def g() { take(this${op}m) }",
+                             "def g() { Supplier<$type> x = this${op}m }",
+                             "Supplier<$type> x = this${op}m"]) {
+                    def err = shouldFail shell, """
+                        $tag
+                        class C {
+                            $returnType m() { $value }
+                            def take(Supplier<$type> x) { }
+                            $use
+                        }
+                    """
+                    assert err.message =~ /Invalid return type: (java.lang.)?$returnType is not convertible to java.lang.$type/
+                }
+            }
+
+            def err = shouldFail shell, """
+                $tag
+                void test() {
+                    Function<String,Long> f = String${op}length
+                }
+            """
+            assert err.message.contains('Invalid return type: int is not convertible to java.lang.Long')
+        }
+    }
+
+    // GROOVY-12607
+    @ParameterizedTest
+    @ValueSource(strings=['@TypeChecked','@CompileStatic'])
+    void testCompatibleReturnType(String tag) {
+        for (op in ['::','.&']) {
+            assertScript shell, """
+                $tag
+                class C {
+                    int m() { 1 }
+                    static int len(String s) { s.length() }
+                    Supplier<Number> f() { this${op}m }
+                    Supplier<Object> g() { this${op}m }
+                    Function<Integer,Integer> h() { Math${op}abs } // overloads return int, long, float and double
+                    def take(Function<Integer,Integer> x) { x.apply(-2) }
+                    def test() {
+                        assert f().get() == 1
+                        assert g().get() == 1
+                        assert h().apply(-2) == 2
+                        assert take(Math${op}abs) == 2
+                        Function<Integer,Integer> abs = Math${op}abs
+                        assert abs.apply(-3) == 3
+                        ToLongFunction<String> length = C${op}len // int widened to long
+                        assert length.applyAsLong('abc') == 3L
+                        Supplier<String> s = 'x'${op}toString
+                        assert s.get() == 'x'
+                    }
+                }
+                new C().test()
+            """
+        }
     }
 
     // GROOVY-10269

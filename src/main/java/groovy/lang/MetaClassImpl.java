@@ -587,6 +587,9 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
                             if (replacement == null) {
                                 replacement = getHiddenExtensionMethod(method, c);
                             }
+                            if (replacement == null) {
+                                replacement = getHiddenStaticMethod(method, c);
+                            }
                             if (replacement != null) {
                                 methods.set(i, replacement);
                             } else {
@@ -609,6 +612,9 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
                         e.methodsForSuper = superMethodOfAnotherRuntimePackage(method, c);
                         if (e.methodsForSuper == null) {
                             e.methodsForSuper = getHiddenExtensionMethod(method, c);
+                        }
+                        if (e.methodsForSuper == null) {
+                            e.methodsForSuper = getHiddenStaticMethod(method, c); // null: not fit for super usage
                         }
                     }
                 }
@@ -662,6 +668,24 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
                     }
                 }
                 return -1;
+            }
+
+            /**
+             * Finds the static method of a superclass that a static method of
+             * class {@code c} hides: "super.name()" within {@code c} calls it.
+             */
+            private MetaMethod getHiddenStaticMethod(final MetaMethod method, final Class<?> c) {
+                if (!method.isStatic() || isDGM(method) || method.getDeclaringClass().getTheClass() != c) return null;
+                for (CachedClass sc = ReflectionCache.getCachedClass(c).getCachedSuperClass(); sc != null; sc = sc.getCachedSuperClass()) {
+                    for (CachedMethod m : sc.getMethods()) {
+                        if (m.isStatic() && m.getName().equals(method.getName())
+                                && MetaMethod.equal(m.getParameterTypes(), method.getParameterTypes())
+                                && (m.isPublic() || m.isProtected() || (!m.isPrivate() && inSamePackage(sc.getTheClass(), c)))) {
+                            return m;
+                        }
+                    }
+                }
+                return null;
             }
 
             /**

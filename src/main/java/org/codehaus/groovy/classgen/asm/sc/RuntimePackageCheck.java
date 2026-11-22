@@ -22,6 +22,7 @@ import groovy.transform.Internal;
 import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
+import org.codehaus.groovy.ast.CompileUnit;
 import org.codehaus.groovy.ast.ConstructorNode;
 import org.codehaus.groovy.ast.FieldNode;
 import org.codehaus.groovy.ast.InnerClassNode;
@@ -305,7 +306,17 @@ public final class RuntimePackageCheck {
 
         private boolean isClassOfAnotherRuntimePackage(final String className) {
             SourceUnit sourceUnit = controller.getSourceUnit();
-            if (sourceUnit.getAST().getUnit().getClass(className) != null) return false; // this compilation
+            CompileUnit unit = sourceUnit.getAST().getUnit();
+            if (unit.getClass(className) != null || unit.getGeneratedInnerClass(className) != null) {
+                return false; // this compilation
+            }
+            // Inner classes created during classgen of their outer class may not
+            // yet be in the unit when this class's instructions are checked. A
+            // leftover class of the same name from an earlier parse of the same
+            // GroovyShell must not be taken as the referent.
+            if (isNestedClassOfThisCompilation(unit, controller.getClassNode(), className)) {
+                return false;
+            }
             try {
                 Class<?> type = sourceUnit.getClassLoader().loadClass(className, false, true);
                 return (type.getModifiers() & (Opcodes.ACC_PUBLIC | Opcodes.ACC_PROTECTED)) == 0 // a protected nested class is public in its class file
@@ -313,6 +324,23 @@ public final class RuntimePackageCheck {
             } catch (ClassNotFoundException | LinkageError e) {
                 return false; // generated with this class, such as a closure
             }
+        }
+
+        /**
+         * Determines if {@code className} is a nested class of the class being
+         * written or of a class already in this compilation unit.
+         */
+        private static boolean isNestedClassOfThisCompilation(final CompileUnit unit, final ClassNode current, final String className) {
+            if (isNestedClassName(className, current.getName())) return true;
+            for (ClassNode cn : unit.getClasses()) {
+                if (isNestedClassName(className, cn.getName())) return true;
+            }
+            return false;
+        }
+
+        private static boolean isNestedClassName(final String className, final String outerName) {
+            return className.startsWith(outerName) && className.length() > outerName.length()
+                && className.charAt(outerName.length()) == '$';
         }
 
         @Override
