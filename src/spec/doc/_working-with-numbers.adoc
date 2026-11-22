@@ -310,9 +310,9 @@ runtime as well as any of the other types, so a division involving one is inferr
 
 `BigDecimal` division is performed with the `divide()` method if the division is exact
 (i.e. yielding a result that can be represented within the bounds of the same precision and scale),
-or using a `MathContext` with a http://docs.oracle.com/javase/7/docs/api/java/math/BigDecimal.html#precision()[precision]
+or using a `MathContext` with a https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/math/BigDecimal.html#precision()[precision]
 of the maximum of the two operands' precision plus an extra precision of 10,
-and a http://docs.oracle.com/javase/7/docs/api/java/math/BigDecimal.html#scale()[scale]
+and a https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/math/BigDecimal.html#scale()[scale]
 of the maximum of 10 and the maximum of the operands' scale.
 
 [NOTE]

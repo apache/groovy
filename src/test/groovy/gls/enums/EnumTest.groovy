@@ -19,6 +19,15 @@
 package gls.enums
 
 import gls.CompilableTestSupport
+import groovy.transform.CompileStatic
+import org.apache.groovy.parser.antlr4.Antlr4ParserPlugin
+import org.codehaus.groovy.ast.ModuleNode
+import org.codehaus.groovy.ast.expr.ListExpression
+import org.codehaus.groovy.control.CompilerConfiguration
+import org.codehaus.groovy.control.ParserPlugin
+import org.codehaus.groovy.control.ParserPluginFactory
+import org.codehaus.groovy.control.SourceUnit
+import org.codehaus.groovy.syntax.Reduction
 import org.junit.jupiter.api.Test
 
 import static groovy.test.GroovyAssert.shouldFail
@@ -1002,28 +1011,442 @@ final class EnumTest extends CompilableTestSupport {
     // meta class
     @Test
     void testEmptyArgumentListKeepsConstantCreationOpenToMetaClassInterception() {
-        def interceptedInits = { Class enumClass ->
-            def seen = []
-            def mc = new DelegatingMetaClass(enumClass) {
-                Object invokeStaticMethod(Object object, String methodName, Object[] arguments) {
-                    if (methodName == '$INIT') seen << arguments.toList()
-                    super.invokeStaticMethod(object, methodName, arguments)
-                }
-            }
-            mc.initialize()
-            GroovySystem.metaClassRegistry.setMetaClass(enumClass, mc)
-            try {
-                // first active use: <clinit> runs now, after the meta class is in place
-                assert enumClass.getMethod('values').invoke(null)*.name() == ['ONE', 'TWO']
-            } finally {
-                GroovySystem.metaClassRegistry.removeMetaClass(enumClass)
-            }
-            seen
-        }
         def loader = new GroovyClassLoader(getClass().classLoader)
         assert interceptedInits(loader.parseClass('enum OptedOut { ONE(), TWO }')) == [['ONE', 0], ['TWO', 1]]
         assert interceptedInits(loader.parseClass('enum Direct { ONE, TWO }')).isEmpty()
     }
+
+    // constants whose arguments are all literals are created beyond the reach of the meta
+    // class as well; an argument that is not a literal keeps the $INIT path open to it
+    // GROOVY-12490
+    @Test
+    void testNonLiteralArgumentKeepsConstantCreationOpenToMetaClassInterception() {
+        def loader = new GroovyClassLoader(getClass().classLoader)
+        def optedOut = loader.parseClass('''
+            enum OptedOutArgs {
+                ONE('one'.toUpperCase()), TWO('two')
+                OptedOutArgs(String s) { }
+            }
+        ''')
+        def direct = loader.parseClass('''
+            enum DirectArgs {
+                ONE('one'), TWO('two')
+                DirectArgs(String s) { }
+            }
+        ''')
+        assert interceptedInits(optedOut) == [['ONE', 0, 'ONE'], ['TWO', 1, 'two']]
+        assert interceptedInits(direct).isEmpty()
+    }
+
+    private static List interceptedInits(Class enumClass) {
+        def seen = []
+        def mc = new DelegatingMetaClass(enumClass) {
+            Object invokeStaticMethod(Object object, String methodName, Object[] arguments) {
+                if (methodName == '$INIT') seen << arguments.toList()
+                super.invokeStaticMethod(object, methodName, arguments)
+            }
+        }
+        mc.initialize()
+        GroovySystem.metaClassRegistry.setMetaClass(enumClass, mc)
+        try {
+            // first active use: <clinit> runs now, after the meta class is in place
+            assert enumClass.getMethod('values').invoke(null)*.name() == ['ONE', 'TWO']
+        } finally {
+            GroovySystem.metaClassRegistry.removeMetaClass(enumClass)
+        }
+        seen
+    }
+
+    // constants whose arguments are literals that the only constructor able to take them
+    // accepts as they are get a direct constructor call too
+    // GROOVY-12490
+    @Test
+    void testConstantsWithLiteralArguments() {
+        assert AccessModifier.values()*.name() == ['PRIVATE', 'PROTECTED', 'PUBLIC']
+        assert AccessModifier.values()*.ordinal() == [0, 1, 2]
+        assert AccessModifier.values()*.keyword == ['private', 'protected', 'public']
+        assert AccessModifier.valueOf('PROTECTED') == AccessModifier.PROTECTED
+        assert AccessModifier.PROTECTED.declaringClass == AccessModifier
+        assert AccessModifier.MIN_VALUE == AccessModifier.PRIVATE
+        assert AccessModifier.MAX_VALUE == AccessModifier.PUBLIC
+        assert AccessModifier.PRIVATE.next() == AccessModifier.PROTECTED
+        assert EnumSet.allOf(AccessModifier).size() == 3
+    }
+
+    // GROOVY-12490
+    @Test
+    void testConstantsWithLiteralArgumentsInASwitch() {
+        def scope = { AccessModifier modifier ->
+            switch (modifier) {
+                case AccessModifier.PRIVATE: return 'class'
+                case AccessModifier.PROTECTED: return 'subclasses'
+                default: return 'everyone'
+            }
+        }
+        assert AccessModifier.values().collect(scope) == ['class', 'subclasses', 'everyone']
+    }
+
+    // GROOVY-12490
+    @Test
+    void testConstantsWithLiteralArgumentsOfEveryKind() {
+        def values = LiteralArgs.ONE.values
+        assert values == ['s', 1, true, 2L, 1.5f, 2.5d, 3.5, 4G, -5, null, String, 6, 'x']
+        assert values.collect { it?.getClass() } == [String, Integer, Boolean, Long, Float, Double,
+                                                     BigDecimal, BigInteger, Integer, null, Class, Integer, String]
+    }
+
+    // GROOVY-12490
+    @Test
+    void testConstantsWithLiteralArgumentsReadStaticFieldsInTheConstructor() {
+        assert Registered.values()*.key == ['key-one', 'key-two']
+        assert Registered.created == 2
+        // the static initializers of an enum run after its constants have been created
+        assert Registered.last == 'initial'
+    }
+
+    // GROOVY-12490
+    @Test
+    void testConstantsWithAndWithoutLiteralArguments() {
+        assert Sized.values()*.size == [1, 10]
+    }
+
+    // GROOVY-12490
+    @Test
+    void testConstantsWithLiteralArgumentsPickTheConstructorByArity() {
+        assert ArityPicked.values()*.description == ['one', 'two:2']
+    }
+
+    // GROOVY-12490
+    @Test
+    void testCompileStaticConstantsWithLiteralArguments() {
+        assert StaticKeyword.values()*.keyword == ['static', 'final']
+        assert StaticKeyword.valueOf('FINAL').ordinal() == 1
+    }
+
+    // GROOVY-12490
+    @Test
+    void testNullArgumentForABooleanParameter() {
+        assertScript '''
+            enum E {
+                ONE(null)
+                final Boolean flag
+                E(Boolean flag) { this.flag = flag }
+            }
+            assert E.ONE.flag == null
+        '''
+    }
+
+    // $INIT casts true and false for a Boolean parameter with asBoolean, which a category
+    // active while the enum initializes changes; null, and true or false for a boolean
+    // parameter, pass as they are, so those constants are created directly
+    // GROOVY-12490
+    @Test
+    void testBooleanArgumentsUnderACategoryThatOverridesAsBoolean() {
+        assertScript '''
+            @groovy.transform.CompileStatic
+            class Negation {
+                static boolean asBoolean(Boolean b) { !b.booleanValue() }
+            }
+            enum Wrapper {
+                ONE(true), TWO(false), THREE(null)
+                final Boolean flag
+                Wrapper(Boolean flag) { this.flag = flag }
+            }
+            enum Nothing {
+                ONE(null)
+                final Boolean flag
+                Nothing(Boolean flag) { this.flag = flag }
+            }
+            enum Primitive {
+                ONE(true), TWO(false)
+                final boolean flag
+                Primitive(boolean flag) { this.flag = flag }
+            }
+            // each enum initializes on its first use, inside the category
+            def flags = use(Negation) { [Wrapper, Nothing, Primitive].collect { it.values()*.flag } }
+            assert flags == [[false, true, null], [null], [true, false]]
+        '''
+    }
+
+    // GROOVY-12490
+    @Test
+    void testLiteralArgumentBesideAVarargsConstructorThatNeedsMoreArguments() {
+        assertScript '''
+            enum E {
+                ONE('one')
+                final String s
+                E(String s) { this.s = s }
+                E(String s, int i, String... more) { this.s = 'varargs' }
+            }
+            assert E.ONE.s == 'one'
+        '''
+    }
+
+    // the runtime prefers the constructor of matching arity to a varargs one, unless the last
+    // argument is null and the varargs constructor has the same arity
+    // GROOVY-12490
+    @Test
+    void testLiteralArgumentsBesideAVarargsConstructor() {
+        assertScript '''
+            enum E {
+                ONE('one'), TWO('two')
+                final String s
+                E(String s) { this.s = s }
+                E(Object... values) { this.s = 'varargs' }
+            }
+            assert E.values()*.s == ['one', 'two']
+        '''
+        assertScript '''
+            enum E {
+                ONE('one', 1), TWO('two', null)
+                final String s
+                E(String s, Integer i) { this.s = s + ':' + i }
+                E(String s, Object... more) { this.s = s + ':varargs:' + more }
+            }
+            assert E.values()*.s == ['one:1', 'two:varargs:[null]']
+        '''
+    }
+
+    // GROOVY-12490
+    @Test
+    void testLiteralArgumentsForAGenericConstructor() {
+        assertScript '''
+            enum E {
+                ONE(1), TWO(2.5)
+                final Number n
+                <T extends Number> E(T n) { this.n = n }
+            }
+            assert E.values()*.n == [1, 2.5]
+            assert E.values()*.n*.getClass() == [Integer, BigDecimal]
+        '''
+    }
+
+    // a transform may give a constant arguments of its own; they reach the constructor
+    // whether or not the constant is created directly
+    // GROOVY-12490
+    @Test
+    void testArgumentsAddedByATransformToPlainConstants() {
+        assertScript addingToPlainConstants("new ConstantExpression('added')") + '''
+            enum Mixed {
+                ONE, TWO('two')
+                final String s
+                Mixed(String s = 'none') { this.s = s }
+            }
+            assert Mixed.values()*.s == ['added', 'two']
+        '''
+        assertScript addingToPlainConstants("new ConstantExpression('added')") + '''
+            enum Plain {
+                ONE, TWO
+                final String s
+                Plain(String s = 'none') { this.s = s }
+            }
+            assert Plain.values()*.s == ['added', 'added']
+        '''
+        assertScript addingToPlainConstants(
+            "new MethodCallExpression(new ConstantExpression('added'), 'toUpperCase', ArgumentListExpression.EMPTY_ARGUMENTS)") + '''
+            enum NotALiteral {
+                ONE, TWO('two')
+                final String s
+                NotALiteral(String s = 'none') { this.s = s }
+            }
+            assert NotALiteral.values()*.s == ['ADDED', 'two']
+        '''
+    }
+
+    // the parser makes no char constant, but a transform can: it reaches a char or Character
+    // parameter as it is, while for an int parameter $INIT finds no constructor
+    // GROOVY-12490
+    @Test
+    void testCharacterConstantArgumentsAddedByATransform() {
+        def character = "new ConstantExpression(Character.valueOf((char) 'c'))"
+        assertScript addingToPlainConstants(character) + '''
+            enum ForChar {
+                ONE, TWO
+                final char c
+                ForChar(char c = (char) 'a') { this.c = c }
+            }
+            assert ForChar.values()*.c == ['c' as char] * 2
+        '''
+        assertScript addingToPlainConstants(character) + '''
+            enum ForCharacter {
+                ONE, TWO
+                final Character c
+                ForCharacter(Character c = null) { this.c = c }
+            }
+            assert ForCharacter.values()*.c == ['c' as char] * 2
+        '''
+        assertScript addingToPlainConstants(character) + '''
+            enum ForInt {
+                ONE, TWO
+                ForInt(int i = 0) { }
+            }
+            try {
+                ForInt.values()
+                assert false
+            } catch (ExceptionInInitializerError e) {
+                assert e.cause.message.startsWith('Could not find matching constructor for: ForInt(String, Integer, Character)')
+            }
+        '''
+    }
+
+    // GROOVY-12490
+    @Test
+    void testInitCallReplacedByATransform() {
+        assertScript '''
+            import groovy.transform.ASTTest
+            import org.codehaus.groovy.ast.expr.ArgumentListExpression
+            import org.codehaus.groovy.ast.expr.ConstantExpression
+            import org.codehaus.groovy.ast.expr.StaticMethodCallExpression
+
+            import static org.codehaus.groovy.control.CompilePhase.CANONICALIZATION
+
+            @ASTTest(phase = CANONICALIZATION, value = {
+                def assignment = node.getDeclaredMethod('<clinit>').code.statements[0].expression
+                assignment.rightExpression = new StaticMethodCallExpression(node, 'make',
+                    new ArgumentListExpression(new ConstantExpression('ONE'), new ConstantExpression(0)))
+            })
+            enum Made {
+                ONE, TWO('two')
+                final String s
+                Made(String s = 'none') { this.s = s }
+                static Made make(String name, int ordinal) { $INIT(name, ordinal, 'made') }
+            }
+            assert Made.values()*.s == ['made', 'two']
+            assert Made.values()*.ordinal() == [0, 1]
+        '''
+    }
+
+    // a parser plugin may leave the only argument of a constant as its initial value instead
+    // of in a list
+    // GROOVY-12490
+    @Test
+    void testOnlyArgumentOutsideAList() {
+        def shell = new GroovyShell(unwrappingOnlyArguments())
+        assert shell.evaluate('''
+            enum Direct {
+                ONE('one'), TWO('two')
+                final String s
+                Direct(String s) { this.s = s }
+            }
+            Direct.values()*.s
+        ''') == ['one', 'two']
+        assert shell.evaluate('''
+            enum NotALiteral {
+                ONE('one'.toUpperCase()), TWO('two')
+                final String s
+                NotALiteral(String s) { this.s = s }
+            }
+            NotALiteral.values()*.s
+        ''') == ['ONE', 'two']
+        assert shell.evaluate('''
+            enum WithBody {
+                ONE { String describe() { 'body' } }, TWO
+                String describe() { 'plain' }
+            }
+            WithBody.values()*.describe()
+        ''') == ['body', 'plain']
+    }
+
+    // a parser that leaves the only argument of an enum constant as its initial value, where
+    // the Groovy parser puts it in a list (a list argument stays in its list, as it would be
+    // taken for the arguments)
+    private static CompilerConfiguration unwrappingOnlyArguments() {
+        new CompilerConfiguration(pluginFactory: new ParserPluginFactory() {
+            @Override
+            ParserPlugin createParserPlugin() {
+                new Antlr4ParserPlugin() {
+                    @Override
+                    ModuleNode buildAST(SourceUnit sourceUnit, ClassLoader classLoader, Reduction cst) {
+                        ModuleNode module = super.buildAST(sourceUnit, classLoader, cst)
+                        module.classes*.fields.flatten().each { field ->
+                            def init = field.initialExpression
+                            if (field.enum && init instanceof ListExpression && init.expressions.size() == 1
+                                    && !(init.expressions[0] instanceof ListExpression)) {
+                                field.initialValueExpression = init.expressions[0]
+                            }
+                        }
+                        module
+                    }
+                }
+            }
+        })
+    }
+
+    // the imports and the annotation of an enum whose $INIT calls an @ASTTest rewrites as a
+    // transform would: the given argument is added to each call that passes only the name
+    // and the ordinal, i.e. to the call of each constant without arguments of its own
+    private static String addingToPlainConstants(final String argument) {
+        """
+            import groovy.transform.ASTTest
+            import org.codehaus.groovy.ast.ClassCodeVisitorSupport
+            import org.codehaus.groovy.ast.expr.ArgumentListExpression
+            import org.codehaus.groovy.ast.expr.ConstantExpression
+            import org.codehaus.groovy.ast.expr.MethodCallExpression
+            import org.codehaus.groovy.ast.expr.StaticMethodCallExpression
+            import org.codehaus.groovy.control.SourceUnit
+
+            import static org.codehaus.groovy.control.CompilePhase.CANONICALIZATION
+
+            @ASTTest(phase = CANONICALIZATION, value = {
+                new ClassCodeVisitorSupport() {
+                    protected SourceUnit getSourceUnit() { null }
+                    void visitStaticMethodCallExpression(StaticMethodCallExpression call) {
+                        if (call.method == '\$INIT' && call.arguments.expressions.size() == 2) {
+                            call.arguments.addExpression($argument)
+                        }
+                    }
+                }.visitMethod(node.getDeclaredMethod('<clinit>'))
+            })
+        """
+    }
+}
+
+enum AccessModifier {
+    PRIVATE('private'), PROTECTED('protected'), PUBLIC('public')
+    final String keyword
+    AccessModifier(String keyword) { this.keyword = keyword }
+}
+
+enum LiteralArgs {
+    ONE('s', 1, true, 2L, 1.5f, 2.5d, 3.5, 4G, -5, null, String, 6, 'x')
+    final List values
+    LiteralArgs(String s, int i, boolean b, long l, float f, double d, BigDecimal bd, BigInteger bi,
+                int negative, Integer nothing, Class c, Number n, CharSequence cs) {
+        values = [s, i, b, l, f, d, bd, bi, negative, nothing, c, n, cs]
+    }
+}
+
+enum Registered {
+    ONE('one'), TWO('two')
+    static final String PREFIX = 'key-'
+    static int created
+    static String last = 'initial'
+    final String key
+    Registered(String name) {
+        key = PREFIX + name
+        Registered.created++
+        Registered.last = name
+    }
+}
+
+enum Sized {
+    SMALL, LARGE(10)
+    final int size
+    Sized(int size = 1) { this.size = size }
+}
+
+enum ArityPicked {
+    ONE('one'), TWO('two', 2)
+    final String description
+    ArityPicked(String name) { description = name }
+    ArityPicked(String name, int count) { description = name + ':' + count }
+}
+
+@CompileStatic
+enum StaticKeyword {
+    STATIC('static'), FINAL('final')
+    final String keyword
+    StaticKeyword(String keyword) { this.keyword = keyword }
 }
 
 enum Weekday {

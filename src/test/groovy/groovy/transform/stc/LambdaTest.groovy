@@ -1067,6 +1067,79 @@ final class LambdaTest {
         }
     }
 
+    // GROOVY-12678
+    @Test
+    void testNestedLambdaOwnerDelegateThisObject() {
+        for (prop in ['owner', 'delegate', 'thisObject', 'getOwner()', 'getDelegate()', 'getThisObject()']) {
+            assertScript shell, """
+                class C {
+                    String name = 'n'
+                    def lambdaInLambda() {
+                        Supplier<Supplier<String>> s = () -> { name; (Supplier<String>) (() -> { name; ${prop}.name }) }
+                        s.get().get()
+                    }
+                    def lambdaInClosure() {
+                        def c = { -> Supplier<String> s = () -> { name; ${prop}.name }; s.get() }
+                        c()
+                    }
+                    def lambdaInLambdaInClosure() {
+                        def c = { -> Supplier<Supplier<String>> s = () -> { name; (Supplier<String>) (() -> { name; ${prop}.name }) }; s.get().get() }
+                        c()
+                    }
+                    def lambdaInClosureInLambda() {
+                        Supplier<String> s = () -> { name; def c = { -> Supplier<String> t = () -> { name; ${prop}.name }; t.get() }; c() }
+                        s.get()
+                    }
+                    def lambdaInClosureReference() {
+                        def c = { -> Supplier<Object> s = () -> { name; ${prop} }; s.get() }
+                        c()
+                    }
+                }
+
+                def c = new C()
+                assert c.lambdaInLambda() == 'n'
+                assert c.lambdaInClosure() == 'n'
+                assert c.lambdaInLambdaInClosure() == 'n'
+                assert c.lambdaInClosureInLambda() == 'n'
+                assert c.lambdaInClosureReference().is(c)
+            """
+        }
+    }
+
+    // GROOVY-12678
+    @Test
+    void testClosureOwnerInNestedFunction() {
+        for (prop in ['owner', 'getOwner()']) {
+            assertScript shell, """
+                class C {
+                    String name = 'n'
+                    def closureInLambda() {
+                        Supplier<Object> s = () -> { name; def c = { -> ${prop}.maximumNumberOfParameters }; c() }
+                        s.get()
+                    }
+                    def closureInClosure() {
+                        def c = { x, y -> def d = { -> ${prop}.maximumNumberOfParameters }; d() }
+                        c(1, 2)
+                    }
+                    def closureLambdaInClosure() {
+                        def c = { x -> def l = () -> ${prop}.maximumNumberOfParameters; l() }
+                        c(1)
+                    }
+                    def closureLambdaInLambda() {
+                        Supplier<Object> s = () -> { name; Closure<Integer> l = () -> ${prop}.maximumNumberOfParameters; l() }
+                        s.get()
+                    }
+                }
+
+                def c = new C()
+                assert c.closureInLambda() == 0
+                assert c.closureInClosure() == 2
+                assert c.closureLambdaInClosure() == 1
+                assert c.closureLambdaInLambda() == 0
+            """
+        }
+    }
+
     // GROOVY-11480
     @Test
     void testNestedLambdaAccessingInstanceFields3() {
@@ -1084,6 +1157,178 @@ final class LambdaTest {
                 assert new Test1.Test2(new Test1()).m() == 123
             """
         }
+    }
+
+    // GROOVY-12668
+    @Test
+    void testLambdaCallsEnclosingClassMethodNamedLikeClosureMethod() {
+        assertScript shell, '''
+            class C {
+                String getDelegate() { 'delegate' }
+                String getOwner() { 'owner' }
+                String getThisObject() { 'thisObject' }
+                int getMaximumNumberOfParameters() { 42 }
+                String memoizeAtMost(int i) { 'memoizeAtMost' + i }
+                List<Object> m() {
+                    Supplier<Object> a = () -> getDelegate()
+                    Supplier<Object> b = () -> getOwner()
+                    Supplier<Object> c = () -> getThisObject()
+                    Supplier<Object> d = () -> getMaximumNumberOfParameters()
+                    Supplier<Object> e = () -> memoizeAtMost(5)
+                    [a.get(), b.get(), c.get(), d.get(), e.get()]
+                }
+                List<Object> p() {
+                    Supplier<Object> a = () -> delegate
+                    Supplier<Object> b = () -> owner
+                    Supplier<Object> c = () -> thisObject
+                    Supplier<Object> d = () -> maximumNumberOfParameters
+                    Supplier<String> e = () -> delegate.toUpperCase()
+                    [a.get(), b.get(), c.get(), d.get(), e.get()]
+                }
+            }
+
+            def c = new C()
+            assert c.m() == ['delegate', 'owner', 'thisObject', 42, 'memoizeAtMost5']
+            assert c.p() == ['delegate', 'owner', 'thisObject', 42, 'DELEGATE']
+        '''
+    }
+
+    // GROOVY-12668
+    @Test
+    void testLambdaCallsEnclosingClassCurryMethod() {
+        assertScript shell, '''
+            class C {
+                String curry(Object o) { 'curry' + o }
+                String rcurry(Object o) { 'rcurry' + o }
+                String ncurry(int i, Object o) { 'ncurry' + i + o }
+                static String curry(int i, int j) { 'static' + i + j }
+                List<Object> m() {
+                    Supplier<Object> a = () -> curry(1)
+                    Supplier<Object> b = () -> rcurry(2)
+                    Supplier<Object> c = () -> ncurry(3, 4)
+                    Supplier<Object> d = () -> curry(5, 6)
+                    [a.get(), b.get(), c.get(), d.get()]
+                }
+            }
+
+            assert new C().m() == ['curry1', 'rcurry2', 'ncurry34', 'static56']
+        '''
+    }
+
+    // GROOVY-12668
+    @Test
+    void testLambdaCallsEnclosingClassStaticMethodNamedLikeClosureMethod() {
+        assertScript shell, '''
+            class C {
+                static String getDelegate() { 'delegate' }
+                static String memoizeAtMost(int i) { 'memoizeAtMost' + i }
+                static List<Object> sm() {
+                    Supplier<Object> a = () -> getDelegate()
+                    Supplier<Object> b = () -> memoizeAtMost(1)
+                    Supplier<Object> c = () -> delegate
+                    [a.get(), b.get(), c.get()]
+                }
+                List<Object> m() {
+                    Supplier<Object> a = () -> getDelegate()
+                    Supplier<Object> b = () -> memoizeAtMost(2)
+                    [a.get(), b.get()]
+                }
+            }
+
+            assert C.sm() == ['delegate', 'memoizeAtMost1', 'delegate']
+            assert new C().m() == ['delegate', 'memoizeAtMost2']
+        '''
+    }
+
+    // GROOVY-12668
+    @Test
+    void testNestedLambdaAndClosureCallMethodNamedLikeClosureMethod() {
+        assertScript shell, '''
+            class C {
+                String getDelegate() { 'delegate' }
+                String memoizeAtMost(int i) { 'memoizeAtMost' + i }
+                List<Object> m() {
+                    Closure<Object> lambdaInClosure = { -> Supplier<Object> s = () -> getDelegate(); s.get() }
+                    Supplier<Object> lambdaInLambda = () -> { Supplier<Object> s = () -> memoizeAtMost(1); return s.get() }
+                    // a closure in a lambda is a closure: its own methods come first
+                    Supplier<Object> closureInLambda = () -> { -> memoizeAtMost(2) }()
+                    [lambdaInClosure(), lambdaInLambda.get(), closureInLambda.get()]
+                }
+            }
+
+            def result = new C().m()
+            assert result[0] == 'delegate'
+            assert result[1] == 'memoizeAtMost1'
+            assert result[2] instanceof Closure
+        '''
+    }
+
+    // GROOVY-12668
+    @Test
+    void testLambdaCallsClosureMethodWithoutEnclosingClassMethod() {
+        assertScript shell, '''
+            class C {
+                List<Object> m() {
+                    Supplier<Object> a = () -> getThisObject()
+                    Supplier<Object> b = () -> getDelegate()
+                    [a.get(), b.get()]
+                }
+            }
+
+            def c = new C()
+            assert c.m().every { it.is(c) }
+        '''
+    }
+
+    // GROOVY-12668: a lambda in dynamic or type-checked code is a closure at run time
+    @Test
+    void testDynamicLambdaCallsClosureMethodBeforeEnclosingClassMethod() {
+        for (mode in ['', '@groovy.transform.TypeChecked']) {
+            assertScript """
+                import java.util.function.Supplier
+
+                $mode
+                class C {
+                    String getDelegate() { 'delegate' }
+                    String memoizeAtMost(int i) { 'memoizeAtMost' + i }
+                    List<Object> m() {
+                        Supplier<Object> a = () -> getDelegate()
+                        Supplier<Object> b = () -> memoizeAtMost(1)
+                        [a.get(), b.get()]
+                    }
+                }
+
+                def c = new C()
+                def result = c.m()
+                assert result[0].is(c)
+                assert result[1] instanceof Closure
+            """
+        }
+    }
+
+    // GROOVY-12668: a lambda without a functional interface type is a closure at run time, also in statically compiled code
+    @Test
+    void testClosureLambdaCallsClosureMethodBeforeEnclosingClassMethod() {
+        assertScript shell, '''
+            class C {
+                String getDelegate() { 'delegate' }
+                String memoizeAtMost(int i) { 'memoizeAtMost' + i }
+                List<Object> m() {
+                    def a = () -> getDelegate()
+                    def b = () -> memoizeAtMost(1)
+                    Supplier<Object> s = () -> getDelegate()
+                    Supplier<Object> t = () -> memoizeAtMost(2)
+                    [a(), b(), s.get(), t.get()]
+                }
+            }
+
+            def c = new C()
+            def result = c.m()
+            assert result[0].is(c)
+            assert result[1] instanceof Closure
+            assert result[2] == 'delegate'
+            assert result[3] == 'memoizeAtMost2'
+        '''
     }
 
     @Test
@@ -1228,6 +1473,138 @@ final class LambdaTest {
             }
 
             new ThisTest().m()
+        '''
+    }
+
+    // GROOVY-12672
+    @Test
+    void testAccessingClosureProperties1() {
+        for (mode in ['', '@groovy.transform.TypeChecked', '@groovy.transform.CompileStatic']) {
+            assertScript """
+                import java.util.function.Supplier
+
+                $mode
+                class C {
+                    def m() {
+                        Supplier<Object> d = () -> delegate
+                        Supplier<Object> o = () -> owner
+                        Supplier<Object> t = () -> thisObject
+                        Supplier<Object> n = () -> maximumNumberOfParameters
+                        Supplier<Object> p = () -> parameterTypes
+                        Supplier<Object> r = () -> resolveStrategy
+                        Supplier<Object> x = () -> directive
+                        Supplier<Object> c = () -> metaClass
+                        [d.get(), o.get(), t.get(), n.get(), p.get(), r.get(), x.get(), c.get()]
+                    }
+                }
+
+                def c = new C()
+                def (d, o, t, n, p, r, x, mc) = c.m()
+                assert d === c
+                assert o === c
+                assert t === c
+                assert n == 0
+                assert p == []
+                assert r == Closure.OWNER_FIRST
+                assert x == 0
+                assert mc instanceof MetaClass
+            """
+        }
+    }
+
+    // GROOVY-12672
+    @Test
+    void testAccessingClosureProperties2() {
+        assertScript shell, '''
+            class C {
+                C m() {
+                    Supplier<C> s = () -> owner
+                    s.get()
+                }
+                String n() {
+                    Supplier<String> s = () -> delegate.toString()
+                    s.get()
+                }
+                def p() {
+                    int i = 1
+                    Supplier<Object> s = () -> [i, delegate, owner]
+                    s.get()
+                }
+                String toString() { 'C' }
+            }
+
+            def c = new C()
+            assert c.m() === c
+            assert c.n() == 'C'
+            assert c.p() == [1, c, c]
+        '''
+    }
+
+    // GROOVY-12672
+    @Test
+    void testAccessingClosureProperties3() {
+        assertScript shell, '''
+            class C {
+                static m() {
+                    Supplier<Object> d = () -> delegate
+                    Supplier<Object> o = () -> owner
+                    Supplier<Object> n = () -> maximumNumberOfParameters
+                    [d.get(), o.get(), n.get()]
+                }
+            }
+
+            assert C.m() == [C, C, 0]
+        '''
+    }
+
+    // GROOVY-12672
+    @Test
+    void testAccessingClosureProperties4() {
+        assertScript shell, '''
+            class C {
+                def m() {
+                    Supplier<Supplier<Object>> s = () -> (Supplier<Object>) (() -> owner)
+                    s.get().get()
+                }
+                def n() {
+                    Supplier<Object> s = () -> {
+                        Supplier<Object> t = () -> 1
+                        [t.get(), delegate]
+                    }
+                    s.get()
+                }
+                def p() {
+                    def c = { ->
+                        Supplier<Object> s = () -> owner
+                        s.get()
+                    }
+                    c()
+                }
+            }
+
+            def c = new C()
+            assert c.m() === c
+            assert c.n() == [1, c]
+            assert c.p() === c
+        '''
+    }
+
+    // GROOVY-12672
+    @Test
+    void testAccessingClosureProperties5() {
+        assertScript shell, '''
+            class C {
+                def m() {
+                    Supplier<Object> s = () -> {
+                        resolveStrategy = Closure.DELEGATE_FIRST
+                        directive = Closure.DONE
+                        [resolveStrategy, directive]
+                    }
+                    s.get()
+                }
+            }
+
+            assert new C().m() == [Closure.DELEGATE_FIRST, Closure.DONE]
         '''
     }
 

@@ -21,6 +21,7 @@ package org.codehaus.groovy.classgen.asm.sc;
 import org.codehaus.groovy.ast.ClassCodeExpressionTransformer;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.CodeVisitorSupport;
+import org.codehaus.groovy.ast.DynamicVariable;
 import org.codehaus.groovy.ast.FieldNode;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.Parameter;
@@ -341,7 +342,8 @@ class StaticTypesLambdaAnalyzer {
         @Override
         public void visitVariableExpression(final VariableExpression expression) {
             if (accessingInstanceMembers) return;
-            if (expression.isThisExpression() || expression.isSuperExpression() || "thisObject".equals(expression.getName())) {
+            // GROOVY-12672: delegate, owner, thisObject, etc. are read from the lambda, whose owner is this
+            if (expression.isThisExpression() || expression.isSuperExpression() || expression.getAccessedVariable() instanceof DynamicVariable) {
                 accessingInstanceMembers = true;
                 return;
             }

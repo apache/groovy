@@ -20,17 +20,14 @@ package org.codehaus.groovy.transform.sc;
 
 import groovy.transform.CompileStatic;
 import org.codehaus.groovy.ast.ASTNode;
-import org.codehaus.groovy.ast.AnnotatedNode;
 import org.codehaus.groovy.ast.AnnotationNode;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.MethodNode;
-import org.codehaus.groovy.ast.PropertyNode;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.classgen.asm.WriterControllerFactory;
 import org.codehaus.groovy.classgen.asm.sc.StaticTypesWriterControllerFactoryImpl;
 import org.codehaus.groovy.control.CompilePhase;
 import org.codehaus.groovy.control.SourceUnit;
-import org.codehaus.groovy.syntax.SyntaxException;
 import org.codehaus.groovy.transform.GroovyASTTransformation;
 import org.codehaus.groovy.transform.StaticTypesTransformation;
 import org.codehaus.groovy.transform.sc.transformers.StaticCompilationTransformer;
@@ -57,19 +54,19 @@ public class StaticCompileTransformation extends StaticTypesTransformation {
      */
     @Override
     public void visit(final ASTNode[] nodes, final SourceUnit source) {
-        AnnotatedNode target = (AnnotatedNode) nodes[1];
+        ASTNode target = nodes[1];
         if (Boolean.TRUE.equals(target.getNodeMetaData(StaticTypeCheckingVisitor.class))) {
             return;
         }
         Map<String,Expression> members = ((AnnotationNode) nodes[0]).getMembers();
         Expression extensions = members.get("extensions");
-        StaticTypeCheckingVisitor visitor = null;
+        StaticTypeCheckingVisitor visitor;
         if (target instanceof ClassNode classNode) {
             visitor = newVisitor(source, classNode);
             visitor.setCompilationUnit(compilationUnit);
             addTypeCheckingExtensions(visitor, extensions);
             classNode.putNodeMetaData(WriterControllerFactory.class, factory);
-            target.putNodeMetaData(STATIC_COMPILE_NODE, !visitor.isSkipMode(target));
+            classNode.putNodeMetaData(STATIC_COMPILE_NODE, !visitor.isSkipMode(classNode));
             visitor.initialize();
             visitor.visitClass(classNode);
         } else if (target instanceof MethodNode methodNode) {
@@ -77,22 +74,23 @@ public class StaticCompileTransformation extends StaticTypesTransformation {
             visitor = newVisitor(source, declaringClass);
             visitor.setCompilationUnit(compilationUnit);
             addTypeCheckingExtensions(visitor, extensions);
-            methodNode.putNodeMetaData(STATIC_COMPILE_NODE, !visitor.isSkipMode(target));
+            methodNode.putNodeMetaData(STATIC_COMPILE_NODE, !visitor.isSkipMode(methodNode));
             if (declaringClass.getNodeMetaData(WriterControllerFactory.class) == null) {
                 declaringClass.putNodeMetaData(WriterControllerFactory.class, factory);
             }
             visitor.setMethodsToBeVisited(Collections.singleton(methodNode));
             visitor.initialize();
             visitor.visitMethod(methodNode);
-        } else if (!(target instanceof PropertyNode)) {
-            source.addError(new SyntaxException(STATIC_ERROR_PREFIX + "Unimplemented node type", target));
+        } else {
+            // GROOVY-12693: the annotation targets types, methods and constructors; any other
+            // placement (local variable, field, parameter, loop statement) is reported by
+            // ExtendedVerifier at class generation, so there is nothing to compile here
+            return;
         }
-        if (visitor != null) {
-            visitor.performSecondPass();
-        }
+        visitor.performSecondPass();
         StaticCompilationTransformer transformer = new StaticCompilationTransformer(source, visitor);
-        if (target instanceof ClassNode) {
-            transformer.visitClass((ClassNode) target);
+        if (target instanceof ClassNode classNode) {
+            transformer.visitClass(classNode);
         } else if (target instanceof MethodNode methodNode) {
             transformer.visitMethod(methodNode);
             // GROOVY-12363: an anonymous inner class declared in this method is compiled

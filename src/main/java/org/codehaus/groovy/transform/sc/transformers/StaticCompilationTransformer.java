@@ -23,9 +23,11 @@ import org.apache.groovy.util.Maps;
 import org.codehaus.groovy.ast.ClassCodeExpressionTransformer;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
+import org.codehaus.groovy.ast.EnumConstantClassNode;
 import org.codehaus.groovy.ast.FieldNode;
 import org.codehaus.groovy.ast.InnerClassNode;
 import org.codehaus.groovy.ast.MethodNode;
+import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.expr.BinaryExpression;
 import org.codehaus.groovy.ast.expr.BooleanExpression;
 import org.codehaus.groovy.ast.expr.CastExpression;
@@ -35,21 +37,31 @@ import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.ListExpression;
 import org.codehaus.groovy.ast.expr.MapExpression;
 import org.codehaus.groovy.ast.expr.MethodCallExpression;
+import org.codehaus.groovy.ast.expr.PostfixExpression;
+import org.codehaus.groovy.ast.expr.PrefixExpression;
 import org.codehaus.groovy.ast.expr.PropertyExpression;
 import org.codehaus.groovy.ast.expr.RangeExpression;
 import org.codehaus.groovy.ast.expr.StaticMethodCallExpression;
 import org.codehaus.groovy.ast.expr.SwitchExpression;
+import org.codehaus.groovy.ast.expr.TupleExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
+import org.codehaus.groovy.ast.stmt.ExpressionStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
+import org.codehaus.groovy.classgen.ReturnAdder;
+import org.codehaus.groovy.classgen.asm.ClosureWriter;
 import org.codehaus.groovy.classgen.asm.sc.StaticTypesTypeChooser;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.runtime.ScriptBytecodeAdapter;
 import org.codehaus.groovy.syntax.Types;
 import org.codehaus.groovy.transform.stc.StaticTypeCheckingVisitor;
 
+import java.util.Collections;
+import java.util.IdentityHashMap;
 import java.util.Map;
+import java.util.Set;
 
-import static org.objectweb.asm.Opcodes.ACC_STATIC;
+import static org.apache.groovy.ast.tools.ClassNodeUtils.hasNoEnclosingInstance;
+import static org.objectweb.asm.Opcodes.ACC_PUBLIC;
 
 /**
  * Some expressions use symbols as aliases to method calls (&lt;&lt;, +=, ...). In static compilation,
@@ -95,6 +107,11 @@ public class StaticCompilationTransformer extends ClassCodeExpressionTransformer
     private final ListExpressionTransformer listExpressionTransformer = new ListExpressionTransformer(this);
     private final MapExpressionTransformer mapExpressionTransformer = new MapExpressionTransformer(this);
     private final CastExpressionOptimizer castExpressionTransformer = new CastExpressionOptimizer(this);
+
+    // expressions that become the implicit return value of a method or closure
+    private final Set<Expression> implicitReturns = Collections.newSetFromMap(new IdentityHashMap<>());
+    // multiple assignments whose value is not used
+    private final Set<Expression> discardedMultipleAssignments = Collections.newSetFromMap(new IdentityHashMap<>());
 
     /**
      * Creates a static compilation transformer for the supplied source unit and visitor.
@@ -147,16 +164,37 @@ public class StaticCompilationTransformer extends ClassCodeExpressionTransformer
     /**
      * Tells whether the class whose body is being rewritten is nested in the
      * given class with an enclosing instance of it, so that {@code Type.this}
-     * is available: no class on the way out is static.
+     * is available: no class on the way out is static, an enum constant body
+     * or an anonymous class created in a static context.
      */
     boolean hasEnclosingInstanceOf(final ClassNode type) {
         ClassNode cn = transformClass;
-        while (cn instanceof InnerClassNode && !cn.isStaticClass() && (cn.getModifiers() & ACC_STATIC) == 0) {
+        while (hasOuterInstance(cn)) {
             cn = cn.getOuterClass();
             if (cn == null) break;
             if (cn.equals(type)) return true;
         }
         return false;
+    }
+
+    private static boolean hasOuterInstance(final ClassNode cn) {
+        return cn instanceof InnerClassNode && !(cn instanceof EnumConstantClassNode) // GROOVY-12626
+            && !cn.isStaticClass() && !hasNoEnclosingInstance(cn);
+    }
+
+    /**
+     * Returns the innermost class that encloses the class being rewritten,
+     * with an enclosing instance of it, and extends the given class; or
+     * {@code null} when there is none.
+     */
+    ClassNode findEnclosingSubclassOf(final ClassNode type) {
+        ClassNode cn = transformClass;
+        while (hasOuterInstance(cn)) {
+            cn = cn.getOuterClass();
+            if (cn == null || cn.equals(type)) break;
+            if (cn.isDerivedFrom(type)) return cn;
+        }
+        return null;
     }
 
     /**
@@ -217,6 +255,10 @@ public class StaticCompilationTransformer extends ClassCodeExpressionTransformer
         if (expr instanceof MapExpression) {
             return mapExpressionTransformer.transformMapExpression((MapExpression) expr);
         }
+        if (expr instanceof PrefixExpression || expr instanceof PostfixExpression) {
+            Expression increment = binaryExpressionTransformer.transformExtensionPropertyIncrement(expr);
+            if (increment != null) return increment;
+        }
         return super.transform(expr);
     }
 
@@ -275,6 +317,61 @@ public class StaticCompilationTransformer extends ClassCodeExpressionTransformer
             // method has already been visited by a static type checking visitor
             return;
         }
+        collectImplicitReturns(node);
+        ClosureWriter.markEscapingClosures(node); // GROOVY-12650, GROOVY-12652
         super.visitConstructorOrMethod(node, isConstructor);
+    }
+
+    /**
+     * Marks the escaping closures of the instance initializer blocks before transforming them.
+     *
+     * @param node the class whose initializer blocks are visited
+     */
+    @Override
+    protected void visitObjectInitializerStatements(final ClassNode node) {
+        ClosureWriter.markEscapingClosures(node); // GROOVY-12652
+        super.visitObjectInitializerStatements(node);
+    }
+
+    /**
+     * Records which multiple assignments are statements whose value is not used.
+     *
+     * @param stmt the expression statement to process
+     */
+    @Override
+    public void visitExpressionStatement(final ExpressionStatement stmt) {
+        Expression expr = stmt.getExpression();
+        if (expr instanceof BinaryExpression bin && bin.getLeftExpression() instanceof TupleExpression
+                && !implicitReturns.contains(expr)) {
+            discardedMultipleAssignments.add(expr);
+        }
+        super.visitExpressionStatement(stmt);
+    }
+
+    /**
+     * Records the expressions that become the implicit return value of a closure body.
+     *
+     * @param code the closure body
+     */
+    void collectImplicitReturns(final Statement code) {
+        if (code != null) { // no parameters: MethodNode would change their static context
+            collectImplicitReturns(new MethodNode("doCall", ACC_PUBLIC, ClassHelper.OBJECT_TYPE, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, code));
+        }
+    }
+
+    private void collectImplicitReturns(final MethodNode node) {
+        new ReturnAdder(returnStatement -> implicitReturns.add(returnStatement.getExpression())).visitMethod(node);
+    }
+
+    /**
+     * Tells whether the value of a multiple assignment is not used: it is an
+     * expression statement that is not the implicit return value of a method or
+     * closure.
+     *
+     * @param expr the multiple assignment
+     * @return {@code true} if the value of {@code expr} cannot be observed
+     */
+    boolean isValueDiscarded(final Expression expr) {
+        return discardedMultipleAssignments.contains(expr);
     }
 }

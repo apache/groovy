@@ -22,6 +22,7 @@ import groovy.lang.Tuple2;
 import org.antlr.v4.runtime.BailErrorStrategy;
 import org.antlr.v4.runtime.BufferedTokenStream;
 import org.antlr.v4.runtime.CommonToken;
+import org.antlr.v4.runtime.NoViableAltException;
 import org.antlr.v4.runtime.RecognitionException;
 import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.TokenStream;
@@ -72,7 +73,8 @@ import static org.apache.groovy.parser.antlr4.GroovyParser.VOID;
  *   <li>RecognitionException whose sole expected token is a single closer
  *       ({@code RPAREN} / {@code RBRACK} / {@code RBRACE})</li>
  *   <li>Cast / parenthesised-type pattern:
- *       {@code '(' type <expr-start>} without the closing {@code ')'}</li>
+ *       {@code '(' type <expr-start>} without the closing {@code ')'}, in a
+ *       group the parser had not already closed before the failure</li>
  *   <li>Unclosed or mismatched {@code (} / {@code [} / {@code ?[} / {@code \{}
  *       on a delimiter stack (innermost first)</li>
  * </ol>
@@ -120,7 +122,7 @@ final class MissingDelimiterDiagnostic {
         }
 
         // (2) Cast form: (type <expr>  — ')' of the cast is missing
-        Hit fromCast = fromCastPattern(defaultChannel);
+        Hit fromCast = fromCastPattern(defaultChannel, failureStart(e));
         if (fromCast != null) {
             return fromCast;
         }
@@ -295,18 +297,25 @@ final class MissingDelimiterDiagnostic {
      *   <li>the token after the type is a literal or {@code '('}
      *       (e.g. {@code (Foo)1}, {@code (Foo)(x)})</li>
      * </ul>
-     * Reporting the earliest site is intentional: with
-     * {@link BailErrorStrategy} the parser stops at the
-     * first recognition failure, so the first incomplete cast is the relevant
-     * one.  In a hypothetical multi-error buffer the caret could theoretically
-     * point at an earlier cast-like fragment than the failure ANTLR reported;
-     * that trade-off is accepted to keep the scan linear and free of false
-     * coupling to ANTLR's sometimes-unrelated offending token.
+     * A {@code (} whose {@code )} precedes {@code failureStart} is skipped: the
+     * parser accepted that group before anything went wrong, so it is
+     * well-formed input that merely looks like a cast — a formal parameter
+     * list {@code (double radius)}, a {@code for (int i = 0; ...)} header, a
+     * parenthesised call {@code (Math.max(1, 2))} — and reporting it would
+     * move the caret to an unrelated earlier line.
+     * <p>
+     * Among the remaining sites the earliest is reported: with
+     * {@link BailErrorStrategy} the parser stops at the first recognition
+     * failure, so the first incomplete cast at or after it is the relevant
+     * one.  In a multi-error buffer the caret could theoretically point at
+     * a later cast-like fragment than the failure ANTLR reported; that
+     * trade-off is accepted to keep the scan linear.
      */
-    private static Hit fromCastPattern(final List<Token> tokens) {
+    private static Hit fromCastPattern(final List<Token> tokens, final int failureStart) {
         final int n = tokens.size();
+        final boolean[] castOpener = castOpeners(tokens, failureStart);
         for (int i = 0; i < n; i++) {
-            if (tokens.get(i).getType() != LPAREN) {
+            if (!castOpener[i]) {
                 continue;
             }
             int typeStart = skipAnnotations(tokens, i + 1);
@@ -341,6 +350,59 @@ final class MissingDelimiterDiagnostic {
 
     private static boolean isHighConfidenceCastOperand(final int tokenType) {
         return isLiteral(tokenType) || tokenType == LPAREN;
+    }
+
+    /**
+     * Token index of the earliest token the failure involves: the start of
+     * the failed decision for a {@link NoViableAltException}, otherwise the
+     * offending token.  {@link Integer#MAX_VALUE} when the exception does not
+     * say, so that nothing is ruled out.
+     */
+    private static int failureStart(final RecognitionException e) {
+        if (e == null) {
+            return Integer.MAX_VALUE;
+        }
+        int index = Integer.MAX_VALUE;
+        Token offending = e.getOffendingToken();
+        if (offending != null && offending.getTokenIndex() >= 0) {
+            index = offending.getTokenIndex();
+        }
+        if (e instanceof NoViableAltException nvae) {
+            Token start = nvae.getStartToken();
+            if (start != null && start.getTokenIndex() >= 0 && start.getTokenIndex() < index) {
+                index = start.getTokenIndex();
+            }
+        }
+        return index;
+    }
+
+    /**
+     * Flags each {@code (} that may open an unclosed cast: every {@code (}
+     * except those whose matching {@code )} precedes {@code failureStart}.
+     * Mismatched closers are left to {@link #fromDelimiterStack}.
+     */
+    private static boolean[] castOpeners(final List<Token> tokens, final int failureStart) {
+        final int n = tokens.size();
+        boolean[] opener = new boolean[n];
+        for (int i = 0; i < n; i++) {
+            opener[i] = tokens.get(i).getType() == LPAREN;
+        }
+        if (failureStart == Integer.MAX_VALUE) {
+            return opener;
+        }
+        Deque<Integer> open = new ArrayDeque<>();
+        for (int i = 0; i < n; i++) {
+            Token t = tokens.get(i);
+            if (t.getTokenIndex() >= failureStart) {
+                break;
+            }
+            if (opener[i]) {
+                open.push(i);
+            } else if (t.getType() == RPAREN && !open.isEmpty()) {
+                opener[open.pop()] = false;
+            }
+        }
+        return opener;
     }
 
     //--------------------------------------------------------------------------

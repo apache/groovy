@@ -26,6 +26,49 @@ import org.junit.jupiter.api.Test
  */
 final class ClosuresStaticCompileTest extends ClosuresSTCTest implements StaticCompilationTestSupport {
 
+    // GROOVY-12678: a statically compiled lambda is owned by the enclosing instance
+    @Override @Test
+    void testNestedLambdaDelegateOwner() {
+        for (prop in ['delegate', 'owner', 'getDelegate()', 'getOwner()']) {
+            assertScript """
+                import java.util.function.Supplier
+                class C {
+                    String name = 'n'
+                    void m() {
+                        def c = { ->
+                            Supplier<Object> s = () -> {
+                                name
+                                @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                                    def type = node.getNodeMetaData(INFERRED_TYPE)?.toString(false)
+                                    assert type/*of $prop*/ == 'C'
+                                })
+                                Object ref = $prop
+                                assert ref.is(this)
+                            }
+                            s.get()
+                        }
+                        c.call()
+                        Supplier<Object> t = () -> {
+                            name
+                            Supplier<Object> s = () -> {
+                                name
+                                @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                                    def type = node.getNodeMetaData(INFERRED_TYPE)?.toString(false)
+                                    assert type/*of $prop*/ == 'C'
+                                })
+                                Object ref = $prop
+                                assert ref.is(this)
+                            }
+                            s.get()
+                        }
+                        t.get()
+                    }
+                }
+                new C().m()
+            """
+        }
+    }
+
     // GROOVY-5584
     @Test
     void testEachOnMapClosure() {
@@ -36,6 +79,40 @@ final class ClosuresStaticCompileTest extends ClosuresSTCTest implements StaticC
                 assert result == "a1b3"
             }
             test()
+        '''
+    }
+
+    // GROOVY-12576
+    @Test
+    void testObjectMethodsInClosureWithoutThisObject() {
+        assertScript '''
+            class C {
+                String toString() { 'C' }
+                List<Closure> closures() {
+                    [{ -> toString() }, { -> hashCode() }, { -> equals(this) }, { -> getClass() }]
+                }
+            }
+
+            C c = new C()
+            List<Closure> closures = c.closures()
+            Closure copy = closures[0].dehydrate()
+            assert copy() == copy.toString()
+            copy = closures[1].dehydrate()
+            assert copy() == copy.hashCode()
+            assert closures[2].dehydrate()() == false
+            copy = closures[3].dehydrate()
+            assert copy() == copy.getClass()
+
+            // without a this object, the owner's method is called
+            assert closures[0].rehydrate(null, c, null)() == 'C'
+            assert closures[1].rehydrate(null, c, null)() == c.hashCode()
+            assert closures[2].rehydrate(null, c, null)() == false
+            assert closures[3].rehydrate(null, c, null)() == C
+
+            assert closures[0]() == 'C'
+            assert closures[1]() == c.hashCode()
+            assert closures[2]() == true
+            assert closures[3]() == C
         '''
     }
 

@@ -295,6 +295,11 @@ public class DataSet extends Sql {
             return EMPTY_INT_ARRAY;
         }
         Closure transformedClosure = new Closure(null) {
+            /**
+             * Adds each map collected for this batch as one batch entry.
+             *
+             * @throws SQLException if an entry cannot be added
+             */
             public void doCall(BatchingPreparedStatementWrapper stmt) throws SQLException {
                 for (Object next : batchData) {
                     stmt.addBatch(new Object[]{next});

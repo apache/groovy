@@ -89,6 +89,7 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.constX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.isOrImplements;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.propX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
+import static org.codehaus.groovy.classgen.asm.sc.StaticInvocationWriter.isTraitSelf;
 import static org.codehaus.groovy.transform.sc.StaticCompilationVisitor.ARRAYLIST_CLASSNODE;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.findDGMMethodsByNameAndArguments;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.isClassClassNodeWrappingConcreteType;
@@ -171,7 +172,9 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter {
         ClassNode receiverType = getPropertyOwnerType(receiver, isClassReceiver);
 
         if (isClassReceiver[0] && !isClassType(receiverType)) {
-            Expression theClass = receiver instanceof ClassExpression ? receiver : classX(receiverType); // GROOVY-12473
+            // GROOVY-12473: static member of the receiver type; GROOVY-12590: keep a trait's
+            // "$static$self", so that a static accessor of the trait gets the implementing class
+            Expression theClass = receiver instanceof ClassExpression || isTraitSelf(receiver) ? receiver : classX(receiverType);
             Expression theReceiver = receiver;
             int receiverSlot = -1;
             if (theClass != receiver && mayHaveSideEffects(receiver)) {
@@ -462,7 +465,8 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter {
             }
         }
         if (getterNode != null) {
-            if (!getterNode.isStatic() && receiver instanceof ClassExpression && !isClassType(receiverType)) {
+            if (!getterNode.isStatic() && !isClassType(receiverType) && (receiver instanceof ClassExpression
+                    || (isTraitSelf(receiver) && isClassType(receiver.getType())))) { // "$static$self.name"
                 return false;
             }
             if ((!getterNode.isPublic() || "class".equals(propertyName) || "empty".equals(propertyName)) && isOrImplements(receiverType, MAP_TYPE)) {
@@ -515,6 +519,7 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter {
     boolean makeGetField(final Expression receiver, final ClassNode receiverType, final String fieldName, final boolean safe, final boolean implicitThis) {
         FieldNode field = getField(receiverType, fieldName); // GROOVY-7039: include interface constants
         if (field != null && AsmClassGenerator.isFieldDirectlyAccessible(field, controller.getClassNode())) {
+            RuntimePackageCheck.checkField(controller, field, implicitThis ? null : controller.getTypeChooser().resolveType(receiver, controller.getClassNode()), receiver);
             CompileStack compileStack = controller.getCompileStack();
             OperandStack operandStack = controller.getOperandStack();
             MethodVisitor mv = controller.getMethodVisitor();
@@ -863,6 +868,7 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter {
         FieldNode fn = AsmClassGenerator.getDeclaredFieldOfCurrentClassOrAccessibleFieldOfSuper(controller.getClassNode(), receiverType, name, false);
         if (fn == null) return false;
 
+        RuntimePackageCheck.checkField(controller, fn, controller.getTypeChooser().resolveType(objectExpression, controller.getClassNode()), expression);
         OperandStack os = controller.getOperandStack();
         os.doGroovyCast(fn.getType());
 

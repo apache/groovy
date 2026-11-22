@@ -131,8 +131,21 @@ public class ServletBinding extends Binding {
             if (outputStream == null) outputStream = response.getOutputStream();
             return outputStream;
         }
+        /**
+         * Returns a stream that forwards writes to the response output stream.
+         * The response stream is opened on the first call, and that open fails
+         * if the response writer has already been used.
+         *
+         * @return the forwarding stream
+         */
         public ServletOutputStream getOutputStream() {
             return new ServletOutputStream() {
+                /**
+                 * Asks the response stream whether it can accept a write.
+                 * An {@link IOException} from that call is wrapped in {@link RuntimeException}.
+                 *
+                 * @return the response stream's readiness
+                 */
                 @Override
                 public boolean isReady() {
                     try {
@@ -142,6 +155,12 @@ public class ServletBinding extends Binding {
                     }
                 }
 
+                /**
+                 * Installs {@code writeListener} on the response stream.
+                 * An {@link IOException} from that call is wrapped in {@link RuntimeException}.
+                 *
+                 * @param writeListener the listener to install
+                 */
                 @Override
                 public void setWriteListener(WriteListener writeListener) {
                     try {
@@ -151,22 +170,52 @@ public class ServletBinding extends Binding {
                     }
                 }
 
+                /**
+                 * Writes one byte to the response stream.
+                 *
+                 * @param b the byte to write
+                 * @throws IOException if the response stream cannot be written
+                 */
                 @Override
                 public void write(int b) throws IOException {
                     getResponseStream().write(b);
                 }
+                /**
+                 * Closes the response stream.
+                 *
+                 * @throws IOException if the response stream cannot be closed
+                 */
                 @Override
                 public void close() throws IOException {
                     getResponseStream().close();
                 }
+                /**
+                 * Flushes the response stream.
+                 *
+                 * @throws IOException if the response stream cannot be flushed
+                 */
                 @Override
                 public void flush() throws IOException {
                     getResponseStream().flush();
                 }
+                /**
+                 * Writes the whole array to the response stream.
+                 *
+                 * @param b the bytes to write
+                 * @throws IOException if the response stream cannot be written
+                 */
                 @Override
                 public void write(byte[] b) throws IOException {
                     getResponseStream().write(b);
                 }
+                /**
+                 * Writes a slice of {@code b} to the response stream.
+                 *
+                 * @param b the source bytes
+                 * @param off the first index to write
+                 * @param len the number of bytes to write
+                 * @throws IOException if the response stream cannot be written
+                 */
                 @Override
                 public void write(byte[] b, int off, int len) throws IOException {
                     getResponseStream().write(b, off, len);
@@ -185,45 +234,107 @@ public class ServletBinding extends Binding {
             }
             return writer;
         }
+        /**
+         * Returns a writer that forwards output to the response writer.
+         * The response writer is opened on the first call, and that open fails
+         * if the response output stream has already been used. The writer is
+         * constructed over a stream that rejects writes, so only these forwarded
+         * methods produce a response.
+         *
+         * @return the forwarding writer
+         */
         public PrintWriter getWriter() {
             return new PrintWriter(new InvalidOutputStream()) {
+                /**
+                 * Returns the response writer's error flag.
+                 *
+                 * @return {@code true} when the response writer has recorded an error
+                 */
                 @Override
                 public boolean checkError() {
                     return getResponseWriter().checkError();
                 }
+                /**
+                 * Closes the response writer.
+                 */
                 @Override
                 public void close() {
                     getResponseWriter().close();
                 }
+                /**
+                 * Flushes the response writer.
+                 */
                 @Override
                 public void flush() {
                     getResponseWriter().flush();
                 }
+                /**
+                 * Writes the whole character array to the response writer.
+                 *
+                 * @param buf the characters to write
+                 */
                 @Override
                 public void write(char[] buf) {
                     getResponseWriter().write(buf);
                 }
+                /**
+                 * Writes a slice of {@code buf} to the response writer.
+                 *
+                 * @param buf the source characters
+                 * @param off the first index to write
+                 * @param len the number of characters to write
+                 */
                 @Override
                 public void write(char[] buf, int off, int len) {
                     getResponseWriter().write(buf, off, len);
                 }
+                /**
+                 * Writes one character to the response writer.
+                 *
+                 * @param c the character to write
+                 */
                 @Override
                 public void write(int c) {
                     getResponseWriter().write(c);
                 }
+                /**
+                 * Writes a slice of {@code s} to the response writer.
+                 *
+                 * @param s the source string
+                 * @param off the first index to write
+                 * @param len the number of characters to write
+                 */
                 @Override
                 public void write(String s, int off, int len) {
                     getResponseWriter().write(s, off, len);
                 }
+                /**
+                 * Writes a line separator through the response writer.
+                 */
                 @Override
                 public void println() {
                     getResponseWriter().println();
                 }
+                /**
+                 * Formats {@code args} with {@code format} on the response writer and returns this wrapper.
+                 *
+                 * @param format the format string
+                 * @param args the values to format
+                 * @return this writer
+                 */
                 @Override
                 public PrintWriter format(String format, Object... args) {
                     getResponseWriter().format(format, args);
                     return this;
                 }
+                /**
+                 * Formats {@code args} with {@code format} for {@code l} on the response writer and returns this wrapper.
+                 *
+                 * @param l the locale used for formatting
+                 * @param format the format string
+                 * @param args the values to format
+                 * @return this writer
+                 */
                 @Override
                 public PrintWriter format(Locale l, String format, Object... args) {
                     getResponseWriter().format(l, format, args);

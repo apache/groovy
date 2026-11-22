@@ -32,6 +32,12 @@ import org.apache.groovy.util.SystemUtil;
 public class GroovyLangParser extends GroovyParser {
     private static final boolean GROOVY_PARSER_PROFILING_ENABLED = SystemUtil.getBooleanSafe("groovy.antlr4.profile");
 
+    /**
+     * Creates a parser over {@code input} and installs the shared parser ATN.
+     * Profiling is enabled when {@code groovy.antlr4.profile} is true.
+     *
+     * @param input the token stream
+     */
     public GroovyLangParser(TokenStream input) {
         super(input);
 
@@ -40,6 +46,18 @@ public class GroovyLangParser extends GroovyParser {
         if (GROOVY_PARSER_PROFILING_ENABLED) {
             this.setProfile(true);
         }
+    }
+
+    /**
+     * Drop this parse's token stream, tree and interpreter. The shared prediction
+     * cache stays on the ATN manager; this parser must not keep a copy of it,
+     * or the tree that points at every token of the file.
+     */
+    void release() {
+        removeErrorListeners();
+        setInterpreter(null);
+        _ctx = null;
+        _input = null;
     }
 
     @Override

@@ -42,8 +42,10 @@ import org.objectweb.asm.MethodVisitor;
 
 import java.util.List;
 
+import static org.codehaus.groovy.ast.tools.GeneralUtils.args;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.assignX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.bytecodeX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.ctorX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.propX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
 import static org.codehaus.groovy.transform.stc.StaticTypesMarker.DIRECT_METHOD_CALL_TARGET;
@@ -181,16 +183,27 @@ public class ConstructorCallTransformer {
             }
             // create temporary variable to store new object instance
             int tmpObj = compileStack.defineTemporaryVariable("tmpObj", ctorType, false);
-            String ctorTypeName = BytecodeHelper.getClassInternalName(ctorType);
-            mv.visitTypeInsn(NEW, ctorTypeName);
-            mv.visitInsn(DUP);
-            String signature = "()V";
-            if (innerClassCall && ctorType.getOuterClass() != null) {
-                acg.visitVariableExpression(varX("this")); // GROOVY-11122
-                Parameter[] params = {new Parameter(ctorType.getOuterClass(),"$p$")};
-                signature = BytecodeHelper.getMethodDescriptor(ClassHelper.VOID_TYPE, params);
+            boolean outer = innerClassCall && ctorType.getOuterClass() != null;
+            Parameter[] params = outer ? new Parameter[]{new Parameter(ctorType.getOuterClass(), "$p$")} : Parameter.EMPTY_ARRAY;
+            ConstructorNode ctor = ctorType.getDeclaredConstructor(params);
+            if (ctor != null && !ctor.isPublic()) {
+                // the invocation writer checks if the current class can call the constructor directly
+                ConstructorCallExpression newObject = outer ? ctorX(ctorType, args(varX("this"))) : ctorX(ctorType);
+                newObject.putNodeMetaData(DIRECT_METHOD_CALL_TARGET, ctor);
+                newObject.setSourcePosition(originalCall);
+                newObject.visit(acg);
+                acg.getController().getOperandStack().remove(1);
+            } else {
+                String ctorTypeName = BytecodeHelper.getClassInternalName(ctorType);
+                mv.visitTypeInsn(NEW, ctorTypeName);
+                mv.visitInsn(DUP);
+                String signature = "()V";
+                if (outer) {
+                    acg.visitVariableExpression(varX("this")); // GROOVY-11122
+                    signature = BytecodeHelper.getMethodDescriptor(ClassHelper.VOID_TYPE, params);
+                }
+                mv.visitMethodInsn(INVOKESPECIAL, ctorTypeName, "<init>", signature, false);
             }
-            mv.visitMethodInsn(INVOKESPECIAL, ctorTypeName, "<init>", signature, false);
             mv.visitVarInsn(ASTORE, tmpObj);
 
             if (map instanceof MapExpression mapExpression) {
@@ -231,6 +244,9 @@ public class ConstructorCallTransformer {
                 );
                 setExpression.putNodeMetaData(AsmClassGenerator.ELIDE_EXPRESSION_VALUE, Boolean.TRUE);
                 setExpression.setSourcePosition(entryExpression);
+                // the transformed expression may or may not write a line number (a setter
+                // call of a compiled class does not), so write the entry's own line first
+                acg.onLineNumber(entryExpression, "visitMapEntryExpression");
                 setExpression.visit(acg);
 
                 operandStack.popDownTo(mark);

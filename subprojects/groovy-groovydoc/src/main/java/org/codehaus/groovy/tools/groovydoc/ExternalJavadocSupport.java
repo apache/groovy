@@ -182,6 +182,11 @@ final class ExternalJavadocSupport {
     static final class CacheSession implements AutoCloseable {
         private boolean closed;
 
+        /**
+         * Drops one reference to the shared caches. When this was the last
+         * open session, the caches are cleared and the JDK source archive
+         * is closed. A second call does nothing.
+         */
         @Override
         public void close() {
             if (closed) return;

@@ -741,6 +741,237 @@ final class MethodReferenceTest {
         '''
     }
 
+    // GROOVY-12623
+    @ParameterizedTest
+    @ValueSource(strings=['@CompileDynamic','@TypeChecked','@CompileStatic'])
+    void testPrimitiveSAMFromTypeParameterReturnType(String tag) {
+        assertScript shell, """
+            @FunctionalInterface interface ToChar<T> { char apply(T t) }
+
+            $tag
+            class C {
+                static class Box<T> {
+                    T value
+                    T get() { value }
+                }
+                static <T> T id(T t) { t }
+                static <T> T first(T... ts) { ts[0] }
+                def <T> T me(T t) { t }
+                static void test() {
+                    Predicate<String> p = C::id
+                    assert [p.test(''), p.test('x')] == [false, true]
+                    p = new C()::me
+                    assert [p.test(''), p.test('x')] == [false, true]
+                    p = C::first
+                    assert [p.test(''), p.test('x')] == [false, true]
+                    Map<String, String> m = [a: 'x', b: '']
+                    p = m::get
+                    assert [p.test('a'), p.test('b'), p.test('z')] == [true, false, false]
+
+                    BiPredicate<C, String> bp = C::me
+                    assert [bp.test(new C(), ''), bp.test(new C(), 'x')] == [false, true]
+                    BiPredicate<Map<String, String>, String> mp = Map::get
+                    assert [mp.test(m, 'a'), mp.test(m, 'b'), mp.test(m, 'z')] == [true, false, false]
+                    Predicate<List<String>> lp = List::first
+                    assert [lp.test(['']), lp.test(['x'])] == [false, true]
+                    Predicate<Box<String>> xp = Box::get
+                    assert [xp.test(new Box<String>(value: '')), xp.test(new Box<String>(value: 'x'))] == [false, true]
+                    Predicate<Integer> ip = C::id
+                    assert [ip.test(0), ip.test(1)] == [false, true]
+                    Predicate<Object> op = C::id
+                    assert [op.test(null), op.test(''), op.test([]), op.test([1]), op.test(true)] == [false, false, false, true, true]
+                    IntPredicate i = C::id
+                    assert [i.test(0), i.test(1)] == [false, true]
+                    BooleanSupplier bs = Optional.of('')::get
+                    assert !bs.getAsBoolean()
+                }
+            }
+            C.test()
+        """
+    }
+
+    // GROOVY-12623: the type argument is checked as the return type of a method would be
+    @Test
+    void testPrimitiveSAMFromTypeParameterReturnTypeIncompatible() {
+        for (ref in ['ToIntFunction<Character> f = C::id', 'ToIntFunction<String> f = C::id', 'ToChar<String> f = C::id']) {
+            def err = shouldFail shell, """
+                @FunctionalInterface interface ToChar<T> { char apply(T t) }
+                @CompileStatic
+                class C {
+                    static <T> T id(T t) { t }
+                    static void test() {
+                        $ref
+                    }
+                }
+            """
+            assert err.message =~ /Invalid return type: java.lang.(Character|String) is not convertible to (int|char)/
+        }
+
+        def err = shouldFail shell, '''
+            @CompileStatic
+            class C {
+                static <T> T id(T t) { t }
+                static void test() {
+                    ToIntFunction<Long> f = C::id
+                }
+            }
+        '''
+        assert err.message =~ /Possible loss of precision from java.lang.Long to int/
+    }
+
+    // GROOVY-12623
+    @ParameterizedTest
+    @ValueSource(strings = [
+        'ToIntFunction<Long> f = C.&id',
+        'ToIntFunction<Long> f = new C().&me',
+        'ToIntFunction<List<Long>> f = List.&first',
+        'use(C.&id)',
+    ])
+    void testMethodPointerFromTypeParameterReturnTypeIncompatible(String ref) {
+        def err = shouldFail shell, """
+            @CompileStatic
+            class C {
+                static <T> T id(T t) { t }
+                def <T> T me(T t) { t }
+                static int use(ToIntFunction<Long> f) { f.applyAsInt(5L) }
+                static void test() {
+                    $ref
+                }
+            }
+        """
+        assert err.message =~ /Possible loss of precision from java.lang.Long to int/
+    }
+
+    // GROOVY-12716: only the overloads that the parameter types can select are checked
+    @Test
+    void testMethodPointerToOverloadsSelectedByParameterTypes() {
+        assertScript shell, '''
+            @CompileStatic
+            class C {
+                Function<Integer,Integer> returned() { Math.&abs }
+                static void test() {
+                    Function<Integer,Integer> f = Math.&abs
+                    assert f.apply(-3) == 3
+                    Function<Long,Long> g = Math.&abs
+                    assert g.apply(-4L) == 4L
+                    ToIntFunction<Integer> h = Math.&abs
+                    assert h.applyAsInt(-5) == 5
+                    BiFunction<Integer,Integer,Integer> i = Math.&max
+                    assert i.apply(1, 2) == 2
+                    Function<Number,Number> j = Math.&abs
+                    assert j.apply(-6) == 6
+                    assert j.apply(-7.5d) == 7.5d
+                }
+            }
+            C.test()
+            assert new C().returned().apply(-8) == 8
+        '''
+
+        // a Number may be a Double, which selects abs(double)
+        def err = shouldFail shell, '''
+            @CompileStatic
+            class C {
+                static void test() {
+                    ToIntFunction<Number> f = Math.&abs
+                }
+            }
+        '''
+        assert err.message =~ /Possible loss of precision from double to int/
+
+        err = shouldFail shell, '''
+            @CompileStatic
+            class C {
+                static void test() {
+                    ToIntFunction<Long> f = Math.&abs
+                }
+            }
+        '''
+        assert err.message =~ /Possible loss of precision from long to int/
+    }
+
+    // GROOVY-12623: a method pointer still selects its method at run time
+    @Test
+    void testMethodPointerFromTypeParameterReturnType() {
+        assertScript shell, '''
+            @CompileStatic
+            class C {
+                static <T> T id(T t) { t }
+                static void test() {
+                    ToLongFunction<Integer> f = C.&id
+                    assert f.applyAsLong(5) == 5L
+                    Predicate<String> p = C.&id
+                    assert !p.test('') && p.test('x')
+                    ToIntFunction<Integer> g = C.&id.memoize()
+                    assert g.applyAsInt(5) == 5
+                }
+            }
+            C.test()
+        '''
+
+        def err = shouldFail shell, '''
+            @CompileStatic
+            class C {
+                static int f(Object o) { 1 }
+                static long f(Long l) { 2L }
+                static void test() {
+                    ToIntFunction<Object> g = C.&f // f(Long) may be called
+                }
+            }
+        '''
+        assert err.message =~ /Possible loss of precision from long to int/
+    }
+
+    // GROOVY-12623
+    @Test
+    void testPrimitiveSAMFromTypeParameterReturnTypeSerializable() {
+        assertScript shell, '''
+            @CompileStatic
+            class C {
+                interface SerPred<T> extends Serializable, Predicate<T> {}
+
+                static <T> T id(T t) { t }
+                static void test() {
+                    SerPred<String> p = C::id
+                    assert !p.test('') && p.test('x')
+
+                    def out = new ByteArrayOutputStream()
+                    out.withObjectOutputStream { it.writeObject(p) }
+                    def q = new ByteArrayInputStream(out.toByteArray()).withObjectInputStream(C.classLoader) { (SerPred<String>) it.readObject() }
+                    assert !q.test('') && q.test('x')
+                }
+            }
+            C.test()
+        '''
+    }
+
+    // GROOVY-12623: a type argument that LambdaMetafactory converts is not converted by Groovy truth or cast
+    @Test
+    void testPrimitiveSAMFromTypeParameterReturnTypeNoConversion() {
+        assertScript shell, '''
+            @CompileStatic
+            class C {
+                static <T> T id(T t) { t }
+                static void test() {
+                    Map<String, Boolean> m = [a: true, b: false]
+                    Predicate<String> p = m::get
+                    assert p.test('a') && !p.test('b')
+                    groovy.test.GroovyAssert.shouldFail(NullPointerException) { p.test('z') }
+
+                    Predicate<Boolean> bp = C::id
+                    assert !bp.test(false) && bp.test(true)
+                    groovy.test.GroovyAssert.shouldFail(NullPointerException) { bp.test(null) }
+
+                    ToLongFunction<Integer> g = C::id
+                    assert g.applyAsLong(5) == 5L
+                    groovy.test.GroovyAssert.shouldFail(NullPointerException) { g.applyAsLong(null) }
+                    ToDoubleFunction<BigDecimal> h = C::id
+                    assert h.applyAsDouble(1.5G) == 1.5d
+                }
+            }
+            C.test()
+        '''
+    }
+
     // GROOVY-11026
     @Test // instance::instanceMethod
     void testBiFunctionII() {
@@ -2269,6 +2500,71 @@ final class MethodReferenceTest {
         assert err.message =~ /Invalid return type: java.lang.String is not convertible to java.lang.Number/
     }
 
+    // GROOVY-12607
+    @ParameterizedTest
+    @ValueSource(strings=['@TypeChecked','@CompileStatic'])
+    void testIncompatibleReturnType2(String tag) {
+        for (op in ['::','.&']) {
+            for (spec in [['String','int','1'], ['Long','int','1'], ['Boolean','String',"'x'"], ['String','Object',"'x'"]]) {
+                def (type, returnType, value) = spec
+                for (use in ["Supplier<$type> f() { this${op}m }",
+                             "def g() { take(this${op}m) }",
+                             "def g() { Supplier<$type> x = this${op}m }",
+                             "Supplier<$type> x = this${op}m"]) {
+                    def err = shouldFail shell, """
+                        $tag
+                        class C {
+                            $returnType m() { $value }
+                            def take(Supplier<$type> x) { }
+                            $use
+                        }
+                    """
+                    assert err.message =~ /Invalid return type: (java.lang.)?$returnType is not convertible to java.lang.$type/
+                }
+            }
+
+            def err = shouldFail shell, """
+                $tag
+                void test() {
+                    Function<String,Long> f = String${op}length
+                }
+            """
+            assert err.message.contains('Invalid return type: int is not convertible to java.lang.Long')
+        }
+    }
+
+    // GROOVY-12607
+    @ParameterizedTest
+    @ValueSource(strings=['@TypeChecked','@CompileStatic'])
+    void testCompatibleReturnType(String tag) {
+        for (op in ['::','.&']) {
+            assertScript shell, """
+                $tag
+                class C {
+                    int m() { 1 }
+                    static int len(String s) { s.length() }
+                    Supplier<Number> f() { this${op}m }
+                    Supplier<Object> g() { this${op}m }
+                    Function<Integer,Integer> h() { Math${op}abs } // overloads return int, long, float and double
+                    def take(Function<Integer,Integer> x) { x.apply(-2) }
+                    def test() {
+                        assert f().get() == 1
+                        assert g().get() == 1
+                        assert h().apply(-2) == 2
+                        assert take(Math${op}abs) == 2
+                        Function<Integer,Integer> abs = Math${op}abs
+                        assert abs.apply(-3) == 3
+                        ToLongFunction<String> length = C${op}len // int widened to long
+                        assert length.applyAsLong('abc') == 3L
+                        Supplier<String> s = 'x'${op}toString
+                        assert s.get() == 'x'
+                    }
+                }
+                new C().test()
+            """
+        }
+    }
+
     // GROOVY-10269
     @Test
     void testNotFunctionalInterface() {
@@ -2789,6 +3085,130 @@ final class MethodReferenceTest {
         '''
     }
 
+    // GROOVY-12617
+    @ParameterizedTest
+    @ValueSource(strings=['@CompileDynamic','@TypeChecked','@CompileStatic'])
+    void testPrimitiveBooleanSAMFromNonBooleanReturnType(String tag) {
+        assertScript shell, """
+            $tag
+            class C {
+                static String str(String s) { s }
+                static Object obj(String s) { s }
+                static List<String> list(String s) { s ? [s] : [] }
+                static Integer length(String s) { s.length() }
+                static int size(String s) { s.size() }
+                static String join(String... s) { s.join('') }
+                String prefix = ''
+                String prepend(String s) { prefix + s }
+                static void test() {
+                    Predicate<String> p = C::str
+                    assert !p.test('') && p.test('x')
+                    p = C.&str
+                    assert !p.test('') && p.test('x')
+                    p = C::obj
+                    assert !p.test('') && p.test('x')
+                    p = C::list
+                    assert !p.test('') && p.test('x')
+                    p = C::length
+                    assert !p.test('') && p.test('x')
+                    p = C::size
+                    assert !p.test('') && p.test('x')
+                    p = C::join
+                    assert !p.test('') && p.test('x')
+                    p = new C()::prepend
+                    assert !p.test('') && p.test('x')
+                    p = new C(prefix: 'x')::prepend
+                    assert p.test('')
+                    p = String::trim
+                    assert !p.test(' ') && p.test('x')
+                    p = ''::concat
+                    assert !p.test('') && p.test('x')
+                    p = String::reverse
+                    assert !p.test('') && p.test('x')
+                    p = ''::plus
+                    assert !p.test('') && p.test('x')
+                    p = StringBuilder::new
+                    assert !p.test('') && p.test('x')
+
+                    BiPredicate<String, String> bp = String::concat
+                    assert !bp.test('', '') && bp.test('', 'x')
+                    IntPredicate ip = Integer::toString
+                    assert ip.test(0)
+                    BooleanSupplier bs = 'x'::trim
+                    assert bs.getAsBoolean()
+                }
+            }
+            C.test()
+        """
+    }
+
+    // GROOVY-12617
+    @Test
+    void testPrimitiveBooleanSAMFromNonBooleanReturnTypeSerializable() {
+        assertScript shell, '''
+            @CompileStatic
+            class C {
+                interface SerPred<T> extends Serializable, Predicate<T> {}
+
+                static String str(String s) { s }
+                static void test() {
+                    SerPred<String> p = C::str
+                    assert !p.test('') && p.test('x')
+
+                    def out = new ByteArrayOutputStream()
+                    out.withObjectOutputStream { it.writeObject(p) }
+                    def q = new ByteArrayInputStream(out.toByteArray()).withObjectInputStream(C.classLoader) { (SerPred<String>) it.readObject() }
+                    assert !q.test('') && q.test('x')
+                }
+            }
+            C.test()
+        '''
+    }
+
+    // GROOVY-12617
+    @Test
+    void testPrimitiveNumberSAMFromNonWideningReturnType() {
+        assertScript shell, '''
+            @FunctionalInterface interface ToByteFunc<T> { byte apply(T t) }
+            @FunctionalInterface interface ToFloatFunc<T> { float apply(T t) }
+
+            @CompileStatic
+            class C {
+                static BigDecimal decimal(String s) { new BigDecimal(s) }
+                static long longValue(String s) { Long.parseLong(s) }
+                static Long longObject(String s) { Long.valueOf(s) }
+                static double doubleValue(String s) { Double.parseDouble(s) }
+                static void test() {
+                    ToDoubleFunction<String> d = C::decimal
+                    assert d.applyAsDouble('1.5') == 1.5d
+                    ToFloatFunc<String> f = C::decimal
+                    assert f.apply('0.5') == 0.5f
+                }
+            }
+            C.test()
+        '''
+
+        // narrowing is checked as for the return of a method
+        for (ref in ['ToIntFunction<String> f = C::longValue', 'ToIntFunction<String> f = C::longObject',
+                     'ToByteFunc<String> f = C::longValue', 'ToFloatFunc<String> f = C::doubleValue',
+                     'ToLongFunction<String> f = C::doubleValue']) {
+            def err = shouldFail shell, """
+                @FunctionalInterface interface ToByteFunc<T> { byte apply(T t) }
+                @FunctionalInterface interface ToFloatFunc<T> { float apply(T t) }
+                @CompileStatic
+                class C {
+                    static long longValue(String s) { Long.parseLong(s) }
+                    static Long longObject(String s) { Long.valueOf(s) }
+                    static double doubleValue(String s) { Double.parseDouble(s) }
+                    static void test() {
+                        $ref
+                    }
+                }
+            """
+            assert err.message =~ /Possible loss of precision from /
+        }
+    }
+
     @Test
     void testByteReturnSAMMethodReference() {
         assertScript shell, '''
@@ -3141,6 +3561,247 @@ final class MethodReferenceTest {
         '''
     }
 
+    @Test // GROOVY-12481
+    void testThisMethodReferenceInStaticContext() {
+        assertScript shell, '''
+            @CompileStatic
+            class C {
+                static int foo() { 42 }
+                static int bar(int i) { i + 1 }
+                static Supplier<Integer> s
+                static {
+                    s = this::foo
+                }
+                static test() {
+                    Supplier<Integer> s = this::foo
+                    assert s.get() == 42
+                    Function<Integer, Integer> f = this::bar
+                    assert f.apply(41) == 42
+                    assert C.s.get() == 42
+                    Supplier<String> n = this::getSimpleName // method of java.lang.Class
+                    assert n.get() == 'C'
+                    def c = { -> Supplier<Integer> r = this::foo; r.get() }
+                    assert c() == 42
+                }
+            }
+            C.test()
+        '''
+    }
+
+    @Test // GROOVY-12481
+    void testThisMethodReferenceInStaticContextOfNestedClass() {
+        assertScript shell, '''
+            @CompileStatic
+            class Outer {
+                static int foo() { 1 }
+                static class Nested {
+                    static int foo() { 2 }
+                    static test() {
+                        Supplier<Integer> s = this::foo // Nested::foo, not Outer::foo
+                        assert s.get() == 2
+                    }
+                }
+            }
+            Outer.Nested.test()
+        '''
+    }
+
+    @Test // GROOVY-12481
+    void testThisMethodReferenceToInstanceMethodInStaticContext() {
+        assertScript shell, '''
+            @CompileStatic
+            class C {
+                int inst() { 42 }
+                static test() {
+                    Function<C, Integer> f = this::inst // like C::inst
+                    assert f.apply(new C()) == 42
+                }
+            }
+            C.test()
+        '''
+    }
+
+    @Test // GROOVY-12481
+    void testThisMethodReferenceToInstanceMethodInStaticContextNeedsReceiver() {
+        def err = shouldFail shell, '''
+            @CompileStatic
+            class C {
+                int inst() { 42 }
+                static test() {
+                    Supplier<Integer> s = this::inst
+                }
+            }
+        '''
+        assert err.message.contains("Failed to find class method 'inst()' for the type: C")
+    }
+
+
+    // GROOVY-11010: a method reference fits only a functional interface whose abstract method it can be called with
+    @Test
+    void testOverloadSelectedByMethodReferenceArity1() {
+        assertScript shell, '''
+            class Ext {
+                static <T> String red(Collection<T> c, BinaryOperator<T> op) { 'combiner:' + c.stream().reduce(op).get() }
+                static <T, R> String red(Collection<T> c, Function<T, R> f) { 'transform:' + c.collect { f.apply(it) } }
+            }
+            class Calc {
+                Integer add(Integer a, Integer b) { a + b }
+                Integer twice(Integer a) { a * 2 }
+            }
+            @CompileStatic
+            void test() {
+                List<Integer> numbers = [1, 2, 3]
+                List<String> strings = ['a ', ' b']
+                def calc = new Calc()
+                assert Ext.red(numbers, Integer::sum) == 'combiner:6'                  // static method, two parameters
+                assert Ext.red(numbers, Math::negateExact) == 'transform:[-1, -2, -3]' // static method, one parameter
+                assert Ext.red(strings, String::concat) == 'combiner:a  b'             // receiver and one parameter
+                assert Ext.red(strings, String::trim) == 'transform:[a, b]'            // receiver only
+                assert Ext.red(numbers, calc::add) == 'combiner:6'                     // bound receiver, two parameters
+                assert Ext.red(numbers, calc::twice) == 'transform:[2, 4, 6]'          // bound receiver, one parameter
+                assert Ext.red(['1', '2'], Integer::new) == 'transform:[1, 2]'         // constructor
+            }
+
+            test()
+        '''
+    }
+
+    // GROOVY-11010: the same for a method pointer
+    @Test
+    void testOverloadSelectedByMethodReferenceArity2() {
+        assertScript shell, '''
+            class Ext {
+                static <T> String red(Collection<T> c, BinaryOperator<T> op) { 'combiner:' + c.stream().reduce(op).get() }
+                static <T, R> String red(Collection<T> c, Function<T, R> f) { 'transform:' + c.collect { f.apply(it) } }
+            }
+            class Calc {
+                Integer add(Integer a, Integer b) { a + b }
+                Integer twice(Integer a) { a * 2 }
+            }
+            @CompileStatic
+            void test() {
+                List<Integer> numbers = [1, 2, 3]
+                def calc = new Calc()
+                assert Ext.red(numbers, calc.&add) == 'combiner:6'
+                assert Ext.red(numbers, calc.&twice) == 'transform:[2, 4, 6]'
+            }
+
+            test()
+        '''
+    }
+
+    // GROOVY-11010
+    @Test
+    void testOverloadSelectedByMethodReferenceArity3() {
+        assertScript shell, '''
+            class Main {
+                static <K, V> String from(Function<K, V> f) { 'Function' }
+                static <V> String from(Supplier<V> f) { 'Supplier' }
+                static int m(String x) { 1 }
+                static int n() { 2 }
+
+                @CompileStatic
+                static void test() {
+                    assert from(Main::m) == 'Function'
+                    assert from(Main::n) == 'Supplier'
+                }
+            }
+
+            Main.test()
+        '''
+    }
+
+    // GROOVY-10714: Closure implements Runnable, which therefore otherwise wins
+    @Test
+    void testOverloadSelectedByMethodReferenceArity4() {
+        assertScript shell, '''
+            class Req<T> {
+            }
+            class Table<T> {
+                String last
+                void putItem(Req<T> request) { last = 'Req' }
+                void putItem(Consumer<Object> consumer) { last = 'Consumer' }
+                void putItem(T item) { last = 'T' }
+            }
+            class Try<T> {
+                final T value
+                Try(T value) { this.value = value }
+                String andThenTry(Consumer<? super T> consumer) { consumer.accept(value); 'Consumer' }
+                String andThenTry(Runnable runnable) { runnable.run(); 'Runnable' }
+            }
+            class Steps {
+                static void noop() {}
+            }
+
+            @CompileStatic
+            void test() {
+                def table = new Table<Req<String>>()
+                assert new Try<Req<String>>(new Req<String>()).andThenTry(table::putItem) == 'Consumer'
+                assert table.last == 'Req'
+                assert new Try<Req<String>>(new Req<String>()).andThenTry(table.&putItem) == 'Consumer'
+                assert new Try<String>('x').andThenTry(Steps::noop) == 'Runnable'
+            }
+
+            test()
+        '''
+    }
+
+    // GROOVY-10714: interfaces that Closure does not implement
+    @Test
+    void testOverloadSelectedByMethodReferenceArity5() {
+        assertScript shell, '''
+            interface CheckedConsumer<T> { void accept(T t) throws Throwable }
+            interface CheckedRunnable { void run() throws Throwable }
+            class Steps {
+                static String tryIt(CheckedConsumer<String> consumer) { 'CheckedConsumer' }
+                static String tryIt(CheckedRunnable runnable) { 'CheckedRunnable' }
+                static void sink(String s) {}
+                static void noop() {}
+            }
+
+            @CompileStatic
+            void test() {
+                assert Steps.tryIt(Steps::sink) == 'CheckedConsumer'
+                assert Steps.tryIt(Steps::noop) == 'CheckedRunnable'
+            }
+
+            test()
+        '''
+    }
+
+    // GROOVY-11010: interfaces of the same arity are still chosen between as before
+    @Test
+    void testOverloadSelectedByMethodReferenceArity6() {
+        assertScript shell, '''
+            import java.util.concurrent.Callable
+            class Steps {
+                static String pick(Runnable runnable) { 'Runnable' }
+                static String pick(Callable<?> callable) { 'Callable' }
+                static String value() { 'v' }
+            }
+
+            @CompileStatic
+            void test() {
+                assert Steps.pick(Steps::value) == 'Runnable'
+            }
+
+            test()
+        '''
+
+        def err = shouldFail shell, '''
+            class Ext {
+                static <T> String red(Collection<T> c, BinaryOperator<T> op) { 'combiner' }
+                static <T, R> String red(Collection<T> c, Function<T, R> f) { 'transform' }
+            }
+
+            @CompileStatic
+            void test() {
+                Ext.red(['1', '2'], Integer::valueOf) // valueOf(String) and valueOf(String, int)
+            }
+        '''
+        assert err.message.contains('Reference to method is ambiguous')
+    }
+
     @Nested
     class NativeMethodReferenceBytecodeTest extends AbstractBytecodeTestCase {
         @Test
@@ -3406,11 +4067,13 @@ final class MethodReferenceTest {
             assertNoDynamicConstructorCall(bytecode)
         }
 
-        // GROOVY-12488
+        // GROOVY-12488, GROOVY-12657
         @Test
         void testPrivateConstructorOfNestedClassIsCalledDirectlyFromClosureOrLambda() {
             def script = '''
                 @CompileStatic
+                // keep the closure class this test inspects when groovy.target.closure.pack is set
+                @groovy.transform.PackedClosures(mode = groovy.transform.PackedClosures.PackMode.DISABLED)
                 class C {
                     static class Box {
                         private Box(String value) { }
@@ -3431,6 +4094,37 @@ final class MethodReferenceTest {
             assertNoDynamicConstructorCall(closure)
 
             def lambda = compileStaticMethodBytecode('ctorRef$doCall$1', script, 'C$_inLambda_lambda2')
+            assert lambda.hasSequence(['NEW C$Box', 'ALOAD 0', 'INVOKESPECIAL C$Box.<init> (Ljava/lang/String;)V'])
+            assertNoDynamicConstructorCall(lambda)
+        }
+
+        // GROOVY-12488, GROOVY-12657
+        @Test
+        void testPrivateConstructorOfNestedClassIsCalledDirectlyFromPackedClosureOrLambda() {
+            def script = '''
+                @CompileStatic
+                // pack the closure into a method of C whatever groovy.target.closure.pack is set to
+                @groovy.transform.PackedClosures(mode = groovy.transform.PackedClosures.PackMode.STRICT)
+                class C {
+                    static class Box {
+                        private Box(String value) { }
+                    }
+                    static Function<String, Box> inClosure() {
+                        def make = { -> Function<String, Box> f = Box::new; f }
+                        make()
+                    }
+                    static Function<String, Box> inLambda() {
+                        Supplier<Function<String, Box>> make = () -> { Function<String, Box> f = Box::new; f }
+                        make.get()
+                    }
+                }
+            '''
+
+            def closure = compileStaticMethodBytecode('ctorRef$$packed$closure$0$0', script)
+            assert closure.hasSequence(['NEW C$Box', 'ALOAD 0', 'INVOKESPECIAL C$Box.<init> (Ljava/lang/String;)V'])
+            assertNoDynamicConstructorCall(closure)
+
+            def lambda = compileStaticMethodBytecode('ctorRef$doCall$1', script, 'C$_inLambda_lambda1')
             assert lambda.hasSequence(['NEW C$Box', 'ALOAD 0', 'INVOKESPECIAL C$Box.<init> (Ljava/lang/String;)V'])
             assertNoDynamicConstructorCall(lambda)
         }

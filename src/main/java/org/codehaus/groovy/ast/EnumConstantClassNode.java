@@ -28,10 +28,29 @@ import org.objectweb.asm.Opcodes;
  */
 public class EnumConstantClassNode extends InnerClassNode {
 
+    /**
+     * Creates the anonymous class of an enum constant. The class is
+     * {@code ACC_ENUM | ACC_FINAL} and extends {@code superClass}.
+     *
+     * @param outerClass the enum that declares the constant
+     * @param name the binary name of the anonymous class
+     * @param superClass the enum type this constant class extends
+     */
     public EnumConstantClassNode(ClassNode outerClass, String name, ClassNode superClass) {
         super(outerClass, name, Opcodes.ACC_ENUM | Opcodes.ACC_FINAL, superClass);
     }
 
+    /**
+     * Creates the anonymous class of an enum constant with caller-supplied modifiers.
+     * Unlike {@link #EnumConstantClassNode(ClassNode, String, ClassNode)}, the
+     * modifiers are passed through unchanged.
+     *
+     * @param outerClass the enum that declares the constant
+     * @param name the binary name of the anonymous class
+     * @param modifiers the access flags stored on the class
+     * @param superClass the enum type this constant class extends
+     * @deprecated since 4.0.0, for removal
+     */
     @Deprecated(forRemoval = true, since = "4.0.0")
     public EnumConstantClassNode(ClassNode outerClass, String name, int modifiers, ClassNode superClass) {
         super(outerClass, name, modifiers, superClass);

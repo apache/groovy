@@ -146,6 +146,19 @@ final class GroovyshLanguageSessionTest {
     }
 
     @Test
+    void anUnqualifiedNameCompletesScriptMethods() {
+        groovy = new GroovyEngine()
+        session = new GroovyshLanguageSession(groovy)
+        assert 'println' in session.completeLine('printl')*.label
+        def candidates = []
+        session.complete(null, new Line('prin'), candidates)
+        assert candidates*.value().containsAll(['print', 'printf', 'println'])
+        candidates.clear()
+        session.complete(null, new Line('sle'), candidates)
+        assert 'sleep' in candidates*.value()
+    }
+
+    @Test
     void completeLineAndCompleterMapEngineCandidates() {
         groovy = new GroovyEngine()
         groovy.execute('class Box { String name }')
