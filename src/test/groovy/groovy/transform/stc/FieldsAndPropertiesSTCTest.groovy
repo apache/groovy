@@ -2232,6 +2232,36 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
         'No such property: z for class: Base', 'No such property: z for class: Base'
     }
 
+    /**
+     * Reads f through a static nested subclass of Base, where the private field
+     * f of Base hides the public field f of Parent, with {@code sub} in Sub and
+     * {@code other} in another class nested in Base.
+     */
+    protected static String hiddenFieldOfSuperclass(String sub, String other) {
+        """
+            class Parent {
+                public int f = 1
+            }
+            class Base extends Parent {
+                private int f = 2
+                static class Sub extends Base {
+                    static read(Sub s) { $sub }
+                }
+                static class Other {
+                    static read(Sub s) { $other }
+                }
+            }
+        """
+    }
+
+    // GROOVY-12610: the meta-class of Sub offers neither the private field of Base nor
+    // the field of Parent that it hides, so dynamic dispatch finds no field f
+    @Test
+    void testPrivateFieldOfSuperclassHidingFieldViaStaticNestedSubclass() {
+        shouldFailWithMessages hiddenFieldOfSuperclass('s.f', ''), 'No such property: f for class: Base$Sub'
+        shouldFailWithMessages hiddenFieldOfSuperclass('', 's.f'), 'No such property: f for class: Base$Sub'
+    }
+
     // GROOVY-12610: an inner class reaches the field through its enclosing instance,
     // and the declaring class reaches it on any subclass instance
     @Test
