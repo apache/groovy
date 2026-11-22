@@ -159,6 +159,168 @@ final class BinaryOperationsTest extends AbstractBytecodeTestCase {
         '''
     }
 
+    // GROOVY-10657: same store sequences as StaticCompilationTest, without @CompileStatic.
+    // The classic backend (indy off) uses the array-store helpers. A statement
+    // evaluates receiver, index and value as those arguments and allocates no temporary.
+    @Test
+    void testDynamicSubscriptAssignmentStatement() {
+        def seq = compile(method: 'm', classNamePattern: 'C', indy: false, '''
+            class C {
+                void m(int[] i) {
+                    i[0] = 1
+                }
+            }
+        ''')
+        assert seq.hasStrictSequence([
+                'ALOAD 1',
+                'ICONST_0',
+                'ICONST_1',
+                'INVOKESTATIC org/codehaus/groovy/runtime/BytecodeInterface8.intArraySet ([III)V',
+        ])
+        assert !methodBody(seq).contains('DUP_X2')
+        assert !methodBody(seq).contains('ACONST_NULL')
+    }
+
+    // GROOVY-10657
+    @Test
+    void testDynamicSubscriptAssignmentReference() {
+        def seq = compile(method: 'm', classNamePattern: 'C', indy: false, '''
+            class C {
+                void m(Object[] a, Object v) {
+                    a[0] = v
+                }
+            }
+        ''')
+        assert seq.hasStrictSequence([
+                'ALOAD 1',
+                'ICONST_0',
+                'ALOAD 2',
+                'INVOKESTATIC org/codehaus/groovy/runtime/BytecodeInterface8.objectArraySet ([Ljava/lang/Object;ILjava/lang/Object;)V',
+        ])
+        assert !methodBody(seq).contains('ACONST_NULL')
+    }
+
+    // GROOVY-10657: the assignment value is the right-hand side, duplicated under the store operands
+    @Test
+    void testDynamicSubscriptAssignmentValue() {
+        def seq = compile(method: 'm', classNamePattern: 'C', indy: false, '''
+            class C {
+                Object m(Object[] a, Object v) {
+                    return (a[0] = v)
+                }
+            }
+        ''')
+        assert seq.hasStrictSequence([
+                'ALOAD 1',
+                'ICONST_0',
+                'ALOAD 2',
+                'DUP_X2',
+                'INVOKESTATIC org/codehaus/groovy/runtime/BytecodeInterface8.objectArraySet ([Ljava/lang/Object;ILjava/lang/Object;)V',
+                'ARETURN'
+        ])
+        // The callsite fallback still uses one temporary and clears it.
+        assert seq.hasStrictSequence(['ACONST_NULL', 'ASTORE'])
+    }
+
+    // GROOVY-10657: a category-2 value uses DUP2_X2 so the copy keeps both words
+    @Test
+    void testDynamicSubscriptAssignmentLongValue() {
+        def seq = compile(method: 'm', classNamePattern: 'C', indy: false, '''
+            class C {
+                long m(long[] a) {
+                    return (a[0] = 1L)
+                }
+            }
+        ''')
+        assert seq.hasStrictSequence([
+                'ALOAD 1',
+                'ICONST_0',
+                'LCONST_1',
+                'DUP2_X2',
+                'INVOKESTATIC org/codehaus/groovy/runtime/BytecodeInterface8.lArraySet ([JIJ)V',
+                'LRETURN'
+        ])
+        assert !methodBody(seq).contains('ACONST_NULL')
+    }
+
+    // GROOVY-10657: indy compiles an array store as putAt. A statement still
+    // passes the right-hand side as the call argument and allocates no slot.
+    @Test
+    void testIndySubscriptAssignmentStatement() {
+        def body = methodBody(compile(method: 'm', classNamePattern: 'C', indy: true, '''
+            class C {
+                void m(Object[] a, Object v) {
+                    a[0] = v
+                }
+            }
+        '''))
+        assert body.contains('INVOKEDYNAMIC')
+        assert body.contains('"putAt"')
+        assert !body.contains('ASTORE')
+        assert !body.contains('ACONST_NULL')
+    }
+
+    // GROOVY-10657: an indy putAt expression keeps one temporary across the call and clears it
+    @Test
+    void testIndySubscriptAssignmentValueClearsRhsSlot() {
+        def seq = compile(method: 'm', classNamePattern: 'C', indy: true, '''
+            class C {
+                Object m(Object[] a, Object v) {
+                    return (a[0] = v)
+                }
+            }
+        ''')
+        def body = methodBody(seq)
+        assert body.contains('INVOKEDYNAMIC')
+        assert body.contains('"putAt"')
+        assert body.contains('ARETURN')
+        assert seq.hasStrictSequence(['ACONST_NULL', 'ASTORE'])
+    }
+
+    // GROOVY-10657: a putAt statement consumes the right-hand side as the call argument
+    @Test
+    void testDynamicPutAtStatementAllocatesNoRhsSlot() {
+        [true, false].each { indy ->
+            def body = methodBody(compile(method: 'm', classNamePattern: 'C', indy: indy, '''
+                class C {
+                    void putAt(int index, Object value) {
+                    }
+                    void m(Object v) {
+                        this[0] = v
+                    }
+                }
+            '''))
+            assert !body.contains('ACONST_NULL') : "indy=$indy\n$body"
+            if (indy) assert !body.contains('ASTORE') : body
+        }
+    }
+
+    // GROOVY-10657: a putAt expression keeps one temporary across the call and clears it
+    @Test
+    void testDynamicPutAtExpressionClearsRhsSlot() {
+        [true, false].each { indy ->
+            def seq = compile(method: 'm', classNamePattern: 'C', indy: indy, '''
+                class C {
+                    void putAt(int index, Object value) {
+                    }
+                    Object m(Object v) {
+                        return (this[0] = v)
+                    }
+                }
+            ''')
+            assert methodBody(seq).contains('ARETURN') : "indy=$indy"
+            assert seq.hasStrictSequence(['ACONST_NULL', 'ASTORE']) : "indy=$indy\n$seq"
+        }
+    }
+
+    private static String methodBody(InstructionSequence seq) {
+        String text = seq.toString()
+        int begin = text.indexOf('--BEGIN--')
+        int end = text.indexOf('--END--')
+        assert begin >= 0 && end > begin : text
+        text.substring(begin, end)
+    }
+
     @Test
     void testPrimitiveOrAssign() {
         ['byte','int','short','long'].each { type ->

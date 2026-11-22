@@ -33,18 +33,45 @@ import org.codehaus.groovy.ast.GroovyCodeVisitor;
  * @see BinaryExpression
  */
 public class ConstantExpression extends Expression {
-    // The following fields are only used internally; every occurrence of a user-defined expression of the same kind
-    // has its own instance so as to preserve line information. Consequently, to test for such an expression, don't
-    // compare against the field but call isXXXExpression() instead.
+    /**
+     * Shared null constant. A null literal from source has its own instance, so
+     * identity comparison with this field is not a null test; use {@link #isNullExpression()}.
+     */
     public static final ConstantExpression NULL = new ConstantExpression(null);
+    /**
+     * Shared {@link Boolean#TRUE} constant, typed as {@code Boolean}. A {@code true}
+     * literal from source has its own instance; use {@link #isTrueExpression()}.
+     */
     public static final ConstantExpression TRUE = new ConstantExpression(Boolean.TRUE);
+    /**
+     * Shared {@link Boolean#FALSE} constant, typed as {@code Boolean}. A {@code false}
+     * literal from source has its own instance; use {@link #isFalseExpression()}.
+     */
     public static final ConstantExpression FALSE = new ConstantExpression(Boolean.FALSE);
+    /**
+     * Shared empty-string constant. An empty string literal from source has its own
+     * instance; use {@link #isEmptyStringExpression()}.
+     */
     public static final ConstantExpression EMPTY_STRING = new ConstantExpression("");
+    /**
+     * {@link Boolean#TRUE} with the primitive type kept, so the expression type is
+     * {@code boolean} rather than {@code Boolean}.
+     */
     public static final ConstantExpression PRIM_TRUE = new ConstantExpression(Boolean.TRUE, true);
+    /**
+     * {@link Boolean#FALSE} with the primitive type kept, so the expression type is
+     * {@code boolean} rather than {@code Boolean}.
+     */
     public static final ConstantExpression PRIM_FALSE = new ConstantExpression(Boolean.FALSE, true);
 
-    // the following fields are only used internally; there are no user-defined expressions of the same kind
+    /**
+     * Constant whose value is {@code Void.class}. Source code has no literal of this form.
+     */
     public static final ConstantExpression VOID = new ConstantExpression(Void.class);
+    /**
+     * Null-valued placeholder for a missing size or initializer. Callers recognize
+     * it by identity, unlike {@link #NULL}.
+     */
     public static final ConstantExpression EMPTY_EXPRESSION = new ConstantExpression(null);
 
     private final Object value;

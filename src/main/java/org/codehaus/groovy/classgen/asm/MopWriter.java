@@ -24,10 +24,13 @@ import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.InnerClassNode;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.Parameter;
+import org.codehaus.groovy.ast.expr.ClassExpression;
+import org.codehaus.groovy.ast.expr.ClosureExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.MethodCallExpression;
 import org.codehaus.groovy.ast.expr.PropertyExpression;
 import org.codehaus.groovy.ast.tools.ParameterUtils;
+import org.codehaus.groovy.classgen.AsmClassGenerator;
 import org.codehaus.groovy.control.SourceUnit;
 import org.objectweb.asm.MethodVisitor;
 
@@ -43,7 +46,7 @@ import java.util.Set;
 
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.toSet;
-import static org.apache.groovy.ast.tools.ExpressionUtils.isOuterSuperExpression;
+import static org.apache.groovy.ast.tools.ExpressionUtils.isSuperExpression;
 import static org.apache.groovy.util.BeanUtils.capitalize;
 import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveDouble;
 import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveLong;
@@ -137,7 +140,7 @@ public class MopWriter {
         if (!ClassHelper.isGeneratedFunction(classNode)) {
             visitMopMethodList(classNode.getMethods(), true, Collections.emptySet(), Collections.emptyList());
             Set<String> superMethodNames = new HashSet<>(controller.getSuperMethodNames());
-            superMethodNames.addAll(getOuterSuperMethodNames(classNode));
+            superMethodNames.addAll(getSuperMethodNamesOfClosuresAndNestedClasses(classNode));
             visitMopMethodList(getSuperMethods(classNode)/*GROOVY-8693, et al.*/, false, classNode.getMethods().stream()
                     .map(mn -> new MopKey(mn.getName(), mn.getParameters())).collect(toSet()), superMethodNames);
         }
@@ -145,14 +148,18 @@ public class MopWriter {
 
     /**
      * Finds the names of the methods, and of the accessors of the properties, that
-     * the closures and nested classes of a class reach through {@code Type.super}
-     * for the class, and of the methods whose MOP methods statically compiled code
-     * calls. Their calls are generated in other classes, and dispatched to the
-     * methods of the superclass through the MOP methods of the class.
+     * the closures of a class reach through {@code super}, and that the closures and
+     * nested classes of the class reach through {@code Type.super} for the class,
+     * and of the methods whose MOP methods statically compiled code calls. Their
+     * calls are generated in other classes, and dispatched to the methods of the
+     * superclass through the MOP methods of the class.
      */
-    private static Set<String> getOuterSuperMethodNames(final ClassNode classNode) {
+    private static Set<String> getSuperMethodNamesOfClosuresAndNestedClasses(final ClassNode classNode) {
         Set<String> names = new HashSet<>();
         new ClassCodeVisitorSupport() {
+            private boolean nested;
+            private int closures;
+
             @Override
             protected SourceUnit getSourceUnit() {
                 return null;
@@ -161,16 +168,26 @@ public class MopWriter {
             @Override
             public void visitClass(final ClassNode node) {
                 super.visitClass(node);
+                boolean wasNested = nested;
+                nested = true; // "super" is the superclass of the nested class
                 for (Iterator<InnerClassNode> it = node.getInnerClasses(); it.hasNext(); ) {
                     InnerClassNode innerClass = it.next();
                     if (!ClassHelper.isGeneratedFunction(innerClass)) visitClass(innerClass);
                 }
+                nested = wasNested;
+            }
+
+            @Override
+            public void visitClosureExpression(final ClosureExpression expression) {
+                closures += 1;
+                super.visitClosureExpression(expression);
+                closures -= 1;
             }
 
             @Override
             public void visitMethodCallExpression(final MethodCallExpression call) {
                 MethodNode target = call.getMethodTarget();
-                if (isOuterSuper(call.getObjectExpression()) && call.getMethodAsString() != null) {
+                if (isSuperOfClass(call.getObjectExpression()) && call.getMethodAsString() != null) {
                     names.add(call.getMethodAsString());
                 } else if (target != null && target.getName().startsWith("super$") && classNode.equals(target.getDeclaringClass())) {
                     String mopName = target.getName(); // super$<distance>$<name>
@@ -182,14 +199,18 @@ public class MopWriter {
             @Override
             public void visitPropertyExpression(final PropertyExpression expression) {
                 String name = expression.getPropertyAsString();
-                if (isOuterSuper(expression.getObjectExpression()) && name != null) {
+                if (isSuperOfClass(expression.getObjectExpression()) && name != null) {
                     Collections.addAll(names, "get" + capitalize(name), "is" + capitalize(name), "set" + capitalize(name));
                 }
                 super.visitPropertyExpression(expression);
             }
 
-            private boolean isOuterSuper(final Expression expression) {
-                return isOuterSuperExpression(expression) && ((PropertyExpression) expression).getObjectExpression().getType().equals(classNode);
+            private boolean isSuperOfClass(final Expression expression) {
+                if (isSuperExpression(expression)) {
+                    return closures > 0 && !nested;
+                }
+                return expression instanceof PropertyExpression pexp && "super".equals(pexp.getPropertyAsString())
+                    && pexp.getObjectExpression() instanceof ClassExpression && pexp.getObjectExpression().getType().equals(classNode);
             }
         }.visitClass(classNode);
         return names;
@@ -218,6 +239,8 @@ public class MopWriter {
             // super$ method for non-private isThis=false
             // --> results in XOR
             if (isThis ^ mn.isPrivate()) continue;
+            // a super$ method cannot call a package-private method of another run-time package
+            if (!isThis && mn.isPackageScope() && !AsmClassGenerator.isInSameRuntimePackage(mn.getDeclaringClass(), controller.getClassNode())) continue;
 
             String methodName = mn.getName();
             Parameter[] parameters = mn.getParameters();

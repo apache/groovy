@@ -439,6 +439,17 @@ final class GroovyClassLoaderTest {
         }
     }
 
+    @Test
+    void testChildLoaderFromParentGroovyClassLoaderResetsRuntimePackageCheck() {
+        def shell = new GroovyShell()
+        assert shell.classLoader.@runtimePackageCheck
+        new GroovyClassLoader(shell.classLoader).withCloseable { child ->
+            assert child.hasCompatibleConfiguration(shell.classLoader.@config)
+            assert !child.@runtimePackageCheck
+            assert child.parseClass('class ChildLoaderCheck { static int v() { 42 } }').v() == 42
+        }
+    }
+
     private static URLClassLoader parentLoader(Path dir) {
         new URLClassLoader(dir.toUri().toURL() as URL[], (ClassLoader) null)
     }

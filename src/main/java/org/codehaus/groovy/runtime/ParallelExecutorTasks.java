@@ -270,6 +270,30 @@ final class ParallelExecutorTasks {
     }
 
     /**
+     * Applies {@code fn} to each element and reduces the results in encounter order, in one
+     * pass. An empty collection returns {@code null}; a one-element collection returns
+     * {@code fn} of that element without calling {@code operator}.
+     */
+    static <T, R> R mapReduce(Pool pool, Collection<T> items, Function<? super T, ? extends R> fn,
+                              BinaryOperator<R> operator) {
+        List<T> list = randomAccess(items);
+        int size = list.size();
+        if (size == 0) {
+            return null;
+        }
+        if (size == 1) {
+            return fn.apply(list.get(0));
+        }
+        return parallelRange(pool, list, operator, (values, from, to) -> {
+            R acc = fn.apply(values.get(from));
+            for (int i = from + 1; i < to; i++) {
+                acc = operator.apply(acc, fn.apply(values.get(i)));
+            }
+            return acc;
+        });
+    }
+
+    /**
      * Parallel {@code reduce(identity, accumulator)}. {@code seed} is the
      * identity of {@code operator}; it is applied once per chunk and the
      * chunk results are combined with the same operator.
@@ -330,19 +354,19 @@ final class ParallelExecutorTasks {
         return order > 0 ? left : right;
     }
 
-    private static <T> T parallelRange(Pool pool, List<T> list, BinaryOperator<T> combine, RangeFn<T> range) {
+    private static <E, R> R parallelRange(Pool pool, List<E> list, BinaryOperator<R> combine, RangeFn<E, R> range) {
         int size = list.size();
         int chunks = chunkCount(size);
         int chunkSize = (size + chunks - 1) / chunks;
         int count = (size + chunkSize - 1) / chunkSize;
         @SuppressWarnings("unchecked")
-        T[] parts = (T[]) new Object[count];
+        R[] parts = (R[]) new Object[count];
         runAll(pool, count, index -> {
             int from = index * chunkSize;
             int to = Math.min(size, from + chunkSize);
             parts[index] = range.apply(list, from, to);
         });
-        T acc = parts[0];
+        R acc = parts[0];
         for (int i = 1; i < count; i++) {
             acc = combine.apply(acc, parts[i]);
         }
@@ -422,8 +446,8 @@ final class ParallelExecutorTasks {
     }
 
     @FunctionalInterface
-    private interface RangeFn<T> {
-        T apply(List<T> list, int from, int to);
+    private interface RangeFn<E, R> {
+        R apply(List<E> list, int from, int to);
     }
 
     @FunctionalInterface

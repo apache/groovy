@@ -23,13 +23,13 @@ on:
     paths:
       - 'gradlew'
       - 'gradlew.bat'
-      - 'gradle/wrapper/'
+      - 'gradle/wrapper/**'
       - '.github/workflows/gradle-wrapper-validation.yml'
   pull_request:
     paths:
       - 'gradlew'
       - 'gradlew.bat'
-      - 'gradle/wrapper/'
+      - 'gradle/wrapper/**'
       - '.github/workflows/gradle-wrapper-validation.yml'
 
 permissions:

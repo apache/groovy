@@ -144,9 +144,10 @@ public final class BroadcastChannel<T> {
      * on each subscriber throws {@code cause}. {@code null} is a normal close,
      * the same as {@link #close()}. Returns {@code true} when this call closes
      * the broadcast. The first close wins, so a later call returns {@code false}
-     * and leaves the retained failure unchanged. A subscriber that arrives
-     * afterwards fails at once with {@link ChannelClosedException} carrying
-     * this cause.
+     * and leaves the retained failure unchanged. A later {@link #subscribe()}
+     * fails at once with {@link ChannelClosedException} carrying this cause.
+     * A later subscriber of {@link #asPublisher()} receives {@code onError}
+     * with this cause, or {@code onComplete} after a normal close.
      *
      * @param cause the failure each subscriber should surface, or {@code null}
      * @return {@code true} if this call closed the broadcast
@@ -215,7 +216,10 @@ public final class BroadcastChannel<T> {
      *       from the broadcast's subscriber set.</li>
      *   <li>Completion: signals {@code onComplete} when the subscriber channel
      *       is closed normally and drained. {@link #close(Throwable)} signals
-     *       {@code onError} with that failure instead.</li>
+     *       {@code onError} with that failure instead. A subscriber that
+     *       arrives after the broadcast has closed gets the same signal
+     *       straight after {@code onSubscribe}, so {@code for await} over it
+     *       ends at once or throws the failure.</li>
      * </ul>
      * <p>
      * <b>Backpressure policy (important).</b> This bridge uses lossless,
@@ -251,8 +255,16 @@ public final class BroadcastChannel<T> {
             try {
                 channel = BroadcastChannel.this.subscribe();
             } catch (ChannelClosedException e) {
+                // Nothing is left to deliver, so this subscriber ends the way
+                // one attached before the close does: the retained failure,
+                // or completion after a normal close.
                 downstream.onSubscribe(NOOP_SUBSCRIPTION);
-                downstream.onError(e);
+                Throwable cause = e.getCause();
+                if (cause != null) {
+                    downstream.onError(cause);
+                } else {
+                    downstream.onComplete();
+                }
                 return;
             }
             new BroadcastFlowSubscription<>(BroadcastChannel.this, channel, downstream).start();

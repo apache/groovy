@@ -117,7 +117,7 @@ final class TrampolineClosure<V> extends Closure<V> {
      * @return An instance of TrampolineClosure wrapping a copy of the original closure.
      */
     @Override
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings({"unchecked", "java:S2975", "java:S1182"}) // overrides Closure.clone() public contract; class and original field are final
     public Object clone() {
         return new TrampolineClosure<V>((Closure<V>) original.clone());
     }

@@ -268,6 +268,11 @@ public class GroovyFilter extends StructuredSyntaxDocumentFilter {
         private final Segment segment = new Segment();
         private final StringBuilder buffer = new StringBuilder();
 
+        /**
+         * Inserts a newline at the caret of a styled document. When the brace
+         * search yields a column greater than {@code -1}, the new line is indented
+         * four spaces past that column.
+         */
         @Override
         public void actionPerformed(ActionEvent ae) {
             JTextComponent tComp = (JTextComponent) ae.getSource();
@@ -297,6 +302,15 @@ public class GroovyFilter extends StructuredSyntaxDocumentFilter {
             }
         }
 
+        /**
+         * Scans backward from {@code offset} for an opening or closing brace that
+         * is not painted with the comment color. Returns the leading-whitespace
+         * width of that line, minus four when the brace is closing or no
+         * brace was found.
+         *
+         * @param offset the character index to scan backward from
+         * @return that adjusted indent width
+         */
         public int findTabLocation(int offset) {
 
             // find first {

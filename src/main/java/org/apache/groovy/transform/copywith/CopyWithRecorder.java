@@ -59,6 +59,16 @@ public class CopyWithRecorder extends GroovyObjectSupport {
     private final String prefix;
     private final Map<Object, Object> sink;
 
+    /**
+     * Creates a recorder that writes assignments into {@code sink}.
+     * The map is stored, not copied. An empty {@code prefix} records a property
+     * under its own name; any other prefix is joined to the name with a dot.
+     * The property {@code old} returns {@code self}.
+     *
+     * @param self the original object, returned for {@code old}
+     * @param prefix path already recorded by a parent, or empty at the root
+     * @param sink map that receives path keys and assigned values
+     */
     public CopyWithRecorder(final Object self, final String prefix, final Map<Object, Object> sink) {
         this.self = self;
         this.prefix = prefix;
