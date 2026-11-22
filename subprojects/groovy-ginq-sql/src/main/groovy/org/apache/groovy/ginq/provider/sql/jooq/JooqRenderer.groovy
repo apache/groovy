@@ -561,17 +561,17 @@ class JooqRenderer {
         if (open >= 0) {
             name = sqlType.substring(0, open)
             String inner = sqlType.substring(open + 1, sqlType.length() - 1)
-            String[] parts = inner.split(',')
-            if (parts.length == 1) {
-                int n = Integer.parseInt(parts[0])
+            int comma = inner.indexOf(',')
+            if (comma < 0) {
+                int n = Integer.parseInt(inner)
                 if ('DECIMAL' == name || 'NUMERIC' == name) {
                     precision = Integer.valueOf(n)
                 } else {
                     length = Integer.valueOf(n)
                 }
             } else {
-                precision = Integer.valueOf(Integer.parseInt(parts[0]))
-                scale = Integer.valueOf(Integer.parseInt(parts[1]))
+                precision = Integer.valueOf(Integer.parseInt(inner.substring(0, comma)))
+                scale = Integer.valueOf(Integer.parseInt(inner.substring(comma + 1)))
             }
         }
         DataType type

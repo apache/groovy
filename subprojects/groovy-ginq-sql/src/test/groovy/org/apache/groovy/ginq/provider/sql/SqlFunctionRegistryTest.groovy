@@ -271,6 +271,8 @@ class SqlFunctionRegistryTest {
         assert null == SqlCastTypes.canonical('VARCHAR(10); drop table e')
         assert null == SqlCastTypes.canonical('INT(11)')
         assert null == SqlCastTypes.canonical('DECIMAL(2,10)')
+        assert null == SqlCastTypes.canonical('DECIMAL(,)')
+        assert null == SqlCastTypes.canonical('DECIMAL(1,2,3)')
         assert null == SqlCastTypes.canonical('VARCHAR(0)')
         assert null == SqlCastTypes.canonical('TIMESTAMP(6)')
         assert null == SqlCastTypes.canonical(null)

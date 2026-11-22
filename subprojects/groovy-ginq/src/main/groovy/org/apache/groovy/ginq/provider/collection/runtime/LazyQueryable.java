@@ -54,7 +54,8 @@ import java.util.stream.Stream;
 public final class LazyQueryable<T> implements Queryable<T> {
 
     private Supplier<? extends Queryable<? extends T>> supplier;
-    private Queryable<T> delegate;
+    @SuppressWarnings("java:S3077") // write-once reference set under synchronized initialize(); volatile publishes safely without per-instance AtomicReference allocation
+    private volatile Queryable<T> delegate;
 
     private LazyQueryable(Supplier<? extends Queryable<? extends T>> supplier) {
         this.supplier = supplier;
@@ -77,21 +78,28 @@ public final class LazyQueryable<T> implements Queryable<T> {
         return new LazyQueryable(() -> (Queryable) body.call());
     }
 
-    @SuppressWarnings("unchecked")
     private Queryable<T> unwrap() {
-        if (delegate == null) {
-            synchronized (this) {
-                if (delegate == null) {
-                    Queryable<? extends T> built = supplier.get();
-                    supplier = null;
-                    if (built == null) {
-                        throw new IllegalStateException("GINQ query supplier returned null");
-                    }
-                    delegate = (Queryable<T>) built;
-                }
-            }
+        Queryable<T> current = delegate;
+        return current != null ? current : initialize();
+    }
+
+    private synchronized Queryable<T> initialize() {
+        Queryable<T> current = delegate;
+        if (current != null) {
+            return current;
         }
-        return delegate;
+        if (supplier == null) {
+            throw new IllegalStateException("GINQ query supplier returned null");
+        }
+        Queryable<? extends T> built = supplier.get();
+        supplier = null;
+        if (built == null) {
+            throw new IllegalStateException("GINQ query supplier returned null");
+        }
+        @SuppressWarnings("unchecked")
+        Queryable<T> ready = (Queryable<T>) built;
+        delegate = ready;
+        return ready;
     }
 
     @Override

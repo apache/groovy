@@ -26,6 +26,10 @@ import org.junit.jupiter.api.Test
 
 import java.lang.reflect.InvocationHandler
 import java.lang.reflect.Proxy
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicInteger
+import java.util.concurrent.atomic.AtomicReference
 import java.util.function.BiFunction
 import java.util.function.BiPredicate
 import java.util.function.Function
@@ -189,6 +193,88 @@ class GinqDeferredQueryTest {
             wrappedNull = caught
         }
         assert wrappedNull != null
+    }
+
+    @Test
+    void concurrentInitializationRunsSupplierOnceAndNullRepeatsIllegalState() {
+        AtomicInteger nullCalls = new AtomicInteger()
+        Queryable nullQuery = LazyQueryable.defer {
+            nullCalls.incrementAndGet()
+            return null
+        }
+        for (int i = 0; i < 2; i++) {
+            IllegalStateException error = null
+            try {
+                nullQuery.toList()
+            } catch (IllegalStateException caught) {
+                error = caught
+            }
+            assert error != null
+            assert error.message.contains('null')
+        }
+        assert nullCalls.get() == 1
+
+        AtomicInteger flakyCalls = new AtomicInteger()
+        Queryable<Integer> flaky = (Queryable<Integer>) LazyQueryable.defer {
+            if (flakyCalls.incrementAndGet() == 1) {
+                throw new IllegalArgumentException('transient failure')
+            }
+            return Queryable.from(List.of(7, 8))
+        }
+        IllegalArgumentException firstFailure = null
+        try {
+            flaky.toList()
+        } catch (IllegalArgumentException caught) {
+            firstFailure = caught
+        }
+        assert firstFailure != null
+        assert firstFailure.message == 'transient failure'
+        assert flaky.toList() == [7, 8]
+        assert flakyCalls.get() == 2
+
+        AtomicInteger invocations = new AtomicInteger()
+        CountDownLatch entered = new CountDownLatch(1)
+        CountDownLatch release = new CountDownLatch(1)
+        Queryable<Integer> shared = (Queryable<Integer>) LazyQueryable.defer {
+            invocations.incrementAndGet()
+            entered.countDown()
+            assert release.await(10, TimeUnit.SECONDS)
+            return Queryable.from(List.of(10, 20))
+        }
+        AtomicReference<List<Integer>> first = new AtomicReference<>()
+        AtomicReference<List<Integer>> second = new AtomicReference<>()
+        AtomicReference<Throwable> failure = new AtomicReference<>()
+
+        Thread t1 = new Thread(() -> {
+            try {
+                first.set(shared.toList())
+            } catch (Throwable t) {
+                failure.set(t)
+            }
+        })
+        Thread t2 = new Thread(() -> {
+            try {
+                second.set(shared.toList())
+            } catch (Throwable t) {
+                failure.set(t)
+            }
+        })
+        t1.start()
+        assert entered.await(10, TimeUnit.SECONDS)
+        t2.start()
+        long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(10)
+        while (t2.state != Thread.State.BLOCKED && System.nanoTime() < deadline) {
+            Thread.yield()
+        }
+        assert t2.state == Thread.State.BLOCKED
+        release.countDown()
+        t1.join(10_000)
+        t2.join(10_000)
+
+        assert failure.get() == null
+        assert invocations.get() == 1
+        assert first.get() == [10, 20]
+        assert second.get() == [10, 20]
     }
 
     @Test

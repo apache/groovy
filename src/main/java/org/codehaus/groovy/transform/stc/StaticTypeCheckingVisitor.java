@@ -4665,6 +4665,7 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
      * last is a varargs parameter, and the type parameters and declared return type of the
      * method, if any.
      */
+    @SuppressWarnings("java:S6218") // internal data carrier; equals/hashCode/toString are never used
     private record FunctorSignature(ClassNode[] parameterTypes, boolean varargs, GenericsType[] typeParameters, ClassNode returnType) {
         /**
          * The type of the parameter that takes argument {@code i} of {@code argumentTypes}:

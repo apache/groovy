@@ -1991,21 +1991,24 @@ out:    for (ClassNode type : todo) {
     }
 
     private static boolean sameGenericsArgument(final GenericsType left, final GenericsType right) {
+        if (left == null || right == null) return left == right;
         // "#T" is still to be inferred, as K is for Map.Entry.comparingByKey()
         if (isInferencePlaceholder(left) || isInferencePlaceholder(right)) return true;
         if (left.isWildcard() != right.isWildcard() || left.isPlaceholder() != right.isPlaceholder()) return false;
         if (left.isPlaceholder()) return left.getName().equals(right.getName());
-        if (left.isWildcard()) {
-            ClassNode leftLower = left.getLowerBound();
-            ClassNode rightLower = right.getLowerBound();
-            if ((leftLower == null) != (rightLower == null)) return false;
-            if (leftLower != null) return sameTypeArgument(leftLower, rightLower);
-            boolean leftUnbounded = unboundedOrObject(left);
-            boolean rightUnbounded = unboundedOrObject(right);
-            if (leftUnbounded || rightUnbounded) return leftUnbounded && rightUnbounded;
-            return sameUpperBounds(left.getUpperBounds(), right.getUpperBounds());
-        }
+        if (left.isWildcard()) return sameWildcardArgument(left, right);
         return sameTypeArgument(left.getType(), right.getType());
+    }
+
+    private static boolean sameWildcardArgument(final GenericsType left, final GenericsType right) {
+        ClassNode leftLower = left.getLowerBound();
+        ClassNode rightLower = right.getLowerBound();
+        if ((leftLower == null) != (rightLower == null)) return false;
+        if (leftLower != null) return sameTypeArgument(leftLower, rightLower);
+        boolean leftUnbounded = unboundedOrObject(left);
+        boolean rightUnbounded = unboundedOrObject(right);
+        if (leftUnbounded || rightUnbounded) return leftUnbounded && rightUnbounded;
+        return sameUpperBounds(left.getUpperBounds(), right.getUpperBounds());
     }
 
     private static boolean unboundedOrObject(final GenericsType wildcard) {
@@ -2175,7 +2178,6 @@ out:    for (ClassNode type : todo) {
     }
 
     private static boolean isInferencePlaceholder(final GenericsType type) {
-        if (type == null) return false;
         if (type.isPlaceholder() && type.getName() != null && type.getName().startsWith("#")) return true;
         return isInferencePlaceholder(type.getType());
     }

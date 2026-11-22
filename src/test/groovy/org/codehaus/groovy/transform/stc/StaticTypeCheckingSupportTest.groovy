@@ -232,7 +232,8 @@ final class StaticTypeCheckingSupportTest {
         MethodNode orphan = new MethodNode('m', Modifier.PUBLIC, STRING_TYPE, [new Parameter(placeholder('E'), 'arg')] as Parameter[], ClassNode.EMPTY_ARRAY, null)
 
         ClassNode placeholderOwner = placeholder('P')
-        MethodNode onPlaceholder = method(placeholderOwner, 'm', STRING_TYPE, new Parameter(placeholder('Q'), 'arg'))
+        MethodNode onPlaceholder = new MethodNode('m', Modifier.PUBLIC, STRING_TYPE, [new Parameter(placeholder('Q'), 'arg')] as Parameter[], ClassNode.EMPTY_ARRAY, null)
+        onPlaceholder.declaringClass = placeholderOwner
 
         MethodNode extensionSource = method(other, 'ext', STRING_TYPE, new Parameter(box, 'self'), new Parameter(t, 'arg'))
         ExtensionMethodNode extension = new ExtensionMethodNode(extensionSource, 'm', Modifier.PUBLIC, STRING_TYPE,
@@ -287,6 +288,36 @@ final class StaticTypeCheckingSupportTest {
         self.putNodeMetaData(marker, inner)
         def specFromExtension = helper.invoke(null, inner, method, new TupleExpression(self))
         assert specFromExtension != null
+    }
+
+    @Test
+    void testSameGenericsArgumentHandlesNullAndPlaceholders() {
+        def method = StaticTypeCheckingSupport.getDeclaredMethod('sameGenericsArgument', GenericsType, GenericsType)
+        method.accessible = true
+        GenericsType stringArg = STRING_TYPE.asGenericsType()
+        GenericsType inferencePlaceholder = placeholder('#T').asGenericsType()
+
+        assert method.invoke(null, null, null) == true
+        assert method.invoke(null, null, stringArg) == false
+        assert method.invoke(null, stringArg, null) == false
+        assert method.invoke(null, stringArg, inferencePlaceholder) == true
+        assert method.invoke(null, inferencePlaceholder, stringArg) == true
+        assert method.invoke(null, stringArg, stringArg) == true
+
+        GenericsType superString = new GenericsType(OBJECT_TYPE, null, STRING_TYPE)
+        superString.wildcard = true
+        GenericsType extendsString = new GenericsType(OBJECT_TYPE, [STRING_TYPE] as ClassNode[], null)
+        extendsString.wildcard = true
+        GenericsType unbounded = new GenericsType(OBJECT_TYPE)
+        unbounded.wildcard = true
+
+        assert method.invoke(null, superString, superString) == true
+        assert method.invoke(null, superString, extendsString) == false
+        assert method.invoke(null, extendsString, superString) == false
+        assert method.invoke(null, unbounded, unbounded) == true
+        assert method.invoke(null, unbounded, extendsString) == false
+        assert method.invoke(null, extendsString, unbounded) == false
+        assert method.invoke(null, extendsString, extendsString) == true
     }
 
     private static MethodNode method(ClassNode owner, String name, ClassNode returnType, Parameter... params) {
