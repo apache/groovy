@@ -3066,6 +3066,10 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
         final String getterName = getGetterName(propertyName);
         final String setterName = getSetterName(propertyName);
 
+        // GROOVY-12589: "super.name" reads and writes through the accessors of the superclass,
+        // as the code generators and dynamic Groovy do, even within the declaring class of the field
+        boolean superReceiver = isSuperExpression(objectExpression) || isOuterSuperExpression(objectExpression);
+
         boolean foundGetterOrSetter = false;
         Set<ClassNode> handledTypes = new HashSet<>();
         List<Receiver<String>> receivers = new ArrayList<>();
@@ -3167,7 +3171,7 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
                     field = null;
                 }
                 // skip property/accessor checks for "field", "this.field", "this.with { field }", etc. within the declaring class of the field
-                else if (field != null && enclosingTypes.contains(current) && storeField(field, pexp, receiver, visitor, !readMode)) {
+                else if (field != null && enclosingTypes.contains(current) && !superReceiver && storeField(field, pexp, receiver, visitor, !readMode)) {
                     return true;
                 }
                 // GROOVY-8283: accessible field shadows getter of super class; GROOVY-11381: inaccessible field stops the loop, so search supers for getter
@@ -3210,7 +3214,7 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
                     }
                 }
                 // prefer explicit getter/setter for out-of-scope references
-                if (property == null || !enclosingTypes.contains(current)) {
+                if (property == null || !enclosingTypes.contains(current) || superReceiver) {
                     if (readMode) {
                         if (getter != null) {
                             ClassNode returnType = inferReturnTypeGenerics(receiverType, getter, ArgumentListExpression.EMPTY_ARGUMENTS);
