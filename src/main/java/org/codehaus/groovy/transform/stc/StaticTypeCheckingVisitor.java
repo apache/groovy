@@ -336,6 +336,7 @@ import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.isBein
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.isBitOperator;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.isBoolIntrinsicOp;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.isClassClassNodeWrappingConcreteType;
+import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.isClosureCoercibleToSAM;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.isCompareToBoolean;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.isGStringOrGStringStringLUB;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.isOperationInGroup;
@@ -2177,7 +2178,8 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
                 && (typeVariableBoundEscapes(leftExpressionType, right)
                     || concreteArgumentContainsWildcard(leftExpressionType, right));
         if (incompatible || typeVariableEscapes) {
-            if (!isClosureCoercibleToSAM(leftExpressionType, rightExpressionType)) { // GROOVY-12588
+            if (!(rightExpressionType.isDerivedFrom(CLOSURE_TYPE) && isSAMType(leftExpressionType)
+                    && isClosureCoercibleToSAM(leftExpressionType, rightExpressionType))) { // GROOVY-12588
                 addStaticTypeError("Incompatible generic argument types. Cannot assign " + prettyPrintType(rightExpressionType) + " to: " + prettyPrintType(leftExpressionType), rightExpression);
             }
         }
@@ -2283,20 +2285,6 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
                 }
             }
         }
-    }
-
-    /**
-     * Checks if a value of type {@code Closure<R>} can be coerced to the given
-     * SAM type: its abstract method returns void or a supertype of {@code R}.
-     */
-    private static boolean isClosureCoercibleToSAM(final ClassNode samType, final ClassNode closureType) {
-        if (!closureType.isDerivedFrom(CLOSURE_TYPE) || !isSAMType(samType)) return false;
-        ClassNode returnType = GenericsUtils.parameterizeSAM(samType).getV2();
-        if (isPrimitiveVoid(returnType)) return true;
-        GenericsType[] closureGenerics = GenericsUtils.findParameterizedType(CLOSURE_TYPE, closureType).getGenericsTypes();
-        if (closureGenerics == null) return true; // raw Closure
-        ClassNode closureReturnType = getCombinedBoundType(closureGenerics[0]);
-        return GenericsUtils.buildWildcardType(wrapTypeIfNecessary(returnType)).isCompatibleWith(wrapTypeIfNecessary(closureReturnType));
     }
 
     private boolean hasGStringStringError(final ClassNode leftExpressionType, final ClassNode wrappedRHS, final Expression rightExpression) {
@@ -3663,6 +3651,12 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
                 BinaryExpression dummy = assignX(varX("{target}", returnType), expression, statement);
                 ClassNode resultType = getResultType(returnType, ASSIGN, type, dummy); // GROOVY-10295
                 checkTypeGenerics(returnType, resultType, expression);
+            } else if (type.isDerivedFrom(CLOSURE_TYPE) && isSAMType(returnType) // GROOVY-12599: Closure<R> value for SAM type
+                    && !(expression instanceof ClosureExpression || expression instanceof MethodPointerExpression)
+                    && !isClosureCoercibleToSAM(returnType, type)) {
+                if (!extension.handleIncompatibleReturnType(statement, type)) {
+                    addStaticTypeError("Cannot return value of type " + prettyPrintValueType(type, expression) + " for method returning " + prettyPrintType(returnType), expression);
+                }
             } else { // GROOVY-11623: check array items or number bounds
                 addPrecisionErrors(returnType.redirect(), returnType, type, expression);
             }
