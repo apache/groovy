@@ -117,6 +117,13 @@ final class MethodCallsStaticCompilationTest extends MethodCallsSTCTest implemen
         '''
     }
 
+    // GROOVY-12510: compiles; running it throws ClassCastException, as it does for a
+    // public method, because static compilation casts the shared variable to Sub1
+    @Override @Test
+    void testPrivateMethodOfClosureSharedVariableInDeclaringClass() {
+        shell.parse(PRIVATE_METHOD_OF_SHARED_VARIABLE_IN_DECLARING_CLASS)
+    }
+
     // GROOVY-12513
     @Override @Test
     void testPrivateOperatorMethodsThroughNarrowedVariable() {

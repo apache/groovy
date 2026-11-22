@@ -32,19 +32,29 @@ class SecondPassExpression<T> {
     private final Expression expression;
     private final T data;
     private final ClassNode declaredReceiverType;
+    private final ClassNode enclosingClass;
 
     SecondPassExpression(final Expression expression) {
-        this(expression, null, null);
+        this(expression, null, null, null);
     }
 
     SecondPassExpression(final Expression expression, final T data) {
-        this(expression, data, null);
+        this(expression, data, null, null);
     }
 
-    SecondPassExpression(final Expression expression, final T data, final ClassNode declaredReceiverType) {
+    SecondPassExpression(final Expression expression, final T data, final ClassNode declaredReceiverType, final ClassNode enclosingClass) {
         this.data = data;
         this.expression = expression;
         this.declaredReceiverType = declaredReceiverType;
+        this.enclosingClass = enclosingClass;
+    }
+
+    /**
+     * Returns the class whose code the first pass checked the expression in,
+     * which decides the private members it may use, or {@code null}.
+     */
+    ClassNode getEnclosingClass() {
+        return enclosingClass;
     }
 
     /**

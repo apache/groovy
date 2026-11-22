@@ -788,6 +788,36 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    /**
+     * Calls a private method of Box, and an operator of Box, in code of Box
+     * through a closure shared variable that is assigned two subclasses.
+     */
+    protected static final String PRIVATE_METHOD_OF_SHARED_VARIABLE_IN_DECLARING_CLASS = '''
+        @groovy.transform.TypeChecked
+        class Outer {
+            static class Box {
+                String id = 'box'
+                private String im() { 'im:' + id }
+                private String plus(String x) { 'plus:' + id + x }
+                static String call() { Sub s = new Sub1(); def c = { -> s.im() }; s = new Sub2(); c() }
+                static String operator() { Sub s = new Sub1(); def c = { -> s + 'x' }; s = new Sub2(); c() }
+            }
+            static class Sub extends Box { }
+            static class Sub1 extends Sub { Sub1() { id = 'sub1' } }
+            static class Sub2 extends Sub { Sub2() { id = 'sub2' } }
+        }
+    '''
+
+    // GROOVY-12510: the second pass for a closure shared variable checks the call in
+    // the class that makes it, here the declaring class of the private method
+    @Test
+    void testPrivateMethodOfClosureSharedVariableInDeclaringClass() {
+        assertScript PRIVATE_METHOD_OF_SHARED_VARIABLE_IN_DECLARING_CLASS + '''
+            assert Outer.Box.call() == 'im:sub2'
+            assert Outer.Box.operator() == 'plus:sub2x'
+        '''
+    }
+
     // GROOVY-12510: a property's explicit private accessor is not inherited, and Verifier
     // generates no public one beside it; a generated accessor is still found
     @Test

@@ -1503,7 +1503,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
             // GROOVY-5874: if left expression is a closure shared variable, a second pass should be done
             if (leftExpression instanceof VariableExpression vexp && vexp.isClosureSharedVariable()) {
-                typeCheckingContext.secondPassExpressions.add(new SecondPassExpression<>(expression, null, getDeclaredReceiverType(vexp)));
+                typeCheckingContext.secondPassExpressions.add(new SecondPassExpression<>(expression, null, getDeclaredReceiverType(vexp), typeCheckingContext.getEnclosingClassNode()));
             }
         } finally {
             typeCheckingContext.popEnclosingBinaryExpression();
@@ -7065,7 +7065,7 @@ out:                if (mn.size() != 1) {
 
                             if (objectExpression instanceof VariableExpression variable && variable.isClosureSharedVariable()) {
                                 // if the object expression is a closure shared variable we will have to perform a second pass
-                                typeCheckingContext.secondPassExpressions.add(new SecondPassExpression<>(call, args, getDeclaredReceiverType(variable)));
+                                typeCheckingContext.secondPassExpressions.add(new SecondPassExpression<>(call, args, getDeclaredReceiverType(variable), typeCheckingContext.getEnclosingClassNode()));
                             }
                         } else {
                             call.removeNodeMetaData(DIRECT_METHOD_CALL_TARGET);
@@ -9378,6 +9378,21 @@ trying: for (ClassNode[] signature : signatures) {
     }
 
     /**
+     * Finds the methods again for an expression that the first pass checked,
+     * with the declared receiver type and in the class of the first pass, so
+     * that the same private members are found.
+     */
+    private List<MethodNode> findMethodInSecondPass(final SecondPassExpression<?> wrapper, final ClassNode receiver, final String name, final ClassNode... args) {
+        ClassNode enclosingClass = wrapper.getEnclosingClass();
+        if (enclosingClass != null) typeCheckingContext.pushEnclosingClassNode(enclosingClass);
+        try {
+            return findMethodWithDeclaredType(wrapper.getDeclaredReceiverType(), receiver, name, args);
+        } finally {
+            if (enclosingClass != null) typeCheckingContext.popEnclosingClassNode();
+        }
+    }
+
+    /**
      * Returns the operand on which an operator calls its method: the left operand
      * of a binary operator, or the operand itself, as {@link #findMethodOrFail} is
      * given for {@code ++} and {@code --}. For {@code -x}, {@code +x} and {@code ~x}
@@ -10606,7 +10621,7 @@ trying: for (ClassNode[] signature : signatures) {
                             ClassNode type = lowestUpperBound(classNodes);
                             String message = getOperationName(((BinaryExpression) expression).getOperation().getType());
                             if (message != null) {
-                                List<MethodNode> methods = findMethodWithDeclaredType(wrapper.getDeclaredReceiverType(), type, message, getType(((BinaryExpression) expression).getRightExpression()));
+                                List<MethodNode> methods = findMethodInSecondPass(wrapper, type, message, getType(((BinaryExpression) expression).getRightExpression()));
                                 if (methods.isEmpty()) {
                                     String methSpec = toMethodParametersString(message, getType(((BinaryExpression) expression).getRightExpression()));
                                     String stcError = String.format("The closure shared variable \"%s\" has been assigned with various types and the method %s does not exist in the lowest upper bound of those types: %s", target.getName(), methSpec, prettyPrintTypeName(type));
@@ -10627,7 +10642,7 @@ trying: for (ClassNode[] signature : signatures) {
                             ClassNode type = lowestUpperBound(classNodes);
                             MethodNode mct = call.getNodeMetaData(DIRECT_METHOD_CALL_TARGET);
                             // we must check that such a method exists for the common type(s)
-                            List<MethodNode> methods = findMethodWithDeclaredType(wrapper.getDeclaredReceiverType(), type, mct.getName(), (ClassNode[]) wrapper.getData());
+                            List<MethodNode> methods = findMethodInSecondPass(wrapper, type, mct.getName(), (ClassNode[]) wrapper.getData());
                             if (methods.size() != 1) {
                                 String methSpec = toMethodParametersString(mct.getName(), extractTypesFromParameters(mct.getParameters()));
                                 String stcError = String.format("The closure shared variable \"%s\" has been assigned with various types and the method %s does not exist in the lowest upper bound of those types: %s", target.getName(), methSpec, prettyPrintTypeName(type));
