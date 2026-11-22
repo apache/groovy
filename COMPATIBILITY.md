@@ -864,13 +864,14 @@ as well as under `@TypeChecked` and `@CompileStatic`, and to `Double.NaN` and
 `Double.isNaN` where NaN needs handling of its own.
 
 **What is unchanged.** Comparisons that go through Groovy's number comparison
-rather than a primitive instruction: operands of different types such as
-`Double` against `Integer` or `BigDecimal`, where NaN is still greater than
-every value as in `Double.compareTo` (GROOVY-3309); `==` on `Double` objects,
-which still treats NaN as equal to NaN as `Double.equals` does; and `<=>`,
-which follows `Double.compare` for primitives and objects alike. Classes
-compiled by an earlier release keep the old comparison until they are
-recompiled.
+rather than a primitive instruction stayed on `Double.compareTo` in 6.0.1:
+operands of different types such as `Double` against `Integer` or `BigDecimal`
+still treated NaN as greater than every value, and `==` on `Double` objects
+still treated NaN as equal to NaN, as `Double.equals` does. `<=>` follows
+`Double.compare` for primitives and objects alike. Classes compiled by an
+earlier release keep the old primitive comparison until they are recompiled.
+Groovy 7 makes those boolean comparisons false as well (GROOVY-3309); `<=>`
+is unchanged.
 
 ### Groovy 6.0.1 — instance initializer blocks of `@CompileStatic` classes are statically compiled (GROOVY-12761)
 
@@ -1449,6 +1450,38 @@ element, and a spread assignment (`people*.name = 'x'`) writes it to each
 element. The previous `@CompileStatic` results were wrong, and code that
 relied on them gets different results once recompiled with 6.0.1; the new
 results are correct.
+
+### Groovy 7 — a boolean comparison with NaN is false (GROOVY-3309)
+
+`==`, `!=`, `<`, `<=`, `>` and `>=` are false when one operand is a `Double`
+or `Float` NaN and the other is numeric. That includes `NaN == NaN`, a NaN
+compared with itself, and a NaN compared with an `int`, `long`, `BigDecimal`,
+the other floating-point type, a character, or a one-character string. It
+matches a primitive `double` or `float` (JLS 15.20.1) and the primitive
+comparisons fixed in Groovy 6.0.1. Before, a comparison that went through
+Groovy's number comparison used `Double.compare`: NaN was greater than every
+other value and equal to NaN, and `Double.equals` made `==` of two NaN
+`Double` objects true.
+
+This applies in dynamic code and under `@TypeChecked` and `@CompileStatic`.
+A primitive captured by a closure is compared this way too, because the
+closure boxes it.
+
+**Who is affected.** Code that used `value == Double.NaN`, or `value > limit`
+with a `Double` or `Float` NaN and a number of another type, to detect NaN or
+to treat it as over the limit. Use `Double.isNaN` or `Float.isNaN`. `x != x`
+is now true for a NaN `Double` or `Float`, as it already was for a primitive
+`double` or `float` kept in a local variable.
+
+**What is unchanged.** `<=>`, which still follows `Double.compare`, so a NaN
+sorts above every value and compares equal to a NaN. `is` and `===` are still
+reference equality. `List.contains`, `equals`, and a `switch` or `in` on a
+number still use `equals` or `compareTo`, so a NaN matches a NaN there. Groovy
+truth of a `Double` or `Float` NaN stays false. Comparisons with `null`, and
+with a value that is not numeric, stay on the previous rules, so a NaN is
+still greater than `null`. Signed zero is unchanged: two boxed zeros of
+opposite sign stay unequal under `==`, because that uses `Double.equals`.
+Primitive `double` and `float` comparisons are unchanged from Groovy 6.0.1.
 
 ### Groovy 7 — `==` on a `Number` that is not `Comparable` compares numerically (GROOVY-12699)
 
