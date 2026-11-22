@@ -87,15 +87,22 @@ public class FormatHelper {
         return null;
     }
 
-    static final Set<String> DEFAULT_IMPORT_PKGS = new HashSet<>();
-    static final Set<String> DEFAULT_IMPORT_CLASSES = new HashSet<>();
+    /**
+     * Holds the default imports used by {@link #typeName(Object)}. They are read
+     * on the first call that needs a type name, so that initializing this class,
+     * and formatting a value, does not initialize {@code ResolveVisitor}.
+     */
+    private static final class DefaultImportsHolder {
+        static final Set<String> DEFAULT_IMPORT_PKGS = new HashSet<>();
+        static final Set<String> DEFAULT_IMPORT_CLASSES = new HashSet<>();
 
-    static {
-        for (String pkgName : ResolveVisitor.DEFAULT_IMPORTS) {
-            FormatHelper.DEFAULT_IMPORT_PKGS.add(pkgName.substring(0, pkgName.length() - 1));
+        static {
+            for (String pkgName : ResolveVisitor.DEFAULT_IMPORTS) {
+                DEFAULT_IMPORT_PKGS.add(pkgName.substring(0, pkgName.length() - 1));
+            }
+            DEFAULT_IMPORT_CLASSES.add("java.math.BigDecimal");
+            DEFAULT_IMPORT_CLASSES.add("java.math.BigInteger");
         }
-        FormatHelper.DEFAULT_IMPORT_CLASSES.add("java.math.BigDecimal");
-        FormatHelper.DEFAULT_IMPORT_CLASSES.add("java.math.BigInteger");
     }
 
     /**
@@ -466,7 +473,7 @@ public class FormatHelper {
     static String typeName(Object argument) {
         Class<?> aClass = argument.getClass();
         String pkgName = aClass.getPackage() == null ? "" : aClass.getPackage().getName();
-        boolean useShort = DEFAULT_IMPORT_PKGS.contains(pkgName) || DEFAULT_IMPORT_CLASSES.contains(aClass.getName());
+        boolean useShort = DefaultImportsHolder.DEFAULT_IMPORT_PKGS.contains(pkgName) || DefaultImportsHolder.DEFAULT_IMPORT_CLASSES.contains(aClass.getName());
         return useShort ? aClass.getSimpleName() : aClass.getName();
     }
 
