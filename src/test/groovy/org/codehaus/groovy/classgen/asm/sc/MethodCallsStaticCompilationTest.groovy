@@ -98,14 +98,21 @@ final class MethodCallsStaticCompilationTest extends MethodCallsSTCTest implemen
             assert nested.viaSuper() == 'im:nested'
             assert nested.viaCast() == 'im:nested'
             assert Outer.param(sub) == 'im:sub'
-            assert Outer.local() == 'im:sub'
             assert Outer.result() == 'im:sub'
             assert Outer.coerced() == 'im:sub'
-            assert Outer.narrowed(sub) == 'im:sub'
-            assert Outer.closure() == 'im:sub'
             assert sub.viaSuper() == 'im:sub'
             assert sub.viaCast() == 'im:sub'
             assert Outer.Other.param(sub) == 'im:sub'
+        '''
+    }
+
+    // GROOVY-12513
+    @Override @Test
+    void testCallToPrivateMethodOfSuperclassThroughNarrowedVariable() {
+        assertScript PRIVATE_METHOD_THROUGH_NARROWED_VARIABLE + '''
+            assert Outer.local() == 'im:sub'
+            assert Outer.narrowed(sub) == 'im:sub'
+            assert Outer.closure() == 'im:sub'
             assert Outer.Other.local() == 'im:sub'
         '''
     }

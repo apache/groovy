@@ -583,13 +583,34 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
             }
             static class Other {
                 static String param(Box b) { b.im() }
-                static String local() { Box b = new Sub(); b.im() }
             }
             static String param(Box b) { b.im() }
-            static String local() { Box b = new Sub(); b.im() }
             static Box make() { new Sub() }
             static String result() { make().im() }
             static String coerced() { (new Sub() as Box).im() }
+        }
+        def sub = new Outer.Sub()
+    '''
+
+    /**
+     * Calls a private method through a variable declared with its class, which
+     * flow typing narrows to a subclass. Run by the static compilation test;
+     * @TypeChecked calls the method dynamically, and the meta-class of a subclass
+     * offers no private method of its superclass, so there each call is rejected.
+     */
+    protected static final String PRIVATE_METHOD_THROUGH_NARROWED_VARIABLE = '''
+        class Outer {
+            static class Box {
+                String id = 'box'
+                private String im() { 'im:' + id }
+            }
+            static class Sub extends Box {
+                Sub() { id = 'sub' }
+            }
+            static class Other {
+                static String local() { Box b = new Sub(); b.im() }
+            }
+            static String local() { Box b = new Sub(); b.im() }
             static String narrowed(Box b) { if (b instanceof Sub) { return b.im() }; null }
             static String closure() { Box b = new Sub(); def c = { -> b.im() }; c() }
         }
@@ -600,6 +621,29 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
     @Test
     void testCallToPrivateMethodOfSuperclassThroughReceiverOfItsType() {
         assertScript PRIVATE_METHOD_THROUGH_DECLARING_TYPE
+    }
+
+    // GROOVY-12513: one call per script, so that each one is rejected
+    @Test
+    void testCallToPrivateMethodOfSuperclassThroughNarrowedVariable() {
+        for (code in ['Box b = new Sub(); b.im()', 'if (p instanceof Sub) { p.im() }', 'Box b = new Sub(); def c = { -> b.im() }; c()']) {
+            for (sibling in [true, false]) {
+                shouldFailWithMessages """
+                    class Outer {
+                        static class Box {
+                            private String im() { 'im' }
+                        }
+                        static class Sub extends Box {
+                        }
+                        static class Other {
+                            static test(Box p) { ${sibling ? code : ''} }
+                        }
+                        static test(Box p) { ${sibling ? '' : code} }
+                    }
+                """,
+                'Cannot find matching method Outer$Sub#im()'
+            }
+        }
     }
 
     // GROOVY-12510: an enum constant body and an anonymous subclass are nested in

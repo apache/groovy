@@ -3033,7 +3033,7 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
 
         Expression objectExpression = pexp.getObjectExpression();
         // a private member of the declared type is reachable when flow typing narrows the variable
-        ClassNode declaredType = getDeclaredType(objectExpression);
+        ClassNode declaredType = getDeclaredReceiverType(objectExpression);
         if (objectExpression instanceof ConstructorCallExpression) {
             ClassNode rawType = getType(objectExpression).getPlainNodeReference();
             inferDiamondType((ConstructorCallExpression) objectExpression, rawType);
@@ -3174,7 +3174,7 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
                 if (!handledTypes.add(current)) continue;
 
                 FieldNode field = current.getDeclaredField(propertyName);
-                if (field != null && !field.isStatic() && !(pexp instanceof AttributeExpression) && !current.equals(receiverType) && !current.equals(declaredType)
+                if (field != null && !field.isStatic() && !(pexp instanceof AttributeExpression) && !current.equals(receiverType)
                         && isInheritedPrivateMember(field.getModifiers(), field.getDeclaringClass())
                         // GROOVY-12600, GROOVY-12610, GROOVY-12626: static compilation uses the field directly from any class of its nest
                         && !isStaticDispatchScope() && isDynamicallyUnreachableThroughSubclass(field, receiverType, pexp, !readMode)
@@ -3625,18 +3625,21 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
             return false;
         }
         boolean superField = isSuperExpression(expression.getObjectExpression());
+        // GROOVY-12513: statically compiled code of the field's nest reads the field of a variable's declared type directly
+        boolean declaredTypeField = field.getDeclaringClass().equals(getDeclaredReceiverType(expression.getObjectExpression()))
+                && inSameNest(field.getDeclaringClass(), typeCheckingContext.getEnclosingClassNode());
         // JLS 8.2: a private instance field is not a member of a subclass, and the meta-class
         // of a subclass offers no private field of its superclass, so "sub.@name" fails at run
         // time; "this.@name" and "super.@name" use the field directly, as in dynamic Groovy
         if (expression instanceof AttributeExpression && !field.isStatic() && !superField
                 && !isThisExpression(expression.getObjectExpression())
                 && !field.getDeclaringClass().equals(receiver)
-                && !field.getDeclaringClass().equals(getDeclaredType(expression.getObjectExpression()))
+                && !declaredTypeField
                 && isInheritedPrivateMember(field.getModifiers(), field.getDeclaringClass())) {
             return false;
         }
         boolean exactReceiver = (!superField && !field.getDeclaringClass().isAbstract() // GROOVY-7300, GROOVY-11358
-                && (receiver.equals(field.getDeclaringClass()) || field.getDeclaringClass().equals(getDeclaredType(expression.getObjectExpression()))));
+                && (receiver.equals(field.getDeclaringClass()) || declaredTypeField));
         if (exactReceiver && delegationData == null
                 && typeCheckingContext.getEnclosingClosure() == null
                 && !(expression instanceof AttributeExpression)
@@ -6858,7 +6861,7 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
                     for (Receiver<String> currentReceiver : receivers) {
                         ClassNode receiverType = currentReceiver.getType();
                         if (isClassType(receiverType)) receiverType = receiverType.getPlainNodeReference();
-                        declaredReceiverType = getDeclaredType(objectExpression);
+                        declaredReceiverType = getDeclaredReceiverType(objectExpression);
                         try {
                             mn = findMethod(receiverType, name, args);
                         } finally {
@@ -9302,6 +9305,18 @@ trying: for (ClassNode[] signature : signatures) {
         List<MethodNode> result = new ArrayList<>(methods);
         result.removeIf(inherited);
         return result;
+    }
+
+    /**
+     * Returns the declared type of a variable through which a private member of
+     * that type may be used although flow typing narrows the variable to a
+     * subclass. Only statically compiled code uses the member of the declared
+     * type; dynamic dispatch looks for it on the meta-class of the object's
+     * class, which offers no private member of a superclass, so elsewhere this
+     * is {@code null}.
+     */
+    private ClassNode getDeclaredReceiverType(final Expression expression) {
+        return isStaticDispatchScope() ? getDeclaredType(expression) : null;
     }
 
     /**

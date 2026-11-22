@@ -2519,23 +2519,24 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
     void testPrivateAccessorOrFieldOfNestMateSuperclassViaSubclass() {
         for (expr in ['new Sub().x', 'new Sub().y = "1"', 'new Sub().f']) {
             def name = expr.substring(10, 11)
-            shouldFailWithMessages """
-                class Outer {
-                    static class Box {
-                        private String f = 'f'
-                        private String getX() { 'gx' }
-                        private void setY(String s) { }
+            for (sibling in [true, false]) { // one access per script, so that each one is rejected
+                shouldFailWithMessages """
+                    class Outer {
+                        static class Box {
+                            private String f = 'f'
+                            private String getX() { 'gx' }
+                            private void setY(String s) { }
+                        }
+                        static class Sub extends Box {
+                        }
+                        static class Other {
+                            static test() { ${sibling ? expr : ''} }
+                        }
+                        static test() { ${sibling ? '' : expr} }
                     }
-                    static class Sub extends Box {
-                    }
-                    static class Other {
-                        static test() { $expr }
-                    }
-                    static test() { $expr }
-                }
-            """,
-            "No such property: $name for class: Outer\$Sub", // sibling
-            "No such property: $name for class: Outer\$Sub"  // outer class
+                """,
+                "No such property: $name for class: Outer\$Sub"
+            }
         }
 
         shouldFailWithMessages '''
@@ -2657,9 +2658,8 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
      * Uses a private field and a private getter through a variable declared with
      * their class, which flow typing narrows to a subclass. Run by the static
      * compilation test; @TypeChecked accesses these properties dynamically, and
-     * the meta-class of a subclass offers no private field of its superclass, so
-     * here they are only compiled, and property syntax for the field is rejected
-     * (GROOVY-12610).
+     * the meta-class of a subclass offers no private member of its superclass,
+     * so there each of them is rejected.
      */
     protected static final String PRIVATE_FIELD_THROUGH_DECLARED_TYPE = '''
         import java.util.function.Supplier
@@ -2685,12 +2685,81 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
         def sub = new Outer.Sub()
     '''
 
-    // GROOVY-12513, GROOVY-12610: b.@f, b.x and the cast compile; b.f does not, because
-    // dynamic dispatch looks for the field on the meta-class of Sub
+    // GROOVY-12513, GROOVY-12610: under type checking a private member of Box is not
+    // found through a variable that flow typing narrows to Sub, because dynamic dispatch
+    // looks for it on the meta-class of Sub; one access per script, so that each is rejected
     @Test
     void testPrivateFieldThroughDeclaredTypeOfNarrowedVariable() {
-        shouldFailWithMessages PRIVATE_FIELD_THROUGH_DECLARED_TYPE,
-            *['No such property: f for class: Outer$Sub'] * 7
+        [
+            'Box b = new Sub(); b.f'                                      : 'No such property: f for class: Outer$Sub',
+            'Box b = new Sub(); b.f = "w"'                                : 'No such property: f for class: Outer$Sub',
+            'Box b = new Sub(); b.f += "!"'                               : 'No such property: f for class: Outer$Sub',
+            'Box b = new Sub(); b.@f'                                     : 'Cannot access field: f of class: Outer$Box',
+            'Box b = new Sub(); b.@f = "a"'                               : 'Cannot access field: f of class: Outer$Box',
+            'Box b = new Sub(); b.x'                                      : 'No such property: x for class: Outer$Sub',
+            'Box b = new Sub(); def c = { -> b.f }; c()'                  : 'No such property: f for class: Outer$Sub',
+            'Box b = new Sub(); def c = { -> b.@f }; c()'                 : 'Cannot access field: f of class: Outer$Box',
+            'Box b = new Sub(); Supplier<String> s = () -> b.f; s.get()'  : 'No such property: f for class: Outer$Sub',
+            'if (p instanceof Sub) { p.f }'                               : 'No such property: f for class: Outer$Sub',
+            'if (p instanceof Sub) { p.@f }'                              : 'Cannot access field: f of class: Outer$Box',
+            'if (p instanceof Sub) { p.x }'                               : 'No such property: x for class: Outer$Sub',
+        ].each { code, message ->
+            for (sibling in [true, false]) {
+                shouldFailWithMessages """
+                    import java.util.function.Supplier
+
+                    class Outer {
+                        static class Box {
+                            private String f = 'f'
+                            private String getX() { 'x' }
+                        }
+                        static class Sub extends Box {
+                        }
+                        static class Other {
+                            static test(Box p) { ${sibling ? code : ''} }
+                        }
+                        static test(Box p) { ${sibling ? '' : code} }
+                    }
+                """, message
+            }
+        }
+
+        // a variable that flow typing does not narrow is taken at its declared type
+        assertScript '''
+            class Outer {
+                static class Box {
+                    private String f = 'f'
+                    private String getX() { 'x' }
+                }
+                static class Sub extends Box {
+                }
+                static class Other {
+                    static String read(Box b) { b.f + b.@f + b.x }
+                }
+                static String read(Box b) { b.f + b.@f + b.x }
+            }
+            assert Outer.Other.read(new Outer.Box()) == 'ffx'
+            assert Outer.read(new Outer.Box()) == 'ffx'
+        '''
+    }
+
+    // GROOVY-12513: a private field of a class of another nest is not reached through
+    // a variable declared with that class, as through one of the subclass type
+    @Test
+    void testPrivateFieldOfOtherNestThroughDeclaredTypeOfNarrowedVariable() {
+        for (code in ['Base b = new Base.Sub(); b.@f', 'Base b = new Base.Sub(); b.@f = "w"']) {
+            shouldFailWithMessages """
+                class Base {
+                    private String f = 'f'
+                    static class Sub extends Base {
+                    }
+                }
+                class Other {
+                    static test() { $code }
+                }
+            """,
+            'Cannot access field: f of class: Base'
+        }
     }
 
     // GROOVY-12513: a private field is not inherited, so a receiver whose type is
