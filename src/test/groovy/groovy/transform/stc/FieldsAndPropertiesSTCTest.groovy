@@ -2232,6 +2232,27 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
         'No such property: z for class: Base', 'No such property: z for class: Base'
     }
 
+    // GROOVY-12511: in an inner subclass, this.name for a private accessor of the enclosing
+    // class is the enclosing instance's property, as without "this" and in dynamic Groovy
+    @Test
+    void testPrivateAccessorOfEnclosingSuperclassViaThisInInnerSubclass() {
+        assertScript '''
+            class Outer {
+                String id = 'O'
+                String log = ''
+                private String getP() { 'p' + id }
+                private void setQ(String v) { log += id + v }
+                class Sub extends Outer {
+                    Sub() { id = 'S' }
+                    List read() { [p, this.p, { -> this.p }()] }
+                    List write() { q = '1'; this.q = '2'; { -> this.q = '3' }(); [Outer.this.log, log] }
+                }
+                List test() { def sub = new Sub(); [sub.read(), sub.write()] }
+            }
+            assert new Outer().test() == [['pO', 'pO', 'pO'], ['O1O2O3', '']]
+        '''
+    }
+
     /**
      * Reads f through a static nested subclass of Base, where the private field
      * f of Base hides the public field f of Parent, with {@code sub} in Sub and

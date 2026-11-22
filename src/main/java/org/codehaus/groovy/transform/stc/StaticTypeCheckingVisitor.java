@@ -3373,12 +3373,18 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
             }
         }
 
-        if (pexp.isImplicitThis() && isThisExpression(objectExpression)) {
+        if (isThisExpression(objectExpression)) {
             Iterator<ClassNode> iter = enclosingTypes.iterator(); // first enclosing is "this" type
             ClassNode thisType = iter.next(); // an enum constant body has no enclosing instance either
             boolean staticOnly = hasNoEnclosingInstance(thisType) || thisType.redirect() instanceof EnumConstantClassNode || typeCheckingContext.isInStaticContext;
             while (iter.hasNext()) {
                 ClassNode outer = iter.next();
+                // GROOVY-12511: an explicit "this.name" is the enclosing instance's property only where this
+                // class extends the enclosing class, whose private accessor it does not inherit (JLS 8.2)
+                if (!pexp.isImplicitThis() && !thisType.isDerivedFrom(outer)) {
+                    staticOnly = staticOnly || hasNoEnclosingInstance(outer);
+                    continue;
+                }
                 // GROOVY-7994, GROOVY-11198: try "this.propertyName" as "Outer.propertyName" or "Outer.this.propertyName"
                 Expression outerThis = staticOnly ? classX(outer) : propX(classX(outer), "this");
                 outerThis.putNodeMetaData("implicit outer this", Boolean.TRUE); // dispatched on "this"
