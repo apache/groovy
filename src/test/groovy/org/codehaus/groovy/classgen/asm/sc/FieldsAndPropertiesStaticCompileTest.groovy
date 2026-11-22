@@ -1265,6 +1265,14 @@ final class FieldsAndPropertiesStaticCompileTest extends FieldsAndPropertiesSTCT
         assert other.contains('INVOKESTATIC Outer$Box.getZ ()Ljava/lang/String;')
     }
 
+    // GROOVY-12610: static compilation reads the private fields of Base
+    @Override @Test
+    void testInterfaceConstantOrGetterBeyondPrivateFieldOfSuperclass() {
+        assertScript PRIVATE_FIELD_BEFORE_CONSTANT_OR_GETTER + '''
+            assert Base.Sub.read(new Base.Sub()) == [2, 4]
+        '''
+    }
+
     // GROOVY-12610: static compilation reads the private field of Base
     @Override @Test
     void testPrivateFieldOfSuperclassHidingFieldViaStaticNestedSubclass() {

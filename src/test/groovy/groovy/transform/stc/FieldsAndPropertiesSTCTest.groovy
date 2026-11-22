@@ -2283,6 +2283,27 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
         shouldFailWithMessages hiddenFieldOfSuperclass('', 's.f'), 'No such property: f for class: Base$Sub'
     }
 
+    // GROOVY-12610: past the private field of Base, dynamic dispatch still finds an
+    // interface constant or a getter of a superclass, so type checking does too
+    @Test
+    void testInterfaceConstantOrGetterBeyondPrivateFieldOfSuperclass() {
+        assertScript PRIVATE_FIELD_BEFORE_CONSTANT_OR_GETTER + '''
+            assert Base.Sub.read(new Base.Sub()) == [1, 3]
+        '''
+    }
+
+    protected static final String PRIVATE_FIELD_BEFORE_CONSTANT_OR_GETTER = '''
+        interface I { int f = 1 }
+        class Parent { int getG() { 3 } }
+        class Base extends Parent implements I {
+            private int f = 2
+            private int g = 4
+            static class Sub extends Base {
+                static List read(Sub s) { [s.f, s.g] }
+            }
+        }
+    '''
+
     // GROOVY-12610: an inner class reaches the field through its enclosing instance,
     // and the declaring class reaches it on any subclass instance
     @Test

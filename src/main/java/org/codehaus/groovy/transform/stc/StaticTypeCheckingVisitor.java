@@ -3174,7 +3174,7 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
                 ClassNode current = queue.remove();
                 if (!handledTypes.add(current)) continue;
 
-                FieldNode field = fieldHidden ? null : current.getDeclaredField(propertyName);
+                FieldNode field = fieldHidden && !current.isInterface() ? null : current.getDeclaredField(propertyName);
                 if (field != null && !field.isStatic() && !(pexp instanceof AttributeExpression) && !current.equals(receiverType)
                         && isInheritedPrivateMember(field.getModifiers(), field.getDeclaringClass())
                         // GROOVY-12600, GROOVY-12610, GROOVY-12626: static compilation uses the field directly from any class of its nest
@@ -3182,7 +3182,7 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
                         // GROOVY-12533: in a class nested in the declaring class, this.name is the field of the enclosing instance, or of this instance without one
                         && !(isThisExpression(objectExpression) && isNestedIn(typeCheckingContext.getEnclosingClassNode(), field.getDeclaringClass()))) {
                     field = null; // JLS 8.2: find the outer class's field, if any, as Outer.this.name
-                    fieldHidden = true; // nor does the meta-class offer a field of this name that it hides
+                    fieldHidden = true; // nor does the meta-class offer a field of a superclass that it hides; a getter or an interface constant it does
                 }
                 if (field == null) {
                     if (current.getSuperClass() != null)
