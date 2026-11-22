@@ -18,7 +18,9 @@
  */
 package groovy.ginq.transform;
 
+import groovy.ginq.Ginq;
 import org.apache.groovy.ginq.dsl.GinqAstVisitor;
+import org.apache.groovy.ginq.provider.GinqProvider;
 import org.apache.groovy.ginq.provider.collection.runtime.Queryable;
 import org.apache.groovy.lang.annotation.Incubating;
 import org.codehaus.groovy.transform.GroovyASTTransformationClass;
@@ -30,7 +32,14 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Method annotation to make a method call returning GINQ result
+ * Method annotation to make a method call returning GINQ result.
+ * <p>
+ * The method body is GINQ syntax, not a Groovy block. It can be used from a
+ * {@code @CompileStatic} or {@code @TypeChecked} class: the method is checked
+ * with the enclosing annotation, and the lowered query closure stays dynamically
+ * dispatched. A {@code def} method is given the result type of {@link #value()}
+ * when that does not conflict with a superclass method. For a statically typed
+ * chain of operators, use {@link Ginq} instead of this annotation.
  *
  * @since 4.0.0
  */
@@ -63,4 +72,18 @@ public @interface GQ {
      */
     @Incubating
     String astWalker() default "org.apache.groovy.ginq.provider.collection.GinqAstWalker";
+
+    /**
+     * Specify the GINQ provider by name, e.g. {@code collection} (the default) or a
+     * provider registered via the {@link GinqProvider}
+     * SPI such as {@code native-sql}.
+     * <p>
+     * Note that database-backed providers also require a {@code dataSource}, which
+     * cannot be supplied via an annotation; use the macro form instead, e.g.
+     * {@code GQ(provider: 'native-sql', dataSource: db) {...}}.
+     *
+     * @since 7.0.0
+     */
+    @Incubating
+    String provider() default "collection";
 }

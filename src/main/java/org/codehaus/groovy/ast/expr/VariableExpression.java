@@ -38,15 +38,20 @@ import org.codehaus.groovy.ast.Variable;
 public class VariableExpression extends Expression implements Cloneable, Variable {
 
     /**
-     * Shared {@code this} variable. A {@code this} expression from source has its
-     * own instance, so identity comparison with this field is not a this-test;
-     * use {@link #isThisExpression()}.
+     * Process-wide {@code this} sentinel for internal compiler use.
+     * Every source occurrence has its own node so line information and inferred
+     * types stay with that use; test with {@link #isThisExpression()} rather than
+     * comparing to this field. A transform that needs a {@code this} receiver
+     * should allocate one with {@code varX("this")} instead of reusing this sentinel.
      */
     public static final VariableExpression THIS_EXPRESSION = new VariableExpression("this");
+
     /**
-     * Shared {@code super} variable. A {@code super} expression from source has its
-     * own instance, so identity comparison with this field is not a super-test;
-     * use {@link #isSuperExpression()}.
+     * Process-wide {@code super} sentinel for internal compiler use.
+     * Every source occurrence has its own node so line information and inferred
+     * types stay with that use; test with {@link #isSuperExpression()} rather than
+     * comparing to this field. A transform that needs a {@code super} receiver
+     * should allocate one with {@code varX("super")} instead of reusing this sentinel.
      */
     public static final VariableExpression SUPER_EXPRESSION = new VariableExpression("super");
 

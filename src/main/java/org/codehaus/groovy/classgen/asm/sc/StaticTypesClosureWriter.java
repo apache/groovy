@@ -328,7 +328,19 @@ public class StaticTypesClosureWriter extends ClosureWriter {
         if (SystemUtil.getBooleanSafe(CompilerConfiguration.CLOSURE_SAM_CONVERSION)) {
             SamAdapterFactory.prepare(controller, closureClass, doCallMethod, expression);
         }
-        closureClass.putNodeMetaData(StaticCompilationMetadataKeys.STATIC_COMPILE_NODE, Boolean.TRUE);
+        // A closure marked DYNAMIC_RESOLUTION is emitted with the dynamic writer.
+        // The enclosing method stays static. Nested lambdas then use closure
+        // capture, which a static lambda does not do for a variable of an
+        // enclosing closure. The marker is Boolean.TRUE only for that switch;
+        // a type-checking extension's per-expression makeDynamic stores a type.
+        boolean dynamic = Boolean.TRUE.equals(expression.getNodeMetaData(DYNAMIC_RESOLUTION));
+        Boolean mode = dynamic ? Boolean.FALSE : Boolean.TRUE;
+        closureClass.putNodeMetaData(StaticCompilationMetadataKeys.STATIC_COMPILE_NODE, mode);
+        for (MethodNode method : closureClass.getMethods()) {
+            if (method.getDeclaringClass() == closureClass) {
+                method.putNodeMetaData(StaticCompilationMetadataKeys.STATIC_COMPILE_NODE, mode);
+            }
+        }
         return closureClass;
     }
 

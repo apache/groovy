@@ -49,6 +49,7 @@ import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.ast.stmt.ExpressionStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
 import org.codehaus.groovy.control.SourceUnit;
+import org.codehaus.groovy.syntax.Token;
 import org.codehaus.groovy.syntax.Types;
 
 import java.util.ArrayDeque;
@@ -311,6 +312,22 @@ public class GinqAstBuilder extends CodeVisitorSupport implements SyntaxErrorRep
             return;
         }
 
+        // `(expr) in (subquery)` is parsed as a method call `where(expr).in(subquery)`
+        // in some Groovy shapes. Keep the binary-expression repair below as the
+        // path the parser actually produces; this covers the method-call shape.
+        if (KW_IN.equals(methodName) || "!in".equals(methodName)) {
+            if (latestGinqExpression != null && latestGinqExpressionClause instanceof FilterExpression) {
+                FilterExpression filter = (FilterExpression) latestGinqExpressionClause;
+                int opType = "!in".equals(methodName) ? Types.COMPARE_NOT_IN : Types.KEYWORD_IN;
+                filter.setFilterExpr(new BinaryExpression(
+                        filter.getFilterExpr(),
+                        new Token(opType, methodName, -1, -1),
+                        latestGinqExpression));
+                latestGinqExpression = null;
+            }
+            return;
+        }
+
         if (KW_EXISTS.equals(methodName)) {
             if (null != latestGinqExpression) {
                 ArgumentListExpression argumentListExpression = (ArgumentListExpression) call.getArguments();
@@ -463,6 +480,24 @@ public class GinqAstBuilder extends CodeVisitorSupport implements SyntaxErrorRep
                 } else if (isSelectMethodCallExpression(expression.getLeftExpression())) {
                     expression.setLeftExpression(latestGinqExpression);
                     latestGinqExpression = null;
+                }
+            }
+            // `where (e.salary + 1) in (subquery)` is parsed as
+            // `where(e.salary + 1) in (subquery)`, so the filter would keep
+            // only the addition. Fold that outer `in` back into the filter.
+            AbstractGinqExpression clause = ginqExpressionStack.isEmpty() || ginqExpressionStack.peek() == null
+                    ? null
+                    : ginqExpressionStack.peek().getNodeMetaData(__LATEST_GINQ_EXPRESSION_CLAUSE);
+            if ((Types.KEYWORD_IN == opType || Types.COMPARE_NOT_IN == opType)
+                    && expression.getLeftExpression() instanceof MethodCallExpression
+                    && clause instanceof FilterExpression) {
+                String leftName = ((MethodCallExpression) expression.getLeftExpression()).getMethodAsString();
+                if (KW_WHERE.equals(leftName) || KW_ON.equals(leftName) || KW_HAVING.equals(leftName)) {
+                    FilterExpression filter = (FilterExpression) clause;
+                    filter.setFilterExpr(new BinaryExpression(
+                            filter.getFilterExpr(),
+                            expression.getOperation(),
+                            expression.getRightExpression()));
                 }
             }
         }

@@ -18,6 +18,7 @@
  */
 package org.codehaus.groovy.transform.sc.transformers;
 
+import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.expr.Expression;
@@ -66,8 +67,11 @@ class MethodCallExpressionTransformer {
         }
 
         var superCallReceiver = mce.getNodeMetaData(StaticTypesMarker.SUPER_MOP_METHOD_REQUIRED);
-        if (superCallReceiver instanceof ClassNode) {
-            return transformMethodCallExpression(transformToMopSuperCall((ClassNode) superCallReceiver, mce));
+        if (superCallReceiver instanceof ClassNode superType) {
+            if (!(mce.getNodeMetaData(StaticTypesMarker.DIRECT_METHOD_CALL_TARGET) instanceof MethodNode superMethod)) {
+                throw new GroovyBugError("Missing direct method call target for super MOP call: " + mce);
+            }
+            return transformMethodCallExpression(transformToMopSuperCall(superType, superMethod, mce));
         }
 
         var callable = (Expression) mce.putNodeMetaData("callable property", null);
@@ -94,8 +98,8 @@ class MethodCallExpressionTransformer {
                     ((ExtensionMethodNode) node).getExtensionMethodNode().getDeclaringClass().getName());
     }
 
-    private static MethodCallExpression transformToMopSuperCall(final ClassNode superType, final MethodCallExpression expr) {
-        MethodNode direct = StaticCompilationMopWriter.getSuperMopMethod(superType, expr.getNodeMetaData(StaticTypesMarker.DIRECT_METHOD_CALL_TARGET));
+    private static MethodCallExpression transformToMopSuperCall(final ClassNode superType, final MethodNode superMethod, final MethodCallExpression expr) {
+        MethodNode direct = StaticCompilationMopWriter.getSuperMopMethod(superType, superMethod);
 
         MethodCallExpression result = new MethodCallExpression(
                 new VariableExpression("this"),

@@ -19,6 +19,7 @@
 package org.codehaus.groovy.classgen.asm;
 
 import org.codehaus.groovy.ast.ClassNode;
+import org.codehaus.groovy.ast.GenericsType;
 
 /**
  * Writes the JVMS 4.7.9.1 nested form of a parameterized type for a Signature
@@ -42,11 +43,54 @@ final class TypeSignatureWriter {
             writeParameterizedClass(ret, owner);
             ret.append('.');
             ret.append(innerClassSimpleName(printType, owner));
-            BytecodeHelper.addSubTypes(ret, printType.getGenericsTypes(), "<", ">");
+            BytecodeHelper.addSubTypes(ret, signatureArguments(printType), "<", ">");
             return;
         }
         ret.append(BytecodeHelper.getTypeDescription(printType, false));
-        BytecodeHelper.addSubTypes(ret, printType.getGenericsTypes(), "<", ">");
+        BytecodeHelper.addSubTypes(ret, signatureArguments(printType), "<", ">");
+    }
+
+    /**
+     * Type arguments safe to write for a resolved declaration. A signature
+     * cannot name arguments a class does not declare, so a count that does
+     * not match the declaration is omitted. An unresolved name is left
+     * unchanged. A source use site that does not match is rejected before
+     * bytecode; a type built later, such as a lowest upper bound, may still
+     * carry arguments this method has to drop.
+     */
+    private static GenericsType[] signatureArguments(final ClassNode printType) {
+        GenericsType[] useSite = printType.getGenericsTypes();
+        if (useSite == null || useSite.length == 0) {
+            return useSite;
+        }
+        int declared = declaredTypeParameters(printType);
+        if (declared >= 0 && declared != useSite.length) {
+            return null;
+        }
+        return useSite;
+    }
+
+    /**
+     * Number of type parameters the class declares, or {@code -1} when this
+     * writer does not know. Unresolved names are not loaded here. A primary
+     * node with no module is not a source class, so generics on it are not
+     * a declaration.
+     */
+    private static int declaredTypeParameters(final ClassNode printType) {
+        if (printType.isGenericsPlaceHolder()) return -1;
+        ClassNode declared = printType.redirect();
+        if (declared.isArray()) return -1;
+        if (declared.isPrimaryClassNode()) {
+            if (declared.getModule() == null) return 0;
+            GenericsType[] formals = declared.getGenericsTypes();
+            return formals == null ? 0 : formals.length;
+        }
+        if (!declared.isResolved()) return -1;
+        if (declared != printType) {
+            GenericsType[] formals = declared.getGenericsTypes();
+            if (formals != null) return formals.length;
+        }
+        return declared.getTypeClass().getTypeParameters().length;
     }
 
     /**
