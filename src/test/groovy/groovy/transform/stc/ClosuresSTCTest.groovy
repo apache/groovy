@@ -1714,4 +1714,97 @@ ${' ' * 46}value.prop += 1
             assert c.field().is(c)
         '''
     }
+
+    // GROOVY-12662
+    @Test
+    void testClosureOverloadedMethods() {
+        assertScript '''
+            Closure<Object> c = { String a, String b -> b == null ? curry(a) : a + b }
+            Closure<Object> cc = { String a, String b, String x -> x == null ? curry(a, b) : a + b + x }
+            Closure<Object> r = { String a, String b -> a == null ? rcurry(b) : a + b }
+            Closure<Object> rr = { String a, String b, String x -> a == null ? rcurry(b, x) : a + b + x }
+            Closure<Object> n = { String a, String b, String x -> b == null ? ncurry(1, x) : a + b + x }
+            Closure<Object> nn = { String a, String b, String x -> b == null ? ncurry(1, a, x) : a + b + x }
+            Closure<Object> t = { int i -> i == 0 ? trampoline() : i }
+            Closure<Object> tt = { int i -> i == 0 ? trampoline(5) : i }
+            Closure<Object> s = { int i -> i == 0 ? andThenSelf() : i + 1 }
+            Closure<Object> ss = { int i -> i == 0 ? composeSelf(2) : i + 1 }
+            Closure<Object> l = { int i -> i == 0 ? leftShift({ int j -> j * 10 }) : i + 1 }
+            Closure<Object> ll = { int i -> i == 0 ? leftShift(5) : i + 1 }
+            Closure<Object> m = { int i -> i == 0 ? memoizeAtMost(2) : i + 1 }
+
+            assert ((Closure) c('x', null))('y') == 'xy'
+            assert ((Closure) cc('x', 'y', null))('z') == 'xyz'
+            assert ((Closure) r(null, 'y'))('x') == 'xy'
+            assert ((Closure) rr(null, 'y', 'z'))('x') == 'xyz'
+            assert ((Closure) n('a', null, 'x'))('p', 'q') == 'pxq'
+            assert ((Closure) nn('a', null, 'x'))('p') == 'pax'
+            assert ((Closure) t(0))(1) == 1
+            assert ((Closure) tt(0))() == 5
+            assert ((Closure) s(0))(1) == 3
+            assert ((Closure) ss(0))(1) == 4
+            assert ((Closure) l(0))(1) == 11
+            assert ll(0) == 6
+            assert ((Closure) m(0))(1) == 2
+        '''
+    }
+
+    // GROOVY-12662
+    @Test
+    void testClosureMethodWithoutMatchingArguments() {
+        assertScript '''
+            class D {
+                String memoize(String s) { 'D' + s }
+            }
+            class C {
+                String memoize(String s) { 'C' + s }
+                String getDelegate(int i) { 'C' + i }
+                static Object withD(@DelegatesTo(value=D, strategy=Closure.DELEGATE_FIRST) Closure c) {
+                    c.resolveStrategy = Closure.DELEGATE_FIRST
+                    c.delegate = new D()
+                    c()
+                }
+                List<Object> m() {
+                    [
+                        { -> memoize('x') }(),
+                        { -> getDelegate(1) }(),
+                        { -> { -> memoize('y') }() }(),
+                        withD { -> memoize('z') },
+                        { -> memoize() }() instanceof Closure
+                    ]
+                }
+            }
+
+            assert new C().m() == ['Cx', 'C1', 'Cy', 'Dz', true]
+        '''
+    }
+
+    // GROOVY-12662
+    @Test
+    void testClosureDelegateOnlyCurryAndShiftMethods() {
+        assertScript '''
+            class D {
+                String curry(String s) { 'curry' + s }
+                String rcurry(String s) { 'rcurry' + s }
+                String ncurry(int i, String s) { 'ncurry' + i + s }
+                String leftShift(String s) { 'leftShift' + s }
+                String rightShift(String s) { 'rightShift' + s }
+                String memoize() { 'memoize' }
+            }
+            class C {
+                static Object delegateOnly(@DelegatesTo(value=D, strategy=Closure.DELEGATE_ONLY) Closure c) {
+                    c.resolveStrategy = Closure.DELEGATE_ONLY
+                    c.delegate = new D()
+                    c()
+                }
+            }
+
+            assert C.delegateOnly { -> curry('x') } == 'curryx'
+            assert C.delegateOnly { -> rcurry('x') } == 'rcurryx'
+            assert C.delegateOnly { -> ncurry(1, 'x') } == 'ncurry1x'
+            assert C.delegateOnly { -> leftShift('x') } == 'leftShiftx'
+            assert C.delegateOnly { -> rightShift('x') } == 'rightShiftx'
+            assert C.delegateOnly { -> memoize() } instanceof Closure
+        '''
+    }
 }
