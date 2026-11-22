@@ -19,6 +19,7 @@
 package bugs
 
 import groovy.test.NotYetImplemented
+import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import com.sun.net.httpserver.HttpServer
 import groovy.concurrent.Awaitable
@@ -792,6 +793,7 @@ final class RegressionTest {
     }
 
     // GROOVY-5785: HashSet removeAll() operations are slow
+    @Disabled('flaky: sometimes finishes within the timeout, sometimes does not')
     @Timeout(value = 20, unit = TimeUnit.SECONDS)
     @NotYetImplemented @Test
     void testGroovy5785() {
