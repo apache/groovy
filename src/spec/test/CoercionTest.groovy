@@ -252,7 +252,7 @@ final class CoercionTest {
     }
 
     @Test
-    void testFunctionalLiteralForATypeParameter() {
+    void testMethodReferenceForATypeParameter() {
         assertScript '''
             import groovy.transform.CompileStatic
             import java.util.function.Function
@@ -261,18 +261,41 @@ final class CoercionTest {
             @CompileStatic
             Map<String, Function<String, String>> commands() {
                 Map<String, Function<String, String>> commands = [:]
-                commands.put('shout', (String s) -> s.toUpperCase()) // V of put(K, V)
-                commands.put('trim', String::trim)
+                commands.put('trim', String::trim) // V of put(K, V)
                 commands
             }
             // end::functional_literal_for_type_parameter[]
 
             // tag::functional_literal_for_type_parameter_assertions[]
-            def commands = commands()
-            assert commands.shout.apply('Hi') == 'HI'     // the lambda is a Function
-            assert commands.trim.apply(' Hi ') == 'Hi'    // and so is the method reference
+            assert commands().trim.apply(' Hi ') == 'Hi' // the method reference is a Function
             // end::functional_literal_for_type_parameter_assertions[]
         '''
+    }
+
+    @Test
+    void testLambdaForATypeParameter() {
+        String previous = System.getProperty('groovy.target.lambda.typearg')
+        System.setProperty('groovy.target.lambda.typearg', 'true')
+        try {
+            assertScript '''
+                import groovy.transform.CompileStatic
+                import java.util.function.Function
+
+                // tag::lambda_for_type_parameter[]
+                @CompileStatic
+                Map<String, Function<String, String>> commands() {
+                    Map<String, Function<String, String>> commands = [:]
+                    commands.put('shout', (String s) -> s.toUpperCase())
+                    commands
+                }
+
+                assert commands().shout.apply('Hi') == 'HI' // the lambda is a Function
+                // end::lambda_for_type_parameter[]
+            '''
+        } finally {
+            if (previous != null) System.setProperty('groovy.target.lambda.typearg', previous)
+            else System.clearProperty('groovy.target.lambda.typearg')
+        }
     }
 
     @Test

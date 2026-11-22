@@ -119,6 +119,7 @@ import org.codehaus.groovy.ast.tools.WideningCategories;
 import org.codehaus.groovy.classgen.ReturnAdder;
 import org.codehaus.groovy.classgen.asm.InvocationWriter;
 import org.codehaus.groovy.control.CompilationUnit;
+import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.control.ErrorCollector;
 import org.codehaus.groovy.control.ResolveVisitor;
 import org.codehaus.groovy.control.SourceUnit;
@@ -5435,11 +5436,15 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
 
     /**
      * Tells if the expression is a lambda or method reference written where the type checker resolves the
-     * functional interface of a parameter declared with a type parameter: only in statically compiled code.
-     * Dynamic and type-checked calls pass such an argument as they are.
+     * functional interface of a parameter declared with a type parameter: only in statically compiled code, and
+     * for a lambda only with {@link CompilerConfiguration#LAMBDA_TYPE_ARGUMENT} set, since a lambda for such a
+     * parameter is otherwise compiled as a closure. Dynamic and type-checked calls pass such an argument as they are.
      */
     private boolean isFunctionalLiteral(final Expression expression) {
-        return (expression instanceof LambdaExpression || expression instanceof MethodReferenceExpression) && isStaticDispatchScope();
+        if (expression instanceof LambdaExpression) {
+            return isStaticDispatchScope() && SystemUtil.getBooleanSafe(CompilerConfiguration.LAMBDA_TYPE_ARGUMENT);
+        }
+        return expression instanceof MethodReferenceExpression && isStaticDispatchScope();
     }
 
     /**
