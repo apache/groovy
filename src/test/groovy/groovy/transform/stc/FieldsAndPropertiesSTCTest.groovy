@@ -2871,6 +2871,11 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
             'class Outer { private String f; static class Sub extends Outer { }; static class Other { static t(Sub sub) { sub.@f } } }',
             'class Outer { private String f; static class Sub extends Outer { }; static class Other { static t(Sub sub) { sub.@f = "w" } } }',
             'class Outer { private String f; class Sub extends Outer { def t(Sub sub) { sub.@f } } }',
+            // GROOVY-12514: Sub.this is a receiver of type Sub, not "this"
+            'class Outer { private String f; static class Sub extends Outer { def t() { Sub.this.@f } } }',
+            'class Outer { private String f; static class Sub extends Outer { def t() { Sub.this.@f = "w" } } }',
+            'class Outer { private String f; static class Sub extends Outer { def t() { def c = { -> Sub.this.@f }; c() } } }',
+            'class Outer { private String f; class Sub extends Outer { def t() { Sub.this.@f } } }',
         ]) {
             shouldFailWithMessages code, 'Cannot access field: f of class: Outer'
         }
