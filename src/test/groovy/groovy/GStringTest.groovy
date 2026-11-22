@@ -41,8 +41,7 @@ class GStringTest extends GroovyTestCase {
         def foo = 'Foo'
         def bar = 'Bar'
         def g = GString.EMPTY + "$foo".toString() + "$bar"
-        assert g instanceof GString
-        assert g.values == ['Bar']
+        assert g instanceof String
         assert 'FooBar' == g
     }
 
@@ -544,9 +543,11 @@ class GStringTest extends GroovyTestCase {
         assert gs1.getValues() == ["dog", "woof-woof"]
         assert gs1.toString() == "the dog says  woof-woof "
 
-        gs1 = gs1.plus(" not the cat")
+        def appended = gs1.plus(" not the cat")
+        assert appended instanceof String
+        assert appended == "the dog says  woof-woof  not the cat"
         assert gs1.getValues() == ["dog", "woof-woof"]
-        assert gs1.toString() == "the dog says  woof-woof  not the cat"
+        assert gs1.toString() == "the dog says  woof-woof "
     }
 
     /**

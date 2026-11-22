@@ -99,7 +99,7 @@ final class RegressionTest {
     }
 
     // GROOVY-2994: String and GString do not commute under plus()
-    @NotYetImplemented @Test
+    @Test
     void testGroovy2994() {
         assertScript '''
             assert "${1}" + "2" instanceof String
