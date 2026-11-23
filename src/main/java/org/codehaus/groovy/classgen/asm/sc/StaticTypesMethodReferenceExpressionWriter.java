@@ -681,8 +681,10 @@ public class StaticTypesMethodReferenceExpressionWriter extends MethodReferenceE
      * <p>
      * A private method of a superclass is left out, since it is not a member of the type (JLS 8.2), unless it
      * is declared by the declared type of the variable {@code typeOrTargetRef}, whose type flow typing narrowed
-     * to a subclass: the reference is then made through the declared type. Unlike a call, a static method or a
-     * reference made in the declaring class is no exception, because dynamic Groovy fails on those.
+     * to a subclass: the reference is then made through the declared type. Unlike a call, a static method, a
+     * reference made in the declaring class, and one on an enum constant body or an anonymous class created in a
+     * static context nested in the declaring class, which has no enclosing instance, are no exception, because
+     * dynamic Groovy fails on those.
      */
     private List<MethodNode> findVisibleMethods(final String name, final ClassNode type, final Expression typeOrTargetRef) {
         List<MethodNode> methods = type.getMethods(name);
