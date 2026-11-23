@@ -257,4 +257,21 @@ class MapConstructorTransformTest extends GroovyShellTestCase {
         '''
     }
 
+    // GROOVY-12787
+    void testNamedParamsAreNotCopiedOntoSharedMapType() {
+        assertScript '''
+            import groovy.transform.*
+
+            @MapConstructor class First  { String name; Integer age }
+            @MapConstructor class Second { String title; Integer size }
+
+            for (type in [First, Second]) {
+                def ctor = type.declaredConstructors.find { it.parameterTypes == [Map] as Class[] }
+                assert ctor.annotatedParameterTypes[0].annotations.length == 0 // no AnnotationFormatError
+                def names = ctor.parameterAnnotations[0].find { it instanceof NamedParams }.value()*.value()
+                assert names == type.declaredFields.findAll { !it.synthetic && it.name != 'metaClass' }*.name
+            }
+        '''
+    }
+
 }
