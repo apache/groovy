@@ -116,6 +116,291 @@ final class ClosuresStaticCompileTest extends ClosuresSTCTest implements StaticC
         '''
     }
 
+    // GROOVY-12576
+    @Test
+    void testObjectMethodsInLambdaInsideClosure() {
+        assertScript '''
+            import java.util.function.Supplier
+
+            class C {
+                String toString() { 'C' }
+                int hashCode() { 42 }
+                boolean equals(Object o) { o instanceof C }
+                List<Object> m() {
+                    C that = new C()
+                    List<Object> result = []
+                    'x'.with {
+                        Supplier<String> s = () -> toString()
+                        Supplier<Integer> h = () -> hashCode()
+                        Supplier<Boolean> e = () -> equals(that)
+                        Supplier<Class> k = () -> getClass()
+                        Supplier<String> n = () -> { { -> toString() }() }
+                        result << s.get() << h.get() << e.get() << k.get() << n.get()
+                    }
+                    result
+                }
+                static String sm() {
+                    'x'.with { Supplier<String> s = () -> toString(); s.get() }
+                }
+            }
+
+            assert new C().m() == ['C', 42, true, C, 'C']
+            assert C.sm() == 'class C'
+        '''
+    }
+
+    // GROOVY-12576
+    @Test
+    void testInheritedObjectMethodInLambdaInsideClosure() {
+        assertScript '''
+            import java.util.function.Supplier
+
+            class C {
+                String m() {
+                    'x'.with { Supplier<String> s = () -> toString(); s.get() }
+                }
+            }
+            trait T {
+                String m() {
+                    'x'.with { Supplier<String> s = () -> toString(); s.get() }
+                }
+            }
+            class K implements T {
+                String toString() { 'K' }
+            }
+
+            C c = new C()
+            assert c.m() == c.toString()
+            assert c.m().startsWith('C@')
+            assert new K().m() == 'K'
+        '''
+    }
+
+    // GROOVY-12576
+    @Test
+    void testObjectMethodInLambdaInsideDelegateOnlyClosure() {
+        assertScript '''
+            import java.util.function.Supplier
+
+            class D {
+                String toString() { 'D' }
+            }
+            class C {
+                String name
+                String toString() { name }
+                static <T> T withC(@DelegatesTo(value = C, strategy = Closure.DELEGATE_ONLY) Closure<T> block) {
+                    block.delegate = new C(name: 'delegate')
+                    block.resolveStrategy = Closure.DELEGATE_ONLY
+                    block.call()
+                }
+                static <T> T withD(@DelegatesTo(value = D, strategy = Closure.DELEGATE_ONLY) Closure<T> block) {
+                    block.delegate = new D()
+                    block.resolveStrategy = Closure.DELEGATE_ONLY
+                    block.call()
+                }
+                String sameType() {
+                    withC { Supplier<String> s = () -> toString(); s.get() }
+                }
+                String otherType() {
+                    withD { Supplier<String> s = () -> toString(); s.get() }
+                }
+            }
+
+            C c = new C(name: 'this')
+            assert c.sameType() == 'this'
+            assert c.otherType() == 'this'
+        '''
+    }
+
+    // GROOVY-12576
+    @Test
+    void testObjectExtensionMethodInLambdaInsideClosure() {
+        assertScript '''
+            import java.util.function.Supplier
+
+            class D {
+                String toString() { 'D' }
+            }
+            class C {
+                String toString() { 'C' }
+                List<Object> m() {
+                    List<Object> result = []
+                    new D().with {
+                        Supplier<Object> s1 = () -> { println('a'); print('b'); printf('%s', 'c'); null }
+                        Supplier<Object> s2 = () -> sprintf('%s', 'd')
+                        Supplier<Object> s3 = () -> inspect()
+                        Supplier<Object> s4 = () -> dump()
+                        Supplier<Object> s5 = () -> with { it.toString() }
+                        result << s1.get() << s2.get() << s3.get() << s4.get() << s5.get()
+                    }
+                    result
+                }
+                static List<Object> sm() {
+                    List<Object> result = []
+                    new D().with {
+                        Supplier<Object> s1 = () -> { println('a'); print('b'); printf('%s', 'c'); null }
+                        Supplier<Object> s2 = () -> sprintf('%s', 'd')
+                        Supplier<Object> s3 = () -> inspect()
+                        Supplier<Object> s4 = () -> dump()
+                        Supplier<Object> s5 = () -> with { it.toString() }
+                        result << s1.get() << s2.get() << s3.get() << s4.get() << s5.get()
+                    }
+                    result
+                }
+            }
+
+            def printed = new ByteArrayOutputStream()
+            PrintStream out = System.out
+            System.setOut(new PrintStream(printed))
+            try {
+                List<Object> result = new C().m()
+                assert result[0..1] == [null, 'd']
+                assert result[2] == 'C'
+                assert result[3].toString().startsWith('<C@')
+                assert result[4] == 'C'
+
+                result = C.sm()
+                assert result[0..1] == [null, 'd']
+                assert result[2] == 'class C'
+                assert result[3].toString().startsWith('<java.lang.Class@')
+                assert result[4] == 'class C'
+            } finally {
+                System.setOut(out)
+            }
+            assert printed.toString().readLines() == ['a', 'bca', 'bc']
+        '''
+    }
+
+    // GROOVY-12576
+    @Test
+    void testObjectExtensionMethodInLambdaInsideClosureInTrait() {
+        assertScript '''
+            import java.util.function.Supplier
+
+            class D {
+                String toString() { 'D' }
+            }
+            trait T {
+                List<Object> m() {
+                    List<Object> result = []
+                    new D().with {
+                        Supplier<Object> s1 = () -> { println('a'); print('b'); printf('%s', 'c'); null }
+                        Supplier<Object> s2 = () -> sprintf('%s', 'd')
+                        Supplier<Object> s3 = () -> inspect()
+                        Supplier<Object> s4 = () -> dump()
+                        Supplier<Object> s5 = () -> with { it.toString() }
+                        result << s1.get() << s2.get() << s3.get() << s4.get() << s5.get()
+                    }
+                    result
+                }
+            }
+            class K implements T {
+                String toString() { 'K' }
+            }
+
+            def printed = new ByteArrayOutputStream()
+            PrintStream out = System.out
+            System.setOut(new PrintStream(printed))
+            try {
+                List<Object> result = new K().m()
+                assert result[0..1] == [null, 'd']
+                assert result[2] == 'K'
+                assert result[3].toString().startsWith('<K@')
+                assert result[4] == 'K'
+            } finally {
+                System.setOut(out)
+            }
+            assert printed.toString().readLines() == ['a', 'bc']
+        '''
+    }
+
+    // GROOVY-12576
+    @Test
+    void testObjectExtensionMethodInLambdaInsideClosureInScript() {
+        assertScript '''
+            import java.util.function.Supplier
+
+            class D {
+                String toString() { 'D' }
+            }
+
+            String toString() { 'script' }
+
+            def printed = new ByteArrayOutputStream()
+            PrintStream out = System.out
+            System.setOut(new PrintStream(printed))
+            try {
+                List<Object> result = []
+                new D().with {
+                    Supplier<Object> s1 = () -> { println('a'); print('b'); printf('%s', 'c'); null }
+                    Supplier<Object> s2 = () -> sprintf('%s', 'd')
+                    Supplier<Object> s3 = () -> inspect()
+                    Supplier<Object> s4 = () -> with { it.toString() }
+                    result << s1.get() << s2.get() << s3.get() << s4.get()
+                }
+                assert result == [null, 'd', 'script', 'script']
+            } finally {
+                System.setOut(out)
+            }
+            assert printed.toString().readLines() == ['a', 'bc']
+        '''
+    }
+
+    // GROOVY-12576
+    @Test
+    void testObjectExtensionMethodInLambdaInsideDelegateOnlyClosure() {
+        assertScript '''
+            import java.util.function.Supplier
+
+            class D {
+                String toString() { 'D' }
+            }
+            class C {
+                String toString() { 'C' }
+                static <T> T withD(@DelegatesTo(value = D, strategy = Closure.DELEGATE_ONLY) Closure<T> block) {
+                    block.delegate = new D()
+                    block.resolveStrategy = Closure.DELEGATE_ONLY
+                    block.call()
+                }
+                List<Object> m() {
+                    List<Object> result = []
+                    withD {
+                        Supplier<Object> s1 = () -> { println('a'); print('b'); printf('%s', 'c'); null }
+                        Supplier<Object> s2 = () -> sprintf('%s', 'd')
+                        Supplier<Object> s3 = () -> inspect()
+                        Supplier<Object> s4 = () -> dump()
+                        Supplier<Object> s5 = () -> with { it.toString() }
+                        result << s1.get() << s2.get() << s3.get() << s4.get() << s5.get()
+                    }
+                    result
+                }
+                void uncalled() {
+                    withD {
+                        Supplier<Object> s1 = () -> { println('a'); print('b'); printf('%s', 'c'); null }
+                        Supplier<Object> s2 = () -> sprintf('%s', 'd')
+                        Supplier<Object> s3 = () -> inspect()
+                        Supplier<Object> s4 = () -> dump()
+                        Supplier<Object> s5 = () -> with { it.toString() }
+                    }
+                }
+            }
+
+            def printed = new ByteArrayOutputStream()
+            PrintStream out = System.out
+            System.setOut(new PrintStream(printed))
+            try {
+                List<Object> result = new C().m()
+                assert result[0..1] == [null, 'd']
+                assert result[2] == 'C'
+                assert result[3].toString().startsWith('<C@')
+                assert result[4] == 'C'
+            } finally {
+                System.setOut(out)
+            }
+            assert printed.toString().readLines() == ['a', 'bc']
+        '''
+    }
+
     // GROOVY-5811
     @Test
     void testClosureExceptionUnwrap() {
