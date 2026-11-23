@@ -300,6 +300,34 @@ final class FunctionalTypeArgumentTest {
 
     // GROOVY-12561
     @Test
+    void testClosureLiteralIsPassedAsBeforeWhereItsParametersAreNotTheInterfaceMethods() {
+        assertScript shell, '''
+            @CompileStatic
+            class C {
+                static List<Object> make() {
+                    List<Function<String, Object>> list = []
+                    list.add { String... parts -> parts.length }        // variadic
+                    list.add { String s, String suffix = '!' -> s + suffix } // a default value
+                    list.add { String a, String b -> a + b }             // more parameters
+                    list.add { -> 'none' }                               // fewer parameters
+                    list << { String... parts -> parts.length }
+                    List<BiFunction<String, String, String>> pairs = []
+                    pairs.add { it }                                     // one parameter for two
+                    List<Object> values = []
+                    values.addAll(list)
+                    values.addAll(pairs)
+                    values
+                }
+            }
+
+            def values = C.make()
+            assert values.every { it instanceof Closure && !(it instanceof Function) && !(it instanceof BiFunction) }
+            assert values[0]('abc') == 1 && values[1]('a') == 'a!' && values[2]('a', 'b') == 'ab' && values[3]() == 'none'
+        '''
+    }
+
+    // GROOVY-12561
+    @Test
     void testClosureLiteralAssignedToASubscriptOrPropertyImplementsItsInterface() {
         assertScript shell, '''
             class Holder<T> { T value }

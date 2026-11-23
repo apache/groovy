@@ -5723,7 +5723,8 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
                     ClassNode functionalType = (i < nSelf || !isFunctionalLiteral(expression) ? null
                             : getFunctionalTypeArgument(receiver, selectedMethod, arguments, i - nSelf, targetType));
                     if (functionalType != null && !(expression instanceof LambdaExpression || expression instanceof MethodReferenceExpression)) {
-                        if (isClosureTargetInterface(functionalType, targetType)) { // the closure class implements the interface
+                        if (isClosureTargetInterface(functionalType, targetType) // the closure class implements the interface
+                                && acceptsParametersOf((ClosureExpression) expression, functionalType)) {
                             expression.putNodeMetaData(CLOSURE_TARGET_INTERFACE, functionalType);
                         } else {
                             functionalType = null; // the closure is passed as it is
@@ -5831,6 +5832,24 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
                 || (t.isPrimaryClassNode() && inSamePackage(typeCheckingContext.getEnclosingClassNode(), t));
     }
 
+    /**
+     * Tells if the parameters of a closure literal can be those of the interface method: an implicit parameter
+     * for a method of at most one parameter, or as many parameters, without a default value, and no array for a
+     * parameter of the method that is not one, such as a variadic parameter. Another closure is passed as it is,
+     * as its parameters are not checked against the interface method there.
+     */
+    private static boolean acceptsParametersOf(final ClosureExpression closure, final ClassNode type) {
+        ClassNode[] parameterTypes = GenericsUtils.parameterizeSAM(type).getV1();
+        if (hasImplicitParameter(closure)) return parameterTypes.length <= 1;
+        Parameter[] parameters = getParametersSafe(closure);
+        if (parameters.length != parameterTypes.length) return false;
+        for (int i = 0; i < parameters.length; i += 1) {
+            if (parameters[i].hasInitialExpression()) return false;
+            if (parameters[i].getType().isArray() && !parameterTypes[i].isArray()) return false;
+        }
+        return true;
+    }
+
     private static Set<String> closureMethodNames() {
         Set<String> names = new HashSet<>();
         names.add("doCall"); // declared by every closure class
@@ -5860,8 +5879,8 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
         if (value instanceof TernaryExpression ternary) { // or Elvis
             markClosureValue(ternary.getTrueExpression(), type);
             markClosureValue(ternary.getFalseExpression(), type);
-        } else if (value instanceof ClosureExpression && !(value instanceof LambdaExpression)) {
-            value.putNodeMetaData(CLOSURE_TARGET_INTERFACE, type);
+        } else if (value instanceof ClosureExpression closure && !(value instanceof LambdaExpression)) {
+            if (acceptsParametersOf(closure, type)) value.putNodeMetaData(CLOSURE_TARGET_INTERFACE, type);
         } else if (implementsInterfaceOrIsSubclassOf(getType(value), CLOSURE_TYPE)
                 && value.putNodeMetaData(CLOSURE_VALUE_NOT_CONVERTED, Boolean.TRUE) == null) {
             String target = prettyPrintType(type);
