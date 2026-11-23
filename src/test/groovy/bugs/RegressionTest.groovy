@@ -5242,32 +5242,6 @@ def cfg = new ConfigSlurper().parse("""
 
     }
 
-    // GROOVY-12727: STC: a generic method's type parameter isn't inferred from the return-type target when the argument is a lambda
-    @NotYetImplemented @Test
-    void testGroovy12727() {
-        assertScript '''
-            import java.util.function.Function
-            class Ctx12727<T> {}
-            class Beh12727<T> {}
-            class Behaviors12727 {
-                static <T> Beh12727<T> setup(Function<Ctx12727<T>, Beh12727<T>> factory) {
-                    factory.apply(new Ctx12727<T>())
-                }
-            }
-            class Bot12727 extends Beh12727<String> {
-                Bot12727(Ctx12727<String> c, int max) {}
-            }
-            @groovy.transform.TypeChecked
-            class M12727 {
-                static Beh12727<String> lambda(int max) {
-                    Behaviors12727.setup(c -> new Bot12727(c, max))
-                }
-            }
-            assert M12727.lambda(1) instanceof Bot12727
-        '''
-
-    }
-
     // GROOVY-12731: Indy: compound assignment keeps invoking the operator method of another instance's metaclass
     @NotYetImplemented @Test
     void testGroovy12731() {

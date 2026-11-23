@@ -177,11 +177,11 @@ class FunctionalTargetTypingSTCTest extends StaticTypeCheckingTestCase {
     private static final Map<String, List<String>> LEGAL_REJECTED = [
         // a lambda or closure parameter without a type does not take its type from the
         // target through a generic call, so it is an Object in the body
-        'lambda wrapped'           : ['parameter', 'bareResult', 'parameterAndResult', 'selfBound', 'receiver'],
+        'lambda wrapped'           : ['bareResult'],
         'lambda nested'            : ['parameter', 'bareResult', 'parameterAndResult', 'selfBound', 'receiver'],
         'lambda wrappedArgument'   : ['parameter', 'result', 'bareResult', 'parameterAndResult', 'selfBound', 'receiver'],
-        'lambda wrappedReturn'     : ['parameter', 'bareResult', 'parameterAndResult', 'selfBound', 'receiver'],
-        'closure wrapped'          : ['parameter', 'bareResult', 'parameterAndResult', 'selfBound', 'receiver'],
+        'lambda wrappedReturn'     : ['bareResult'],
+        'closure wrapped'          : ['bareResult'],
         // a generic call that is itself an argument, as for GROOVY-12777
         'reference wrappedArgument': ['result', 'parameterAndResult']
     ]
