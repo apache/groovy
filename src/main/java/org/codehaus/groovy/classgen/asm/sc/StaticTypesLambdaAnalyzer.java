@@ -29,10 +29,12 @@ import org.codehaus.groovy.ast.PropertyNode;
 import org.codehaus.groovy.ast.Variable;
 import org.codehaus.groovy.ast.expr.AttributeExpression;
 import org.codehaus.groovy.ast.expr.ClassExpression;
+import org.codehaus.groovy.ast.expr.ClosureExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.MethodCallExpression;
 import org.codehaus.groovy.ast.expr.PropertyExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
+import org.codehaus.groovy.ast.stmt.Statement;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.transform.sc.StaticCompilationMetadataKeys;
 import org.codehaus.groovy.transform.stc.ExtensionMethodNode;
@@ -47,6 +49,7 @@ import static org.codehaus.groovy.classgen.asm.sc.StaticTypesFunctionalInterface
 import static org.apache.groovy.util.BeanUtils.capitalize;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.classX;
 import static org.codehaus.groovy.transform.stc.StaticTypesMarker.DIRECT_METHOD_CALL_TARGET;
+import static org.codehaus.groovy.transform.stc.StaticTypesMarker.IMPLICIT_RECEIVER;
 
 /**
  * Analysis helper for lambda expressions that determines whether a lambda
@@ -90,6 +93,60 @@ class StaticTypesLambdaAnalyzer {
         accessingInstanceMembers = finder.isAccessingInstanceMembers();
         lambdaMethod.putNodeMetaData(LAMBDA_ACCESSES_INSTANCE_MEMBERS, accessingInstanceMembers);
         return accessingInstanceMembers;
+    }
+
+    /**
+     * Returns {@code true} if the lambda body, or a closure or lambda nested in
+     * it, uses a name that the type checker resolved through the owner of the
+     * lambda, like a method of the delegate of a closure around the lambda. The
+     * receiver path of such a name, like {@code owner.delegate}, has more
+     * {@code owner} steps than there are closures between the name and the lambda.
+     */
+    boolean resolvesThroughOwner(final Statement lambdaCode) {
+        boolean[] throughOwner = {false};
+        lambdaCode.visit(new CodeVisitorSupport() {
+            private int depth;
+
+            @Override
+            public void visitClosureExpression(final ClosureExpression expression) {
+                depth += 1;
+                super.visitClosureExpression(expression);
+                depth -= 1;
+            }
+
+            @Override
+            public void visitMethodCallExpression(final MethodCallExpression expression) {
+                check(expression);
+                super.visitMethodCallExpression(expression);
+            }
+
+            @Override
+            public void visitPropertyExpression(final PropertyExpression expression) {
+                check(expression);
+                super.visitPropertyExpression(expression);
+            }
+
+            @Override
+            public void visitAttributeExpression(final AttributeExpression expression) {
+                check(expression);
+                super.visitAttributeExpression(expression);
+            }
+
+            @Override
+            public void visitVariableExpression(final VariableExpression expression) {
+                check(expression);
+                super.visitVariableExpression(expression);
+            }
+
+            private void check(final Expression expression) {
+                if (expression.getNodeMetaData(IMPLICIT_RECEIVER) instanceof String path) {
+                    int steps = 0;
+                    for (int i = 0; path.startsWith("owner.", i); i += 6) steps += 1;
+                    if (steps > depth) throughOwner[0] = true;
+                }
+            }
+        });
+        return throughOwner[0];
     }
 
     /**

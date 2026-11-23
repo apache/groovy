@@ -99,6 +99,7 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.attrX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.bytecodeX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.callX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.classX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.constX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.ctorX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.inSamePackage;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.nullX;
@@ -112,6 +113,7 @@ import static org.objectweb.asm.Opcodes.ACONST_NULL;
 import static org.objectweb.asm.Opcodes.ALOAD;
 import static org.objectweb.asm.Opcodes.CHECKCAST;
 import static org.objectweb.asm.Opcodes.DUP;
+import static org.objectweb.asm.Opcodes.GETFIELD;
 import static org.objectweb.asm.Opcodes.GOTO;
 import static org.objectweb.asm.Opcodes.IFEQ;
 import static org.objectweb.asm.Opcodes.IFNE;
@@ -895,14 +897,8 @@ public class StaticInvocationWriter extends InvocationWriter {
             implicitReceiver = ((MethodCallExpression) origin).getObjectExpression().getNodeMetaData(StaticTypesMarker.IMPLICIT_RECEIVER);
         }
         if (implicitReceiver != null) {
-            String[] path = ((String) implicitReceiver).split("\\.");
             // GROOVY-6021
-            PropertyExpression pexp = propX(varX("this", ClassHelper.CLOSURE_TYPE), path[0]);
-            pexp.setImplicitThis(true);
-            for (int i = 1, n = path.length; i < n; i += 1) {
-                pexp.putNodeMetaData(StaticTypesMarker.INFERRED_TYPE, ClassHelper.CLOSURE_TYPE);
-                pexp = propX(pexp, path[i]);
-            }
+            PropertyExpression pexp = implicitReceiverX(controller, (String) implicitReceiver, varX("this", ClassHelper.CLOSURE_TYPE), false);
             pexp.putNodeMetaData(StaticTypesMarker.IMPLICIT_RECEIVER, implicitReceiver);
             origin.removeNodeMetaData(StaticTypesMarker.IMPLICIT_RECEIVER);
             if (origin instanceof PropertyExpression) {
@@ -917,6 +913,58 @@ public class StaticInvocationWriter extends InvocationWriter {
             return true;
         }
         return false;
+    }
+
+    /**
+     * Name of the field of a native lambda that holds the closure around the lambda.
+     * The lambda has the field only if a name in it is resolved through that closure.
+     */
+    static final String ENCLOSING_CLOSURE = "$enclosingClosure";
+
+    /**
+     * Returns the receiver that a path like {@code owner.delegate} leads to from
+     * the closure or lambda being generated. The owner of a native lambda is the
+     * enclosing instance, not the closure around the lambda, so a step from such
+     * a lambda to its owner reads the closure that the lambda captured instead.
+     *
+     * @param function loads the closure or lambda being generated
+     */
+    static PropertyExpression implicitReceiverX(final WriterController controller, final String path, final Expression function, final boolean safe) {
+        String[] names = path.split("\\.");
+        Expression receiver = function;
+        PropertyExpression pexp = null;
+        ClassNode type = controller.getClassNode();
+        for (int i = 0, n = names.length; i < n; i += 1) {
+            if (i < n - 1 && type != null && type.getDeclaredField(ENCLOSING_CLOSURE) != null) {
+                receiver = enclosingClosureX(controller, i == 0 ? null : receiver, type);
+            } else {
+                pexp = propX(receiver, constX(names[i]), safe && i == 0);
+                if (i == 0) pexp.setImplicitThis(isThisExpression(function));
+                if (i < n - 1) pexp.putNodeMetaData(StaticTypesMarker.INFERRED_TYPE, ClassHelper.CLOSURE_TYPE);
+                receiver = pexp;
+            }
+            if (type != null) type = type.getOuterClass();
+        }
+        return pexp;
+    }
+
+    /**
+     * Loads the closure that the given native lambda captured.
+     *
+     * @param lambda loads the lambda; {@code null} for the lambda being generated
+     */
+    private static Expression enclosingClosureX(final WriterController controller, final Expression lambda, final ClassNode lambdaClass) {
+        String lambdaClassInternalName = BytecodeHelper.getClassInternalName(lambdaClass);
+        return bytecodeX(ClassHelper.CLOSURE_TYPE, mv -> {
+            if (lambda == null) {
+                mv.visitVarInsn(ALOAD, 0);
+            } else {
+                lambda.visit(controller.getAcg());
+                controller.getOperandStack().remove(1);
+                mv.visitTypeInsn(CHECKCAST, lambdaClassInternalName);
+            }
+            mv.visitFieldInsn(GETFIELD, lambdaClassInternalName, ENCLOSING_CLOSURE, BytecodeHelper.getTypeDescription(ClassHelper.CLOSURE_TYPE));
+        });
     }
 
     private boolean makeGetField(final Expression origin, final Expression receiver, final boolean safe) {

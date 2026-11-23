@@ -2309,6 +2309,40 @@ for interface default methods, method calls through `N.super` and through
 below the superclass declares. `ExpressionUtils.isOuterSuperExpression` is
 new; there are no other API changes.
 
+### Groovy 7 — a lambda inside a closure can use the closure's delegate (GROOVY-12827)
+
+Under `@CompileStatic`, an implicit call or property access in a native
+lambda could resolve to the delegate of a closure around the lambda. The code
+compiled, but threw `ClassCastException` when that name was evaluated, because
+the owner of a lambda is the enclosing instance rather than the closure. This
+was so in 5.x and 6.0.0.
+
+Such a lambda now captures the closure around it. The name resolves as it
+would directly in the closure, using the closure's resolve strategy and its
+delegate at the time of the call. The lambda's own `owner`, `delegate` and
+`thisObject` remain the enclosing instance. A lambda that uses no such name
+is generated as before.
+
+**Who is affected (runtime behaviour).** Only a serializable lambda containing
+such a name, which could not previously evaluate it:
+
+- Serializing the lambda also serializes the closure, including its delegate
+  and the values it holds. If one of them is not serializable, writing the
+  lambda throws `NotSerializableException`, even when the name is on a branch
+  that never runs. Dynamic Groovy behaves the same way.
+- The lambda is a `java.lang.reflect.Proxy` over a `ConvertedClosure`, unless
+  its functional interface is or implements a trait. An undeclared checked
+  exception thrown from a proxied lambda reaches the caller as
+  `UndeclaredThrowableException`, as in dynamic Groovy.
+
+To keep such a lambda serializable with a non-serializable delegate, remove
+the reference to the delegate from the lambda, or pass the value in through a
+serializable local variable.
+
+**Who is not affected.** Non-serializable lambdas, and serializable lambdas
+that do not resolve a name through the closure around them, keep their
+serialized form and behaviour.
+
 ## The binary-compatibility check
 
 The [`subprojects/binary-compatibility/`](subprojects/binary-compatibility)
