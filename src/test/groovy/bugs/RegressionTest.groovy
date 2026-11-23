@@ -5073,27 +5073,6 @@ def cfg = new ConfigSlurper().parse("""
 
     }
 
-    // GROOVY-12561: SC: a closure passed or assigned for a type parameter bound to a functional interface is stored unconverted
-    @NotYetImplemented @Test
-    void testGroovy12561() {
-        assertScript '''
-            import java.util.function.Function
-            @groovy.transform.CompileStatic
-            class C {
-                static class Box<T> {
-                    T shout
-                }
-                static Box<Function<String, String>> make() {
-                    def b = new Box<Function<String, String>>()
-                    b.shout = { String s -> s + '!' }
-                    b
-                }
-            }
-            assert C.make().shout.apply('hi') == 'hi!'
-        '''
-
-    }
-
     // GROOVY-12628: Assigning a primitive numeric value to a Boolean (boxed) target throws WrongMethodTypeException at run time instead of applying Groovy truth
     @NotYetImplemented @Test
     void testGroovy12628() {

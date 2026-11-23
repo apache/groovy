@@ -990,28 +990,50 @@ include::../test/CoercionTest.groovy[tags=method_call_with_implicit_coercion,ind
 As you can see, this has the advantage of letting you use the closure syntax for method calls, that is to say put the
 closure outside the parenthesis, improving the readability of your code.
 
-==== Lambdas and method references for a type parameter
+==== Closures, lambdas and method references for a type parameter
 
-A method may declare the parameter a lambda or method reference is passed for with a type parameter, such as `E` of
-`List.add(E)` or `V` of `Map.put(K, V)`, whose erasure is `Object`. When statically compiled code binds that type
-parameter to a SAM interface, for instance `Function<String, String>` for a `Map<String, Function<String, String>>`,
-a method reference is compiled for the interface:
+A method may declare the parameter a closure is passed for with a type parameter, such as `E` of `List.add(E)` or `V`
+of `Map.put(K, V)`, whose erasure is `Object`. When statically compiled code binds that type parameter to a SAM
+interface, for instance `Function<String, String>` for a `Map<String, Function<String, String>>`, the class generated
+for a closure literal implements the interface, so the closure is stored as an instance of it. A method reference is
+compiled for the interface:
 
 [source,groovy]
 ----
 include::../test/CoercionTest.groovy[tags=functional_literal_for_type_parameter,indent=0]
 ----
 
-The stored value is an instance of the interface, as when it is assigned to a variable of the interface type, and
-dynamically compiled code calls it through the interface's method:
+The closure is still a closure, so dynamically compiled code can call it either way. A method reference is only an
+instance of the interface, as when it is assigned to a variable of the interface type, and dynamically compiled code
+calls it through the interface's method:
 
 [source,groovy]
 ----
 include::../test/CoercionTest.groovy[tags=functional_literal_for_type_parameter_assertions,indent=0]
 ----
 
-A lambda for such a parameter is compiled as a closure, unless the code is compiled with the incubating
-`-Dgroovy.target.lambda.typearg=true` option. With the option, the lambda is compiled for the interface too:
+This applies to a closure literal passed as an argument or as the operand of an operator such as `<<`, assigned to a
+subscript, a property or a named constructor argument, or written as a branch of a conditional expression in such a
+place. There the closure gets the types of its parameters from the interface, so `list.add { it.toUpperCase() }` and
+`list << { it.toUpperCase() }` compile for a `List<Function<String, String>>`. A value of type `Closure`, such as a
+variable or a method pointer (`this.&m`), is stored as it is, and the compiler warns that it is not converted; `as`
+converts it:
+
+[source,groovy]
+----
+include::../test/CoercionTest.groovy[tags=closure_value_for_type_parameter,indent=0]
+----
+
+A closure literal is passed as it is for an interface that `Closure` already implements, such as `Runnable` or
+`Callable`, for an interface whose method has the name of a method of `Closure`, such as `call`, or with a default
+method that a method of `Closure` would replace, such as `getOwner()`, for a sealed interface, a trait, a non-public
+interface not compiled with the closure, and for an abstract class. So is a closure whose parameters cannot be those
+of the interface method: one with a default value or a variadic parameter, or more or fewer parameters than the
+method. Closure packing (`@PackedClosures`) does not pack a closure that implements an interface this way.
+
+A lambda for such a parameter is compiled as a closure that does not implement the interface, unless the code is
+compiled with the incubating `-Dgroovy.target.lambda.typearg=true` option. With the option, the lambda is compiled for
+the interface:
 
 [source,groovy]
 ----
@@ -1022,8 +1044,8 @@ Callers can tell the difference: the stored lambda is then an instance of the in
 dynamically compiled code can no longer call it as one, with `commands().shout('Hi')` or
 `commands().shout.call('Hi')`, as with `Supplier<String> s = () -> 'y'`.
 
-Dynamically compiled and type-checked (`@TypeChecked`) code are unchanged, with or without the option: there a lambda
-for such a parameter is compiled as a closure, and type-checked code rejects a method reference for it.
+Dynamically compiled and type-checked (`@TypeChecked`) code are unchanged, with or without the option: there a closure
+or lambda for such a parameter is passed as a closure, and type-checked code rejects a method reference for it.
 
 ==== Closure to arbitrary type coercion
 
