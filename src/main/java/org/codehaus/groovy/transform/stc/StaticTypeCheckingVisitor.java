@@ -1436,7 +1436,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 if (op == EQUAL && isSAMType(lType) && isStaticDispatchScope()
                         && !(rightExpression instanceof LambdaExpression || rightExpression instanceof MethodReferenceExpression)) {
                     ClassNode slotType = getTypeParameterOfSlot(leftExpression, rType);
-                    if (slotType != null) convertClosureValue(rightExpression, lType, slotType);
+                    if (slotType != null) convertClosureValue(rightExpression, lType, slotType, true);
                 }
                 // check for implicit conversion like "String a = 123", "int[] b = [1,2,3]", "List c = [].stream()", etc.
                 if (!implementsInterfaceOrIsSubclassOf(wrapTypeIfNecessary(resultType), wrapTypeIfNecessary(originType))) {
@@ -2965,7 +2965,7 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
                         }
                     } else if (propertyTypes.size() == 1 && isSAMType(propertyTypes.iterator().next()) && isStaticDispatchScope()) {
                         ClassNode slotType = getTypeParameterOfSlot(dummyExpression, valueType);
-                        if (slotType != null) convertClosureValue(valueExpression, propertyTypes.iterator().next(), slotType);
+                        if (slotType != null) convertClosureValue(valueExpression, propertyTypes.iterator().next(), slotType, false);
                     }
                 }
             }
@@ -5772,7 +5772,7 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
                 if (targetType.isArray() && i >= nthParameter)
                     targetType = targetType.getComponentType();
                 ClassNode functionalType = getFunctionalTypeArgument(receiver, selectedMethod, arguments, i - nSelf, targetType);
-                if (functionalType != null) convertClosureValue(expression, functionalType, targetType);
+                if (functionalType != null) convertClosureValue(expression, functionalType, targetType, false);
             }
             if (i == 0 && parameters.length > 0 && expression instanceof MapExpression) {
                 checkNamedParamsAnnotation(parameters[0], (MapExpression) expression, isNestedCopyWith(selectedMethod));
@@ -5894,17 +5894,24 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
      * branch of a conditional expression that is one, implements the interface. Any other value of type
      * {@code Closure}, such as a variable, is passed as it is, and the type checker warns that it is.
      */
-    private void convertClosureValue(final Expression value, final ClassNode type, final ClassNode slotType) {
-        if (isClosureTargetInterface(type, slotType)) markClosureValue(value, type);
+    private void convertClosureValue(final Expression value, final ClassNode type, final ClassNode slotType, final boolean assigned) {
+        if (isClosureTargetInterface(type, slotType)) markClosureValue(value, type, assigned);
     }
 
-    private void markClosureValue(final Expression value, final ClassNode type) {
+    /**
+     * Records the interface on a closure literal and warns of a value that is stored as a plain closure. A lambda
+     * or method reference assigned, as a branch of a conditional expression too, is compiled for the type of the
+     * assignment's target, and a value whose type implements the interface already is an instance of it.
+     */
+    private void markClosureValue(final Expression value, final ClassNode type, final boolean assigned) {
         if (value instanceof TernaryExpression ternary) { // or Elvis
-            markClosureValue(ternary.getTrueExpression(), type);
-            markClosureValue(ternary.getFalseExpression(), type);
+            markClosureValue(ternary.getTrueExpression(), type, assigned);
+            markClosureValue(ternary.getFalseExpression(), type, assigned);
         } else if (value instanceof ClosureExpression closure && !(value instanceof LambdaExpression)) {
             if (acceptsParametersOf(closure, type)) value.putNodeMetaData(CLOSURE_TARGET_INTERFACE, type);
-        } else if (implementsInterfaceOrIsSubclassOf(getType(value), CLOSURE_TYPE)
+        } else if (!(assigned && (value instanceof LambdaExpression || value instanceof MethodReferenceExpression))
+                && implementsInterfaceOrIsSubclassOf(getType(value), CLOSURE_TYPE)
+                && !implementsInterfaceOrIsSubclassOf(getType(value), type)
                 && value.putNodeMetaData(CLOSURE_VALUE_NOT_CONVERTED, Boolean.TRUE) == null) {
             String target = prettyPrintType(type);
             addWarning(WarningMessage.LIKELY_ERRORS, "The Closure is stored as it is, not converted to " + target
@@ -8924,7 +8931,7 @@ trying: for (ClassNode[] signature : signatures) {
                         if (rightExpression instanceof MethodReferenceExpression)
                             rightExpression.putNodeMetaData(CLOSURE_ARGUMENTS, GenericsUtils.parameterizeSAM(functionalType).getV1());
                     } else {
-                        convertClosureValue(rightExpression, functionalType, parameterType);
+                        convertClosureValue(rightExpression, functionalType, parameterType, false);
                     }
                 }
             }

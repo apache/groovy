@@ -473,6 +473,39 @@ final class FunctionalTypeArgumentTest {
         '''
     }
 
+    // GROOVY-12561
+    @Test
+    void testWarningOnlyForAValueStoredAsAPlainClosure() {
+        String source = '''
+            import groovy.transform.CompileStatic
+            import java.util.function.Function
+            import org.apache.groovy.util.Closures
+            class Holder<T> { T value }
+            @CompileStatic
+            class W {
+                static void make(Closure<String> closure, boolean flag) {
+                    Closures.FunctionClosure<String, String> function = Closures.from((Function<String, String>) { String s -> s })
+                    List<Function<String, String>> list = []
+                    list.add(function)                                   // a Function already
+                    list << function
+                    Map<String, Function<String, String>> map = [:]
+                    map['function'] = function
+                    map['lambdas'] = flag ? ((String s) -> s) : ((String s) -> s.trim())
+                    map['references'] = flag ? String::trim : String::strip
+                    list.add(closure)                                    // warning
+                    new Holder<Function<String, String>>(value: (String s) -> s) // warning: stored as a Closure
+                    map['branches'] = flag ? closure : closure           // warning for each
+                }
+            }
+        '''
+        for (option in [true, false]) {
+            Closure<List<String>> compile = { warnings(source) }
+            def warnings = option ? compile() : withoutLambdaTypeArgument(compile)
+            assert warnings.size() == 4
+            assert warnings.every { it.startsWith('The Closure is stored as it is, not converted to java.util.function.Function') }
+        }
+    }
+
     @Test
     void testClosureLiteralIsPassedAsBeforeWhereItCannotImplementTheInterface() {
         assertScript shell, '''
