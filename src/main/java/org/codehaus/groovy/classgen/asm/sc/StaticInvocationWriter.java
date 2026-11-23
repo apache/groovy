@@ -392,7 +392,13 @@ public class StaticInvocationWriter extends InvocationWriter {
             } else if (!isThisOrSuper(receiver) || !controller.isInGeneratedFunction()) {
                 argumentList.add(receiver);
             } else {
-                argumentList.add(thisObjectExpression(enclosingClass, declaringClass));
+                Expression thisObject = thisObjectExpression(enclosingClass, declaringClass);
+                if (ClassHelper.isObjectType(parameters[0].getType()) && !enclosingClass.implementsInterface(ClassHelper.GENERATED_LAMBDA_TYPE)) {
+                    // a closure without a this object, e.g. after rehydrate(), passes its owner,
+                    // or itself when it has no owner either, e.g. after dehydrate()
+                    thisObject = new ThisObjectOwnerOrClosureExpression(thisObject);
+                }
+                argumentList.add(thisObject);
             }
             argumentList.addAll(args.getExpressions());
             loadArguments(argumentList, parameters);
