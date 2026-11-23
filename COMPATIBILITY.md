@@ -2309,6 +2309,33 @@ for interface default methods, method calls through `N.super` and through
 below the superclass declares. `ExpressionUtils.isOuterSuperExpression` is
 new; there are no other API changes.
 
+### Groovy 6.0.1 — `Object` methods in statically compiled closures and lambdas use the enclosing object (GROOVY-12576, GROOVY-12826)
+
+Under `@CompileStatic`, an implicit call of `toString()`, `hashCode()`,
+`equals()` or `getClass()` in a closure or lambda was made on the generated
+closure or lambda itself. An instance extension method of `Object`, like
+`inspect()`, called in a lambda received a `Class` object. Dynamic Groovy
+uses the enclosing object or the closure's delegate.
+
+These calls now follow the same rules:
+
+- In a closure, the method is found through the closure's resolve strategy,
+  so `new D().with { toString() }` calls `D.toString()`.
+- In a lambda, including one inside a closure, the method is the enclosing
+  instance's, as in Java.
+- In a closure or lambda of an inner class, the method is the inner
+  instance's, even if the outer class overrides it.
+- A closure rehydrated without a this object uses its owner. A dehydrated
+  closure, which has neither, still uses itself.
+
+**Who is affected (runtime behaviour).** Statically compiled code that relied
+on such a call returning the closure's or lambda's own string, hash code,
+equality or class. Classes compiled by an earlier release keep the old
+behaviour until they are recompiled.
+
+**What is unchanged.** Dynamic code, explicit receivers such as `this.toString()`
+and `Outer.this.toString()`, and methods that `Closure` declares itself.
+
 ### Groovy 7 — a lambda inside a closure can use the closure's delegate (GROOVY-12827)
 
 Under `@CompileStatic`, an implicit call or property access in a native
