@@ -2273,6 +2273,55 @@ final class LambdaTest {
         '''
     }
 
+    // GROOVY-12826
+    @Test
+    void testInheritedObjectMethodInLambda() {
+        assertScript shell, '''
+            class C {
+                String m() {
+                    Supplier<String> s = () -> toString()
+                    s.get()
+                }
+            }
+
+            C c = new C()
+            assert c.m() == c.toString()
+            assert c.m().startsWith('C@')
+        '''
+    }
+
+    // GROOVY-12826
+    @Test
+    void testInstanceExtensionMethodInLambda() {
+        assertScript shell, '''
+            class C {
+                int f = 7
+                String toString() { 'C!' }
+                List<Object> m() {
+                    Supplier<String> s1 = () -> inspect()
+                    Supplier<String> s2 = () -> dump()
+                    Supplier<Object> s3 = () -> with { it.getClass().simpleName }
+                    [s1.get(), s2.get(), s3.get()]
+                }
+            }
+            class L extends ArrayList<Integer> {
+                Object m() {
+                    add(3)
+                    add(4)
+                    Supplier<Object> s = () -> sum()
+                    s.get()
+                }
+            }
+
+            List<Object> result = new C().m()
+            assert result[0] == 'C!'
+            assert result[1].toString().startsWith('<C@')
+            assert result[1].toString().contains('f=7')
+            assert result[2] == 'C'
+            assert new L().m() == 7
+        '''
+    }
+
     // GROOVY-11905
     @Nested
     @DisabledIfSystemProperty(named = CompilerConfiguration.LAMBDA_HOISTING, matches = 'true',
@@ -2517,6 +2566,25 @@ final class LambdaTest {
                     }
                 }
                 C.test()
+            '''
+        }
+
+        // GROOVY-12826
+        @Test
+        void testNonCapturingLambdaCallingStaticExtensionMethod() {
+            assertScript shell,  '''
+                class C {
+                    void test() {
+                        def identities = new HashSet()
+                        for (int i = 0; i < 5; i++) {
+                            Supplier<String> s = () -> { sleep(1); 'done' }
+                            identities.add(System.identityHashCode(s))
+                            assert s.get() == 'done'
+                        }
+                        assert identities.size() == 1 : 'non-capturing lambda should be a singleton'
+                    }
+                }
+                new C().test()
             '''
         }
 
