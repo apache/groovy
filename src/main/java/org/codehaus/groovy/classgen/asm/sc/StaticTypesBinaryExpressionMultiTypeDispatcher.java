@@ -70,6 +70,7 @@ import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.isAssi
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingVisitor.inferLoopElementType;
 import static org.codehaus.groovy.transform.stc.StaticTypesMarker.COMPOUND_ASSIGN_TARGET;
 import static org.codehaus.groovy.transform.stc.StaticTypesMarker.DIRECT_METHOD_CALL_TARGET;
+import static org.codehaus.groovy.transform.stc.StaticTypesMarker.ENCLOSING_INSTANCE_OF_RECEIVER;
 import static org.codehaus.groovy.transform.stc.StaticTypesMarker.INFERRED_TYPE;
 import static org.codehaus.groovy.transform.stc.StaticTypesMarker.SUPER_MOP_METHOD_REQUIRED;
 import static org.objectweb.asm.Opcodes.ACC_PUBLIC;
@@ -116,6 +117,8 @@ public class StaticTypesBinaryExpressionMultiTypeDispatcher extends BinaryExpres
             call.setMethodTarget(mn);
             call.setImplicitThis(false);
             call.setSourcePosition(orig);
+            // GROOVY-12511: next() or previous() of an enclosing instance of the operand is called on that instance
+            call.putNodeMetaData(ENCLOSING_INSTANCE_OF_RECEIVER, orig.getNodeMetaData(ENCLOSING_INSTANCE_OF_RECEIVER));
             call.visit(controller.getAcg());
             controller.getCompileStack().removeVar(slot);
             return;

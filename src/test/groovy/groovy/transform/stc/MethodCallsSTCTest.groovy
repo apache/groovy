@@ -958,6 +958,58 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-12511: ++ and -- call next() or previous() of an enclosing instance of the
+    // operand, as dynamic Groovy does; a compound assignment uses a *Assign method only of
+    // the receiver itself, as dynamic Groovy does, and else the operator, here of the
+    // enclosing instance
+    @Test
+    void testOperatorOfEnclosingInstanceOfReceiver() {
+        assertScript '''
+            class Box {
+                String id
+                Box(String id) { this.id = id }
+                private Sub next() { new Sub('next:' + id) }
+                private Sub previous() { new Sub('previous:' + id) }
+                private Sub plus(String s) { new Sub('plus:' + id + s) }
+                private void plusAssign(String s) { id = 'plusAssign:' + id + s }
+                class Sub extends Box {
+                    Sub(String id) { super(id) }
+                    List<String> increments(Sub other) {
+                        Sub a = other, b = other, c = other, d = other, self = this
+                        Sub before = a++
+                        ++b; c--; --d; self++
+                        [before.id, a.id, b.id, c.id, d.id, self.id]
+                    }
+                    List<String> operands(Sub other) {
+                        Sub[] array = [other, other]
+                        array[0]++
+                        Holder holder = new Holder()
+                        holder.sub = other
+                        holder.sub++
+                        [array[0].id, holder.sub.id]
+                    }
+                    List<String> compound(Sub other) {
+                        Sub a = other
+                        a += 'x'
+                        Sub[] array = [other]
+                        array[0] += 'y'
+                        [a.id, array[0].id, other.id]
+                    }
+                }
+                class Holder {
+                    Sub sub
+                }
+                Sub sub() { new Sub('self') }
+            }
+            def a = new Box('A'), b = new Box('B')
+            def sa = a.sub(), sb = b.sub()
+            assert sa.increments(sb) == ['self', 'next:B', 'next:B', 'previous:B', 'previous:B', 'next:A']
+            assert sa.operands(sb) == ['next:B', 'next:B']
+            assert sa.compound(sb) == ['plus:Bx', 'plus:By', 'self']
+            assert a.id == 'A' && b.id == 'B'
+        '''
+    }
+
     // GROOVY-12511: this.m() in an inner class may name a method of the enclosing
     // class, as in dynamic Groovy
     @Test

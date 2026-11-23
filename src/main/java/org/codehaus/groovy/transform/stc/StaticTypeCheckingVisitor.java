@@ -1255,6 +1255,11 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                                 ? UNKNOWN_PARAMETER_TYPE
                                 : getInferredTypeFromTempInfo(rightExpression, getType(rightExpression));
                         List<MethodNode> candidates = findMethodThrough(leftExpression, lhsType, assignName, rhsType);
+                        // GROOVY-12511: dynamic Groovy uses a *Assign method only if the receiver itself responds to
+                        // it, and else the base operator, which may be one of an enclosing instance as for "x + y"
+                        if (candidates.size() == 1 && isMethodOfEnclosingInstanceOfReceiver(candidates.get(0), lhsRead, lhsType)) {
+                            candidates = Collections.emptyList();
+                        }
                         if (candidates.size() == 1) {
                             MethodNode target = candidates.get(0);
                             expression.putNodeMetaData(COMPOUND_ASSIGN_TARGET, target);
@@ -4292,6 +4297,7 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
                 MethodNode node = findMethodOrFail(receiver, operandType, name);
                 if (node != null) {
                     storeTargetMethod(origin, node);
+                    storeEnclosingInstanceOfOperand(origin, node, receiver, operandType);
                     storeType(origin, getMathWideningClassNode(operandType));
                     return;
                 }
@@ -4304,6 +4310,7 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
             MethodNode node = findMethodOrFail(receiver, operandType, name);
             if (node != null) {
                 storeTargetMethod(origin, node);
+                storeEnclosingInstanceOfOperand(origin, node, receiver, operandType);
                 storeType(origin, isPostfix ? operandType : inferReturnTypeGenerics(operandType, node, ArgumentListExpression.EMPTY_ARGUMENTS));
             }
         } finally {
@@ -9054,6 +9061,18 @@ trying: for (ClassNode[] signature : signatures) {
             }
         }
         return componentType;
+    }
+
+    /**
+     * Records on {@code x++}, {@code ++x}, {@code x--} or {@code --x} whether the selected
+     * {@code next()} or {@code previous()} is a method of an enclosing instance of the
+     * operand, not of the operand itself: static compilation then calls it
+     * on that enclosing instance, as dynamic Groovy does, see
+     * {@link StaticTypesMarker#ENCLOSING_INSTANCE_OF_RECEIVER}.
+     */
+    private void storeEnclosingInstanceOfOperand(final Expression origin, final MethodNode method, final Expression operand, final ClassNode operandType) {
+        origin.putNodeMetaData(ENCLOSING_INSTANCE_OF_RECEIVER, // not kept from an earlier visit
+                isMethodOfEnclosingInstanceOfReceiver(method, operand, operandType) ? operandType : null);
     }
 
     /**
