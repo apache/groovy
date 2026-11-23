@@ -238,13 +238,13 @@ class InvokerHelperFormattingTest {
     void testNestedAndMixedCycles() {
         List nestedList = []
         nestedList << [nestedList]
-        assert '[[(this Collection)]]' == nestedList.toString()
-        assert '[[(this Collection)]]' == nestedList.toListString()
-        assert '[[(this Collection)]]' == InvokerHelper.toListString(nestedList)
-        assert '[[(this Collection)]]' == FormatHelper.toString(nestedList)
-        assert '[[(this Collection)]]' == FormatHelper.toListString(nestedList)
-        assert '[[(this Collection)]]' == FormatHelper.inspect(nestedList)
-        assert '[[(this Collection)]]' == FormatHelper.format(nestedList, false, -1, true)
+        assert '[[(ancestor Collection)]]' == nestedList.toString()
+        assert '[[(ancestor Collection)]]' == nestedList.toListString()
+        assert '[[(ancestor Collection)]]' == InvokerHelper.toListString(nestedList)
+        assert '[[(ancestor Collection)]]' == FormatHelper.toString(nestedList)
+        assert '[[(ancestor Collection)]]' == FormatHelper.toListString(nestedList)
+        assert '[[(ancestor Collection)]]' == FormatHelper.inspect(nestedList)
+        assert '[[(ancestor Collection)]]' == FormatHelper.format(nestedList, false, -1, true)
 
         List withNull = [null]
         withNull << withNull
@@ -256,11 +256,11 @@ class InvokerHelperFormattingTest {
 
         Map nestedMap = [:]
         nestedMap.nested = [self: nestedMap]
-        assert '[nested:[self:(this Map)]]' == nestedMap.toString()
-        assert '[nested:[self:(this Map)]]' == nestedMap.toMapString()
-        assert '[nested:[self:(this Map)]]' == InvokerHelper.toMapString(nestedMap)
-        assert '[nested:[self:(this Map)]]' == FormatHelper.toMapString(nestedMap)
-        assert "['nested':['self':(this Map)]]" == FormatHelper.inspect(nestedMap)
+        assert '[nested:[self:(ancestor Map)]]' == nestedMap.toString()
+        assert '[nested:[self:(ancestor Map)]]' == nestedMap.toMapString()
+        assert '[nested:[self:(ancestor Map)]]' == InvokerHelper.toMapString(nestedMap)
+        assert '[nested:[self:(ancestor Map)]]' == FormatHelper.toMapString(nestedMap)
+        assert "['nested':['self':(ancestor Map)]]" == FormatHelper.inspect(nestedMap)
 
         Map nullKey = [:]
         nullKey[null] = nullKey
@@ -273,8 +273,8 @@ class InvokerHelperFormattingTest {
         List mixedList = []
         Map mixedMap = [child: mixedList]
         mixedList << mixedMap
-        assert '[[child:(this Collection)]]' == mixedList.toString()
-        assert '[child:[(this Map)]]' == mixedMap.toString()
+        assert '[[child:(ancestor Collection)]]' == mixedList.toString()
+        assert '[child:[(ancestor Map)]]' == mixedMap.toString()
 
         List outer = []
         Map mid = [:]
@@ -282,7 +282,7 @@ class InvokerHelperFormattingTest {
         outer << mid
         mid.n = inner
         inner << mid
-        assert '[[n:[(this Map)]]]' == outer.toString()
+        assert '[[n:[(ancestor Map)]]]' == outer.toString()
 
         List first = []
         List second = []
@@ -290,9 +290,9 @@ class InvokerHelperFormattingTest {
         first << second
         second << third
         third << first
-        assert '[[[(this Collection)]]]' == first.toString()
-        assert '[[[(this Collection)]]]' == second.toString()
-        assert '[[[(this Collection)]]]' == third.toString()
+        assert '[[[(ancestor Collection)]]]' == first.toString()
+        assert '[[[(ancestor Collection)]]]' == second.toString()
+        assert '[[[(ancestor Collection)]]]' == third.toString()
 
         List again = []
         List middle = []
@@ -300,20 +300,20 @@ class InvokerHelperFormattingTest {
         again << middle
         middle << loop
         loop << middle
-        assert '[[[(this Collection)]]]' == again.toString()
-        assert '[[(this Collection)]]' == middle.toString()
-        assert '[[(this Collection)]]' == loop.toString()
+        assert '[[[(ancestor Collection)]]]' == again.toString()
+        assert '[[(ancestor Collection)]]' == middle.toString()
+        assert '[[(ancestor Collection)]]' == loop.toString()
 
         Set set = new LinkedHashSet()
         List setList = [set]
         set.add(setList)
-        assert '[[(this Collection)]]' == set.toString()
-        assert '[[(this Collection)]]' == setList.toString()
+        assert '[[(ancestor Collection)]]' == set.toString()
+        assert '[[(ancestor Collection)]]' == setList.toString()
 
         Map keyed = [:]
         List key = [keyed]
         keyed[key] = 'v'
-        assert '[[(this Map)]:v]' == keyed.toString()
+        assert '[[(ancestor Map)]:v]' == keyed.toString()
 
         // a repeated child is not a cycle
         List shared = [1]
@@ -350,14 +350,14 @@ class InvokerHelperFormattingTest {
         Object[] right = new Object[1]
         left[0] = right
         right[0] = left
-        assert '[[(this array)]]' == FormatHelper.toString(left)
-        assert '[[(this array)]]' == FormatHelper.toString(right)
+        assert '[[(ancestor array)]]' == FormatHelper.toString(left)
+        assert '[[(ancestor array)]]' == FormatHelper.toString(right)
 
         List arrayList = []
         Object[] array = [arrayList] as Object[]
         arrayList << array
-        assert '[[(this Collection)]]' == arrayList.toString()
-        assert '[[(this array)]]' == FormatHelper.toString(array)
+        assert '[[(ancestor Collection)]]' == arrayList.toString()
+        assert '[[(ancestor array)]]' == FormatHelper.toString(array)
 
         Object[] reenteredArray = new Object[1]
         reenteredArray[0] = new Object() {
@@ -369,6 +369,21 @@ class InvokerHelperFormattingTest {
         assert boundedPair.contains('...')
         assert boundedPair.startsWith('[')
         assert boundedPair.endsWith(']')
+    }
+
+    // GROOVY-3250: a cycle further up the render path is an ancestor, not the container being printed
+    @Test
+    void testAncestorCycleMarker() {
+        List nestedList1 = [1]
+        nestedList1 << [nestedList1]
+        List nestedList2 = [2]
+        nestedList2 << [nestedList2]
+        List nestedList3 = [3]
+        List nestedList4 = [nestedList1, nestedList2, nestedList3]
+        assert '[[1, [(ancestor Collection)]], [2, [(ancestor Collection)]], [3]]' == nestedList4.toString()
+
+        nestedList3 << nestedList4
+        assert '[[1, [(ancestor Collection)]], [2, [(ancestor Collection)]], [3, (ancestor Collection)]]' == nestedList4.toString()
     }
 
     // GROOVY-3250
@@ -398,7 +413,7 @@ class InvokerHelperFormattingTest {
 
         List nested = []
         nested << [nested]
-        assert '[[(this Collection)]]' == FormatHelper.toString(nested)
+        assert '[[(ancestor Collection)]]' == FormatHelper.toString(nested)
         assert '[1]' == FormatHelper.toString([1])
         assert '[[1]]' == FormatHelper.toString([[1]])
         assert '[]' == FormatHelper.toString([])

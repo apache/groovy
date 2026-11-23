@@ -1319,21 +1319,21 @@ final class GroovyMethodsTest {
 
         def nestedList = []
         nestedList << [nestedList]
-        assert nestedList.toListString() == '[[(this Collection)]]'
-        assert nestedList.toString() == '[[(this Collection)]]'
-        assert nestedList.inspect() == '[[(this Collection)]]'
+        assert nestedList.toListString() == '[[(ancestor Collection)]]'
+        assert nestedList.toString() == '[[(ancestor Collection)]]'
+        assert nestedList.inspect() == '[[(ancestor Collection)]]'
 
         def nestedMap = [:]
         nestedMap.nested = [self: nestedMap]
-        assert nestedMap.toMapString() == '[nested:[self:(this Map)]]'
-        assert nestedMap.toString() == '[nested:[self:(this Map)]]'
-        assert nestedMap.inspect() == "['nested':['self':(this Map)]]"
+        assert nestedMap.toMapString() == '[nested:[self:(ancestor Map)]]'
+        assert nestedMap.toString() == '[nested:[self:(ancestor Map)]]'
+        assert nestedMap.inspect() == "['nested':['self':(ancestor Map)]]"
 
         def mixedList = []
         def mixedMap = [child: mixedList]
         mixedList << mixedMap
-        assert mixedList.toString() == '[[child:(this Collection)]]'
-        assert mixedMap.toString() == '[child:[(this Map)]]'
+        assert mixedList.toString() == '[[child:(ancestor Collection)]]'
+        assert mixedMap.toString() == '[child:[(ancestor Map)]]'
 
         def animals = ['ant', 'bee', 'cat']
         animals << [pets:animals]

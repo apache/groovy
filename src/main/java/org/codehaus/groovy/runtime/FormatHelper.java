@@ -36,10 +36,10 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.io.Writer;
+import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashSet;
-import java.util.IdentityHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -66,46 +66,125 @@ public class FormatHelper {
 
     /**
      * Containers on the current unbounded render path, compared by identity.
-     * A repeat is a cycle and uses the same marker as a direct self-reference.
-     * A non-negative size limit does not record a path of its own, so it still
-     * unrolls a container until it truncates, but it will not re-enter one an
-     * unbounded render is already walking.
+     * The path is a stack: its top is the container currently being printed,
+     * and earlier frames are that container's ancestors. A cycle back to the
+     * top uses the same marker as a direct self-reference:
+     * {@code (this Collection)}, {@code (this Map)}, or {@code (this array)}.
+     * A cycle that points at a container further up the path uses
+     * {@code (ancestor Collection)}, {@code (ancestor Map)}, or
+     * {@code (ancestor array)}. A non-negative size limit does not record a
+     * path of its own, so it still unrolls a container until it truncates,
+     * but it will not re-enter one an unbounded render is already walking.
      */
-    private static final ThreadLocal<Set<Object>> RENDERING = new ThreadLocal<>();
+    private static final ThreadLocal<RenderPath> RENDERING = new ThreadLocal<>();
+
+    /**
+     * Identity-ordered path for one unbounded formatting call.
+     * Frames are compared with {@code ==}, not {@code equals}, and the stack
+     * may contain null. The top is the container currently being printed.
+     * An empty stack is not current, including when the node itself is null.
+     */
+    private static final class RenderPath {
+        private final List<Object> stack = new ArrayList<>();
+
+        private boolean contains(Object node) {
+            for (Object frame : stack) {
+                if (frame == node) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        /** {@code true} when {@code node} is the container currently being printed. */
+        private boolean isCurrent(Object node) {
+            int last = stack.size() - 1;
+            return last >= 0 && node == stack.get(last);
+        }
+
+        private void push(Object node) {
+            stack.add(node);
+        }
+
+        private void pop(Object node) {
+            int last = stack.size() - 1;
+            if (last >= 0 && stack.get(last) == node) {
+                stack.remove(last);
+            }
+        }
+    }
 
     private enum Render {
         SKIP,
         ROOT,
         NESTED,
-        CYCLE
+        /** Cycle back to the container currently being printed. */
+        SELF,
+        /** Cycle to a container further up the render path. */
+        ANCESTOR
     }
 
+    /**
+     * Records {@code node} on the unbounded render path.
+     * <p>
+     * {@link Render#SELF} means {@code node} is the container currently being
+     * printed. {@link Render#ANCESTOR} means it is already further up the path.
+     * {@link Render#SKIP} means a size limit is in force and {@code node} is not
+     * already being walked, so nothing is recorded. {@link Render#ROOT} and
+     * {@link Render#NESTED} mean {@code node} was just pushed.
+     */
     private static Render openRender(Object node, int maxSize) {
-        Set<Object> active = RENDERING.get();
-        if (active != null && active.contains(node)) {
-            return Render.CYCLE;
+        RenderPath path = RENDERING.get();
+        if (path != null && path.contains(node)) {
+            return path.isCurrent(node) ? Render.SELF : Render.ANCESTOR;
         }
         if (maxSize != -1) {
             return Render.SKIP;
         }
-        boolean root = active == null;
+        boolean root = path == null;
         if (root) {
-            active = Collections.newSetFromMap(new IdentityHashMap<>(8));
-            RENDERING.set(active);
+            path = new RenderPath();
         }
-        active.add(node);
+        path.push(node);
+        if (root) {
+            RENDERING.set(path);
+        }
         return root ? Render.ROOT : Render.NESTED;
     }
 
+    /**
+     * Drops {@code node} from the path opened for {@link Render#ROOT} or
+     * {@link Render#NESTED}. A failed render still reaches this from
+     * {@code finally}, including the root, which clears the thread's path.
+     * {@link Render#SELF}, {@link Render#ANCESTOR}, and {@link Render#SKIP}
+     * did not push, so they leave the path unchanged.
+     */
     private static void closeRender(Render state, Object node) {
         if (state != Render.ROOT && state != Render.NESTED) {
             return;
         }
-        Set<Object> active = RENDERING.get();
-        active.remove(node);
+        RenderPath path = RENDERING.get();
+        path.pop(node);
         if (state == Render.ROOT) {
             RENDERING.remove();
         }
+    }
+
+    /**
+     * Marker for a cycle found by {@link #openRender(Object, int)}.
+     * A cycle back to the container currently being printed is
+     * {@code (this Collection)}, {@code (this Map)}, or {@code (this array)}.
+     * A cycle further up the path is {@code (ancestor Collection)},
+     * {@code (ancestor Map)}, or {@code (ancestor array)}.
+     * A direct self-reference, where an element is the container being
+     * printed, uses the {@code (this ...)} text at the call site and does
+     * not come through here.
+     *
+     * @param render {@link Render#SELF} or {@link Render#ANCESTOR}
+     * @param kind {@code Collection}, {@code Map}, or {@code array}
+     */
+    private static String cycleMarker(Render render, String kind) {
+        return "(" + (render == Render.SELF ? "this" : "ancestor") + " " + kind + ")";
     }
 
     /**
@@ -384,8 +463,8 @@ public class FormatHelper {
 
     private static String formatMap(Map map, boolean inspect, boolean escapeBackslashes, int maxSize, boolean safe) {
         Render render = openRender(map, maxSize);
-        if (render == Render.CYCLE) {
-            return "(this Map)";
+        if (render == Render.SELF || render == Render.ANCESTOR) {
+            return cycleMarker(render, "Map");
         }
         try {
             if (map.isEmpty()) {
@@ -430,8 +509,8 @@ public class FormatHelper {
 
     private static String formatCollection(Collection collection, boolean inspect, boolean escapeBackslashes, int maxSize, boolean safe) {
         Render render = openRender(collection, maxSize);
-        if (render == Render.CYCLE) {
-            return "(this Collection)";
+        if (render == Render.SELF || render == Render.ANCESTOR) {
+            return cycleMarker(render, "Collection");
         }
         try {
             if (collection.isEmpty()) {
@@ -605,8 +684,8 @@ public class FormatHelper {
             return "null";
         }
         Render render = openRender(array, maxSize);
-        if (render == Render.CYCLE) {
-            return "(this array)";
+        if (render == Render.SELF || render == Render.ANCESTOR) {
+            return cycleMarker(render, "array");
         }
         try {
             if (array.length == 0) {
