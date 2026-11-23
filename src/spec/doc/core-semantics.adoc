@@ -1014,8 +1014,10 @@ include::../test/CoercionTest.groovy[tags=functional_literal_for_type_parameter_
 
 This applies to a closure literal passed as an argument or as the operand of an operator such as `<<`, assigned to a
 subscript, a property or a named constructor argument, or written as a branch of a conditional expression in such a
-place. A value of type `Closure`, such as a variable, is stored as it is, and the compiler warns that it is not
-converted; `as` converts it:
+place. A closure passed as an argument or assigned to a subscript or property gets the types of its parameters from
+the interface, so `list.add { it.toUpperCase() }` compiles for a `List<Function<String, String>>`; elsewhere, declare
+them, as `list << { String s -> s.toUpperCase() }`. A value of type `Closure`, such as a variable, is stored as it is,
+and the compiler warns that it is not converted; `as` converts it:
 
 [source,groovy]
 ----
@@ -1023,9 +1025,11 @@ include::../test/CoercionTest.groovy[tags=closure_value_for_type_parameter,inden
 ----
 
 A closure literal is passed as it is for an interface that `Closure` already implements, such as `Runnable` or
-`Callable`, for an interface whose method has the name of a method of `Closure`, such as `call`, for a sealed
-interface, a trait, a non-public interface not compiled with the closure, and for an abstract class. Closure packing
-(`@PackedClosures`) does not pack a closure that implements an interface this way.
+`Callable`, for an interface whose method has the name of a method of `Closure`, such as `call`, or with a default
+method that a method of `Closure` would replace, such as `getOwner()`, for a sealed interface, a trait, a non-public
+interface not compiled with the closure, and for an abstract class. So is a closure whose parameters cannot be those
+of the interface method: one with a default value or a variadic parameter, or more or fewer parameters than the
+method. Closure packing (`@PackedClosures`) does not pack a closure that implements an interface this way.
 
 A lambda for such a parameter is compiled as a closure that does not implement the interface, unless the code is
 compiled with the incubating `-Dgroovy.target.lambda.typearg=true` option. With the option, the lambda is compiled for
