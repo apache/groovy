@@ -35,6 +35,7 @@ import org.codehaus.groovy.ast.expr.PropertyExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.transform.sc.StaticCompilationMetadataKeys;
+import org.codehaus.groovy.transform.stc.ExtensionMethodNode;
 import org.codehaus.groovy.transform.trait.Traits;
 
 import java.util.HashMap;
@@ -257,7 +258,7 @@ class StaticTypesLambdaAnalyzer {
             }
 
             MethodNode directMethodCallTarget = expression.getMethodTarget();
-            if (directMethodCallTarget == null || !directMethodCallTarget.isStatic()) return null;
+            if (directMethodCallTarget == null || !isStaticMethod(directMethodCallTarget)) return null;
 
             ClassNode owner = directMethodCallTarget.getDeclaringClass();
             if (!isReferenceOwner(owner)) return null;
@@ -271,7 +272,7 @@ class StaticTypesLambdaAnalyzer {
             }
 
             MethodNode directMethodCallTarget = expression.getNodeMetaData(DIRECT_METHOD_CALL_TARGET);
-            if (directMethodCallTarget != null && directMethodCallTarget.isStatic() && isReferenceOwner(directMethodCallTarget.getDeclaringClass())) {
+            if (directMethodCallTarget != null && isStaticMethod(directMethodCallTarget) && isReferenceOwner(directMethodCallTarget.getDeclaringClass())) {
                 return directMethodCallTarget.getDeclaringClass();
             }
 
@@ -304,6 +305,15 @@ class StaticTypesLambdaAnalyzer {
             for (ClassNode interfaceNode : redirectedOwner.getInterfaces()) {
                 collectReferenceOwners(interfaceNode, referenceOwnerIndex);
             }
+        }
+
+        /**
+         * Tells whether a method is called without an instance. An extension method
+         * node is static like the method that implements it, but only a static
+         * extension method is called without an instance.
+         */
+        private static boolean isStaticMethod(final MethodNode method) {
+            return method instanceof ExtensionMethodNode extensionMethod ? extensionMethod.isStaticExtension() : method.isStatic();
         }
 
         private static boolean isStaticReference(final VariableExpression expression) {
