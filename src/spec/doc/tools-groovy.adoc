@@ -78,9 +78,15 @@ It runs the given script once for every line a client sends, with the
 line available as the implicit `line` variable and the connection as `out` and
 `socket`. The listening socket is bound to the loopback address, so only clients on
 the same machine can connect. Supply a host to listen more widely -- `0.0.0.0:1960`
-for every interface, or a single address to pick one. The script is read once, when the
-listener starts, and recompiled for each connection so that one connection cannot leave
-state behind for the next; editing the file has no effect until the listener is restarted.
+for every interface, or a single address to pick one. A new script instance is created
+for each connection. The class is compiled once, and compiled again only when a file or
+URL source's bytes change. Inline text is compiled once. A file or URL is read again
+for every connection, so an edit takes effect on the next connection after the bytes
+change; the listener does not need to be restarted. A failed compile or read is
+reported and the listener keeps accepting. Instances share the `GroovyShell`
+binding. Class-level state (static fields, static initializers, and class-level
+meta-class changes) survives from one connection to the next, while instance fields
+still reset because each connection gets a new instance.
 
 WARNING: A listener bound beyond loopback accepts connections from any peer that can
 reach the port. Groovy performs no authentication and the connection is not encrypted,
