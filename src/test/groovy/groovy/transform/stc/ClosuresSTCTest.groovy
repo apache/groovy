@@ -1710,6 +1710,25 @@ ${' ' * 46}value.prop += 1
         '''
     }
 
+    // GROOVY-12576
+    @Test
+    void testClosureObjectMethodWithThisObjectOfAnotherType() {
+        assertScript '''
+            class C {
+                String toString() { 'C' }
+                List<Closure> closures() {
+                    [{ -> toString() }, { -> hashCode() }, { -> equals('o') }, { -> getClass() }]
+                }
+            }
+
+            List<Closure> closures = new C().closures()
+            assert closures[0].rehydrate('o', 'o', 'o')() == 'o'
+            assert closures[1].rehydrate('o', 'o', 'o')() == 'o'.hashCode()
+            assert closures[2].rehydrate('o', 'o', 'o')() == true
+            assert closures[3].rehydrate('o', 'o', 'o')() == String
+        '''
+    }
+
     // GROOVY-9604
     @Test
     void testClosureResolveStrategy() {

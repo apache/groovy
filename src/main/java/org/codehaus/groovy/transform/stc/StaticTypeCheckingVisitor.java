@@ -6623,6 +6623,62 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
     }
 
     /**
+     * Tells whether a receiver path like {@code owner.delegate} goes through the
+     * owner of a lambda that is statically compiled to a native lambda. The owner
+     * of such a lambda is the enclosing instance, not the enclosing closure.
+     */
+    private boolean isBeyondNativeLambda(final String path) {
+        if (path != null) {
+            List<TypeCheckingContext.EnclosingClosure> enclosingClosures = typeCheckingContext.getEnclosingClosureStack();
+            for (int i = 0, j = 0; i < enclosingClosures.size() && path.startsWith("owner.", j); i += 1, j += 6) {
+                if (isNativeLambda(enclosingClosures.get(i))) return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Tells whether the name and argument types select a public instance method
+     * of {@code Object}, like {@code toString()}.
+     */
+    private static boolean isObjectMethodCall(final String name, final ClassNode[] args) {
+        for (MethodNode method : chooseBestMethod(OBJECT_TYPE, OBJECT_TYPE.getMethods(name), args)) {
+            if (method.isPublic() && !method.isStatic()) return true;
+        }
+        return false;
+    }
+
+    /**
+     * Removes the receivers that a method of {@code Object} called in a native
+     * lambda does not go to. Such a method is the enclosing instance's, as in
+     * Java, not that of the delegate of a closure around the lambda. Likewise
+     * a method that extends {@code Object}, like {@code println()}, unless the
+     * delegate declares it.
+     *
+     * @return whether a receiver was removed
+     */
+    private boolean removeReceiversBeyondNativeLambda(final List<Receiver<String>> receivers, final String name, final ClassNode[] args) {
+        boolean objectMethod = isObjectMethodCall(name, args);
+        return receivers.removeIf(r -> isBeyondNativeLambda(r.getData())
+                && (objectMethod || isObjectExtensionMethodCall(r.getType(), name, args)));
+    }
+
+    /**
+     * Tells whether the name and argument types select, for a receiver of the
+     * given type, an instance extension method of {@code Object}, like
+     * {@code println()}.
+     */
+    private boolean isObjectExtensionMethodCall(final ClassNode receiverType, final String name, final ClassNode[] args) {
+        List<MethodNode> methods = findMethod(isClassType(receiverType) ? receiverType.getPlainNodeReference() : receiverType, name, args);
+        if (methods.isEmpty()) return false;
+        for (MethodNode method : methods) {
+            if (!(method instanceof ExtensionMethodNode extensionMethod) || extensionMethod.isStaticExtension()
+                    || !isObjectType(extensionMethod.getExtensionMethodNode().getParameters()[0].getType())) return false;
+        }
+        return true;
+    }
+
+    /**
      * Tells whether an implicit-this method call finds a method on the delegate,
      * owner or enclosing class.
      */
@@ -6784,7 +6840,14 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
                     //   - any of the potential receivers found in the instanceof temporary table
                     // in that order
                     List<Receiver<String>> receivers = new ArrayList<>();
-                    addReceivers(receivers, makeOwnerList(objectExpression), call.isImplicitThis());
+                    List<Receiver<String>> owners = makeOwnerList(objectExpression);
+                    addReceivers(receivers, owners, call.isImplicitThis());
+                    if (call.isImplicitThis() && isStaticDispatchScope() && removeReceiversBeyondNativeLambda(receivers, name, args)) {
+                        // the closure may not have let the call reach the enclosing instance
+                        for (Receiver<String> owner : owners) {
+                            if (receivers.stream().map(Receiver::getType).noneMatch(owner.getType()::equals)) receivers.add(owner);
+                        }
+                    }
 
                     MethodNode first = null;
                     for (Receiver<String> currentReceiver : receivers) {
