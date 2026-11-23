@@ -289,14 +289,11 @@ public class StaticInvocationWriter extends InvocationWriter {
             thisExpr = varX("thisObject", thisType);
             // adjust for multiple levels of nesting
             while (exact ? !thisType.equals(target) : !isSubtype(target, thisType)) {
-                FieldNode thisZero = thisType.getDeclaredField("this$0");
-                if (thisZero != null) {
-                    thisExpr = attrX(thisExpr, "this$0");
-                    thisExpr.setType(thisZero.getType());
-                    thisType = thisType.getOuterClass();
-                    if (thisType != null) continue;
-                }
-                break;
+                Expression outer = enclosingInstanceOf(thisExpr, thisType);
+                if (outer == null) break;
+                thisExpr = outer;
+                thisType = thisType.getOuterClass();
+                if (thisType == null) break;
             }
         }
         return thisExpr;
@@ -316,18 +313,30 @@ public class StaticInvocationWriter extends InvocationWriter {
         if (outer == null) throw new GroovyBugError("no enclosing instance with " + method.getTypeDescriptor() + " for " + selectedType.getName());
         Expression expr = receiverType.equals(selectedType) ? receiver : castX(selectedType, receiver);
         for (ClassNode type = selectedType; !type.equals(outer); type = type.getOuterClass()) {
-            FieldNode thisZero = type.getDeclaredField("this$0");
-            if (thisZero == null) throw new GroovyBugError("no enclosing instance of " + outer.getName() + " for " + selectedType.getName());
-            expr = attrX(expr, "this$0");
-            expr.setType(thisZero.getType());
-            if (ClassHelper.CLOSURE_TYPE.equals(thisZero.getType())) { // a class created in a closure: the closure's this object, as for Outer.this
-                MethodCallExpression thisObject = callX(expr, "getThisObject");
-                thisObject.setImplicitThis(false);
-                thisObject.setMethodTarget(ClassHelper.CLOSURE_TYPE.getMethod("getThisObject", Parameter.EMPTY_ARRAY));
-                expr = castX(type.getOuterClass(), thisObject);
-            }
+            expr = enclosingInstanceOf(expr, type);
+            if (expr == null) throw new GroovyBugError("no enclosing instance of " + outer.getName() + " for " + selectedType.getName());
         }
         return expr;
+    }
+
+    /**
+     * Returns the expression for the enclosing instance of {@code expr}, an instance
+     * of {@code type}: its {@code this$0} field or, for a class created in a closure,
+     * the this object of that closure, as for {@code Outer.this}; or {@code null} if
+     * {@code type} has no enclosing instance.
+     */
+    private static Expression enclosingInstanceOf(final Expression expr, final ClassNode type) {
+        FieldNode thisZero = type.getDeclaredField("this$0");
+        if (thisZero == null) return null;
+        Expression outer = attrX(expr, "this$0");
+        outer.setType(thisZero.getType());
+        if (ClassHelper.CLOSURE_TYPE.equals(thisZero.getType()) && type.getOuterClass() != null) {
+            MethodCallExpression thisObject = callX(outer, "getThisObject");
+            thisObject.setImplicitThis(false);
+            thisObject.setMethodTarget(ClassHelper.CLOSURE_TYPE.getMethod("getThisObject", Parameter.EMPTY_ARRAY));
+            outer = castX(type.getOuterClass(), thisObject);
+        }
+        return outer;
     }
 
     /**

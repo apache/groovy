@@ -1065,6 +1065,24 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-12511: in a class created in a closure in an anonymous class created in a
+    // closure, this.m() is called on the this object of the outer closure
+    @Test
+    void testCallToMethodOfEnclosingInstanceThroughClosureInAnonymousClass() {
+        assertScript '''
+            class Box {
+                String id
+                Box(String id) { this.id = id }
+                private String im() { 'im:' + id }
+                String test() {
+                    def outer = { -> new Box('anon') { String test() { def inner = { -> this.im() }; inner() } }.test() }
+                    outer()
+                }
+            }
+            assert new Box('A').test() == 'im:A'
+        '''
+    }
+
     // GROOVY-12511: this.m() in an inner class may name a method of the enclosing
     // class, as in dynamic Groovy
     @Test
