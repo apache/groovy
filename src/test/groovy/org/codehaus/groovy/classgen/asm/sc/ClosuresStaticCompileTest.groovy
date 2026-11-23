@@ -689,6 +689,59 @@ final class ClosuresStaticCompileTest extends ClosuresSTCTest implements StaticC
         '''
     }
 
+    // GROOVY-12576: a method of Object in a closure or lambda of an inner class is not the outer instance's
+    @Test
+    void testObjectMethodInClosureOrLambdaOfInnerClass() {
+        assertScript '''
+            import java.util.function.Supplier
+
+            class Outer {
+                @Override String toString() { 'outer' }
+                @Override int hashCode() { 11 }
+                @Override boolean equals(Object that) { true }
+                String hello() { 'hello from outer' }
+
+                class Inner {
+                    @Override String toString() { 'inner' }
+                    Closure<String> viaToString() { { -> toString() } }
+                    Closure<Integer> viaHashCode() { { -> hashCode() } }
+                    Closure<Boolean> viaEquals() { { -> equals('other') } }
+                    Closure<String> viaOuterMethod() { { -> hello() } }
+                    String viaLambda() { Supplier<String> s = () -> toString(); s.get() }
+                    String viaLambdaInClosure() {
+                        Closure<String> c = { -> Supplier<String> s = () -> toString(); s.get() }
+                        c.call()
+                    }
+                }
+                class Plain {
+                    Closure<String> viaToString() { { -> toString() } }
+                    class Deeper {
+                        Closure<String> viaToString() { { -> toString() } }
+                    }
+                }
+            }
+
+            def outer = new Outer()
+            def inner = new Outer.Inner(outer)
+            assert inner.viaToString().call() == 'inner'
+            assert inner.viaHashCode().call() == inner.hashCode()
+            assert !inner.viaEquals().call()
+            assert inner.viaOuterMethod().call() == 'hello from outer'
+            assert inner.viaLambda() == 'inner'
+            assert inner.viaLambdaInClosure() == 'inner'
+
+            def plain = new Outer.Plain(outer)
+            assert plain.viaToString().call() == plain.toString()
+            def deeper = new Outer.Plain.Deeper(plain)
+            assert deeper.viaToString().call() == deeper.toString()
+
+            def closure = plain.viaToString()
+            assert closure.dehydrate().call().toString().contains('_closure')
+            assert closure.rehydrate('context', 'context', 'context').call() == 'context'
+            assert closure.rehydrate('delegate', 'owner', null).call() == 'owner'
+        '''
+    }
+
     // a serializable lambda does not hold the closure, so the closure's delegate need not be serializable
     @Test
     void testSerializableLambdaInsideClosureDoesNotHoldTheClosure() {
