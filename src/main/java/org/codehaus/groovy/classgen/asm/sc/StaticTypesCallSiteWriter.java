@@ -373,14 +373,8 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter {
             if (currentCall != null) {
                 String implicitReceiver = currentCall.getNodeMetaData(StaticTypesMarker.IMPLICIT_RECEIVER);
                 if (implicitReceiver != null) {
-                    String[] pathElements = implicitReceiver.split("\\.");
                     BytecodeExpression thisLoader = bytecodeX(CLOSURE_TYPE, mv -> mv.visitVarInsn(ALOAD, 0));
-                    PropertyExpression pexp = propX(thisLoader, constX(pathElements[0]), safe);
-                    for (int i = 1, n = pathElements.length; i < n; i += 1) {
-                        pexp.putNodeMetaData(StaticTypesMarker.INFERRED_TYPE, CLOSURE_TYPE);
-                        pexp = propX(pexp, pathElements[i]);
-                    }
-                    pexp.visit(controller.getAcg());
+                    StaticInvocationWriter.implicitReceiverX(controller, implicitReceiver, thisLoader, safe).visit(controller.getAcg());
                     return;
                 }
             }
