@@ -2605,6 +2605,31 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-12513: through a variable declared with a superclass that has a private
+    // setter, b.p = v selects the setter as b.setP(v) does
+    @Test
+    void testPropertySetterOfNarrowedVariableWithPrivateSetterOfDeclaredType() {
+        assertScript '''
+            class Box {
+                String log
+                private void setP(Object o) { log = 'Box.setP(Object)' }
+                static class Sub extends Box {
+                    void setP(String s) { log = 'Sub.setP(String)' }
+                }
+                static class Other {
+                    static List<String> test() {
+                        Box b = new Sub()
+                        b.p = 'x'
+                        Box c = new Sub()
+                        c.setP('x')
+                        [b.log, c.log]
+                    }
+                }
+            }
+            assert Box.Other.test() == ['Sub.setP(String)', 'Sub.setP(String)']
+        '''
+    }
+
     // GROOVY-12509: dynamic Groovy also calls the accessors here, not the field
     @Test
     void testPrivateAccessorOfNestMateVersusPrivateField() {

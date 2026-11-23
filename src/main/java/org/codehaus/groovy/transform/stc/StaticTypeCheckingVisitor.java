@@ -1702,6 +1702,8 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
                 && setterInfo.setters.stream().anyMatch(setter -> setter.isPrivate() && setter.getDeclaringClass().equals(declaredType));
         VariableExpression receiver = varX("%", narrowed ? declaredType : setterInfo.receiverType);
         receiver.setType(setterInfo.receiverType); // same as origin type, unless narrowed
+        // the setter is selected for the narrower type, as for a call of it, with the private setter of the declared type
+        if (narrowed) receiver.putNodeMetaData(INFERRED_TYPE, setterInfo.receiverType);
 
         Function<Expression, MethodNode> setterCall = (value) -> {
             typeCheckingContext.pushEnclosingBinaryExpression(null); // GROOVY-10628: LHS re-purposed
