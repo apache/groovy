@@ -19,8 +19,11 @@
 package org.codehaus.groovy.classgen.asm.sc;
 
 import org.codehaus.groovy.ast.ASTNode;
+import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.expr.Expression;
+import org.codehaus.groovy.ast.expr.LambdaExpression;
+import org.codehaus.groovy.ast.expr.MethodReferenceExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.classgen.asm.StatementMetaTypeChooser;
 import org.codehaus.groovy.classgen.asm.TypeChooser;
@@ -37,6 +40,11 @@ public class StaticTypesTypeChooser extends StatementMetaTypeChooser {
     /** {@inheritDoc} */
     @Override
     public ClassNode resolveType(final Expression exp, final ClassNode current) {
+        ClassNode functionalInterface = getCompiledFunctionalInterface(exp);
+        if (functionalInterface != null) {
+            return functionalInterface;
+        }
+
         ClassNode inferredType = exp.getNodeMetaData(StaticTypesMarker.DECLARATION_INFERRED_TYPE);
         if (inferredType == null) {
             inferredType = exp.getNodeMetaData(StaticTypesMarker.INFERRED_TYPE);
@@ -55,6 +63,22 @@ public class StaticTypesTypeChooser extends StatementMetaTypeChooser {
         }
 
         return super.resolveType(exp, current);
+    }
+
+    /**
+     * A lambda or method reference that the type checker gave a functional interface is compiled as an instance
+     * of the interface, not as a closure, although its inferred type is {@code Closure}: a conditional expression
+     * whose branches it is must not cast it to {@code Closure}.
+     *
+     * @return the interface, or {@code null} if the expression is not compiled for one
+     */
+    private static ClassNode getCompiledFunctionalInterface(final Expression exp) {
+        if (!(exp instanceof LambdaExpression || exp instanceof MethodReferenceExpression)
+                || exp.getNodeMetaData(StaticTypesMarker.DYNAMIC_RESOLUTION) != null) {
+            return null;
+        }
+        ClassNode type = exp.getNodeMetaData(StaticTypesMarker.PARAMETER_TYPE);
+        return type != null && type.isInterface() && ClassHelper.findSAM(type) != null ? type : null;
     }
 
     /**

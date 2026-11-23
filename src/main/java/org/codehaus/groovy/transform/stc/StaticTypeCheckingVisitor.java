@@ -439,6 +439,8 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     private static final Object BODY_RETURN_TYPE = new Object();
     /** Metadata key marking an untyped closure or lambda parameter declared with the type its functional interface gives it. */
     private static final Object FUNCTIONAL_PARAMETER_TYPE = new Object();
+    /** Metadata key for the type of a subscript that an assignment writes, while the assigned value is visited for it. */
+    private static final Object ASSIGNED_SUBSCRIPT_TYPE = new Object();
     /** Metadata key for the type a method call's value is assigned or returned to, a witness for its type arguments. */
     private static final Object CALL_TARGET_TYPE = new Object();
     /** Cached {@code Closure#getDelegate()} method. */
@@ -1376,7 +1378,14 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     // left hand side of a subscript assignment: map['key'] = ...
                     Expression enclosingExpressionRHS = enclosingBinaryExpression.getRightExpression();
                     if (!(enclosingExpressionRHS instanceof ClosureExpression)) {
-                        enclosingExpressionRHS.visit(this);
+                        // the value is visited before the assignment: the subscript's type is the target of a lambda,
+                        // method reference or closure that is a branch of a conditional expression
+                        expression.putNodeMetaData(ASSIGNED_SUBSCRIPT_TYPE, resultType);
+                        try {
+                            enclosingExpressionRHS.visit(this);
+                        } finally {
+                            expression.removeNodeMetaData(ASSIGNED_SUBSCRIPT_TYPE);
+                        }
                     }
                     ClassNode[] arguments = {rType, isNullConstant(enclosingExpressionRHS) // GROOVY-11621
                                 ? UNKNOWN_PARAMETER_TYPE : getType(enclosingExpressionRHS)};
@@ -8324,6 +8333,10 @@ trying: for (ClassNode[] signature : signatures) {
                 && isAssignment(enclosingExpression.getOperation().getType())
                 && isTypeSource(expr, enclosingExpression.getRightExpression())) {
             targetType = getDeclaredOrInferredType(enclosingExpression.getLeftExpression());
+        } else if (enclosingExpression != null && enclosingExpression.getNodeMetaData(ASSIGNED_SUBSCRIPT_TYPE) != null
+                && typeCheckingContext.getEnclosingBinaryExpressionStack().size() > 1
+                && isTypeSource(expr, typeCheckingContext.getEnclosingBinaryExpressionStack().get(1).getRightExpression())) {
+            targetType = enclosingExpression.getNodeMetaData(ASSIGNED_SUBSCRIPT_TYPE); // "map[key] = value" visits the value early
         } else if (enclosingMethodCall != null
                 && InvocationWriter.makeArgumentList(enclosingMethodCall.getArguments())
                         .getExpressions().stream().anyMatch(arg -> isTypeSource(expr, arg))) {
@@ -8335,7 +8348,7 @@ trying: for (ClassNode[] signature : signatures) {
              targetType = enclosingMethod.getReturnType();
         }
 
-        if (expr instanceof ClosureExpression) { // GROOVY-10271, GROOVY-10272
+        if (expr instanceof ClosureExpression || expr instanceof MethodReferenceExpression) { // GROOVY-10271, GROOVY-10272
             return isSAMType(targetType) ? targetType : type;
         }
 
