@@ -63,6 +63,7 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.isOrImplements;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.stmt;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
 import static org.codehaus.groovy.classgen.AsmClassGenerator.ELIDE_EXPRESSION_VALUE;
+import static org.codehaus.groovy.syntax.Types.LEFT_SQUARE_BRACKET;
 import static org.codehaus.groovy.transform.sc.StaticCompilationVisitor.ARRAYLIST_ADD_METHOD;
 import static org.codehaus.groovy.transform.sc.StaticCompilationVisitor.ARRAYLIST_CLASSNODE;
 import static org.codehaus.groovy.transform.sc.StaticCompilationVisitor.ARRAYLIST_CONSTRUCTOR;
@@ -149,6 +150,29 @@ public class StaticTypesBinaryExpressionMultiTypeDispatcher extends BinaryExpres
         } else if (isPrimitiveDouble(top)) {
             mv.visitInsn(dInsn);
         }
+    }
+
+    /**
+     * Writes the read of {@code x[i]} in {@code x[i]++} or {@code x[i] += v} as the
+     * {@code getAt} of an enclosing instance of {@code x} where the type checker
+     * selected one (GROOVY-12511), as dynamic Groovy reads it; the write stays the
+     * {@code putAt} of {@code x}.
+     */
+    @Override
+    protected void evaluateBinaryExpression(final String message, final BinaryExpression binExp) {
+        if (binExp.getOperation().getType() == LEFT_SQUARE_BRACKET
+                && binExp.getNodeMetaData(ENCLOSING_INSTANCE_OF_RECEIVER) != null
+                && binExp.getNodeMetaData(DIRECT_METHOD_CALL_TARGET) instanceof MethodNode getAt) {
+            MethodCallExpression call = callX(binExp.getLeftExpression(), "getAt", binExp.getRightExpression());
+            call.setImplicitThis(false);
+            call.setSafe(binExp.isSafe());
+            call.setMethodTarget(getAt);
+            call.putNodeMetaData(ENCLOSING_INSTANCE_OF_RECEIVER, binExp.getNodeMetaData(ENCLOSING_INSTANCE_OF_RECEIVER));
+            call.setSourcePosition(binExp);
+            call.visit(controller.getAcg());
+            return;
+        }
+        super.evaluateBinaryExpression(message, binExp);
     }
 
     /** {@inheritDoc} */

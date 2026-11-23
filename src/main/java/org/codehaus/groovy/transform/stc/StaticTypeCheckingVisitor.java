@@ -1257,7 +1257,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                         List<MethodNode> candidates = findMethodThrough(leftExpression, lhsType, assignName, rhsType);
                         // GROOVY-12511: dynamic Groovy uses a *Assign method only if the receiver itself responds to
                         // it, and else the base operator, which may be one of an enclosing instance as for "x + y"
-                        if (candidates.size() == 1 && isMethodOfEnclosingInstanceOfReceiver(candidates.get(0), lhsRead, lhsType)) {
+                        if (candidates.size() == 1 && !isMethodOfReceiver(candidates.get(0), lhsRead, lhsType)) {
                             candidates = Collections.emptyList();
                         }
                         if (candidates.size() == 1) {
@@ -8790,9 +8790,16 @@ trying: for (ClassNode[] signature : signatures) {
             Expression copy = binX(leftExpression, expr.getOperation(), rightExpression);
             copy.setSourcePosition(expr); // do not propagate BINARY_EXP_TARGET, etc.
             MethodNode method = findMethodOrFail(copy, left, "getAt", rightRedirect);
-            if (method != null && copy.getNodeMetaData(ENCLOSING_INSTANCE_OF_RECEIVER) != null && !isTargetOfAssignment(expr)) {
+            boolean target = isTargetOfAssignment(expr);
+            if (method != null && copy.getNodeMetaData(ENCLOSING_INSTANCE_OF_RECEIVER) != null && !target) {
                 // GROOVY-12511: the getAt of an enclosing instance of the left operand is written as that call
                 method = findMethodOrFail(expr, left, "getAt", rightRedirect);
+            } else if (target) {
+                // GROOVY-12511: x[i]++ and x[i] += v read x[i] with the getAt of an enclosing instance of x, as dynamic
+                // Groovy does; the subscript stays one, for the write, so the read is recorded for the static writer
+                boolean enclosing = method != null && copy.getNodeMetaData(ENCLOSING_INSTANCE_OF_RECEIVER) != null;
+                expr.putNodeMetaData(ENCLOSING_INSTANCE_OF_RECEIVER, enclosing ? copy.getNodeMetaData(ENCLOSING_INSTANCE_OF_RECEIVER) : null);
+                expr.putNodeMetaData(DIRECT_METHOD_CALL_TARGET, enclosing ? method : null);
             }
             if (method != null && !isNumberCategory(getWrapper(rightRedirect))) {
                 return inferReturnTypeGenerics(left, method, rightExpression);
@@ -9418,6 +9425,17 @@ trying: for (ClassNode[] signature : signatures) {
     }
 
     /**
+     * Determines if the selected method is one of the receiver itself, as a
+     * meta-class lookup on the receiver finds it: not a method of an outer class,
+     * static or one of an enclosing instance, that {@link #findMethod} offers for
+     * a receiver of the class whose code this is.
+     */
+    private boolean isMethodOfReceiver(final MethodNode method, final Expression objectExpression, final ClassNode receiverType) {
+        return (method instanceof ExtensionMethodNode || implementsInterfaceOrIsSubclassOf(receiverType, method.getDeclaringClass()))
+                && !isMethodOfEnclosingInstanceOfReceiver(method, objectExpression, receiverType);
+    }
+
+    /**
      * Determines if {@code type} is a class whose code this is, or a subclass
      * of one that is an inner class itself, so that a method of an outer class
      * may be one of its enclosing instance.
@@ -9485,6 +9503,7 @@ trying: for (ClassNode[] signature : signatures) {
      */
     private boolean isTargetOfAssignment(final BinaryExpression expr) {
         for (BinaryExpression be : typeCheckingContext.getEnclosingBinaryExpressionStack()) {
+            if (be == null) break; // a left-hand side re-purposed, as for a setter call
             if (be != expr) return be.getLeftExpression() == expr && isAssignment(be.getOperation().getType());
         }
         return false;

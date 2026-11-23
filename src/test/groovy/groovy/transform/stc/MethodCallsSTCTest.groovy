@@ -1010,6 +1010,61 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-12511: a compound assignment uses a *Assign method only of the receiver
+    // itself, as dynamic Groovy does, not a static one of an outer class
+    @Test
+    void testCompoundAssignmentWithAssignMethodOfOuterClass() {
+        assertScript '''
+            class Box {
+                static String log = ''
+                static void plusAssign(String s) { log += 'Box.plusAssign' }
+                class Item {
+                    String id
+                    Item(String id) { this.id = id }
+                    Item plus(String s) { new Item(id + s) }
+                    List<String> test() {
+                        Item item = new Item('i'), same = item
+                        item += 'x'
+                        [item.id, same.id, log]
+                    }
+                }
+                List<String> test() { new Item('o').test() }
+            }
+            assert new Box().test() == ['ix', 'i', '']
+        '''
+    }
+
+    // GROOVY-12511: x[i]++ and x[i] += v read x[i] with the getAt of an enclosing
+    // instance of x, as dynamic Groovy does, and write it with the putAt of x
+    @Test
+    void testSubscriptUpdateWithGetAtOfEnclosingInstance() {
+        assertScript '''
+            class Box {
+                int n
+                Box(int n) { this.n = n }
+                private int getAt(int i) { n + i }
+                private String getAt(String s) { 'getAt:' + n + s }
+                class Sub extends Box {
+                    List stored = []
+                    Sub(int n) { super(n) }
+                    void putAt(int i, int v) { stored << v }
+                    void putAt(String s, String v) { stored << v }
+                    List test(Sub other) {
+                        def read = other[0]
+                        other[0]++
+                        ++other[1]
+                        other[1]--
+                        other['s'] += 'x'
+                        [read, other.stored]
+                    }
+                }
+                Sub sub(int n) { new Sub(n) }
+            }
+            def a = new Box(1), b = new Box(10)
+            assert a.sub(100).test(b.sub(1000)) == [10, [11, 12, 10, 'getAt:10sx']]
+        '''
+    }
+
     // GROOVY-12511: this.m() in an inner class may name a method of the enclosing
     // class, as in dynamic Groovy
     @Test
