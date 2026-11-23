@@ -326,6 +326,40 @@ final class FunctionalTypeArgumentTest {
         '''
     }
 
+    // GROOVY-12561, GROOVY-12824
+    @Test
+    void testClosureLiteralGetsParameterTypesFromTheInterfaceAsAnOperandConditionalOrNamedArgument() {
+        assertScript shell, '''
+            class Holder<T> { T value }
+            @CompileStatic
+            class C {
+                static List<Function<String, String>> make(boolean flag) {
+                    List<Function<String, String>> list = []
+                    list << { it.toUpperCase() }                          // operand of leftShift(List<T>, T)
+                    list.add(flag ? { it.toUpperCase() } : { it.trim() }) // branches of a conditional argument
+                    list.add(flag ? (s -> s * 2) : (s -> s))              // lambdas, with the option
+                    list << new Holder<Function<String, String>>(value: { it.toUpperCase() }).value // named argument
+                    list
+                }
+            }
+
+            def list = C.make(true)
+            assert list*.apply(' a ') == [' A ', ' A ', ' a  a ', ' A ']
+            assert list[0] instanceof Closure && list[1] instanceof Closure && list[3] instanceof Closure
+            assert list.every { it instanceof Function }
+            assert C.make(false)[1].apply(' a ') == 'a'
+        '''
+
+        def err = shouldFail shell, '''
+            @TypeChecked
+            void test() {
+                List<Function<String, String>> list = []
+                list << { it.toUpperCase() } // passed as it is
+            }
+        '''
+        assert err.message.contains('Cannot find matching method java.lang.Object#toUpperCase()')
+    }
+
     // GROOVY-12561
     @Test
     void testClosureLiteralAssignedToASubscriptOrPropertyImplementsItsInterface() {

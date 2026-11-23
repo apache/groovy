@@ -5739,6 +5739,7 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
                             : getFunctionalTypeArgument(receiver, selectedMethod, arguments, i - nSelf, targetType));
                     if (functionalType != null && closureConditional) { // its closure branches implement the interface
                         convertClosureValue(expression, functionalType, targetType, false);
+                        if (takesParameterTypesFrom(expression, functionalType)) applyTypeParameterTarget(functionalType, targetType, expression);
                         functionalType = null;
                     } else if (functionalType != null && !(expression instanceof LambdaExpression || expression instanceof MethodReferenceExpression)) {
                         if (isClosureTargetInterface(functionalType, targetType) // the closure class implements the interface
@@ -5840,7 +5841,11 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
         Parameter[] parameters = (method instanceof ExtensionMethodNode emn ? emn.getExtensionMethodNode() : method).getParameters();
         if (parameters.length == 0) return;
         ClassNode type = parameters[parameters.length - 1].getType();
-        if (type.isGenericsPlaceHolder()) return;
+        if (type.isGenericsPlaceHolder()) { // a type parameter the call binds to a functional interface
+            ClassNode functionalType = isStaticDispatchScope() ? getFunctionalTypeArgument(lType, method, args(operand), 0, type) : null;
+            if (functionalType != null && takesParameterTypesFrom(operand, functionalType)) applyTypeParameterTarget(functionalType, type, operand);
+            return;
+        }
         type = applyGenericsContext(extractPlaceHoldersVisibleToDeclaration(lType, method, args(operand)), type);
         if (takesParameterTypesFrom(operand, type)) applyTargetType(type, operand);
     }
@@ -5860,6 +5865,24 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
         if (hasImplicitParameter(closure)) return n == 1;
         Parameter[] parameters = getParametersSafe(closure);
         return n > 0 && parameters.length == n && Arrays.stream(parameters).anyMatch(Parameter::isDynamicTyped);
+    }
+
+    /**
+     * Gives a closure or lambda written for a slot declared with a type parameter, or each branch of a conditional
+     * expression that is one, the functional interface the slot is bound to before it is visited, where it is
+     * compiled for the interface: a closure whose class implements the interface, and a lambda with
+     * {@link CompilerConfiguration#LAMBDA_TYPE_ARGUMENT}. Another is passed as it is, as before.
+     */
+    private void applyTypeParameterTarget(final ClassNode type, final ClassNode slotType, final Expression expression) {
+        if (expression instanceof TernaryExpression ternary) {
+            applyTypeParameterTarget(type, slotType, ternary.getTrueExpression());
+            applyTypeParameterTarget(type, slotType, ternary.getFalseExpression());
+        } else if (expression instanceof LambdaExpression) {
+            if (isFunctionalLiteral(expression)) applyTargetType(type, expression);
+        } else if (expression instanceof ClosureExpression closure
+                && isClosureTargetInterface(type, slotType) && acceptsParametersOf(closure, type)) {
+            applyTargetType(type, expression);
+        }
     }
 
     /**
