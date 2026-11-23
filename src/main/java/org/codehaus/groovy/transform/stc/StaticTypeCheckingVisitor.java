@@ -588,6 +588,12 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     private Set<Expression> instanceOfGuards = Collections.newSetFromMap(new IdentityHashMap<>());
     /** Declared type of the variable whose method {@link #findMethod} is looking up, if any. */
     private ClassNode declaredReceiverType;
+    /**
+     * Set for a receiver that offers only its static methods, such as the class that
+     * a {@code Class} receiver wraps or the class in a static method, and read once
+     * by the next {@link #findMethod}.
+     */
+    private boolean staticOnlyReceiver;
 
     /**
      * Creates a static type-checking visitor for the supplied source and class.
@@ -6901,6 +6907,7 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
                     for (Receiver<String> currentReceiver : receivers) {
                         ClassNode receiverType = currentReceiver.getType();
                         if (isClassType(receiverType)) receiverType = receiverType.getPlainNodeReference();
+                        staticOnlyReceiver = !currentReceiver.isObject(); // a static receiver can use only static methods, also of the outer classes
                         mn = findMethodThrough(objectExpression, receiverType, name, args);
                         if (!mn.isEmpty()) {
                             first = mn.get(0); // capture for error reporting
@@ -9234,10 +9241,12 @@ trying: for (ClassNode[] signature : signatures) {
      * <p>
      * When the receiver is a class whose code this is, or an inner class that is a
      * subclass of one, and none of its own methods accepts the argument types (or
-     * none are given), the methods of its outer classes are candidates too, only the
+     * none are given), the methods of its outer classes are candidates too, from the
+     * nearest one out to the first that has a method accepting them, and only the
      * static ones beyond a class that has no enclosing instance: dynamic Groovy calls
      * such a method on the enclosing instance, and static compilation does too, see
-     * {@link StaticTypesMarker#ENCLOSING_INSTANCE_OF_RECEIVER}.
+     * {@link StaticTypesMarker#ENCLOSING_INSTANCE_OF_RECEIVER}. For a receiver that is
+     * the class itself, as in a static method, only its static methods count.
      * <p>
      * These rules are for calls. A method pointer or reference ({@code x.&m},
      * {@code x::m}) is resolved elsewhere, with the exceptions for an enum constant
@@ -9246,6 +9255,8 @@ trying: for (ClassNode[] signature : signatures) {
      */
     protected List<MethodNode> findMethod(ClassNode receiver, final String name, final ClassNode... args) {
         if (isPrimitiveType(receiver)) receiver = getWrapper(receiver);
+        boolean staticOnlyReceiver = this.staticOnlyReceiver; // set for the class that a Class receiver wraps, below
+        this.staticOnlyReceiver = false;
 
         List<MethodNode> methods;
         if ("<init>".equals(name)) {
@@ -9273,12 +9284,16 @@ trying: for (ClassNode[] signature : signatures) {
                 }
             }
             if (isTypeOfEnclosingClass(receiver)
-                    // dynamic Groovy turns to the enclosing instance only for a method the receiver lacks, and javac to the innermost class
-                    && (args == null || chooseBestMethod(receiver, filterMethodsByVisibility(methods, typeCheckingContext.getEnclosingClassNode()), args).isEmpty())) {
-                boolean staticOnly = hasNoEnclosingInstance(receiver);
+                    // dynamic Groovy turns to the enclosing instance only for a method the receiver lacks, and javac to the innermost
+                    // class; a receiver that is the class itself, as in a static method, has only its static methods
+                    && (args == null || chooseBestMethod(receiver, filterMethodsByVisibility(allowStaticAccessToMember(methods, staticOnlyReceiver), typeCheckingContext.getEnclosingClassNode()), args).isEmpty())) {
+                boolean staticOnly = staticOnlyReceiver || hasNoEnclosingInstance(receiver);
                 for (ClassNode outer = receiver; (outer = outer.getOuterClass()) != null;
                         staticOnly = staticOnly || hasNoEnclosingInstance(outer)) {
-                    methods.addAll(allowStaticAccessToMember(removeInheritedPrivateMethods(findMethodsWithGenerated(outer, name), outer, null, true), staticOnly));
+                    List<MethodNode> outerMethods = allowStaticAccessToMember(removeInheritedPrivateMethods(findMethodsWithGenerated(outer, name), outer, null, true), staticOnly);
+                    methods.addAll(outerMethods);
+                    // dynamic Groovy tries the nearest enclosing instance first, and stops at one that has an applicable method
+                    if (args != null && !chooseBestMethod(outer, filterMethodsByVisibility(outerMethods, typeCheckingContext.getEnclosingClassNode()), args).isEmpty()) break;
                 }
             }
             if (args == null || args.length == 0) {
@@ -9366,6 +9381,7 @@ trying: for (ClassNode[] signature : signatures) {
         }
 
         if (isClassClassNodeWrappingConcreteType(receiver)) { // GROOVY-6802, GROOVY-6803, GROOVY-9415
+            this.staticOnlyReceiver = true;
             List<MethodNode> result = findMethod(receiver.getGenericsTypes()[0].getType(), name, args);
             result = allowStaticAccessToMember(result, true); // GROOVY-11427
             if (!result.isEmpty()) return result;

@@ -1083,6 +1083,46 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-12511: in a static method, an instance method of the class does not
+    // stop the call from using an applicable static method of an outer class
+    @Test
+    void testCallToStaticMethodOfOuterClassFromStaticMethod() {
+        assertScript '''
+            class Outer {
+                static String m(String s) { 'Outer.m(String)' }
+                static String n(String s) { 'Outer.n(String)' }
+                static class Inner {
+                    String m(Object o) { 'Inner.m(Object)' }
+                    static String n(Object o) { 'Inner.n(Object)' }
+                    static List<String> test() { [m('x'), new Inner().m('x'), n('x')] }
+                }
+            }
+            assert Outer.Inner.test() == ['Outer.m(String)', 'Inner.m(Object)', 'Inner.n(Object)']
+        '''
+    }
+
+    // GROOVY-12511: the nearest enclosing instance with an applicable method is used,
+    // as dynamic Groovy tries them from the nearest one out
+    @Test
+    void testCallToMethodOfNearestEnclosingInstance() {
+        assertScript '''
+            class Outer {
+                String m(String s) { 'Outer.m(String)' }
+                String n(String s) { 'Outer.n(String)' }
+                class Middle {
+                    String m(Object o) { 'Middle.m(Object)' }
+                    String n(Integer i) { 'Middle.n(Integer)' }
+                    class Inner {
+                        List<String> test() { [this.m('x'), m('x'), n('x'), n(1)] }
+                    }
+                    List<String> test() { new Inner().test() }
+                }
+                List<String> test() { new Middle().test() }
+            }
+            assert new Outer().test() == ['Middle.m(Object)', 'Middle.m(Object)', 'Outer.n(String)', 'Middle.n(Integer)']
+        '''
+    }
+
     // GROOVY-12511: this.m() in an inner class may name a method of the enclosing
     // class, as in dynamic Groovy
     @Test
