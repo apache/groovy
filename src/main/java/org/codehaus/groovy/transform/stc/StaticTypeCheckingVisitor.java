@@ -3234,6 +3234,9 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
 
                 MethodNode getter = getGetterMethod(current, isserName, checkUp);
                 getter = allowStaticAccessToMember(getter, staticOnly);
+                if (getter != null && !isAccessibleAccessor(getter, receiverType, declaredType)) {
+                    getter = null; // a private isX that is not a member of the receiver leaves getX, as for dynamic Groovy
+                }
                 if (getter == null) {
                     getter = getGetterMethod(current, getterName, checkUp);
                     getter = allowStaticAccessToMember(getter, staticOnly);

@@ -2605,6 +2605,26 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-12509: a private isX that is not a member of the receiver leaves the
+    // public getX of the same class, as dynamic Groovy finds it
+    @Test
+    void testPrivateIsserAndPublicGetterOfSuperclass() {
+        assertScript '''
+            class Outer {
+                static class Base {
+                    private boolean isReady() { false }
+                    boolean getReady() { true }
+                }
+                static class Sub extends Base {
+                }
+                static class Other {
+                    static boolean test() { new Sub().ready }
+                }
+            }
+            assert Outer.Other.test()
+        '''
+    }
+
     // GROOVY-12513: through a variable declared with a superclass that has a private
     // setter, b.p = v selects the setter as b.setP(v) does
     @Test
