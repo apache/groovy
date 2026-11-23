@@ -71,6 +71,7 @@ import static org.codehaus.groovy.ast.tools.ClosureUtils.getParametersSafe;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.block;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.classX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.returnS;
+import static org.codehaus.groovy.classgen.asm.sc.StaticInvocationWriter.ENCLOSING_CLOSURE;
 import static org.codehaus.groovy.classgen.asm.sc.StaticTypesFunctionalInterfaceMetadataKey.LAMBDA_GENERATED_CONSTRUCTOR;
 import static org.codehaus.groovy.classgen.asm.sc.StaticTypesFunctionalInterfaceMetadataKey.LAMBDA_PRELOADED_RECEIVER;
 import static org.codehaus.groovy.classgen.asm.sc.StaticTypesFunctionalInterfaceMetadataKey.LAMBDA_SHARED_VARIABLES;
@@ -92,6 +93,7 @@ import static org.objectweb.asm.Opcodes.ICONST_0;
 import static org.objectweb.asm.Opcodes.INVOKESPECIAL;
 import static org.objectweb.asm.Opcodes.INVOKEVIRTUAL;
 import static org.objectweb.asm.Opcodes.NEW;
+import static org.objectweb.asm.Opcodes.PUTFIELD;
 
 /**
  * Writer responsible for generating lambda classes in statically compiled mode.
@@ -260,6 +262,13 @@ public class StaticTypesLambdaWriter extends LambdaWriter implements AbstractFun
 
         Parameter[] lambdaClassConstructorParameters = generatedLambda.constructor.getParameters();
         mv.visitMethodInsn(INVOKESPECIAL, lambdaClassInternalName, "<init>", createMethodDescriptor(VOID_TYPE, lambdaClassConstructorParameters), generatedLambda.lambdaClass.isInterface());
+
+        if (generatedLambda.lambdaClass.getDeclaredField(ENCLOSING_CLOSURE) != null) {
+            // the lambda is created in the closure around it, which is "this" here
+            mv.visitInsn(DUP);
+            mv.visitVarInsn(ALOAD, 0);
+            mv.visitFieldInsn(PUTFIELD, lambdaClassInternalName, ENCLOSING_CLOSURE, BytecodeHelper.getTypeDescription(CLOSURE_TYPE));
+        }
 
         operandStack.replace(CLOSURE_TYPE, lambdaClassConstructorParameters.length);
     }
@@ -514,7 +523,16 @@ public class StaticTypesLambdaWriter extends LambdaWriter implements AbstractFun
             addSerialVersionUIDField(lambdaClass);
         }
 
-        MethodNode syntheticLambdaMethodNode = addSyntheticLambdaMethodNode(expression, lambdaClass, abstractMethod);
+        // a name resolved through the closure around the lambda, like a method of that closure's
+        // delegate, needs the closure; the owner of the lambda is the enclosing instance. A
+        // serializable lambda does not hold the closure, which might not be serializable
+        boolean capturesEnclosingClosure = !expression.isSerializable() && controller.isInGeneratedFunction() && !controller.isStaticMethod()
+                && lambdaAnalyzer.resolvesThroughOwner(expression.getCode());
+        if (capturesEnclosingClosure) {
+            lambdaClass.addField(ENCLOSING_CLOSURE, ACC_PUBLIC | ACC_SYNTHETIC, CLOSURE_TYPE.getPlainNodeReference(), null);
+        }
+
+        MethodNode syntheticLambdaMethodNode = addSyntheticLambdaMethodNode(expression, lambdaClass, abstractMethod, capturesEnclosingClosure);
 
         Parameter[] localVariableParameters = getStoredLambdaSharedVariables(expression);
         addFieldsForLocalVariables(lambdaClass, localVariableParameters);
@@ -533,7 +551,7 @@ public class StaticTypesLambdaWriter extends LambdaWriter implements AbstractFun
         return enclosingClass.getName() + "$" + controller.getContext().getNextLambdaInnerName(outermostClass, enclosingClass, controller.getMethodNode());
     }
 
-    private MethodNode addSyntheticLambdaMethodNode(final LambdaExpression expression, final ClassNode lambdaClass, final MethodNode abstractMethod) {
+    private MethodNode addSyntheticLambdaMethodNode(final LambdaExpression expression, final ClassNode lambdaClass, final MethodNode abstractMethod, final boolean capturesEnclosingClosure) {
         Parameter[] parametersWithExactType = createParametersWithExactType(expression, abstractMethod);
         Parameter[] localVariableParameters = getLambdaSharedVariables(expression);
         removeInitialValues(localVariableParameters);
@@ -561,7 +579,7 @@ public class StaticTypesLambdaWriter extends LambdaWriter implements AbstractFun
             code
         );
         doCallMethod.setSourcePosition(expression);
-        if (lambdaAnalyzer.isNonCapturing(doCallMethod, localVariableParameters)) {
+        if (!capturesEnclosingClosure && lambdaAnalyzer.isNonCapturing(doCallMethod, localVariableParameters)) {
             lambdaAnalyzer.qualifyOuterStaticMemberReferences(doCallMethod);
             doCallMethod.setModifiers(doCallMethod.getModifiers() | ACC_STATIC);
         }
