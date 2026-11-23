@@ -523,6 +523,29 @@ final class FunctionalTypeArgumentTest {
             assert !(values[0] instanceof Shout) && !(values[1] instanceof Greeter)
         '''
 
+        assertScript shell, '''
+            interface Owned { String apply(String s); default Object getOwner() { 'default owner' } }
+            interface Delegating extends Owned { default Object getDelegate() { 'default delegate' } }
+            @CompileStatic
+            class C {
+                static List<Object> make() {
+                    List<Owned> owned = []
+                    owned.add { String s -> s }
+                    List<Delegating> delegating = []
+                    delegating.add { String s -> s }
+                    Owned o = owned[0]
+                    Delegating d = delegating[0]
+                    [owned[0], delegating[0], o.getOwner(), d.getDelegate()]
+                }
+            }
+
+            // Closure's getOwner and getDelegate would replace the default methods
+            def values = C.make()
+            assert values[0] instanceof Closure && !(values[0] instanceof Owned)
+            assert values[1] instanceof Closure && !(values[1] instanceof Delegating)
+            assert values[2] == 'default owner' && values[3] == 'default delegate'
+        '''
+
         def parent = new GroovyClassLoader()
         parent.parseClass '''
             package p

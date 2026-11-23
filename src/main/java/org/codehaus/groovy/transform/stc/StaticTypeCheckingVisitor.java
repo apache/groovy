@@ -5799,7 +5799,8 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
      * where the closure is converted as before, or if the interface is one that {@code Closure} already
      * implements, such as {@code Runnable} or {@code Callable}. Neither can it implement an interface whose
      * abstract method declares type parameters or has the name of a method of {@code Closure}, such as
-     * {@code call} or {@code isCase}. A sealed interface, which only the classes it permits may implement, and
+     * {@code call} or {@code isCase}, nor one with a default method that the closure class would replace,
+     * such as {@code getOwner()}. A sealed interface, which only the classes it permits may implement, and
      * a trait, whose methods a closure class does not get, are not implemented either, nor is an interface
      * whose method's types the closure class cannot name.
      */
@@ -5809,6 +5810,9 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
         if (sam == null || sam.getGenericsTypes() != null || CLOSURE_METHOD_NAMES.contains(sam.getName())) return false;
         for (ClassNode face : type.getAllInterfaces()) {
             if (Traits.isTrait(face)) return false;
+            for (MethodNode method : face.getMethods()) {
+                if (isReplacedByClosureClass(method)) return false;
+            }
         }
         Tuple2<ClassNode[], ClassNode> signature = GenericsUtils.parameterizeSAM(type);
         List<ClassNode> named = new ArrayList<>(List.of(type, signature.getV2()));
@@ -5818,6 +5822,25 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
             if (!isAccessibleToClosureClass(erasureOf(t))) return false;
         }
         return true;
+    }
+
+    /**
+     * Tells if a closure class would replace a default method of an interface: {@code Closure} or one of its
+     * superclasses declares a method of its name and erased parameter types, such as {@code getOwner()}, or it
+     * has the name of {@code doCall} or {@code call}, which the closure class declares. An overload such as
+     * {@code Function.andThen(Function)} of {@code Closure.andThen(Closure)} is inherited.
+     */
+    private static boolean isReplacedByClosureClass(final MethodNode method) {
+        String name = method.getName();
+        if (method.isAbstract() || method.isStatic() || !CLOSURE_METHOD_NAMES.contains(name)) return false;
+        if ("doCall".equals(name) || "call".equals(name)) return true;
+        Parameter[] erased = Arrays.stream(method.getParameters())
+                .map(p -> new Parameter(GenericsUtils.erasure(p.getType()), p.getName())).toArray(Parameter[]::new);
+        for (ClassNode type = CLOSURE_TYPE; type != null; type = type.getSuperClass()) {
+            MethodNode declared = type.getMethod(name, erased);
+            if (declared != null && !declared.isPrivate() && !declared.isStatic()) return true;
+        }
+        return false;
     }
 
     /**
