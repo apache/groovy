@@ -1016,8 +1016,8 @@ This applies to a closure literal passed as an argument or as the operand of an 
 subscript, a property or a named constructor argument, or written as a branch of a conditional expression in such a
 place. A closure passed as an argument or assigned to a subscript or property gets the types of its parameters from
 the interface, so `list.add { it.toUpperCase() }` compiles for a `List<Function<String, String>>`; elsewhere, declare
-them, as `list << { String s -> s.toUpperCase() }`. A value of type `Closure`, such as a variable, is stored as it is,
-and the compiler warns that it is not converted; `as` converts it:
+them, as `list << { String s -> s.toUpperCase() }`. A value of type `Closure`, such as a variable or a method pointer
+(`this.&m`), is stored as it is, and the compiler warns that it is not converted; `as` converts it:
 
 [source,groovy]
 ----

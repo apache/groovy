@@ -506,6 +506,38 @@ final class FunctionalTypeArgumentTest {
         }
     }
 
+    // GROOVY-12561
+    @Test
+    void testMethodPointerIsStoredAsItIs() {
+        String source = '''
+            import groovy.transform.CompileStatic
+            import java.util.function.Function
+            @CompileStatic
+            class W {
+                static String shout(String s) { s.toUpperCase() }
+                static List<Function<String, String>> make() {
+                    List<Function<String, String>> list = []
+                    list.add(W.&shout)          // warning
+                    list << W.&shout            // warning
+                    Map<String, Function<String, String>> map = [:]
+                    map['k'] = W.&shout         // warning
+                    list.add(map['k'])
+                    list
+                }
+            }
+        '''
+        def warnings = warnings(source)
+        assert warnings.size() == 3
+        assert warnings.every { it == "The Closure is stored as it is, not converted to java.util.function.Function<java.lang.String, java.lang.String>; write 'as java.util.function.Function<java.lang.String, java.lang.String>' to convert it" }
+
+        assertScript shell, source + '''
+            // a method pointer is a MethodClosure, which dynamic code calls as a closure
+            def list = W.make()
+            assert list.every { it instanceof org.codehaus.groovy.runtime.MethodClosure }
+            assert list*.call('a') == ['A', 'A', 'A']
+        '''
+    }
+
     @Test
     void testClosureLiteralIsPassedAsBeforeWhereItCannotImplementTheInterface() {
         assertScript shell, '''

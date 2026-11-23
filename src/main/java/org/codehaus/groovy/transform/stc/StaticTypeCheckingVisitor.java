@@ -5765,19 +5765,33 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
                 }
                 expression.visit(this);
                 expression.removeNodeMetaData(DELEGATION_METADATA);
+                if (expression instanceof MethodPointerExpression && visitFunctors && nthParameter != -1 && i >= nSelf && isStaticDispatchScope()) {
+                    convertClosureArgument(receiver, selectedMethod, arguments, parameters, i, nSelf, expression); // a MethodClosure
+                }
             } else if (visitFunctors && nthParameter != -1 && i >= nSelf && isStaticDispatchScope()
                     && implementsInterfaceOrIsSubclassOf(getType(expression), CLOSURE_TYPE)) {
                 // a conditional expression or a value of type Closure, such as a variable
-                ClassNode targetType = parameters[Math.min(i, nthParameter)].getType();
-                if (targetType.isArray() && i >= nthParameter)
-                    targetType = targetType.getComponentType();
-                ClassNode functionalType = getFunctionalTypeArgument(receiver, selectedMethod, arguments, i - nSelf, targetType);
-                if (functionalType != null) convertClosureValue(expression, functionalType, targetType, false);
+                convertClosureArgument(receiver, selectedMethod, arguments, parameters, i, nSelf, expression);
             }
             if (i == 0 && parameters.length > 0 && expression instanceof MapExpression) {
                 checkNamedParamsAnnotation(parameters[0], (MapExpression) expression, isNestedCopyWith(selectedMethod));
             }
         }
+    }
+
+    /**
+     * Converts a closure value passed for a parameter declared with a type parameter, which the call binds to a
+     * functional interface, as {@link #convertClosureValue} does: a value of type {@code Closure}, such as a
+     * variable or a method pointer, is passed as it is, and the type checker warns that it is.
+     */
+    private void convertClosureArgument(final ClassNode receiver, final MethodNode method, final ArgumentListExpression arguments,
+                                        final Parameter[] parameters, final int i, final int nSelf, final Expression expression) {
+        int last = parameters.length - 1;
+        ClassNode targetType = parameters[Math.min(i, last)].getType();
+        if (targetType.isArray() && i >= last)
+            targetType = targetType.getComponentType();
+        ClassNode functionalType = getFunctionalTypeArgument(receiver, method, arguments, i - nSelf, targetType);
+        if (functionalType != null) convertClosureValue(expression, functionalType, targetType, false);
     }
 
     /**
