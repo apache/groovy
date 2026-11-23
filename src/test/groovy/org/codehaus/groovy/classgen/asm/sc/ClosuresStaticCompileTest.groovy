@@ -448,6 +448,378 @@ final class ClosuresStaticCompileTest extends ClosuresSTCTest implements StaticC
         '''
     }
 
+    // a method of the delegate of a closure, called in a lambda inside the closure
+    @Test
+    void testDelegateMethodInLambdaInsideClosure() {
+        assertScript '''
+            import java.util.function.Supplier
+
+            class D {
+                String hi() { 'hi from D' }
+                String toString(int n) { 'D' * n }
+            }
+            class C {
+                List<Object> m() {
+                    List<Object> result = []
+                    new D().with {
+                        Supplier<String> s1 = () -> hi()
+                        Supplier<String> s2 = () -> toString(2)
+                        result << s1.get() << s2.get()
+                    }
+                    [1, 2, 3].with {
+                        Supplier<Integer> s = () -> size()
+                        result << s.get()
+                    }
+                    'abcd'.with {
+                        Supplier<Integer> s1 = () -> length()
+                        Supplier<String> s2 = () -> toUpperCase()
+                        result << s1.get() << s2.get()
+                    }
+                    42.with {
+                        Supplier<String> s = () -> toString(7)
+                        result << s.get()
+                    }
+                    result
+                }
+            }
+
+            assert new C().m() == ['hi from D', 'DD', 3, 4, 'ABCD', '7']
+        '''
+    }
+
+    @Test
+    void testDelegatePropertyInLambdaInsideClosure() {
+        assertScript '''
+            import java.util.function.Supplier
+
+            class D {
+                String name = 'd'
+                int count
+            }
+            class C {
+                String label = 'c'
+                List<Object> m() {
+                    D d = new D()
+                    List<Object> result = []
+                    d.with {
+                        Supplier<String> s1 = () -> name
+                        Supplier<String> s2 = () -> name + label
+                        Runnable r = () -> { name = 'e'; count += 2 }
+                        result << s1.get() << s2.get()
+                        r.run()
+                        result << s1.get()
+                    }
+                    result << d.name << d.count
+                    result
+                }
+            }
+
+            assert new C().m() == ['d', 'dc', 'e', 'e', 2]
+        '''
+    }
+
+    // the closure's resolve strategy decides, as for a call directly in the closure
+    @Test
+    void testDelegateMethodInLambdaInsideClosureWithResolveStrategy() {
+        assertScript '''
+            import java.util.function.Supplier
+
+            class D {
+                String both() { 'D.both' }
+                String onlyD() { 'D.onlyD' }
+                String toString() { 'D' }
+            }
+            class C {
+                String both() { 'C.both' }
+                String onlyC() { 'C.onlyC' }
+                String toString() { 'C' }
+                static <T> T delegateOnly(@DelegatesTo(value = D, strategy = Closure.DELEGATE_ONLY) Closure<T> block) {
+                    block.delegate = new D()
+                    block.resolveStrategy = Closure.DELEGATE_ONLY
+                    block.call()
+                }
+                static <T> T delegateFirst(@DelegatesTo(value = D, strategy = Closure.DELEGATE_FIRST) Closure<T> block) {
+                    block.delegate = new D()
+                    block.resolveStrategy = Closure.DELEGATE_FIRST
+                    block.call()
+                }
+                static <T> T ownerFirst(@DelegatesTo(D) Closure<T> block) {
+                    block.delegate = new D()
+                    block.call()
+                }
+                List<String> m() {
+                    List<String> result = []
+                    delegateOnly {
+                        Supplier<String> s1 = () -> both()
+                        Supplier<String> s2 = () -> onlyD()
+                        Supplier<String> s3 = () -> toString()
+                        result << s1.get() << s2.get() << s3.get()
+                    }
+                    delegateFirst {
+                        Supplier<String> s1 = () -> both()
+                        Supplier<String> s2 = () -> onlyD()
+                        Supplier<String> s3 = () -> onlyC()
+                        Supplier<String> s4 = () -> toString()
+                        result << s1.get() << s2.get() << s3.get() << s4.get()
+                    }
+                    ownerFirst {
+                        Supplier<String> s1 = () -> both()
+                        Supplier<String> s2 = () -> onlyD()
+                        Supplier<String> s3 = () -> onlyC()
+                        Supplier<String> s4 = () -> toString()
+                        result << s1.get() << s2.get() << s3.get() << s4.get()
+                    }
+                    result
+                }
+            }
+
+            assert new C().m() == ['D.both', 'D.onlyD', 'C',
+                                   'D.both', 'D.onlyD', 'C.onlyC', 'C',
+                                   'C.both', 'D.onlyD', 'C.onlyC', 'C']
+        '''
+    }
+
+    // the delegate is read when the lambda is called
+    @Test
+    void testDelegateSetAfterLambdaInsideClosureIsCreated() {
+        assertScript '''
+            import java.util.function.Supplier
+
+            class D {
+                String name
+                String hi() { "hi from $name" }
+            }
+            class C {
+                static List<String> twice(@DelegatesTo(D) Closure<Supplier<String>> block) {
+                    block.delegate = new D(name: 'first')
+                    Supplier<String> s = block.call()
+                    List<String> result = [s.get()]
+                    block.delegate = new D(name: 'second')
+                    result << s.get()
+                }
+                List<String> m() {
+                    twice { (Supplier<String>) (() -> hi() + '/' + name) }
+                }
+            }
+
+            assert new C().m() == ['hi from first/first', 'hi from second/second']
+        '''
+    }
+
+    @Test
+    void testDelegateMethodInNestedLambdasAndClosures() {
+        assertScript '''
+            import java.util.function.Supplier
+
+            class D {
+                String hi() { 'D' }
+            }
+            class E {
+                String ho() { 'E' }
+            }
+            class C {
+                String hey() { 'C' }
+                List<String> m() {
+                    List<String> result = []
+                    new D().with {
+                        // lambda in closure in closure
+                        Closure<String> c = { -> Supplier<String> s = () -> hi() + hey(); s.get() }
+                        result << c()
+                        new E().with {
+                            Supplier<String> s = () -> hi() + ho() + hey()
+                            result << s.get()
+                        }
+                        // closure in lambda in closure
+                        Supplier<String> s1 = () -> { Closure<String> k = { -> hi() + hey() }; k() }
+                        result << s1.get()
+                        // lambda in lambda in closure
+                        Supplier<String> s2 = () -> { Supplier<String> t = () -> hi() + hey(); t.get() }
+                        result << s2.get()
+                        Supplier<String> s3 = () -> { Supplier<String> t = () -> { Closure<String> k = { -> Supplier<String> u = () -> hi() + hey(); u.get() }; k() }; t.get() }
+                        result << s3.get()
+                        // closure with its own delegate in lambda in closure
+                        Supplier<String> s4 = () -> new E().with { hi() + ho() + hey() }
+                        result << s4.get()
+                        Supplier<String> s5 = () -> new E().with { Supplier<String> t = () -> hi() + ho() + hey(); t.get() }
+                        result << s5.get()
+                    }
+                    result
+                }
+            }
+
+            assert new C().m() == ['DC', 'DEC', 'DC', 'DC', 'DC', 'DEC', 'DEC']
+        '''
+    }
+
+    @Test
+    void testDelegateMethodInLambdaInsideClosureInStaticTraitAndScriptCode() {
+        assertScript '''
+            import java.util.function.Supplier
+
+            class D {
+                String name = 'd'
+                String hi() { 'hi' }
+            }
+            class C {
+                static String sm() {
+                    new D().with { Supplier<String> s = () -> hi() + name; s.get() }
+                }
+                static String sf = new D().with { Supplier<String> s = () -> hi() + name; s.get() }
+                String f = new D().with { Supplier<String> s = () -> hi() + name; s.get() }
+                String p
+                C() {
+                    p = new D().with { Supplier<String> s = () -> hi() + name; s.get() }
+                }
+            }
+            trait T {
+                String who() { 'T' }
+                String tm() {
+                    new D().with { Supplier<String> s = () -> hi() + name + who(); s.get() }
+                }
+                static String tsm() {
+                    new D().with { Supplier<String> s = () -> hi() + name; s.get() }
+                }
+            }
+            class U implements T {
+            }
+
+            assert C.sm() == 'hid'
+            assert C.sf == 'hid'
+            assert new C().f == 'hid'
+            assert new C().p == 'hid'
+            assert new U().tm() == 'hidT'
+            assert U.tsm() == 'hid'
+
+            String scriptMethod() {
+                new D().with { Supplier<String> s = () -> hi() + name; s.get() }
+            }
+            assert scriptMethod() == 'hid'
+            assert new D().with { Supplier<String> s = () -> hi() + name; s.get() } == 'hid'
+        '''
+    }
+
+    @Test
+    void testDelegateMethodInLambdaInsideRehydratedClosure() {
+        assertScript '''
+            import java.util.function.Supplier
+
+            class D {
+                String name
+                String hi() { "hi from $name" }
+            }
+            class C {
+                static Closure<String> block(@DelegatesTo(D) Closure<String> block) {
+                    block
+                }
+                Closure<String> viaLambda() {
+                    block { -> Supplier<String> s = () -> hi(); s.get() }
+                }
+                Closure<String> direct() {
+                    block { -> hi() }
+                }
+            }
+
+            C c = new C()
+            for (Closure<String> closure : [c.viaLambda(), c.direct()]) {
+                closure.delegate = new D(name: 'one')
+                assert closure() == 'hi from one'
+                assert closure.rehydrate(new D(name: 'two'), c, c)() == 'hi from two'
+                assert closure.rehydrate(new D(name: 'three'), null, null)() == 'hi from three'
+                groovy.test.GroovyAssert.shouldFail(NullPointerException) {
+                    closure.dehydrate()()
+                }
+            }
+        '''
+    }
+
+    // the delegate refers back to the lambda, so the lambda is reached again while it is being read
+    @Test
+    void testSerializableLambdaInsideClosureHeldByItsDelegate() {
+        assertScript '''
+            import java.util.function.Supplier
+
+            interface SerializableSupplier extends Supplier<String>, Serializable {}
+            interface Marker {}
+
+            class D implements Serializable {
+                Supplier<String> held
+                String hi() { "hi, held: ${held instanceof Supplier}" }
+            }
+            class C implements Serializable {
+                SerializableSupplier direct(D d) {
+                    d.with { SerializableSupplier s = () -> hi(); held = s; s }
+                }
+                Supplier<String> intersection(D d) {
+                    d.with {
+                        int unused = 0
+                        Supplier<String> s = (Supplier & Serializable & Marker) () -> hi()
+                        held = s
+                        return
+                    }
+                    d.held
+                }
+            }
+
+            Object roundTrip(Object o) {
+                def bytes = new ByteArrayOutputStream()
+                bytes.withObjectOutputStream { it.writeObject(o) }
+                new ByteArrayInputStream(bytes.toByteArray()).newObjectInputStream(C.classLoader).readObject()
+            }
+
+            C c = new C()
+            def direct = (SerializableSupplier) roundTrip(c.direct(new D()))
+            assert direct.get() == 'hi, held: true'
+
+            def intersection = (Supplier<String>) roundTrip(c.intersection(new D()))
+            assert intersection instanceof Marker
+            assert intersection.get() == 'hi, held: true'
+        '''
+    }
+
+    // a lambda that uses no name of the delegate keeps its shape, and its owner is the enclosing instance either way
+    @Test
+    void testLambdaInsideClosureCapturesClosureOnlyWhenNeeded() {
+        assertScript '''
+            import java.util.function.Supplier
+
+            class D {
+                String hi() { 'D' }
+                String println(String s) { "D.println($s)" }
+            }
+            class C {
+                String hey() { 'C' }
+                String toString() { 'C' }
+                List<List<Object>> m() {
+                    List<List<Object>> result = []
+                    new D().with {
+                        // no capture
+                        List<Object> identities = []
+                        for (int i = 0; i < 3; i += 1) {
+                            Supplier<String> s = () -> 'x'
+                            identities << System.identityHashCode(s)
+                        }
+                        result << identities.unique()
+                        // the enclosing instance only
+                        Supplier<List<Object>> s1 = () -> [hey(), toString(), owner, delegate, thisObject, metaClass.theClass.declaredFields*.name]
+                        result << s1.get()
+                        // the enclosing instance and the closure
+                        Supplier<List<Object>> s2 = () -> [hi(), hey(), toString(), owner, delegate, thisObject, metaClass.theClass.declaredFields*.name, println('x')]
+                        result << s2.get()
+                    }
+                    result
+                }
+            }
+
+            C c = new C()
+            def (List<Object> n, List<Object> r1, List<Object> r2) = c.m()
+            assert n.size() == 1
+            assert r1[0..1] == ['C', 'C'] && r1[2..4].every { it.is(c) }
+            assert !((List) r1[5]).contains('$enclosingClosure')
+            assert r2[0..2] == ['D', 'C', 'C'] && r2[3..5].every { it.is(c) } && r2[7] == 'D.println(x)'
+            assert ((List) r2[6]).contains('$enclosingClosure')
+        '''
+    }
+
     // GROOVY-5811
     @Test
     void testClosureExceptionUnwrap() {
