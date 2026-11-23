@@ -214,6 +214,53 @@ final class ClosuresStaticCompileTest extends ClosuresSTCTest implements StaticC
 
     // GROOVY-12576
     @Test
+    void testInheritedObjectMethodInClosureWithoutThisObject() {
+        assertScript '''
+            class C {
+                Closure<String> closure() {
+                    return { -> toString() }
+                }
+            }
+
+            C c = new C()
+            Closure<String> closure = c.closure()
+            assert closure() == c.toString()
+
+            Closure<String> copy = closure.dehydrate()
+            assert copy() == copy.toString()
+
+            // without a this object, the owner's method is called
+            assert closure.rehydrate(null, c, null)() == c.toString()
+            assert closure.rehydrate('o', 'o', 'o')() == 'o'
+        '''
+    }
+
+    // GROOVY-12576
+    @Test
+    void testInstanceExtensionMethodInClosureWithoutThisObject() {
+        assertScript '''
+            class C {
+                String toString() { 'C!' }
+                Closure<String> closure() {
+                    return { -> inspect() }
+                }
+            }
+
+            C c = new C()
+            Closure<String> closure = c.closure()
+            assert closure() == 'C!'
+
+            Closure<String> copy = closure.dehydrate()
+            assert copy() == copy.toString()
+
+            // without a this object, the extension method is called on the owner
+            assert closure.rehydrate(null, c, null)() == 'C!'
+            assert closure.rehydrate('o', 'o', 'o')() == "'o'"
+        '''
+    }
+
+    // GROOVY-12576
+    @Test
     void testObjectExtensionMethodInLambdaInsideClosure() {
         assertScript '''
             import java.util.function.Supplier
