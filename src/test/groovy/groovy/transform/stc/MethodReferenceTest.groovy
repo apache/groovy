@@ -2641,6 +2641,33 @@ final class MethodReferenceTest {
         assert err.message =~ /Argument is a method reference, but parameter type 'T' is not a functional interface/
     }
 
+    // GROOVY-12823
+    @Test
+    void testNotFunctionalInterface4() {
+        assertScript shell, '''
+            @CompileStatic
+            class C {
+                static <T> T id(T t) { t }
+                static String twice(String s) { s + s }
+                static Function<String, String> returned() {
+                    id(String::trim)
+                }
+                static List<Object> test() {
+                    Function<String, String> assigned = id(String::toUpperCase)
+                    Function<String, String> bound = id(C::twice)
+                    Function<String, StringBuilder> constructor = id(StringBuilder::new)
+                    Supplier<List<String>> supplier = id(ArrayList::new)
+                    Object cast = (Function<String, String>) id(String::trim)
+                    [assigned.apply('a'), bound.apply('a'), constructor.apply('a').toString(), supplier.get(),
+                     returned().apply(' a '), ((Function<String, String>) cast).apply(' a ')]
+                }
+            }
+
+            // the type the call is assigned, returned or cast to gives T, as for a lambda
+            assert C.test() == ['A', 'aa', 'a', [], 'a', 'a']
+        '''
+    }
+
     // GROOVY-11254
     @Test
     void testLocalFunctionalInterface() {

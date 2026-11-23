@@ -5765,7 +5765,8 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
      * or for the second {@code T} of {@code <T extends Function<String, String>> m(T a, T b)} called with a
      * subinterface of {@code Function} as the first argument. A lambda or method reference for the parameter
      * is compiled for that interface. Neither the argument itself nor any closure, lambda or method reference
-     * passed for a parameter that is not a functional interface is a witness for the type parameter.
+     * passed for a parameter that is not a functional interface is a witness for the type parameter. When no
+     * argument is one, the type the call's value is assigned, returned or cast to gives the type parameter.
      *
      * @return the interface, or {@code null} if the parameter is not declared with a type parameter or the call
      *         does not bind it to a functional interface
@@ -5790,7 +5791,16 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
             if (typeCheckingContext.getEnclosingMethodCall() instanceof MethodCallExpression call && call.getArguments() == arguments) {
                 typeArguments = call.getGenericsTypes();
             }
+            ClassNode typeParameter = type;
             type = inferGenericsOfCall(receiver, method, args(witnesses), typeArguments, parameterType);
+            if ((type == null || !isSAMType(type)) && !method.isConstructor() && method.getGenericsTypes() != null) {
+                // only the type the call's value is assigned, returned or cast to gives the type parameter, such as
+                // T of "Function<String, String> f = id(String::trim)" for "<T> T id(T t)", as for a lambda
+                Map<GenericsTypeName, GenericsType> context = new HashMap<>();
+                extractGenericsConnectionsFromCallTarget(arguments, method.getReturnType(), method.getGenericsTypes(), context);
+                ClassNode targetTyped = context.isEmpty() ? null : applyGenericsContext(context, typeParameter);
+                if (targetTyped != null && !targetTyped.isGenericsPlaceHolder()) type = targetTyped;
+            }
         }
         if (type == null || type.isGenericsPlaceHolder() || !isSAMType(type)
                 || !implementsInterfaceOrIsSubclassOf(type, parameterType.redirect())) {
