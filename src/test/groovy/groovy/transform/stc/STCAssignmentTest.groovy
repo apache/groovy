@@ -151,6 +151,12 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
             x.viaProperty(y, 'java.lang.String')
             assert x.f == String
             assert y.f == String
+
+            Map<String, Class<String>> m = [:]
+            m.k = 'java.lang.String'
+            assert m.k == String
+            m['k'] = 'java.lang.String'
+            assert m.k == String
         '''
 
         shouldFailWithMessages '''
@@ -169,8 +175,12 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
                     this.f = type
                     other.f = type
                 }
+                void viaMap(Map<String, Class<? extends CharSequence>> m, Class<?> type) {
+                    m.k = type
+                }
             }
         ''',
+        'Incompatible generic argument types. Cannot assign java.lang.Class<?> to: java.lang.Class<? extends java.lang.CharSequence>',
         'Incompatible generic argument types. Cannot assign java.lang.Class<?> to: java.lang.Class<? extends java.lang.CharSequence>',
         'Incompatible generic argument types. Cannot assign java.lang.Class<?> to: java.lang.Class<? extends java.lang.CharSequence>',
         'Incompatible generic argument types. Cannot assign java.lang.Class<?> to: java.lang.Class<? extends java.lang.CharSequence>'
