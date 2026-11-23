@@ -1627,7 +1627,7 @@ public class CompilerConfiguration {
      * The default, {@link Integer#MAX_VALUE}, imposes no practical limit.
      *
      * @return the per-method frame computation memory limit in bytes
-     * @since 7.0.0
+     * @since 6.0.1
      */
     public int getFrameComputationMaxBytes() {
         return frameComputationMaxBytes;
@@ -1641,7 +1641,7 @@ public class CompilerConfiguration {
      *
      * @param maxBytes the per-method frame computation memory limit in bytes
      * @throws IllegalArgumentException if {@code maxBytes} is less than 1
-     * @since 7.0.0
+     * @since 6.0.1
      */
     public void setFrameComputationMaxBytes(final int maxBytes) {
         if (maxBytes < 1) throw new IllegalArgumentException("frame computation max bytes must be positive: " + maxBytes);
@@ -1654,7 +1654,7 @@ public class CompilerConfiguration {
      * The default, {@link Long#MAX_VALUE}, imposes no practical limit.
      *
      * @return the per-method frame computation operation limit
-     * @since 7.0.0
+     * @since 6.0.1
      */
     public long getFrameComputationMaxOperations() {
         return frameComputationMaxOperations;
@@ -1669,7 +1669,7 @@ public class CompilerConfiguration {
      *
      * @param maxOperations the per-method frame computation operation limit
      * @throws IllegalArgumentException if {@code maxOperations} is less than 1
-     * @since 7.0.0
+     * @since 6.0.1
      */
     public void setFrameComputationMaxOperations(final long maxOperations) {
         if (maxOperations < 1) throw new IllegalArgumentException("frame computation max operations must be positive: " + maxOperations);
