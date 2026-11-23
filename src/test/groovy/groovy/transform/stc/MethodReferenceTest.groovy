@@ -2668,6 +2668,45 @@ final class MethodReferenceTest {
         '''
     }
 
+    // GROOVY-12825
+    @Test
+    void testNotFunctionalInterface5() {
+        assertScript shell, '''
+            class Holder {
+                final Function<String, String> f
+                Holder(Function<String, String> f) { this.f = f }
+            }
+            @CompileStatic
+            class C {
+                static <T> T id(T t) { t }
+                static <T> T wrap(T t) { t }
+                static String take(Function<String, String> f) { f.apply(' a ') }
+                static <U> String takeGeneric(Function<U, String> f, U u) { f.apply(u) }
+                static List<Object> test() {
+                    Function<String, String> assigned = wrap(id(String::trim))
+                    [take(id(String::trim)), take(id(String::new)), new Holder(id(String::toUpperCase)).f.apply('b'),
+                     takeGeneric(id(String::valueOf), 7), take(wrap(id(String::trim))), assigned.apply(' c '),
+                     ((Function<String, String>) wrap(id(String::trim))).apply(' d ')]
+                }
+            }
+
+            // the parameter of the enclosing call gives T, through each call
+            assert C.test() == ['a', ' a ', 'B', '7', 'a', 'c', 'd']
+        '''
+
+        def err = shouldFail shell, '''
+            @CompileStatic
+            class C {
+                static <T> T id(T t) { t }
+                static String take(Object o) { o.toString() }
+                static String test() {
+                    take(id(String::trim))
+                }
+            }
+        '''
+        assert err.message =~ /Argument is a method reference, but parameter type 'T' is not a functional interface/
+    }
+
     // GROOVY-11254
     @Test
     void testLocalFunctionalInterface() {

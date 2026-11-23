@@ -439,6 +439,8 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     private static final Object BODY_RETURN_TYPE = new Object();
     /** Metadata key marking an untyped closure or lambda parameter declared with the type its functional interface gives it. */
     private static final Object FUNCTIONAL_PARAMETER_TYPE = new Object();
+    /** Metadata key for the method references of a call that an argument of the enclosing call resolves. */
+    private static final Object DEFERRED_METHOD_REFERENCES = new Object();
     /** Metadata key for the type a method call's value is assigned or returned to, a witness for its type arguments. */
     private static final Object CALL_TARGET_TYPE = new Object();
     /** Cached {@code Closure#getDelegate()} method. */
@@ -5732,6 +5734,14 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
                             inferClosureParameterTypes(receiver, arguments, lambda, target, selectedMethod);
                             expression.putNodeMetaData(PARAMETER_TYPE, lambda.getNodeMetaData(PARAMETER_TYPE));
                             expression.putNodeMetaData(CLOSURE_ARGUMENTS, lambda.getNodeMetaData(CLOSURE_ARGUMENTS));
+                        } else if (i >= nSelf && isFunctionalLiteral(expression) && declared.getType().isGenericsPlaceHolder()
+                                && isArgumentOfEnclosingCall(typeCheckingContext.getEnclosingMethodCall())) {
+                            // the parameter of the call this one is an argument of may give the type parameter, as in
+                            // "take(id(String::trim))" for "take(Function<String, String>)": resolved with that call
+                            List<Runnable> deferred = typeCheckingContext.getEnclosingMethodCall().getNodeMetaData(DEFERRED_METHOD_REFERENCES, x -> new ArrayList<>());
+                            Expression call = typeCheckingContext.getEnclosingMethodCall();
+                            int index = i - nSelf;
+                            deferred.add(() -> resolveDeferredMethodReference(call, receiver, selectedMethod, arguments, index, declared, (MethodReferenceExpression) expression));
                         } else {
                             addStaticTypeError("Argument is a method reference, but parameter type '" + prettyPrintTypeName(targetType) + "' is not a functional interface", expression);
                         }
@@ -5740,9 +5750,83 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
                 expression.visit(this);
                 expression.removeNodeMetaData(DELEGATION_METADATA);
             }
+            if (visitFunctors && expression.getNodeMetaData(DEFERRED_METHOD_REFERENCES) != null) {
+                // a call whose method reference argument takes the type parameter from the parameter here
+                ClassNode callTarget = null;
+                if (nthParameter != -1 && i >= nSelf) {
+                    callTarget = parameters[Math.min(i, nthParameter)].getType();
+                    if (callTarget.isArray() && i >= nthParameter) callTarget = callTarget.getComponentType();
+                    callTarget = applyGenericsContext(extractPlaceHoldersVisibleToDeclaration(receiver, selectedMethod, arguments), callTarget);
+                }
+                List<Runnable> deferred = expression.getNodeMetaData(DEFERRED_METHOD_REFERENCES);
+                expression.removeNodeMetaData(DEFERRED_METHOD_REFERENCES);
+                Expression call = typeCheckingContext.getEnclosingMethodCall();
+                if (callTarget != null && callTarget.isGenericsPlaceHolder() && selectedMethod != null && selectedMethod.getGenericsTypes() != null) {
+                    // a type parameter of this call, as in "take(wrap(id(String::trim)))": its target type gives it
+                    ClassNode typeParameter = callTarget;
+                    Runnable resolve = () -> {
+                        typeCheckingContext.pushEnclosingMethodCall(call);
+                        try {
+                            Map<GenericsTypeName, GenericsType> context = new HashMap<>();
+                            extractGenericsConnectionsFromCallTarget(arguments, selectedMethod.getReturnType(), selectedMethod.getGenericsTypes(), context);
+                            ClassNode type = context.isEmpty() ? null : applyGenericsContext(context, typeParameter);
+                            if (type != null && !type.isGenericsPlaceHolder()) expression.putNodeMetaData(CALL_TARGET_TYPE, type);
+                        } finally {
+                            typeCheckingContext.popEnclosingMethodCall();
+                        }
+                        deferred.forEach(Runnable::run);
+                    };
+                    if (call.getNodeMetaData(CALL_TARGET_TYPE) == null && isArgumentOfEnclosingCall(call)) {
+                        call.<List<Runnable>>getNodeMetaData(DEFERRED_METHOD_REFERENCES, x -> new ArrayList<>()).add(resolve);
+                    } else {
+                        resolve.run();
+                    }
+                } else {
+                    if (callTarget != null && !isDynamicTyped(callTarget) && !isObjectType(callTarget)) {
+                        expression.putNodeMetaData(CALL_TARGET_TYPE, callTarget);
+                    }
+                    deferred.forEach(Runnable::run);
+                }
+            }
             if (i == 0 && parameters.length > 0 && expression instanceof MapExpression) {
                 checkNamedParamsAnnotation(parameters[0], (MapExpression) expression, isNestedCopyWith(selectedMethod));
             }
+        }
+    }
+
+    /**
+     * Tells if the call is an argument of the call that encloses it, which is visited before that call's method is
+     * chosen.
+     */
+    private boolean isArgumentOfEnclosingCall(final Expression call) {
+        List<Expression> calls = typeCheckingContext.getEnclosingMethodCalls();
+        if (calls.size() < 2 || calls.get(0) != call || !(calls.get(1) instanceof MethodCall enclosing)) return false;
+        return InvocationWriter.makeArgumentList(enclosing.getArguments()).getExpressions().stream().anyMatch(argument -> argument == call);
+    }
+
+    /**
+     * Resolves a method reference passed for a type parameter that only the call's target type gives, once the
+     * call is known to be an argument of a parameter of the enclosing call: the type of that parameter is the
+     * call's target type, as for an assignment. Otherwise, the method reference is rejected, as before.
+     */
+    private void resolveDeferredMethodReference(final Expression call, final ClassNode receiver, final MethodNode method, final ArgumentListExpression arguments,
+                                                final int index, final Parameter declared, final MethodReferenceExpression reference) {
+        typeCheckingContext.pushEnclosingMethodCall(call);
+        try {
+            ClassNode functionalType = getFunctionalTypeArgument(receiver, method, arguments, index, declared.getType());
+            if (functionalType != null && functionalType.isInterface()) {
+                Map<GenericsTypeName, GenericsType> context = extractPlaceHoldersVisibleToDeclaration(receiver, method, arguments);
+                functionalType = applyGenericsContext(context, functionalType);
+                Parameter target = declared.getAnnotations(CLOSUREPARAMS_CLASSNODE).isEmpty() ? new Parameter(functionalType, declared.getName()) : declared;
+                LambdaExpression lambda = constructLambdaExpressionForMethodReference(functionalType, reference);
+                inferClosureParameterTypes(receiver, arguments, lambda, target, method);
+                reference.putNodeMetaData(PARAMETER_TYPE, lambda.getNodeMetaData(PARAMETER_TYPE));
+                reference.putNodeMetaData(CLOSURE_ARGUMENTS, lambda.getNodeMetaData(CLOSURE_ARGUMENTS));
+            } else {
+                addStaticTypeError("Argument is a method reference, but parameter type '" + prettyPrintTypeName(declared.getType()) + "' is not a functional interface", reference);
+            }
+        } finally {
+            typeCheckingContext.popEnclosingMethodCall();
         }
     }
 
