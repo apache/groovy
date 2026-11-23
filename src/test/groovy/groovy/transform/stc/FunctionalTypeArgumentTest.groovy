@@ -269,6 +269,37 @@ final class FunctionalTypeArgumentTest {
 
     // GROOVY-12561
     @Test
+    void testClosureLiteralImplementsAnInterfaceWithWildcardTypeArguments() {
+        assertScript shell, '''
+            @CompileStatic
+            class C {
+                static List<Object> make() {
+                    List<Function<? super String, Integer>> lengths = []
+                    lengths.add { String s -> s.length() }
+                    List<Supplier<? extends CharSequence>> suppliers = []
+                    suppliers.add { 'supplied' }
+                    List<Function<?, String>> anything = []
+                    anything.add { Object o -> o.toString() + '!' }
+                    List<Consumer<? super String>> consumers = []
+                    List<String> consumed = []
+                    consumers.add { String s -> consumed << s }
+                    consumers[0].accept('consumed')
+                    Function<? super String, Integer> length = lengths[0]
+                    [length.apply('abc'), suppliers[0].get(), anything[0], consumed, lengths[0], consumers[0]]
+                }
+            }
+
+            def values = C.make()
+            assert values[0] == 3 && values[1] == 'supplied' && values[3] == ['consumed']
+            // the class implements the interface with the type argument the wildcard stands for, and its erasure
+            assert values[2].apply(1) == '1!' && values[4].apply('ab') == 2
+            assert values[2] instanceof Function && values[4] instanceof Function && values[5] instanceof Consumer
+            assert values[4].call('abcd') == 4 // still a closure
+        '''
+    }
+
+    // GROOVY-12561
+    @Test
     void testClosureLiteralAssignedToASubscriptOrPropertyImplementsItsInterface() {
         assertScript shell, '''
             class Holder<T> { T value }

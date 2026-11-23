@@ -26,6 +26,7 @@ import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.CodeVisitorSupport;
+import org.codehaus.groovy.ast.GenericsType;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.Variable;
@@ -49,6 +50,7 @@ import org.codehaus.groovy.transform.stc.ExtensionMethodNode;
 import org.objectweb.asm.Opcodes;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
@@ -380,8 +382,9 @@ public class StaticTypesClosureWriter extends ClosureWriter {
      * for its erasure. The closure is then stored as it is: dynamic code can still call it as a closure.
      */
     private static void addTargetInterface(final ClassNode closureClass, final MethodNode doCallMethod, final ClosureExpression expression) {
-        ClassNode type = expression.getNodeMetaData(CLOSURE_TARGET_INTERFACE);
-        if (type == null || closureClass.implementsInterface(type)) return;
+        ClassNode target = expression.getNodeMetaData(CLOSURE_TARGET_INTERFACE);
+        if (target == null || closureClass.implementsInterface(target)) return;
+        ClassNode type = withoutWildcards(target);
 
         MethodNode sam = ClassHelper.findSAM(type);
         Tuple2<ClassNode[], ClassNode> signature = GenericsUtils.parameterizeSAM(type);
@@ -415,6 +418,32 @@ public class StaticTypesClosureWriter extends ClosureWriter {
 
         closureClass.addInterface(type);
         addGeneratedMethod(closureClass, new MethodNode(sam.getName(), Opcodes.ACC_PUBLIC, returnType, parameters, sam.getExceptions(), code), true);
+    }
+
+    /**
+     * The interface as a class can implement it: a type argument may not be a wildcard. {@code ? super X} and
+     * {@code ? extends X} become {@code X}, as for the parameter and return types of the interface method, and
+     * {@code ?} the erasure of the type parameter, so the verifier finds the method that the bridge calls.
+     */
+    private static ClassNode withoutWildcards(final ClassNode type) {
+        GenericsType[] arguments = type.getGenericsTypes();
+        if (arguments == null || Arrays.stream(arguments).noneMatch(GenericsType::isWildcard)) return type;
+        GenericsType[] parameters = type.redirect().getGenericsTypes();
+        GenericsType[] concrete = new GenericsType[arguments.length];
+        for (int i = 0; i < arguments.length; i += 1) {
+            GenericsType argument = arguments[i];
+            if (!argument.isWildcard()) {
+                concrete[i] = argument;
+            } else if (argument.getLowerBound() != null) {
+                concrete[i] = argument.getLowerBound().asGenericsType();
+            } else if (argument.getUpperBounds() != null) {
+                concrete[i] = argument.getUpperBounds()[0].asGenericsType();
+            } else {
+                ClassNode[] bounds = parameters != null ? parameters[i].getUpperBounds() : null;
+                concrete[i] = (bounds != null ? GenericsUtils.erasure(bounds[0]) : ClassHelper.OBJECT_TYPE).asGenericsType();
+            }
+        }
+        return GenericsUtils.makeClassSafeWithGenerics(type.redirect(), concrete);
     }
 
     private static MethodCallExpression callDoCall(final ClassNode closureClass, final MethodNode doCallMethod, final Expression arguments) {
