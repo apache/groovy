@@ -9238,9 +9238,9 @@ trying: for (ClassNode[] signature : signatures) {
      * {@link StaticTypesMarker#ENCLOSING_INSTANCE_OF_RECEIVER}.
      * <p>
      * These rules are for calls. A method pointer or reference ({@code x.&m},
-     * {@code x::m}) is resolved elsewhere, without the exceptions for a static method,
-     * the declaring class and an instance with no enclosing instance, because dynamic
-     * Groovy fails on those.
+     * {@code x::m}) is resolved elsewhere, with the exceptions for an enum constant
+     * body and a static method of an enclosing class only, because dynamic Groovy
+     * fails on the others.
      */
     protected List<MethodNode> findMethod(ClassNode receiver, final String name, final ClassNode... args) {
         if (isPrimitiveType(receiver)) receiver = getWrapper(receiver);
@@ -9379,13 +9379,16 @@ trying: for (ClassNode[] signature : signatures) {
     /**
      * Removes the private methods that {@code type} only inherits from a superclass
      * (JLS 8.2). A method declared by {@code declaredType} is kept: that is the
-     * declared type of a variable whose inferred type is the narrower type. For a
-     * call, three cases that dynamic Groovy runs are kept as well: a private static
-     * method, a private method called from its declaring class, and one called on
-     * an enum constant body or an anonymous class created in a static context that
-     * is nested in the declaring class: having no enclosing instance, it calls the
-     * method on itself. For a method reference or pointer they are not, because
-     * dynamic Groovy fails on those.
+     * declared type of a variable whose inferred type is the narrower type. The
+     * cases that dynamic Groovy runs are kept as well. For a call and for a method
+     * reference or pointer: a private method of the enum of an enum constant body,
+     * which the meta-class of the body finds, and a private static method of a class
+     * that encloses {@code type}, which dynamic Groovy finds in the outer class. For
+     * a call, also any other private static method, a private method called from its
+     * declaring class, and one called on an anonymous class created in a static
+     * context that is nested in the declaring class, which has no enclosing instance
+     * and calls the method on itself. For a method reference or pointer these are
+     * not kept, because dynamic Groovy fails on those.
      */
     private List<MethodNode> removeInheritedPrivateMethods(final List<MethodNode> methods, final ClassNode type, final ClassNode declaredType, final boolean call) {
         ClassNode enclosingClass = typeCheckingContext.getEnclosingClassNode();
@@ -9393,7 +9396,9 @@ trying: for (ClassNode[] signature : signatures) {
                 && hasNoEnclosingInstance(enclosingClass) && !Modifier.isStatic(enclosingClass.getModifiers());
         Predicate<MethodNode> inherited = method -> isInheritedPrivateMethod(method, type)
                 && !method.getDeclaringClass().equals(declaredType)
-                && !(call && (method.isStatic() || method.getDeclaringClass().equals(enclosingClass)
+                && !(method.isStatic() && (call || type.getOuterClasses().contains(method.getDeclaringClass())))
+                && !isPrivateMethodOfEnumOfConstantBody(method, type)
+                && !(call && (method.getDeclaringClass().equals(enclosingClass)
                         || (selfWithoutEnclosingInstance && enclosingClass.getOuterClasses().contains(method.getDeclaringClass()))));
         if (methods.stream().noneMatch(inherited)) return methods;
 
@@ -9422,6 +9427,14 @@ trying: for (ClassNode[] signature : signatures) {
             return false; // a member of the receiver
         }
         return findEnclosingInstanceTypeWithMethod(receiverType, method) != null;
+    }
+
+    /**
+     * Determines if {@code method} is a private method of the enum that {@code type},
+     * an enum constant body, extends: the meta-class of the body finds it there.
+     */
+    private static boolean isPrivateMethodOfEnumOfConstantBody(final MethodNode method, final ClassNode type) {
+        return type.redirect() instanceof EnumConstantClassNode && method.getDeclaringClass().equals(type.getUnresolvedSuperClass());
     }
 
     /**

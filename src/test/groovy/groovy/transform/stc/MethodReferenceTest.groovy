@@ -3162,6 +3162,40 @@ final class MethodReferenceTest {
         }
     }
 
+    // GROOVY-12510: dynamic Groovy references a private static method through a
+    // subclass nested in its class, which it finds in the outer class, and a private
+    // method of an enum through an enum constant body, which the meta-class of the
+    // body finds
+    @ParameterizedTest
+    @ValueSource(strings=['@CompileDynamic','@TypeChecked','@CompileStatic'])
+    void testPrivateStaticOrEnumMethodReferenceThroughSubclass(String tag) {
+        assertScript shell, """
+            $tag
+            class Box {
+                private static String sm() { 'sm' }
+                static List test() { [((Supplier<String>) Sub::sm).get(), Sub.&sm()] }
+                static class Sub extends Box {
+                    static List test() { [((Supplier<String>) Sub::sm).get(), Sub.&sm()] }
+                }
+                static class Other {
+                    static List test() { [((Supplier<String>) Sub::sm).get(), Sub.&sm()] }
+                }
+            }
+            $tag
+            enum E {
+                A {
+                    List test() { [((Supplier<String>) this::helper).get(), this.&helper()] }
+                }
+                private String helper() { 'helper:' + name() }
+                List test() { null }
+            }
+            assert Box.test() == ['sm', 'sm']
+            assert Box.Sub.test() == ['sm', 'sm']
+            assert Box.Other.test() == ['sm', 'sm']
+            assert E.A.test() == ['helper:A', 'helper:A']
+        """
+    }
+
     // GROOVY-12510
     @ParameterizedTest
     @ValueSource(strings=['@CompileDynamic','@TypeChecked','@CompileStatic'])

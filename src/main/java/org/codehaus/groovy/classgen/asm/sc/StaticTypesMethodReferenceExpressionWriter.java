@@ -21,6 +21,7 @@ package org.codehaus.groovy.classgen.asm.sc;
 import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
+import org.codehaus.groovy.ast.EnumConstantClassNode;
 import org.codehaus.groovy.ast.ConstructorNode;
 import org.codehaus.groovy.ast.DynamicVariable;
 import org.codehaus.groovy.ast.GenericsType;
@@ -681,10 +682,11 @@ public class StaticTypesMethodReferenceExpressionWriter extends MethodReferenceE
      * <p>
      * A private method of a superclass is left out, since it is not a member of the type (JLS 8.2), unless it
      * is declared by the declared type of the variable {@code typeOrTargetRef}, whose type flow typing narrowed
-     * to a subclass: the reference is then made through the declared type. Unlike a call, a static method, a
-     * reference made in the declaring class, and one on an enum constant body or an anonymous class created in a
-     * static context nested in the declaring class, which has no enclosing instance, are no exception, because
-     * dynamic Groovy fails on those.
+     * to a subclass: the reference is then made through the declared type. As for a call, a private method of the
+     * enum of an enum constant body is kept, which the meta-class of the body finds, and so is a private static
+     * method of a class that encloses the type, which dynamic Groovy finds in the outer class. Unlike a call, any
+     * other private static method, a reference made in the declaring class and one on an anonymous class created in
+     * a static context are no exception, because dynamic Groovy fails on those.
      */
     private List<MethodNode> findVisibleMethods(final String name, final ClassNode type, final Expression typeOrTargetRef) {
         List<MethodNode> methods = type.getMethods(name);
@@ -702,7 +704,9 @@ public class StaticTypesMethodReferenceExpressionWriter extends MethodReferenceE
         methods = filterMethodsByVisibility(methods, controller.getClassNode());
 
         ClassNode declaredType = getDeclaredType(typeOrTargetRef);
-        methods.removeIf(method -> isInheritedPrivateMethod(method, type) && !method.getDeclaringClass().equals(declaredType));
+        methods.removeIf(method -> isInheritedPrivateMethod(method, type) && !method.getDeclaringClass().equals(declaredType)
+                && !(method.isStatic() && type.getOuterClasses().contains(method.getDeclaringClass()))
+                && !(type.redirect() instanceof EnumConstantClassNode && method.getDeclaringClass().equals(type.getUnresolvedSuperClass())));
         return methods;
     }
 
