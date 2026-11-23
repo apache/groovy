@@ -8861,13 +8861,31 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Support the subscript operator for a Map.
      * <pre class="language-groovy groovyTestCase">def map = [1:10]
      * assert map[1] == 10</pre>
+     * <p>
+     * A {@link GString} is looked up as itself first. When that key is
+     * present its value is returned, including null, and a {@code String}
+     * of the same text is not consulted. When the {@code GString} is absent,
+     * the {@link String} from one {@code toString()} call is looked up.
+     * A map literal stores that rendering, and a subscript whose static type
+     * is not {@code String} or {@code GString} selects this method, so the
+     * literal's entry is still found. A null key and every other key are
+     * passed to {@link Map#get(Object)} unchanged. Dynamic dispatch of a
+     * {@code GString} subscript selects the {@code String} overload instead,
+     * which renders the argument before {@code get}.
      *
      * @param self a Map
      * @param key  an Object as a key for the map
-     * @return the value corresponding to the given key
+     * @return the value for the key that matched, or null when no key matched
      * @since 1.0
      */
     public static <K,V> V getAt(Map<K,V> self, Object key) {
+        if (key instanceof GString gString) {
+            V stored = self.get(key);
+            if (stored != null || self.containsKey(key)) {
+                return stored;
+            }
+            return self.get(gString.toString());
+        }
         return self.get(key);
     }
 

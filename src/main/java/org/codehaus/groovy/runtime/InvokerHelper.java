@@ -594,8 +594,12 @@ public class InvokerHelper {
      * The initial capacity is {@link #initialCapacity(int)} of
      * {@code values.length / 2}. A pair whose first element is a
      * {@link SpreadMap} and whose second element is a {@link Map} contributes
-     * that map's entries. Every other pair is stored as one key and value.
+     * that map's entries, keeping each key as that map stored it. Every other
+     * pair is stored as one key and value. A direct key that is a
+     * {@link GString} is stored as the {@link String} from one
+     * {@code toString()} call, so a later subscript can find the entry.
      * A trailing element left without a pair is ignored.
+     * Values are stored as they are, including a {@code GString} value.
      *
      * @param values alternating keys and values, with optional spread pairs
      * @return the collected entries in insertion order
@@ -611,10 +615,38 @@ public class InvokerHelper {
                 }
                 i += 2;
             } else {
-                answer.put(values[i++], values[i++]);
+                answer.put(renderedMapKey(values[i++]), values[i++]);
             }
         }
         return answer;
+    }
+
+    /**
+     * Key stored for one direct entry of a map literal.
+     * <p>
+     * A {@link GString} is replaced by the result of one {@code toString()}
+     * call. Subscript lookup renders a {@code GString} argument to
+     * {@link String} before {@link Map#get(Object)}, and
+     * {@code String.equals} does not accept a {@code GString}, so a key left
+     * as a {@code GString} cannot be read back with the same interpolation or
+     * with the equivalent {@code String}. The text is the rendering at the
+     * moment the literal is evaluated. A later change to an interpolated
+     * value does not rename the entry, and two keys that render the same
+     * text are one entry; the later value wins and the first insertion
+     * position is kept. {@code null} stays {@code null}. A {@code toString()}
+     * that returns null is stored as a null key. Every other key is stored
+     * unchanged.
+     * <p>
+     * A spread entry does not come through here. The source map's key is
+     * copied as stored, so a {@code GString} passed to
+     * {@link Map#put(Object, Object)} stays a {@code GString} and remains
+     * distinct from a {@code String} of the same text.
+     *
+     * @param key the key expression's value, or null
+     * @return the key to store
+     */
+    private static Object renderedMapKey(Object key) {
+        return key instanceof GString gString ? gString.toString() : key;
     }
 
     /**

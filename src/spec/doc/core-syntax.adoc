@@ -558,15 +558,15 @@ Even for the same resulting string, GStrings and Strings don't have the same has
 include::../test/SyntaxTest.groovy[tags=gstring_hashcode_1,indent=0]
 ----
 
-GString and Strings having different hashCode values, using GString as Map keys should be avoided,
-especially if we try to retrieve an associated value with a String instead of a GString.
+GString and Strings having different hashCode values, `Map.put` of a GString does not match a later `get` with the equivalent String.
+A map literal does not keep that GString: it stores the String rendered when the literal is evaluated, so the entry is found with that String or with another GString that renders the same text.
 
 [source,groovy]
 ----
 include::../test/SyntaxTest.groovy[tags=gstring_hashcode_2,indent=0]
 ----
-<1> The map is created with an initial pair whose key is a GString
-<2> When we try to fetch the value with a String key, we will not find it, as Strings and GString have different hashCode values
+<1> The map literal stores the key as the String rendered from the GString
+<2> A String subscript finds that entry, and so does the same GString
 
 === Triple-double-quoted string
 

@@ -86,9 +86,11 @@ final class Groovy12165 {
     void testTypedGuardFallsThroughToCoercion() {
         assertScript '''
             // a GString key is NOT an instance of the String parameter type: the guard fails,
-            // the call falls through to the metaclass, and its coercion produces a real String
+            // the call falls through to the metaclass, and its coercion produces a real String.
+            // Map.put keeps the GString; a map literal would store the rendered String
             def name = 'a'
-            def m = [("k${name}"): 1]
+            def m = [:]
+            m.put(("k${name}"), 1)
             assert m.keySet()[0] !instanceof String // premise: the key stays a GString
             def out = []
             m.each { String k, Integer v -> assert k.class == String; out << "$k=$v".toString() }

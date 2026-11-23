@@ -2362,7 +2362,7 @@ include::../test/typing/TypeCheckingTest.groovy[tags=map_literal_inference_simpl
 ----
 include::../test/typing/TypeCheckingTest.groovy[tags=map_literal_inference_gstring,indent=0]
 ----
-|`java.util.LinkedHashMap<GString,String>` be careful, the key is a `GString`!
+|`java.util.LinkedHashMap<String,String>` a `GString` key expression is stored as the `String` it renders
 
 |[source,groovy]
 ----
