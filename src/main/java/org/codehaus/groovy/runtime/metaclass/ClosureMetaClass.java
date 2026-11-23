@@ -50,6 +50,7 @@ import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -76,7 +77,7 @@ public final class ClosureMetaClass extends MetaClassImpl {
 
     private volatile boolean attributeInitDone;
     private final FastArray closureMethods = new FastArray(3);
-    /** the methods the closure class declares for a functional interface it implements, such as {@code apply} */
+    /** the methods of a functional interface the closure class implements: those it declares, such as {@code apply}, and the default methods it inherits */
     private final FastArray interfaceMethods = new FastArray(1);
     private final Map<String, CachedField> attributes = new HashMap<>();
     private MethodChooser chooser;
@@ -548,6 +549,10 @@ public final class ClosureMetaClass extends MetaClassImpl {
                     interfaceMethods.add(cachedMethod);
                 }
             }
+            for (Method method : getInheritedDefaultMethods(theClass)) {
+                CachedMethod cachedMethod = CachedMethod.find(method);
+                interfaceMethods.add(cachedMethod != null ? cachedMethod : new CachedMethod(method));
+            }
             assignMethodChooser();
             super.reinitialize();
         }
@@ -567,6 +572,26 @@ public final class ClosureMetaClass extends MetaClassImpl {
             }
         }
         return names;
+    }
+
+    /**
+     * Returns the default methods of those interfaces that the closure class inherits and does not override,
+     * so dynamic code can call them on the closure as statically compiled code calls them on the interface.
+     */
+    private static Set<Method> getInheritedDefaultMethods(final Class<?> closureClass) {
+        Set<Method> methods = new LinkedHashSet<>();
+        for (Class<?> type : closureClass.getInterfaces()) {
+            if (type == GeneratedClosure.class) continue;
+            for (Method method : type.getMethods()) {
+                if (!method.isDefault()) continue;
+                try {
+                    Method resolved = closureClass.getMethod(method.getName(), method.getParameterTypes());
+                    if (resolved.getDeclaringClass().isInterface()) methods.add(resolved);
+                } catch (NoSuchMethodException ignore) {
+                }
+            }
+        }
+        return methods;
     }
 
     private MetaMethod pickInterfaceMethod(final String methodName, final Class<?>[] argClasses) {

@@ -379,6 +379,25 @@ final class FunctionalTypeArgumentTest {
             assert h.whisper.with { apply('Hi') } == 'hi'
             assert h.whisper.respondsTo('apply')
         '''
+
+        assertScript shell, '''
+            interface Shout { String shout(String s); default String twice(String s) { shout(s) + shout(s) } }
+            @CompileStatic
+            List<Shout> make() {
+                List<Shout> list = []
+                list.add { String s -> s + '!' }
+                list
+            }
+
+            // a default method of the interface, called as statically compiled code calls it
+            def shout = make()[0]
+            assert shout.twice('a') == 'a!a!'
+            assert shout.invokeMethod('twice', 'a') == 'a!a!'
+            def twice = shout.&twice
+            assert twice('a') == 'a!a!'
+            assert shout.with { twice('a') } == 'a!a!'
+            assert shout.respondsTo('twice')
+        '''
     }
 
     @Test
