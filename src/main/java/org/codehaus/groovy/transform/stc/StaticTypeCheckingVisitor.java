@@ -1322,6 +1322,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     lhs.forEach((key, types) -> typeCheckingContext.peekTemporaryTypeInfo(key).addAll(types));
                     rhs.forEach((key, types) -> typeCheckingContext.peekTemporaryTypeInfo(key).addAll(types));
                 } else if (op != LOGICAL_OR && op != BITWISE_OR) { // "|" narrows like "||", see propagateTemporaryTypeInfo
+                    if (!isAssignment(op)) applyOperandTargetType(lType, op, rightExpression);
                     rightExpression.visit(this);
                     if (op == EQUAL) typePatternBinding(expression, leftExpression, rightExpression); // GEP-19
                     if (negation) { // "c == false" tells what "!c" does
@@ -4440,6 +4441,7 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
                 Expression arguments = call.getArguments();
                 ArgumentListExpression argumentList = InvocationWriter.makeArgumentList(arguments);
 
+                applyNamedArgumentTargetTypes(receiver, argumentList);
                 // visit functional arguments *after* method has been chosen
                 visitMethodCallArguments(receiver, argumentList, false, null);
                 final ClassNode[] argumentTypes = getArgumentTypes(argumentList);
@@ -5705,7 +5707,11 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
         int nSelf = nExpressions - arguments.getExpressions().size(); // receiver of an extension method
         for (int i = 0; i < nExpressions; i += 1) {
             Expression expression = expressions.get(i);
-            if (visitFunctors == (expression instanceof ClosureExpression || expression instanceof MethodPointerExpression)) {
+            boolean closureConditional = isClosureConditional(expression);
+            if (closureConditional && !visitFunctors) { // visited with the closures, once the method is chosen
+                expression.putNodeMetaData(INFERRED_TYPE, CLOSURE_TYPE);
+            }
+            if (visitFunctors == (expression instanceof ClosureExpression || expression instanceof MethodPointerExpression || closureConditional)) {
                 if (visitFunctors && nthParameter != -1) { // GROOVY-10636: vargs call
                     Parameter declared = parameters[Math.min(i, nthParameter)], target = declared;
                     ClassNode targetType = target.getType();
@@ -5722,9 +5728,11 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
                     if (coerceToMethod) { // resolve the target parameter's type
                         Map<GenericsTypeName, GenericsType> context = extractPlaceHoldersVisibleToDeclaration(receiver, selectedMethod, arguments);
                         targetType = applyGenericsContext(context, targetType);
-                        expression.putNodeMetaData(PARAMETER_TYPE, targetType);
+                        if (!closureConditional) expression.putNodeMetaData(PARAMETER_TYPE, targetType);
                     }
-                    if (expression instanceof ClosureExpression) {
+                    if (closureConditional) {
+                        if (coerceToMethod && targetType.isInterface()) applyTargetType(targetType, expression); // each branch
+                    } else if (expression instanceof ClosureExpression) {
                         checkClosureWithDelegatesTo(receiver, selectedMethod, args(expressions), parameters, expression, declared);
                         if (i > 0 || !(selectedMethod instanceof ExtensionMethodNode)) {
                             inferClosureParameterTypes(receiver, arguments, (ClosureExpression) expression, target, selectedMethod);
@@ -5751,6 +5759,78 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
             }
             if (i == 0 && parameters.length > 0 && expression instanceof MapExpression) {
                 checkNamedParamsAnnotation(parameters[0], (MapExpression) expression, isNestedCopyWith(selectedMethod));
+            }
+        }
+    }
+
+    /**
+     * Tells if the expression is a conditional expression whose branches are closures or lambdas, or such
+     * conditional expressions: as an argument, it is visited once the method is chosen, as a closure is, so that
+     * the closures get the types of their parameters from the method's parameter.
+     */
+    private static boolean isClosureConditional(final Expression expression) {
+        return expression instanceof TernaryExpression ternary
+                && (ternary.getTrueExpression() instanceof ClosureExpression || isClosureConditional(ternary.getTrueExpression()))
+                && (ternary.getFalseExpression() instanceof ClosureExpression || isClosureConditional(ternary.getFalseExpression()));
+    }
+
+    /**
+     * Gives a closure or lambda written as the operand of an operator method, or as the branches of a conditional
+     * expression there, the functional interface the method's parameter is declared with, before it is visited,
+     * as an assignment does: {@code sink << { it.toUpperCase() }} for {@code leftShift(Function<String, String>)}.
+     */
+    private void applyOperandTargetType(final ClassNode lType, final int op, final Expression operand) {
+        if (!(operand instanceof ClosureExpression || isClosureConditional(operand)) || lType == null) return;
+        String name = getOperationName(op);
+        if (name == null) return;
+        List<MethodNode> methods = findMethod(lType, name, CLOSURE_TYPE);
+        if (methods.size() != 1) return;
+        MethodNode method = methods.get(0);
+        Parameter[] parameters = (method instanceof ExtensionMethodNode emn ? emn.getExtensionMethodNode() : method).getParameters();
+        if (parameters.length == 0) return;
+        ClassNode type = parameters[parameters.length - 1].getType();
+        if (type.isGenericsPlaceHolder()) return;
+        type = applyGenericsContext(extractPlaceHoldersVisibleToDeclaration(lType, method, args(operand)), type);
+        if (takesParameterTypesFrom(operand, type)) applyTargetType(type, operand);
+    }
+
+    /**
+     * Tells if a closure or lambda, or each branch of a conditional expression that is one, takes the types of its
+     * parameters from the functional interface: an implicit parameter for a method of one parameter, or as many
+     * parameters as the method, at least one without a type. Another one, or one for an interface whose method has
+     * no parameters, such as {@code Iterable}, is checked as before.
+     */
+    private static boolean takesParameterTypesFrom(final Expression expression, final ClassNode type) {
+        if (expression instanceof TernaryExpression ternary) {
+            return takesParameterTypesFrom(ternary.getTrueExpression(), type) && takesParameterTypesFrom(ternary.getFalseExpression(), type);
+        }
+        if (!(expression instanceof ClosureExpression closure) || !isSAMType(type) || !type.isInterface()) return false;
+        int n = findSAM(type).getParameters().length;
+        if (hasImplicitParameter(closure)) return n == 1;
+        Parameter[] parameters = getParametersSafe(closure);
+        return n > 0 && parameters.length == n && Arrays.stream(parameters).anyMatch(Parameter::isDynamicTyped);
+    }
+
+    /**
+     * Gives a closure or lambda written as a named argument of a constructor call, or as the branches of a
+     * conditional expression there, the functional interface the property it sets is declared with, before the
+     * arguments are visited: {@code new Bean(value: { it.toUpperCase() })} for a {@code Function<String, String>}.
+     */
+    private void applyNamedArgumentTargetTypes(final ClassNode receiver, final ArgumentListExpression arguments) {
+        List<Expression> expressions = arguments.getExpressions();
+        if (expressions.isEmpty() || expressions.size() > 2
+                || !(expressions.get(expressions.size() - 1) instanceof MapExpression map)
+                || !findMethod(receiver, "<init>", LINKEDHASHMAP_CLASSNODE).isEmpty()) return; // a constructor takes the map
+        for (MapEntryExpression entry : map.getMapEntryExpressions()) {
+            Expression value = entry.getValueExpression();
+            if (!(entry.getKeyExpression() instanceof ConstantExpression key) || !(key.getValue() instanceof String name)
+                    || !(value instanceof ClosureExpression || isClosureConditional(value))) continue;
+            Set<ClassNode> types = new HashSet<>();
+            if (existsProperty(propX(varX("_", receiver), name), true, new PropertyLookup(receiver, types::add)) && types.size() == 1) {
+                ClassNode type = types.iterator().next();
+                if (type.isGenericsPlaceHolder()) continue;
+                if (receiver.getGenericsTypes() != null) type = applyGenericsContext(GenericsUtils.extractPlaceholders(receiver), type);
+                if (takesParameterTypesFrom(value, type)) applyTargetType(type, value);
             }
         }
     }
