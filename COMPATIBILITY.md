@@ -1355,6 +1355,44 @@ Code in a named package, and default-package code whose class path has no
 such class or source, resolve as before whether or not the options are on.
 The two options are the only API change.
 
+### Groovy 6.0.1 — `Object` methods in statically compiled closures and lambdas use the enclosing object (GROOVY-12576, GROOVY-12826)
+
+Under `@CompileStatic`, an implicit call of `toString()`, `hashCode()`,
+`equals()` or `getClass()` in a closure or lambda was made on the generated
+closure or lambda itself. An instance extension method of `Object`, like
+`inspect()`, called in a lambda received a `Class` object. Dynamic Groovy
+uses the enclosing object or the closure's delegate.
+
+These calls now follow the same rules:
+
+- In a closure, the method is found through the closure's resolve strategy,
+  so `new D().with { toString() }` calls `D.toString()`.
+- In a lambda, including one inside a closure, the method is the enclosing
+  instance's, as in Java.
+- In a closure or lambda of an inner class, the method is the inner
+  instance's, even if the outer class overrides it.
+- A closure rehydrated without a this object uses its owner. A dehydrated
+  closure, which has neither, still uses itself.
+
+**Who is affected (runtime behaviour).** Statically compiled code that relied
+on such a call returning the closure's or lambda's own string, hash code,
+equality or class. Classes compiled by an earlier release keep the old
+behaviour until they are recompiled.
+
+**What is unchanged.** Dynamic code, explicit receivers such as `this.toString()`
+and `Outer.this.toString()`, and methods that `Closure` declares itself.
+
+### Groovy 6.0.1 — a non-serializable lambda inside a closure can use the closure's delegate (GROOVY-12827)
+
+Under `@CompileStatic`, an implicit call or property access in a lambda that
+resolved to the delegate of a closure around it compiled, but threw
+`ClassCastException` when evaluated. A lambda that is not serializable now
+captures the closure, and the name resolves as it would in the closure.
+
+**What is unchanged.** A serializable lambda does not capture the closure, so
+its serialized form is the same as in 6.0.0 and such a name in it still throws
+`ClassCastException`. Groovy 7 also supports it in serializable lambdas.
+
 ## The binary-compatibility check
 
 The [`subprojects/binary-compatibility/`](subprojects/binary-compatibility)
