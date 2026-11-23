@@ -455,13 +455,19 @@ public class StaticInvocationWriter extends InvocationWriter {
                     ClassNode outerType = getImplicitReceiverType(enclosingClass, declaringClass);
                     theReceiver = propX(classX(outerType != null ? outerType : declaringClass), "this");
                 } else {
-                    theReceiver = thisObjectExpression(enclosingClass, declaringClass);
                     MethodNode objectMethod = getObjectMethod(target);
-                    if (objectMethod != null && !enclosingClass.implementsInterface(ClassHelper.GENERATED_LAMBDA_TYPE)) {
-                        // a closure without a this object, e.g. after rehydrate(), uses its owner's method,
-                        // or its own method when it has no owner either, e.g. after dehydrate()
-                        theReceiver = new ThisObjectOwnerOrClosureExpression(theReceiver);
+                    if (objectMethod != null) {
+                        // every object has this method, so it is the this object's, even in an
+                        // inner class where the type checker found an override in the outer class
+                        theReceiver = thisObjectExpression(enclosingClass, ClassHelper.OBJECT_TYPE);
                         theTarget = objectMethod;
+                        if (!enclosingClass.implementsInterface(ClassHelper.GENERATED_LAMBDA_TYPE)) {
+                            // a closure without a this object, e.g. after rehydrate(), uses its owner's method,
+                            // or its own method when it has no owner either, e.g. after dehydrate()
+                            theReceiver = new ThisObjectOwnerOrClosureExpression(theReceiver);
+                        }
+                    } else {
+                        theReceiver = thisObjectExpression(enclosingClass, declaringClass);
                     }
                 }
                 if (!(theReceiver instanceof VariableExpression)) isThisImplicit = false;
