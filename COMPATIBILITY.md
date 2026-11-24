@@ -548,6 +548,36 @@ so `japicmp` sees nothing — this is a behavioural change only.
 Groovy 6 is the major version for the change. On 3.0.x/4.0.x/5.0.x/5.1.x the
 coercion still initializes the class.
 
+### Groovy 6 — a bare `await` or `async` is the keyword, not an existing name (GROOVY-9381, GROOVY-12715)
+
+`async`, `await` and `defer` are contextual keywords (incubating), so
+existing variables, fields, parameters and methods with these names still
+compile. But `await` at the start of an expression, followed by something
+that can begin an expression, is the keyword, and so is `async` followed by
+a closure or lambda. Code that used these words as plain names in those
+positions compiles to something else, and fails at run time:
+
+- a call to your own method, `await(1)` or `async { ... }`, now awaits `1`
+  or starts an async task;
+- `await + 1`, `await - 1` and `await[0]`, with a variable or field named
+  `await`, now await `+1`, `-1` and the list `[0]`;
+- a statically imported `await` with an argument, such as Awaitility's
+  `await('alias')`, is the keyword. `await()` and `await().atMost(...)`
+  keep working.
+
+**Who is affected (source).** Code written for Groovy 5 or earlier that uses
+`await` or `async` as names in those positions. Qualify the name, as in
+`this.await(1)`, `obj.await`, `Awaitility.await('alias')`, or rename it.
+Declarations, qualified uses and uses later in an expression, such as
+`1 + await`, are unchanged. The user guide's "Existing names `async`,
+`await` and `defer`" lists the rules.
+
+**Groovy 6.0.1 (GROOVY-12715).** In 6.0.0, a cast in front kept the names
+ordinary: `(int) await + 1`, `(String) await(1)` and `(String) async { 1 }`
+used the variable or method. A cast now applies to the keyword, as
+`(BigDecimal) await(price)` and `(Awaitable<Integer>) async { 7 }` need, so
+those forms follow the same rules as without the cast.
+
 ### Groovy 6.0.1 — `abs()` on a `Number` receiver keeps the number's precision (GROOVY-12471)
 
 `DefaultGroovyMethods.abs(Number)` used to return `int`, truncating any
