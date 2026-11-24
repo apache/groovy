@@ -238,6 +238,8 @@ Runnable run = { println 'run' }
 list.each { println it } // or list.each(this.&println)
 ----
 
+link:core-closures.html#closure-lambdas[Lambdas] in the closures chapter describes how a lambda relates to a closure.
+
 Since Groovy 6.0, intersection-type casts (https://docs.oracle.com/javase/specs/jls/se21/html/jls-15.html#jls-15.16[JLS §15.16])
 are supported on lambdas and method references, so a lambda can opt into `Serializable`
 or other marker interfaces, just like in Java:

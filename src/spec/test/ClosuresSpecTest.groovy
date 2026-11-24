@@ -598,6 +598,64 @@ final class ClosuresSpecTest {
     }
 
     @Test
+    void testLambdaValues() {
+        assertScript '''
+            import java.util.function.Supplier
+
+            // tag::lambda_values[]
+            Supplier<String> greeting = () -> 'hi'              // <1>
+            assert greeting.get() == 'hi'
+
+            def twice = (x) -> x * 2
+            assert twice instanceof Closure                     // <2>
+            assert twice(3) == 6
+            // end::lambda_values[]
+        '''
+    }
+
+    @Test
+    void testNamesInLambda() {
+        def script = '''
+            import groovy.transform.CompileStatic
+            import java.util.function.Supplier
+
+            // tag::lambda_names[]
+            class Email {
+                String subject = 'Hello'
+                String shout() { subject.toUpperCase() }
+            }
+
+            @CompileStatic
+            class Mailer {
+                String toString() { 'Mailer' }
+
+                String inMethod() {
+                    Supplier<String> s = () -> toString()       // <1>
+                    s.get()
+                }
+
+                String build(@DelegatesTo(Email) Closure<String> spec) {
+                    spec.delegate = new Email()
+                    spec.call()
+                }
+
+                String inClosure() {
+                    build {
+                        Supplier<String> s = () -> shout()      // <2>
+                        s.get()
+                    }
+                }
+            }
+
+            assert new Mailer().inMethod() == 'Mailer'
+            assert new Mailer().inClosure() == 'HELLO'
+            // end::lambda_names[]
+        '''
+        assertScript script
+        assertScript script.replace('@CompileStatic', '')
+    }
+
+    @Test
     void testGStringEager() {
         // tag::gstring_eager_intro[]
         def x = 1
