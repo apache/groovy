@@ -94,7 +94,7 @@ public class StaticTypesClosureWriter extends ClosureWriter {
         }
         if (callsClosureMethod(expression)) {
             return "it calls a method on a closure object (a Closure method such as memoize(), an Object method "
-                    + "such as toString() under TO_SELF, or one in a nested closure, whose owner is the closure)";
+                    + "such as toString() or an extension method of Object, which depend on what rehydrate() leaves)";
         }
         if (touchesMapOwnerProperties(expression)) {
             return "it accesses properties of a Map owner, whose closure-context resolution "
@@ -209,7 +209,9 @@ public class StaticTypesClosureWriter extends ClosureWriter {
      * {@code Closure}; or a method of {@code Object} in a nested closure, which STC resolves against
      * the enclosing closure (receiver path {@code "owner"}). A hoisted body is a method of the owner
      * class, where the same call would reach the owner's method, and a nested closure constructed in
-     * it has the owner instance, not the packed closure, as its owner.
+     * it has the owner instance, not the packed closure, as its owner. Any implicit call of a
+     * method of {@code Object}, or an instance extension method of {@code Object} other than the
+     * print methods, counts too, as its receiver depends on what {@code rehydrate()} leaves.
      */
     private static boolean callsClosureMethod(final ClosureExpression expression) {
         Statement code = expression.getCode();
@@ -223,7 +225,8 @@ public class StaticTypesClosureWriter extends ClosureWriter {
                     if ((target != null && !ClassHelper.isObjectType(target.getDeclaringClass())
                                 && ClassHelper.CLOSURE_TYPE.isDerivedFrom(target.getDeclaringClass()))
                             || ClassHelper.CLOSURE_TYPE.equals(receiverType)
-                            || "owner".equals(call.getNodeMetaData(IMPLICIT_RECEIVER))) {
+                            || "owner".equals(call.getNodeMetaData(IMPLICIT_RECEIVER))
+                            || StaticInvocationWriter.isCalledOnClosureContext(target)) {
                         closureResolved[0] = true;
                     }
                 }

@@ -56,8 +56,11 @@ import java.lang.annotation.Target;
  *       delegate chain or the MOP could intercept;</li>
  *   <li>under {@code @CompileStatic}, resolves a name against a delegate (e.g. via {@code @DelegatesTo}
  *       or {@code with}), is left to runtime resolution by a type-checking extension (mixed-mode
- *       dynamic islands), or touches {@code this}-properties of a {@code Map}-implementing owner —
- *       packing is otherwise proven sound from the type checker's resolution.</li>
+ *       dynamic islands), touches {@code this}-properties of a {@code Map}-implementing owner, or
+ *       makes an implicit call of a method of {@code Object} such as {@code toString()} or of an
+ *       instance extension method of {@code Object} other than the print methods, whose receiver
+ *       depends on what {@code rehydrate} leaves — packing is otherwise proven sound from the type
+ *       checker's resolution.</li>
  * </ul>
  * Under dynamic compilation the annotation is a trust assertion the compiler cannot verify; the
  * {@code PackedClosure} adapter then fails fast if a delegate, or a delegate-consulting
