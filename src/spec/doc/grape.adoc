@@ -395,7 +395,9 @@ Run with plain `java`, the grab fails with "No suitable ClassLoader found for gr
 so they are never resolved in this mode.
 * Any `@GrabConfig` system properties are set at runtime before the grab,
 so properties read when the engine is created, such as `grape.root`,
-`grape.config` or `groovy.grape.impl`, are seen by that engine.
+`grape.config` or `groovy.grape.impl`, are seen by that engine. They are
+set whenever grapes are enabled, even if no engine is found and the grab
+does nothing; disable grapes to stop them being set.
 
 [[Grape-MultipleGrapeAnnotations]]
 === Multiple Grape Annotations
