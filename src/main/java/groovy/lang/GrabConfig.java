@@ -97,7 +97,8 @@ public @interface GrabConfig {
      * declaring SSL certificates or proxy settings. Currently, this only affects the generated
      * class or script. You may need to also set those same properties for the Groovy compiler.
      * The properties are only set when grapes are enabled, and are set before the grab runs,
-     * so they also apply to a grape engine created by that grab.
+     * so they also apply to a grape engine created by that grab. They are set even if no
+     * grape engine is available and the grab does nothing.
      * For convenience, a String with comma separated name=value pairs
      * can be used in addition to an array (using Groovy's literal list notation) of String name=value items.
      * The single String shorthand form can't be used if value part of a property contains a comma.
