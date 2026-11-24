@@ -2321,12 +2321,21 @@ These calls now follow the same rules:
 
 - In a closure, the method is found through the closure's resolve strategy,
   so `new D().with { toString() }` calls `D.toString()`.
-- In a lambda, including one inside a closure, the method is the enclosing
-  instance's, as in Java.
+- In a lambda, the method is the enclosing instance's, as in Java. A lambda
+  inside a closure uses what that closure would use, so this differs only
+  after `rehydrate()` or `dehydrate()`. A serializable lambda does not hold
+  on to the closure for this, so that its serialized form does not change: it
+  uses the this object of the closure, or itself when there is none.
 - In a closure or lambda of an inner class, the method is the inner
   instance's, even if the outer class overrides it.
-- A closure rehydrated without a this object uses its owner. A dehydrated
-  closure, which has neither, still uses itself.
+- A rehydrated closure uses its this object, where dynamic Groovy uses its
+  owner. Without a this object it uses its owner, and without an owner it uses
+  itself, where dynamic Groovy would use a delegate.
+- A closure with neither an owner nor a delegate, as after `dehydrate()`, uses
+  itself, even if it was given a this object.
+- Under `@PackedClosures`, a closure that makes such a call is no longer
+  packed, so that it follows these rules after `rehydrate()`. The print
+  methods, like `println`, do not prevent packing.
 
 **Who is affected (runtime behaviour).** Statically compiled code that relied
 on such a call returning the closure's or lambda's own string, hash code,
@@ -2347,8 +2356,10 @@ was so in 5.x and 6.0.0.
 Such a lambda now captures the closure around it. The name resolves as it
 would directly in the closure, using the closure's resolve strategy and its
 delegate at the time of the call. The lambda's own `owner`, `delegate` and
-`thisObject` remain the enclosing instance. A lambda that uses no such name
-is generated as before.
+`thisObject` remain the enclosing instance. A non-serializable lambda that
+makes an implicit call of a method of `Object` captures the closure too, to
+use what the closure would use. Any other lambda that uses no such name is
+generated as before.
 
 **Who is affected (runtime behaviour).** Only a serializable lambda containing
 such a name, which could not previously evaluate it:

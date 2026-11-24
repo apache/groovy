@@ -574,7 +574,9 @@ public class StaticTypesLambdaWriter extends LambdaWriter implements AbstractFun
         // a name resolved through the closure around the lambda, like a method of that closure's
         // delegate, needs the closure; the owner of the lambda is the enclosing instance
         boolean capturesEnclosingClosure = controller.isInGeneratedFunction() && !controller.isStaticMethod()
-                && lambdaAnalyzer.resolvesThroughOwner(expression.getCode());
+                && (lambdaAnalyzer.resolvesThroughOwner(expression.getCode())
+                    // a serializable lambda keeps its serialized form for these calls
+                    || (!expression.isSerializable() && lambdaAnalyzer.callsMethodOnClosureContext(expression.getCode())));
         if (capturesEnclosingClosure) {
             lambdaClass.addField(ENCLOSING_CLOSURE, ACC_PUBLIC | ACC_SYNTHETIC, CLOSURE_TYPE.getPlainNodeReference(), null);
         }

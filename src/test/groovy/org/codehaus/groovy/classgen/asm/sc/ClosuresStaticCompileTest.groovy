@@ -853,7 +853,7 @@ final class ClosuresStaticCompileTest extends ClosuresSTCTest implements StaticC
                         }
                         result << identities.unique()
                         // the enclosing instance only
-                        Supplier<List<Object>> s1 = () -> [hey(), toString(), owner, delegate, thisObject, metaClass.theClass.declaredFields*.name]
+                        Supplier<List<Object>> s1 = () -> [hey(), hey(), owner, delegate, thisObject, metaClass.theClass.declaredFields*.name]
                         result << s1.get()
                         // the enclosing instance and the closure
                         Supplier<List<Object>> s2 = () -> [hi(), hey(), toString(), owner, delegate, thisObject, metaClass.theClass.declaredFields*.name, println('x')]
@@ -976,6 +976,127 @@ final class ClosuresStaticCompileTest extends ClosuresSTCTest implements StaticC
             }
 
             test(new Pogo())
+        '''
+    }
+
+    @Test
+    void testObjectMethodInLambdaInDehydratedClosure() {
+        assertScript '''
+            class C {
+                @Override String toString() { 'c' }
+                String m() {
+                    def k = { -> java.util.function.Supplier<String> s = () -> toString(); s.get() }.dehydrate()
+                    k.call()
+                }
+            }
+            assert new C().m().contains('_closure')
+        '''
+    }
+
+    @Test
+    void testObjectMethodFollowsRehydratedClosure() {
+        for (packed in ['', '@groovy.transform.PackedClosures']) {
+            for (body in ['{ -> toString() }', '{ -> java.util.function.Supplier<String> s = () -> toString(); s.get() }']) {
+                assertScript """
+                    class D { @Override String toString() { 'D' } }
+                    class O { @Override String toString() { 'O' } }
+                    class T { @Override String toString() { 'T' } }
+                    @groovy.transform.CompileStatic
+                    $packed
+                    class C {
+                        @Override String toString() { 'C' }
+                        List m() {
+                            Closure k = $body
+                            [
+                                k.call(),
+                                k.rehydrate(new D(), new O(), new T()).call(),
+                                k.rehydrate(null, new O(), null).call(),
+                                k.rehydrate(null, this, null).call(),
+                                k.rehydrate(new D(), null, null).call().toString().contains('_closure'),
+                                k.rehydrate(null, null, new T()).call().toString().contains('_closure'),
+                                k.dehydrate().call().toString().contains('_closure'),
+                            ]
+                        }
+                    }
+                    assert new C().m() == ['C', 'T', 'O', 'C', true, true, true]
+                """
+            }
+        }
+    }
+
+    @Test
+    void testPrintInLambdaInClosure() {
+        assertScript '''
+            class C {
+                def m() {
+                    def sw = new StringWriter()
+                    def k = { -> java.util.function.Supplier<String> s = () -> sprintf('%s', 'x'); s.get() }.dehydrate()
+                    sw << k.call()
+                    sw.toString()
+                }
+            }
+            assert new C().m() == 'x'
+        '''
+    }
+
+    @Test
+    void testSerializableLambdaInRehydratedClosure() {
+        assertScript '''
+            import java.util.function.Supplier
+            interface SerializableSupplier extends Supplier<String>, Serializable {}
+            class O { @Override String toString() { 'O' } }
+            class T { @Override String toString() { 'T' } }
+            @groovy.transform.CompileStatic
+            class C {
+                @Override String toString() { 'C' }
+                List m() {
+                    Closure<String> k = { -> SerializableSupplier s = () -> toString(); s.get() }
+                    [
+                        k.call(),
+                        k.rehydrate(null, new O(), new T()).call(),
+                        k.rehydrate(null, new O(), null).call().toString().contains('lambda'),
+                        k.dehydrate().call().toString().contains('lambda'),
+                    ]
+                }
+            }
+            assert new C().m() == ['C', 'T', true, true]
+        '''
+    }
+
+    @Test
+    void testSerializableLambdaInClosureKeepsItsForm() {
+        assertScript '''
+            import java.util.function.Supplier
+            interface SerializableSupplier extends Supplier<String>, Serializable {}
+            class C implements Serializable {
+                @Override String toString() { 'C' }
+                def m() {
+                    def k = { ->
+                        SerializableSupplier s = () -> toString()
+                        s
+                    }
+                    def out = new ByteArrayOutputStream()
+                    new ObjectOutputStream(out).withCloseable { it.writeObject(k.call()) }
+                    def read = new ObjectInputStream(new ByteArrayInputStream(out.toByteArray())).readObject()
+                    assert !java.lang.reflect.Proxy.isProxyClass(read.getClass())
+                    ((Supplier<String>) read).get()
+                }
+            }
+            assert new C().m() == 'C'
+        '''
+    }
+
+    @Test
+    void testUserOverloadOfCloneInClosure() {
+        assertScript '''
+            class C {
+                String clone(int n) { 'c' + n }
+                def m() {
+                    def k = { -> clone(2) }
+                    k.call()
+                }
+            }
+            assert new C().m() == 'c2'
         '''
     }
 }

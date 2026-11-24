@@ -150,6 +150,26 @@ class StaticTypesLambdaAnalyzer {
     }
 
     /**
+     * Returns {@code true} if the lambda body, or a closure or lambda nested in it,
+     * makes an implicit call that depends on the this object, owner and delegate of
+     * the closure around the lambda, like {@code toString()}.
+     */
+    boolean callsMethodOnClosureContext(final Statement lambdaCode) {
+        boolean[] calls = {false};
+        lambdaCode.visit(new CodeVisitorSupport() {
+            @Override
+            public void visitMethodCallExpression(final MethodCallExpression expression) {
+                if (expression.isImplicitThis() && StaticInvocationWriter.isCalledOnClosureContext(
+                        expression.getNodeMetaData(DIRECT_METHOD_CALL_TARGET))) {
+                    calls[0] = true;
+                }
+                super.visitMethodCallExpression(expression);
+            }
+        });
+        return calls[0];
+    }
+
+    /**
      * Qualifies unqualified outer-class static member references in a lambda
      * body into class-qualified references (e.g., {@code label} becomes
      * {@code Outer.label}).
