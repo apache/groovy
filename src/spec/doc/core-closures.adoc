@@ -197,6 +197,7 @@ Groovy defines closures as <<closure-as-object, instances of the Closure class>>
 {lambdas}. Delegation is a
 key concept in Groovy closures which has no equivalent in lambdas. The ability to _change the delegate_ or _change the
 delegation strategy_ of closures make it possible to design beautiful domain specific languages (DSLs) in Groovy.
+Groovy accepts the lambda syntax too, as described in <<closure-lambdas,Lambdas>>.
 
 [[closure-owner]]
 === Owner, delegate and this
@@ -593,6 +594,32 @@ include::../test/ClosuresSpecTest.groovy[tags=gstring_no_mutation,indent=0]
 
 Closures can be converted into interfaces or single-abstract method types. Please refer to
 link:core-semantics.html#closure-coercion[this section of the manual] for a complete description.
+
+[[closure-lambdas]]
+== Lambdas
+
+Groovy also accepts the Java syntax for lambda expressions, such as `+(x, y) -> x + y+`. A lambda can be used
+wherever a functional interface is expected. Where no such type is expected, it is a closure:
+
+[source,groovy]
+----
+include::../test/ClosuresSpecTest.groovy[tags=lambda_values,indent=0]
+----
+<1> a lambda for a functional interface
+<2> with no functional interface to target, the lambda is an instance of `Closure`
+
+A lambda is meant to be transparent: a name in its body means what it would mean in the code around the lambda.
+In a method, a name without a receiver is resolved against the enclosing instance, as in Java. In a closure, it is
+resolved as the closure would resolve it, which includes the delegate of the closure:
+
+[source,groovy]
+----
+include::../test/ClosuresSpecTest.groovy[tags=lambda_names,indent=0]
+----
+<1> `toString()` is the method of the enclosing instance
+<2> `shout()` is found on the delegate of the closure around the lambda
+
+The example gives the same results without `@CompileStatic`.
 
 == Functional programming
 

@@ -876,7 +876,8 @@ the accessor in both cases. This is what the same names mean in a closure in the
 Where closures and lambdas are nested, the innermost one decides: this rule applies in a closure within a lambda, and
 rule 5 in a lambda within a closure.
 . *In a lambda, a declared property is its backing field.* Rule 3 applies to the simple name `p` in a lambda as it
-does in a method body. A statically compiled lambda has no delegate or owner to resolve the name through.
+does in a method body. A lambda does not offer the name of a declared property to a delegate or an owner, also where
+it is within a closure whose delegate has a property of that name.
 
 [source,groovy]
 ----
