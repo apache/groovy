@@ -262,6 +262,34 @@ public class StaticInvocationWriter extends InvocationWriter {
         return objectMethod != null && objectMethod.isPublic() && !objectMethod.isStatic() ? objectMethod : null;
     }
 
+    /**
+     * Tells whether the closure or lambda being generated can run without a this object,
+     * as a closure can after {@code dehydrate()} or {@code rehydrate()}. That includes a
+     * lambda inside such a closure, but not a lambda written directly in a class.
+     */
+    private boolean mayLackThisObject(final ClassNode function) {
+        if (!function.implementsInterface(ClassHelper.GENERATED_LAMBDA_TYPE)) return true;
+        ClassNode outer = function.getOuterClass();
+        return outer != null && ClassHelper.isGeneratedFunction(outer) && !controller.isStaticMethod();
+    }
+
+    /**
+     * Tells whether an implicit call of the given method in a closure goes to the closure's
+     * this object, owner or the closure itself, whichever {@code rehydrate()} left: a public
+     * method of {@code Object}, or an instance extension method of {@code Object}. The print
+     * methods are left out, as what they print does not depend on the receiver in practice.
+     */
+    static boolean isCalledOnClosureContext(final MethodNode target) {
+        if (target instanceof ExtensionMethodNode emn) {
+            if (emn.isStaticExtension() || PRINT_METHODS.contains(target.getName())) return false;
+            Parameter[] parameters = emn.getExtensionMethodNode().getParameters();
+            return parameters.length > 0 && ClassHelper.isObjectType(parameters[0].getType());
+        }
+        return target != null && getObjectMethod(target) != null;
+    }
+
+    private static final Set<String> PRINT_METHODS = Set.of("print", "printf", "println", "sprintf");
+
     private Expression thisObjectExpression(final ClassNode source, final ClassNode target) {
         ClassNode thisType = source;
         while (ClassHelper.isGeneratedFunction(thisType)) {
@@ -396,7 +424,7 @@ public class StaticInvocationWriter extends InvocationWriter {
                 argumentList.add(receiver);
             } else {
                 Expression thisObject = thisObjectExpression(enclosingClass, declaringClass);
-                if (ClassHelper.isObjectType(parameters[0].getType()) && !enclosingClass.implementsInterface(ClassHelper.GENERATED_LAMBDA_TYPE)) {
+                if (ClassHelper.isObjectType(parameters[0].getType()) && mayLackThisObject(enclosingClass)) {
                     // a closure without a this object, e.g. after rehydrate(), passes its owner,
                     // or itself when it has no owner either, e.g. after dehydrate()
                     thisObject = new ThisObjectOwnerOrClosureExpression(thisObject);
@@ -461,7 +489,7 @@ public class StaticInvocationWriter extends InvocationWriter {
                         // inner class where the type checker found an override in the outer class
                         theReceiver = thisObjectExpression(enclosingClass, ClassHelper.OBJECT_TYPE);
                         theTarget = objectMethod;
-                        if (!enclosingClass.implementsInterface(ClassHelper.GENERATED_LAMBDA_TYPE)) {
+                        if (mayLackThisObject(enclosingClass)) {
                             // a closure without a this object, e.g. after rehydrate(), uses its owner's method,
                             // or its own method when it has no owner either, e.g. after dehydrate()
                             theReceiver = new ThisObjectOwnerOrClosureExpression(theReceiver);
@@ -1022,8 +1050,10 @@ public class StaticInvocationWriter extends InvocationWriter {
     }
 
     /**
-     * Loads the this object of the closure being generated, or its owner when
-     * the this object is {@code null}, or the closure itself when both are.
+     * Loads the receiver of a method of {@code Object} for the closure being generated, or for
+     * the closure that the lambda being generated captured: the closure itself when it has
+     * neither an owner nor a delegate, else its this object, or its owner when that is
+     * {@code null}, or the closure itself when both are.
      */
     private class ThisObjectOwnerOrClosureExpression extends Expression {
         private final Expression thisObject;
@@ -1040,21 +1070,50 @@ public class StaticInvocationWriter extends InvocationWriter {
 
         @Override
         public void visit(final GroovyCodeVisitor visitor) {
-            thisObject.visit(visitor);
-            if (visitor instanceof AsmClassGenerator) {
-                MethodVisitor mv = controller.getMethodVisitor();
-                Label done = new Label();
-                mv.visitInsn(DUP);
-                mv.visitJumpInsn(IFNONNULL, done);
-                mv.visitInsn(POP);
-                mv.visitVarInsn(ALOAD, 0);
-                mv.visitMethodInsn(INVOKEVIRTUAL, "groovy/lang/Closure", "getOwner", "()Ljava/lang/Object;", false);
-                mv.visitInsn(DUP);
-                mv.visitJumpInsn(IFNONNULL, done);
-                mv.visitInsn(POP);
-                mv.visitVarInsn(ALOAD, 0);
-                mv.visitLabel(done);
-                controller.getOperandStack().replace(ClassHelper.OBJECT_TYPE);
+            if (!(visitor instanceof AsmClassGenerator)) {
+                thisObject.visit(visitor);
+                return;
+            }
+            MethodVisitor mv = controller.getMethodVisitor();
+            boolean captured = controller.getClassNode().getDeclaredField(ENCLOSING_CLOSURE) != null;
+            Label hasCandidate = new Label(), done = new Label();
+            loadClosure(mv);
+            mv.visitMethodInsn(INVOKEVIRTUAL, "groovy/lang/Closure", "getOwner", "()Ljava/lang/Object;", false);
+            mv.visitJumpInsn(IFNONNULL, hasCandidate);
+            loadClosure(mv);
+            mv.visitMethodInsn(INVOKEVIRTUAL, "groovy/lang/Closure", "getDelegate", "()Ljava/lang/Object;", false);
+            mv.visitJumpInsn(IFNONNULL, hasCandidate);
+            loadClosure(mv);
+            mv.visitJumpInsn(GOTO, done);
+            mv.visitLabel(hasCandidate);
+            if (captured) {
+                loadClosure(mv);
+                mv.visitMethodInsn(INVOKEVIRTUAL, "groovy/lang/Closure", "getThisObject", "()Ljava/lang/Object;", false);
+                controller.getOperandStack().push(ClassHelper.OBJECT_TYPE);
+            } else {
+                thisObject.visit(visitor);
+            }
+            mv.visitInsn(DUP);
+            mv.visitJumpInsn(IFNONNULL, done);
+            mv.visitInsn(POP);
+            loadClosure(mv);
+            mv.visitMethodInsn(INVOKEVIRTUAL, "groovy/lang/Closure", "getOwner", "()Ljava/lang/Object;", false);
+            mv.visitInsn(DUP);
+            mv.visitJumpInsn(IFNONNULL, done);
+            mv.visitInsn(POP);
+            loadClosure(mv);
+            mv.visitLabel(done);
+            controller.getOperandStack().replace(ClassHelper.OBJECT_TYPE);
+        }
+
+        /** Loads the closure being generated, or the closure around the lambda being generated. */
+        private void loadClosure(final MethodVisitor mv) {
+            mv.visitVarInsn(ALOAD, 0);
+            ClassNode function = controller.getClassNode();
+            for (ClassNode type = function; type != null && type.getDeclaredField(ENCLOSING_CLOSURE) != null; type = type.getOuterClass()) {
+                String internalName = BytecodeHelper.getClassInternalName(type);
+                if (type != function) mv.visitTypeInsn(CHECKCAST, internalName);
+                mv.visitFieldInsn(GETFIELD, internalName, ENCLOSING_CLOSURE, BytecodeHelper.getTypeDescription(ClassHelper.CLOSURE_TYPE));
             }
         }
     }

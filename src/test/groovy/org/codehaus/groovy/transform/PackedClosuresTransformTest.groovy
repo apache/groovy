@@ -624,7 +624,9 @@ final class PackedClosuresTransformTest {
             def targets = [new O(name: 'b'), new P(name: 'p'), new D()]
             def args = [one: ['x'], two: ['x', 'y'], three: ['x', 'y', 'z'], it: ['i']]
             def packed = a.packed(), unpacked = a.unpacked()
-            assert packed.values().every { it instanceof org.codehaus.groovy.runtime.PackedClosure }
+            // a method of Object or an Object extension method follows what rehydrate leaves, so it stays a class
+            assert packed.findAll { k, c -> !(k in ['objectMethod', 'extension']) }.values().every { it instanceof org.codehaus.groovy.runtime.PackedClosure }
+            assert !packed.objectMethod.getClass().name.contains('PackedClosure') && !(packed.extension instanceof org.codehaus.groovy.runtime.PackedClosure)
             assert !unpacked.values().any { it instanceof org.codehaus.groovy.runtime.PackedClosure }
             def results = { Map<String, Closure> cs -> cs.collectEntries { k, c -> [k, targets.collect { O.attempt(c, it, args[k] ?: []) }] } }
             [results(packed), results(unpacked)]
@@ -634,19 +636,7 @@ final class PackedClosuresTransformTest {
         assertEquals(['b', 'p', 'CCE'], packed.name)
         assertEquals(['const42', 'const42', 'const42'], packed.constant)
         assertEquals(['O:b', 'O:p', 'D'], unpacked.extension)
-        unpacked.each { k, v ->
-            if (k == 'objectMethod') {
-                // the closure class calls a method of Object on a foreign this object uncast; the
-                // hoisted body can only call it on an instance of the enclosing class, so it fails
-                assertEquals(v[0..1] + 'CCE', packed[k], k)
-            } else if (k == 'extension') {
-                // an extension method also takes the this object uncast; for a foreign one the
-                // hoisted body keeps its receiver, as the println family must keep working
-                assertEquals(v[0..1] + 'O:a', packed[k], k)
-            } else {
-                assertEquals(v, packed[k], k)
-            }
-        }
+        unpacked.each { k, v -> assertEquals(v, packed[k], k) }
     }
 
     // GROOVY-12666
@@ -703,7 +693,8 @@ final class PackedClosuresTransformTest {
         // a closure created by an inherited method of a subclass instance has that instance as its
         // receiver; rehydrated onto an instance of the enclosing class that is not a subclass
         // instance, the closure class uses the new this object, so the copy must take it even where
-        // the body is not marked as using its receiver (an extension method on the implicit this)
+        // the body is not marked as using its receiver; an extension method on the implicit this
+        // stays a class, for the same reason
         String src = '''
             import groovy.transform.CompileStatic
             import groovy.transform.PackedClosures
@@ -726,7 +717,9 @@ final class PackedClosuresTransformTest {
             class P extends O {}
             def a = new P(name: 'a'), b = new O(name: 'b')
             def packed = a.packed(), unpacked = a.unpacked()
-            assert packed.values().every { it instanceof org.codehaus.groovy.runtime.PackedClosure }
+            assert packed.foo instanceof org.codehaus.groovy.runtime.PackedClosure
+            assert packed.name instanceof org.codehaus.groovy.runtime.PackedClosure
+            assert !(packed.extension instanceof org.codehaus.groovy.runtime.PackedClosure)
             assert !unpacked.values().any { it instanceof org.codehaus.groovy.runtime.PackedClosure }
             def results = { Map<String, Closure> cs -> cs.collectEntries { k, c -> [k, c.rehydrate(null, b, b)()] } }
             [results(packed), results(unpacked)]
@@ -1605,7 +1598,8 @@ final class PackedClosuresTransformTest {
         // TO_SELF, and against the enclosing closure in a nested closure (OWNER_FIRST, OWNER_ONLY). A
         // hoisted body is a method of R, where the call reached R's method (TO_SELF, nested) or the
         // nested closure got R instead of the closure as its owner (MissingPropertyException: owner).
-        // Those closures stay classes; a top-level call, resolved against R, still packs.
+        // Those closures stay classes. So does a top-level call, resolved against R, as its receiver
+        // depends on what rehydrate leaves.
         def r = instance(CLOSURE_RECEIVER_OWNER + '''
             List<Object> toSelf() {
                 def a = self { -> toString() }
@@ -1642,7 +1636,7 @@ final class PackedClosuresTransformTest {
         assertEquals([[true, true, false, true], [false] * 4], r.toSelf())
         assertEquals([[true, true, false, true, true, true], [false] * 6], r.nested())
         assertEquals([[true, true, true], [false] * 3], r.nestedProperties())
-        assertEquals([['R', r.getClass(), 'R'], [true] * 3], r.ownerResolved())
+        assertEquals([['R', r.getClass(), 'R'], [false] * 3], r.ownerResolved())
     }
 
     // GROOVY-12660
@@ -1820,7 +1814,8 @@ final class PackedClosuresTransformTest {
                 static Object objectMethods()        { { -> [getClass(), hashCode() == S.hashCode()] }() }
                 Object instance()                    { { -> toString() }() }
             }'''
-        assertEquals(['S'], generatedClassNames(src))   // every closure packs, no class remains
+        // a method of Class packs; a method of Object follows what rehydrate leaves, so it stays a class
+        assertEquals(['S', 'S$_instance_closure3', 'S$_objectMethods_closure2', 'S$_string_closure1'], generatedClassNames(src))
 
         def s = instance(src + '\n new S()')
         assertEquals('class S', s.string())
