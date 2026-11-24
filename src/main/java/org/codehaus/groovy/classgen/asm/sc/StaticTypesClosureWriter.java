@@ -94,7 +94,8 @@ public class StaticTypesClosureWriter extends ClosureWriter {
         }
         if (callsClosureMethod(expression)) {
             return "it calls a method on a closure object (a Closure method such as memoize(), an Object method "
-                    + "such as toString() or an extension method of Object, which depend on what rehydrate() leaves)";
+                    + "such as toString() or an extension method of Object, which depend on what rehydrate() leaves, "
+                    + "or a method that an enclosing closure answers)";
         }
         if (touchesMapOwnerProperties(expression)) {
             return "it accesses properties of a Map owner, whose closure-context resolution "
@@ -211,12 +212,13 @@ public class StaticTypesClosureWriter extends ClosureWriter {
      * True when an implicit-this call in the closure (or a nested closure) was resolved against a
      * closure object rather than the owner class: a method that {@code Closure} declares, such as
      * {@code memoize()}; a method of {@code Object} under {@code TO_SELF}, whose receiver STC types as
-     * {@code Closure}; or a method of {@code Object} in a nested closure, which STC resolves against
-     * the enclosing closure (receiver path {@code "owner"}). A hoisted body is a method of the owner
-     * class, where the same call would reach the owner's method, and a nested closure constructed in
-     * it has the owner instance, not the packed closure, as its owner. Any implicit call of a
-     * method of {@code Object}, or an instance extension method of {@code Object} other than the
-     * print methods, counts too, as its receiver depends on what {@code rehydrate()} leaves.
+     * {@code Closure}; or a method in a nested closure that STC resolves against the enclosing
+     * closure (receiver path {@code "owner"}), such as a method of {@code Object} when the enclosing
+     * closure is {@code TO_SELF}. A hoisted body is a method of the owner class, where the same call
+     * would reach the owner's method, and a nested closure constructed in it has the owner instance,
+     * not the packed closure, as its owner. Any implicit call of a method of {@code Object}, or an
+     * instance extension method of {@code Object} other than the print methods, counts too, as its
+     * receiver depends on what {@code rehydrate()} leaves.
      */
     private static boolean callsClosureMethod(final ClosureExpression expression) {
         Statement code = expression.getCode();

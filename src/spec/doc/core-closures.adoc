@@ -421,7 +421,9 @@ them its own meaning.
 . *The candidates named by the resolve strategy*, in order, as shown in the table below. A candidate is used if
 it <<_delegation_strategy_in_the_presence_of_metaprogramming,handles>> the property or method. A candidate that is `null`
 is skipped. A candidate that is itself a closure, which is the case for the owner of a nested closure, applies these same
-rules with its own owner, delegate and resolve strategy.
+rules with its own owner, delegate and resolve strategy. That holds for every name, also for a method that every object
+has, such as `toString()`: an enclosing closure passes the call on to its own candidates, and answers it itself only
+under its own step 4.
 . *For a method call only, any other method of the closure*, such as those inherited from `Object` or added by the
 Groovy development kit (`toString()`, `with`, `tap`).
 . Otherwise a `MissingMethodException` or a `MissingPropertyException` is thrown.
@@ -492,6 +494,18 @@ include::../test/ClosuresSpecTest.groovy[tags=resolution_nested,indent=0]
 <1> `inner` asks its owner, the `outer` closure, for `name`
 <2> `outer` does not find `name` on its own owner, the script, and so reads it from its delegate
 
+A method that every object has, such as `toString()`, `hashCode()`, `equals` or `getClass()`, is resolved in the same
+way. A closure is an object too, but an enclosing closure does not answer such a call for a closure nested in it.
+The call means what it would mean in the enclosing closure, however deeply it is nested:
+
+[source,groovy]
+----
+include::../test/ClosuresSpecTest.groovy[tags=resolution_nested_object_method,indent=0]
+----
+<1> `inner` asks its owner, the `outer` closure, which asks its own owner, the `Report` instance
+<2> the same call written directly in `outer` gives the same result
+<3> `outer` now asks its delegate first, and so does the call in `inner`
+
 The owner or the delegate of a closure can be `null`: after `dehydrate()`, after `rehydrate` with a `null` argument,
 or after assigning `null` to `delegate`. A `null` candidate is skipped, and when no candidate remains
 the failure is a missing property or method, not a `NullPointerException`:
@@ -525,7 +539,10 @@ include::../test/ClosuresSpecTest.groovy[tags=resolution_to_self,indent=0]
 
 NOTE: These rules describe dynamic Groovy, where resolution happens when the closure runs. In statically compiled
 or type checked code the receiver of a name is determined at compile time from the declared types, with the help of
-link:core-domain-specific-languages.html#section-delegatesto[`@DelegatesTo`].
+link:core-domain-specific-languages.html#section-delegatesto[`@DelegatesTo`]. A name that the compiler resolves
+to the enclosing class is then sent to the `this` object of the closure, where dynamic code asks the owner. The two
+differ only for a closure that `rehydrate` gave an owner other than its `this` object; statically compiled code then
+needs the `this` object to be an instance of the enclosing class.
 
 == Closures in GStrings
 

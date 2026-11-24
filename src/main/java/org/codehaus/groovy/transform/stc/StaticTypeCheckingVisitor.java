@@ -6574,6 +6574,11 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
     private static void addReceivers(final List<Receiver<String>> receivers, final Collection<Receiver<String>> owners, final DelegationMetadata dmd, final String path) {
         int strategy = dmd.getStrategy();
         switch (strategy) {
+          case Closure.TO_SELF:
+            if (!path.isEmpty()) { // an enclosing closure that resolves to itself answers for a nested closure
+                receivers.add(new Receiver<>(CLOSURE_TYPE.getPlainNodeReference(), path.substring(0, path.length() - 1)));
+            }
+            break;
           case Closure.DELEGATE_ONLY:
           case Closure.DELEGATE_FIRST:
             addDelegateReceiver(receivers, dmd.getType(), path + "delegate");
@@ -6599,16 +6604,6 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
             }
             break;
         }
-    }
-
-    /**
-     * Tells whether the innermost enclosing closure is a closure, not a lambda,
-     * whose owner is an enclosing closure.
-     */
-    private static boolean isOwnerClosure(final List<TypeCheckingContext.EnclosingClosure> enclosingClosures) {
-        return enclosingClosures.size() > 1
-            && !(enclosingClosures.get(0).getClosureExpression() instanceof LambdaExpression)
-            && !(enclosingClosures.get(1).getClosureExpression() instanceof LambdaExpression);
     }
 
     /**
@@ -6814,17 +6809,9 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
                         mn = chooseBestMethod(CLOSURE_TYPE, CLOSURE_TYPE.getMethods(name), args);
                     }
                     if (strategy != Closure.TO_SELF) {
-                        // a method of Object is looked up on the delegate or owner, as at run time
-                        List<MethodNode> objectMethods = new ArrayList<>(mn);
-                        objectMethods.removeIf(m -> !isObjectType(m.getDeclaringClass()));
+                        // a method of Object is looked up on the delegate or owner, as at run time;
+                        // an owner that is a closure passes it on in the same way
                         mn.removeIf(m -> isObjectType(m.getDeclaringClass()));
-                        if (mn.isEmpty() && !objectMethods.isEmpty()
-                                && (strategy == Closure.OWNER_FIRST || strategy == Closure.OWNER_ONLY)
-                                && isOwnerClosure(typeCheckingContext.getEnclosingClosureStack())) {
-                            // the owner is a closure, so it is the owner's own method
-                            mn = objectMethods;
-                            chosenReceiver = new Receiver<>(CLOSURE_TYPE.getPlainNodeReference(), "owner");
-                        }
                     }
                     if (!mn.isEmpty()) {
                         receiver = CLOSURE_TYPE.getPlainNodeReference();
