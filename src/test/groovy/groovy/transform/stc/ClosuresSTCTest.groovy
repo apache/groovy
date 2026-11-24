@@ -1605,14 +1605,14 @@ ${' ' * 46}value.prop += 1
                     [
                         tos[0] == tos[1],
                         nested[0] == nested[1],
-                        outer() == outer.toString(),
+                        outer(), // the enclosing closure passes the call on to its own owner
                         delegateOnly { -> toString() },
                         ownerOnly { -> toString() }
                     ]
                 }
             }
 
-            assert new C().m() == [true, true, true, 'd', 'C']
+            assert new C().m() == [true, true, 'C', 'd', 'C']
         '''
     }
 

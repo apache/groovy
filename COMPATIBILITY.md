@@ -1130,6 +1130,57 @@ call in a closure with a null owner or delegate, and code that relied on
 exception before behaves differently, apart from those methods of the
 closure. No public API changes, so `japicmp` does not report this.
 
+### Groovy 6.0.1 — a closure passes a method of `Object` on for a closure nested in it (GROOVY-12829)
+
+A call without a receiver to a method that every object has (`toString()`,
+`hashCode()`, `equals`, `getClass()`, and the Groovy development kit methods
+for `Object` such as `with`, `tap`, `is` and `inspect`) is first tried on the
+closure's owner and delegate (GROOVY-11858, Groovy 6.0.0). When the owner is
+itself a closure, as for a nested closure, a lambda in a closure, or a closure
+passed to `each` or `collect` inside another closure, that enclosing closure
+answered the call itself. It now passes the call on to its own owner and
+delegate, by its own resolve strategy, as it does for any other name:
+
+```groovy
+class C {
+    String toString() { 'C' }
+    def m() {
+        def outer = { ->
+            def inner = { -> toString() }
+            [toString(), inner()]
+        }
+        outer()
+    }
+}
+assert new C().m() == ['C', 'C']    // was ['C', 'C$_m_closure1@...']
+```
+
+- **The call means what it would in the enclosing closure.** In a closure
+  nested in `new D().with { ... }` it reaches `D`. In a closure nested in one
+  with `DELEGATE_FIRST` or `DELEGATE_ONLY` it reaches that closure's delegate.
+- **An enclosing closure still answers when it would for its own body:** with
+  `TO_SELF`, or when it has no owner and no delegate, as after `dehydrate()`.
+- **Dynamic, type checked and statically compiled code agree.** Statically
+  compiled code had resolved `toString()`, `hashCode()`, `equals` and
+  `getClass()` against the enclosing closure, to match. For the Groovy
+  development kit methods, and in a lambda in a closure, it already reached
+  the enclosing instance.
+- **`@PackedClosures`.** A closure that makes such a call is still left as
+  a class, as for any implicit call of a method of `Object` (GROOVY-12576).
+
+Unchanged: a call in a closure that is not nested, any other method or
+property name, the methods that `Closure` declares (`call`, `curry`,
+`getDelegate` and the rest), `this.toString()`, `owner.toString()`, and
+`toString()` called on a closure from outside it. Up to Groovy 5 the nested
+closure answered such a call itself.
+
+**Who is affected.** Code that calls `toString()`, `hashCode()`, `equals`,
+`getClass()` or an `Object` extension method without a receiver in a nested
+closure and relies on getting the enclosing closure: for example
+`getClass().name` to obtain the closure's class name, or `with { ... }` to
+operate on the closure. Use `owner.` or name the closure through a variable
+to keep that. No public API changes, so `japicmp` does not report this.
+
 ### Groovy 6.0.1 — async constructs rethrow a checked exception as itself (GROOVY-12763)
 
 In 6.0.0, `await` rethrew a checked exception from an async task unchanged,

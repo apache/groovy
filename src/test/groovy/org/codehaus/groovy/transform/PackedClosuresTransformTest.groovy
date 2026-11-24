@@ -827,9 +827,8 @@ final class PackedClosuresTransformTest {
     @Test
     void dynamicClosuresCallingObjectMethodsInANestedClosureDecline() {
         // In a nested closure, toString(), hashCode(), equals(), getClass() and the GDK methods try the
-        // owner first, the enclosing closure, which answers them itself. A nested closure in a hoisted
-        // body has R as its owner, so they reached R. Those outer closures stay classes; calls that
-        // resolve to R anyway still pack.
+        // owner first, the enclosing closure, which passes them on to its own owner, so they reach R,
+        // as they would from a hoisted body. Those outer closures still stay classes.
         def r = instance(DYNAMIC_CLOSURE_RECEIVER_OWNER + '''
             List nested() {
                 def a = call0 { -> { -> toString() }() }
@@ -854,8 +853,8 @@ final class PackedClosuresTransformTest {
         }
         new R()
         ''')
-        assertEquals([[true, true, false, true, true, false, true], [false] * 7], r.nested())
-        assertEquals([['R', r.getClass(), true, true, true, 'p'], [true] * 6], r.ownerResolved())
+        assertEquals([[false, false, true, false, false, true, false], [false] * 7], r.nested())
+        assertEquals([['R', r.getClass(), true, true, false, 'p'], [true] * 6], r.ownerResolved())
     }
 
     // GROOVY-12663
@@ -1595,11 +1594,12 @@ final class PackedClosuresTransformTest {
     @Test
     void closuresCallingObjectMethodsOnAClosureDecline() {
         // STC resolves toString(), hashCode(), equals() and getClass() against the closure itself under
-        // TO_SELF, and against the enclosing closure in a nested closure (OWNER_FIRST, OWNER_ONLY). A
-        // hoisted body is a method of R, where the call reached R's method (TO_SELF, nested) or the
-        // nested closure got R instead of the closure as its owner (MissingPropertyException: owner).
-        // Those closures stay classes. So does a top-level call, resolved against R, as its receiver
-        // depends on what rehydrate leaves.
+        // TO_SELF. A hoisted body is a method of R, where the call reached R's method. In a nested
+        // closure (OWNER_FIRST, OWNER_ONLY) the enclosing closure passes the call on to its own owner,
+        // R. A nested closure that names owner, delegate or thisObject would get R instead of the
+        // closure as its owner (MissingPropertyException: owner). All of these closures stay classes,
+        // as does one with a top-level call, resolved against R, as its receiver depends on what
+        // rehydrate leaves.
         def r = instance(CLOSURE_RECEIVER_OWNER + '''
             List<Object> toSelf() {
                 def a = self { -> toString() }
@@ -1634,7 +1634,7 @@ final class PackedClosuresTransformTest {
         new R()
         ''')
         assertEquals([[true, true, false, true], [false] * 4], r.toSelf())
-        assertEquals([[true, true, false, true, true, true], [false] * 6], r.nested())
+        assertEquals([[false, false, true, false, false, false], [false] * 6], r.nested())
         assertEquals([[true, true, true], [false] * 3], r.nestedProperties())
         assertEquals([['R', r.getClass(), 'R'], [false] * 3], r.ownerResolved())
     }
