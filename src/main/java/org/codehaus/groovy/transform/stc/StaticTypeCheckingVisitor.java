@@ -5434,8 +5434,12 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
                 // GROOVY-11386:
                 if (isThisObjectExpression && call.isImplicitThis()
                     && typeCheckingContext.getEnclosingClosure() != null
+                    // clone() in a native lambda is the enclosing class's, not that of the generated lambda
+                    && !(name.equals("clone") && isNativeLambda(typeCheckingContext.getEnclosingClosure()))
                     && !name.equals("call") && !name.equals("doCall")) { // GROOVY-9662
-                    mn = CLOSURE_TYPE.getMethods(name);
+                    // select the closure method by argument types; without a match the
+                    // call goes to the delegate or owner, as at run time
+                    mn = chooseBestMethod(CLOSURE_TYPE, CLOSURE_TYPE.getMethods(name), args);
                     DelegationMetadata dmd = typeCheckingContext.delegationMetadata;
                     int strategy = dmd != null ? dmd.getStrategy() : Closure.OWNER_FIRST;
                     if (strategy != Closure.TO_SELF) {
