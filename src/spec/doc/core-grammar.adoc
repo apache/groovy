@@ -943,6 +943,11 @@ closure/lambda alternative of `expression`.
 `forUpdate` (`canSpread == false`). This is conversion, not
 recognition.
 
+**R22** (`{ LA(2) != LPAREN }?` on `awaitExprAlt`)::
+The unparenthesised `await` alternative of `expression` and
+`castOperandExpression` is not taken when `(` follows `await`, so
+`await(...)` is always the parenthesised `primary`.
+
 `<assoc=right>` on `==>`, ternary / elvis / null-coalescing, and assignment is CFG
 disambiguation of an ambiguous grammar, recorded in the precedence
 table, not numbered here.
@@ -1584,10 +1589,7 @@ are no `LSHIFT` / `RSHIFT` / `URSHIFT` lexer tokens).
 expression ::=
       castParExpression castOperandExpression          /* cast, tightest */
     | 'async' NL* closureOrLambdaExpression            /* R20 enters */
-    | 'await' NL*
-          ( '(' expression (',' NL* expression)* ')'
-          | expression (',' NL* expression)*
-          )
+    | 'await' expression (',' NL* expression)*         /* R22 */
     | postfixExpression
     | switchExpression                                 /* R19 enters */
     | ('~' | '!') NL* expression
@@ -1625,10 +1627,7 @@ expression ::=
 castOperandExpression ::=              /* restricted form of expression */
       castParExpression castOperandExpression
     | 'async' NL* closureOrLambdaExpression            /* R20 enters */
-    | 'await' NL*
-          ( '(' expression (',' NL* expression)* ')'
-          | expression (',' NL* expression)*
-          )
+    | 'await' expression (',' NL* expression)*         /* R22 */
     | postfixExpression
     | ('~' | '!') NL* castOperandExpression
     | ('++' | '--' | '+' | '-') castOperandExpression
@@ -1664,11 +1663,18 @@ here because that character also opens slashy strings (R1).
 `castOperandExpression` exists so `(int) a + b` is `((int) a) + b` and
 `(int) ++x` is a cast of a prefix. Its `async` and `await` alternatives
 let a cast apply to them, as in `(Awaitable<Integer>) async { 7 }` and
-`(BigDecimal) await(price)`; otherwise `async` and `await` would be read
+`(BigDecimal) await price`; otherwise `async` and `await` would be read
 as the names of called methods.
 
-`await` takes a full `expression` (or a parenthesised list). So
-`await a + b` is `await (a + b)`.
+Without parentheses, `await` takes a full `expression`, so
+`await a + b` is `await (a + b)` and `await a.b()` is `await (a.b())`.
+With parentheses, `await(...)` is a `primary`, like a method call, so
+`await(a) + b` is `(await a) + b` and `await(a).b()` calls `b()` on the
+awaited value.
+
+`await` must be followed by its operand, or by `(`, on the same line.
+An `await` at the end of a line is a name, so a variable named `await`
+can end a statement. `async` may have its closure on the next line.
 
 === Precedence and associativity
 
@@ -1691,7 +1697,7 @@ group "level 7"; the table keeps that grouping and notes the split.
 | Assoc.
 
 | (atom)
-| `(T) e`, `async { }`, `await e`, path/postfix, `switch (e) { }`
+| `(T) e`, `async { }`, `await e`, path/postfix (including `await(e)`), `switch (e) { }`
 | `#castExprAlt` `#asyncClosureExprAlt` `#awaitExprAlt` `#postfixExprAlt` `#switchExprAlt`
 | n/a
 
@@ -1856,7 +1862,8 @@ the g4, not a production.
 [source,ebnf]
 ----
 primary ::=
-      identifier typeArguments?
+      'await' '(' expression (',' NL* expression)* ')'
+    | identifier typeArguments?
     | literal
     | gstring
     | 'new' NL* nonWildcardTypeArguments? creator

@@ -4624,13 +4624,34 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
     }
 
     /**
+     * Returns the expression produced by {@code AsyncTransformHelper.buildAwaitCall} for an
+     * unparenthesized {@code await}, positioned on {@code ctx}.
+     *
+     * @see #createAwaitCall(List, GroovyParserRuleContext)
+     */
+    @Override
+    public Expression visitAwaitExprAlt(final AwaitExprAltContext ctx) {
+        return createAwaitCall(ctx.expression(), ctx);
+    }
+
+    /**
+     * Returns the expression produced by {@code AsyncTransformHelper.buildAwaitCall} for a
+     * parenthesized {@code await}, positioned on {@code ctx}. As a primary, a following method
+     * call, property or index applies to the awaited value.
+     *
+     * @see #createAwaitCall(List, GroovyParserRuleContext)
+     */
+    @Override
+    public Expression visitAwaitPrmrAlt(final AwaitPrmrAltContext ctx) {
+        return createAwaitCall(ctx.expression(), ctx);
+    }
+
+    /**
      * Returns the expression produced by {@code AsyncTransformHelper.buildAwaitCall}, positioned
      * on {@code ctx}. One operand is passed through. Several operands are passed as an
      * {@link ArgumentListExpression}.
      */
-    @Override
-    public Expression visitAwaitExprAlt(final AwaitExprAltContext ctx) {
-        List<? extends ExpressionContext> exprCtxs = ctx.expression();
+    private Expression createAwaitCall(final List<? extends ExpressionContext> exprCtxs, final GroovyParserRuleContext ctx) {
         if (exprCtxs.size() == 1) {
             Expression expr = (Expression) this.visit(exprCtxs.get(0));
             return configureAST(

@@ -578,6 +578,26 @@ used the variable or method. A cast now applies to the keyword, as
 `(BigDecimal) await(price)` and `(Awaitable<Integer>) async { 7 }` need, so
 those forms follow the same rules as without the cast.
 
+### Groovy 6.0.1 — `await(x)` binds like a call, and `await` needs its operand on the same line (GROOVY-12831, GROOVY-12832)
+
+Two changes to how `await` (incubating) is parsed:
+
+- A method call, property or index after a parenthesised `await` applies to
+  the awaited value: `await(task).toString()` is `(await task).toString()`.
+  In 6.0.0 it awaited `task.toString()`, which failed at run time, although
+  `await(task) + 1` already added to the awaited value. Without parentheses
+  `await` still takes the whole expression, so `await task.toString()` keeps
+  awaiting `task.toString()`.
+- `await` at the end of a line is a name, not the keyword. In 6.0.0 the next
+  line became its operand, so `def r = await` followed by `r` on the next
+  line was read as `def r = await r`. An `await` with its operand on the next
+  line now needs the operand moved up, or `await(` with the arguments on the
+  following lines. `async` may still have its closure on the next line.
+
+**Who is affected (source).** Code that relied on `await(x).m()` awaiting
+`x.m()` should write `await x.m()`, and code that put the operand of `await`
+on the next line should join the lines.
+
 ### Groovy 6.0.1 — `abs()` on a `Number` receiver keeps the number's precision (GROOVY-12471)
 
 `DefaultGroovyMethods.abs(Number)` used to return `int`, truncating any
