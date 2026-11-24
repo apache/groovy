@@ -2345,7 +2345,7 @@ behaviour until they are recompiled.
 **What is unchanged.** Dynamic code, explicit receivers such as `this.toString()`
 and `Outer.this.toString()`, and methods that `Closure` declares itself.
 
-### Groovy 7 — a lambda inside a closure can use the closure's delegate (GROOVY-12827)
+### Groovy 6.0.1 — a non-serializable lambda inside a closure can use the closure's delegate (GROOVY-12827)
 
 Under `@CompileStatic`, an implicit call or property access in a native
 lambda could resolve to the delegate of a closure around the lambda. The code
@@ -2353,13 +2353,25 @@ compiled, but threw `ClassCastException` when that name was evaluated, because
 the owner of a lambda is the enclosing instance rather than the closure. This
 was so in 5.x and 6.0.0.
 
-Such a lambda now captures the closure around it. The name resolves as it
-would directly in the closure, using the closure's resolve strategy and its
-delegate at the time of the call. The lambda's own `owner`, `delegate` and
-`thisObject` remain the enclosing instance. A non-serializable lambda that
-makes an implicit call of a method of `Object` captures the closure too, to
-use what the closure would use. Any other lambda that uses no such name is
-generated as before.
+A lambda that is not serializable now captures the closure around it. The
+name resolves as it would directly in the closure, using the closure's resolve
+strategy and its delegate at the time of the call. The lambda's own `owner`,
+`delegate` and `thisObject` remain the enclosing instance. A non-serializable
+lambda that makes an implicit call of a method of `Object` captures the
+closure too, to use what the closure would use. Any other lambda that uses no
+such name is generated as before.
+
+**What is unchanged.** In 6.0.x a serializable lambda does not capture the
+closure, so its serialized form is the same as in 6.0.0 and such a name in it
+still throws `ClassCastException`. Groovy 7 supports it there too
+(GROOVY-12830, see the next entry).
+
+### Groovy 7 — a serializable lambda inside a closure can use the closure's delegate (GROOVY-12830)
+
+A serializable lambda that resolves a name through the closure around it now
+captures that closure too, as a non-serializable lambda does from Groovy 6.0.1
+(GROOVY-12827, see the entry above). Before, the name threw
+`ClassCastException` when evaluated.
 
 **Who is affected (runtime behaviour).** Only a serializable lambda containing
 such a name, which could not previously evaluate it:
