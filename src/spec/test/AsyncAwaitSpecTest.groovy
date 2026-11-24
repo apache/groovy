@@ -585,4 +585,53 @@ final class AsyncAwaitSpecTest {
         }
         '''
     }
+
+    // === Contextual keywords ===
+
+    @Test
+    void testAwaitAndAsyncAsNames() {
+        assertScript '''
+        // tag::await_async_as_names[]
+        class Gate {
+            boolean open = true
+            def await(long millis) { open }             // a method named await
+            def async(Closure action) { action() }      // a method named async
+
+            def check() {
+                assert this.await(10)                   // qualified: calls the method
+                assert this.async { 'ran' } == 'ran'
+            }
+        }
+
+        def gate = new Gate()
+        gate.check()
+        assert gate.await(10)                           // qualified: calls the method
+
+        def await = 5                                   // a variable named await
+        assert await == 5                               // no operand follows: the variable
+        assert 1 + await == 6                           // not first in the expression: the variable
+        // end::await_async_as_names[]
+        '''
+    }
+
+    @Test
+    void testAwaitKeywordTakesOver() {
+        assertScript '''
+        import static groovy.test.GroovyAssert.shouldFail
+
+        // tag::await_keyword_takes_over[]
+        class Counter {
+            int await = 5                               // a field named await
+
+            def next() { this.await + 1 }               // qualified: reads the field
+            def broken() { await + 1 }                  // the keyword: awaits the value +1
+        }
+
+        assert new Counter().next() == 6
+        shouldFail(IllegalArgumentException) {          // 1 is not something that can be awaited
+            new Counter().broken()
+        }
+        // end::await_keyword_takes_over[]
+        '''
+    }
 }

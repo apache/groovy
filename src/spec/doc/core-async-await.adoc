@@ -567,8 +567,43 @@ type, e.g. `AtomicInteger` for a shared counter, or thread-safe types from
 | Non-blocking pause.
 |===
 
-All keywords (`async`, `await`, `defer`) are contextual — they can still be
-used as variable or method names in existing code.
+[[async-contextual-keywords]]
+=== Existing names `async`, `await` and `defer`
+
+The keywords (`async`, `await`, `defer`) are contextual, so existing
+variables, fields, parameters and methods with these names still compile.
+Each word is read as a keyword only in one position:
+
+* `defer` starts a statement inside an `async` closure.
+* `async` is followed by a closure or lambda.
+* `await` starts an expression and is followed by something that can begin
+an expression, such as a name, a literal, a parenthesised argument list,
+`-1`, `+1` or `[0]`.
+
+Everywhere else the word is an ordinary name. Declarations, qualified uses
+such as `this.await(10)`, `gate.await(10)` or `Type.await(10)`, uses that
+are not first in an expression, such as `1 + await`, and an `await` that
+nothing follows, such as `await == 5` or `await()`, all keep their meaning:
+
+[source,groovy]
+----
+include::../test/AsyncAwaitSpecTest.groovy[tags=await_async_as_names,indent=0]
+----
+
+A bare `await(1)` or `async { ... }` calls the keyword, not a method of that
+name, and a bare `await + 1` awaits `+1` rather than adding to a variable.
+A cast in front, as in `(int) await + 1`, does not change this. Qualify
+the name to reach your own member:
+
+[source,groovy]
+----
+include::../test/AsyncAwaitSpecTest.groovy[tags=await_keyword_takes_over,indent=0]
+----
+
+The same applies to methods imported statically. Awaitility's
+`await()` and `await().atMost(...)` keep working because `await()` with
+no argument is not an await, but `await('alias')` is the keyword; write
+`Awaitility.await('alias')` instead.
 
 include::_core-gpars-migration.adoc[]
 
