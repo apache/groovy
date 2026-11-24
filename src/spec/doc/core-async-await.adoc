@@ -529,6 +529,9 @@ type, e.g. `AtomicInteger` for a shared counter, or thread-safe types from
 
 | `await expr`
 | Block until the result is available. Rethrows the original exception.
+Without parentheses, `await` applies to the whole expression after it, so
+`await a.b()` awaits `a.b()`. With parentheses it binds like a method call,
+so `await(a).b()` calls `b()` on the awaited value.
 
 | `await(a, b, c)`
 | Wait for all — syntactic sugar for `await Awaitable.all(a, b, c)`.
@@ -576,14 +579,15 @@ Each word is read as a keyword only in one position:
 
 * `defer` starts a statement inside an `async` closure.
 * `async` is followed by a closure or lambda.
-* `await` starts an expression and is followed by something that can begin
-an expression, such as a name, a literal, a parenthesised argument list,
-`-1`, `+1` or `[0]`.
+* `await` starts an expression and is followed, on the same line, by
+something that can begin an expression, such as a name, a literal, a
+parenthesised argument list, `-1`, `+1` or `[0]`.
 
 Everywhere else the word is an ordinary name. Declarations, qualified uses
 such as `this.await(10)`, `gate.await(10)` or `Type.await(10)`, uses that
 are not first in an expression, such as `1 + await`, and an `await` that
-nothing follows, such as `await == 5` or `await()`, all keep their meaning:
+nothing follows, such as `await == 5`, `await()` or an `await` at the end
+of a line, all keep their meaning:
 
 [source,groovy]
 ----

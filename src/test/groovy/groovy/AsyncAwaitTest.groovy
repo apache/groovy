@@ -559,6 +559,114 @@ final class AsyncAwaitTest {
         '''
     }
 
+    // === member access after a parenthesized await ===
+
+    // GROOVY-12831
+    @Test
+    void testMemberAccessAfterParenthesizedAwaitAppliesToAwaitedValue() {
+        assertScript '''
+            def t = async { 7 }
+            def l = async { [3, 1, 2] }
+            def s = async { 'abc' }
+            def n = async { null }
+            assert await(t).toString() == '7'
+            assert await(t).plus(1) == 8
+            assert await(l)[0] == 3
+            assert await(l).collect { it * 2 } == [6, 2, 4]
+            assert await(l).sort() == [1, 2, 3]
+            assert await(s).size() == 3
+            assert await(s).bytes.length == 3
+            assert await(n)?.size() == null
+            assert await(t) + 1 == 8
+            assert await(t, l).size() == 2
+        '''
+    }
+
+    // GROOVY-12831
+    @Test
+    void testMemberAccessAfterParenthesizedAwaitInMethodAndAsyncClosure() {
+        assertScript '''
+            class Worker {
+                def task = async { [3, 1, 2] }
+                def first() { await(task).sort()[0] }
+            }
+            assert new Worker().first() == 1
+
+            def l = async { [3, 1, 2] }
+            def sorted = async { await(l).sort() }
+            assert await(sorted) == [1, 2, 3]
+        '''
+    }
+
+    // GROOVY-12831
+    @Test
+    void testUnparenthesizedAwaitStillTakesWholeExpression() {
+        assertScript '''
+            class Holder { def task = async { 7 } }
+            def h = new Holder()
+            def a = await h.task
+            def b = await h.getTask()
+            assert a == 7 && b == 7
+            def t = async { 7 }
+            assert (String) await(t).toString() == '7'
+            assert (Integer) await(t).plus(1) == 8
+        '''
+    }
+
+    // === await at the end of a line ===
+
+    // GROOVY-12832
+    @Test
+    void testVariableNamedAwaitAtEndOfLine() {
+        assertScript '''
+            def await = 5
+            def r = await
+            r
+            assert r == 5
+            def x
+            x = await
+            assert x == 5
+        '''
+    }
+
+    // GROOVY-12832
+    @Test
+    void testFieldAndParameterNamedAwaitAtEndOfLine() {
+        assertScript '''
+            class A {
+                int await = 5
+                def go() {
+                    def r = await
+                    r
+                }
+                def twice(int await) {
+                    def r = await
+                    r * 2
+                }
+            }
+            assert new A().go() == 5
+            assert new A().twice(3) == 6
+        '''
+    }
+
+    // GROOVY-12832
+    @Test
+    void testAwaitOperandOnSameLineOrInsideParentheses() {
+        assertScript '''
+            def t = async { 7 }
+            def a = await t
+            def b = await(
+                t
+            )
+            def c = await(t,
+                t)
+            assert a == 7 && b == 7 && c == [7, 7]
+            def d = async
+            { 8 }
+            assert await(d) == 8
+        '''
+    }
+
     // === for await ===
 
     @Test
