@@ -1400,7 +1400,8 @@ captures the closure, and the name resolves as it would in the closure.
 
 **What is unchanged.** A serializable lambda does not capture the closure, so
 its serialized form is the same as in 6.0.0 and such a name in it still throws
-`ClassCastException`. Groovy 7 also supports it in serializable lambdas.
+`ClassCastException`. Groovy 7 also supports it in serializable lambdas
+(GROOVY-12830).
 
 ## The binary-compatibility check
 
