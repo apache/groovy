@@ -41,6 +41,7 @@ import org.codehaus.groovy.ast.stmt.Statement;
 import org.codehaus.groovy.control.AnnotationConstantsVisitor;
 import org.codehaus.groovy.control.ErrorCollector;
 import org.codehaus.groovy.control.SourceUnit;
+import org.codehaus.groovy.vmplugin.VMPluginFactory;
 import org.objectweb.asm.Opcodes;
 
 import java.lang.annotation.Retention;
@@ -422,6 +423,7 @@ public class ExtendedVerifier extends ClassCodeVisitorSupport {
                         }
                     }
                     collector.addMember("value", listX(entry.getValue().stream().map(AnnotationConstantExpression::new).collect(toList())));
+                    VMPluginFactory.getPlugin().configureAnnotation(collector); // allowed targets
                     node.getAnnotations().removeAll(entry.getValue());
                     node.addAnnotation(collector);
                 }
