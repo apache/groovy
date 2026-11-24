@@ -532,6 +532,35 @@ final class ClosuresSpecTest {
     }
 
     @Test
+    void testObjectMethodsInNestedClosures() {
+        assertScript '''
+            // tag::resolution_nested_object_method[]
+            class Draft {
+                String toString() { 'draft' }
+            }
+
+            class Report {
+                String toString() { 'report' }
+
+                List<String> describe() {
+                    def outer = { ->
+                        def inner = { -> toString() }           // <1>
+                        [inner(), toString()]                   // <2>
+                    }
+                    def plain = outer()
+
+                    outer.resolveStrategy = Closure.DELEGATE_FIRST
+                    outer.delegate = new Draft()
+                    plain + outer()                             // <3>
+                }
+            }
+
+            assert new Report().describe() == ['report', 'report', 'draft', 'draft']
+            // end::resolution_nested_object_method[]
+        '''
+    }
+
+    @Test
     void testResolutionWithNullOwner() {
         assertScript '''
             // tag::resolution_null_owner[]

@@ -377,6 +377,11 @@ public final class ClosureMetaClass extends MetaClassImpl {
         }
 
         if (method != null) {
+            if (callObject instanceof GeneratedClosure && callObject instanceof Closure<?> candidate
+                    && candidate.getMetaClass() instanceof ClosureMetaClass candidateMetaClass) {
+                // a candidate that is a closure applies these rules itself, as for a call made in its own body
+                return candidateMetaClass.invokeMethod(getNonClosureOuter(candidate.getClass()), candidate, methodName, arguments, false, true);
+            }
             var metaClass = registry.getMetaClass(callObject.getClass());
             if (metaClass instanceof ProxyMetaClass) {
                 return metaClass.invokeMethod(callObject, methodName, arguments);

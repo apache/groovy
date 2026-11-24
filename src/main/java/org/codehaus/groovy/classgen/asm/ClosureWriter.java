@@ -530,7 +530,9 @@ public class ClosureWriter {
      * these against the closure itself, before the owner;</li>
      * <li>in a closure nested directly in the body, an implicit-this call to an {@code Object} method
      * or a GDK method a closure has, such as {@code toString()} or {@code with}: such a call tries the
-     * nested closure's owner, the enclosing closure, which answers it itself. {@code print},
+     * nested closure's owner, the enclosing closure, which passes it on by its own resolve strategy.
+     * That reaches the owner's method, as the hoisted body does, unless the strategy or a delegate
+     * of the enclosing closure decides otherwise, so this decline is a cautious one. {@code print},
      * {@code println} and {@code printf} are kept: their {@code Closure} versions forward to the owner.</li>
      * </ul>
      * Methods that {@code Object} declares, called in the closure's own body, go to the owner first and
@@ -584,7 +586,7 @@ public class ClosureWriter {
     protected String triggerDeclineReason(final ClosureExpression expression) {
         if (callsClosureMethod(expression)) {
             return "it calls a method on a closure object (a Closure method such as memoize(), or an Object or GDK "
-                    + "method such as toString() in a nested closure, whose owner is the closure)";
+                    + "method such as toString() in a nested closure, which asks the closure first)";
         }
         return null;
     }
