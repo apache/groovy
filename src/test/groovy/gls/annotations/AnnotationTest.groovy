@@ -1139,6 +1139,34 @@ final class AnnotationTest {
         }
     }
 
+    // GROOVY-12787
+    @Test
+    void testImplicitRepeatableContainerUsesTargetsOfContainer() {
+        assertScript shell, '''
+            @Target([PARAMETER, TYPE_USE])
+            @Retention(RUNTIME)
+            @Repeatable(Tags)
+            @interface Tag {
+                String value()
+            }
+
+            @Target(PARAMETER)
+            @Retention(RUNTIME)
+            @interface Tags {
+                Tag[] value()
+            }
+
+            class C {
+                void m(@Tag('a') @Tag('b') String s) {
+                }
+            }
+
+            def p = C.getMethod('m', String).parameters[0]
+            assert p.getAnnotation(Tags).value()*.value() == ['a', 'b']
+            assert p.annotatedType.annotations.length == 0 // container is not TYPE_USE
+        '''
+    }
+
     // GROOVY-9452
     @Test
     void testDuplicationAnnotationOnClassWithParams() {
