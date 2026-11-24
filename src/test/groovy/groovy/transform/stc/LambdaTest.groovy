@@ -2045,6 +2045,46 @@ final class LambdaTest {
         '''
     }
 
+    @Test
+    void testCloneInLambdaIsOfEnclosingClass() {
+        assertScript shell, '''
+            class C implements Cloneable {
+                @Override C clone() { (C) super.clone() }
+                Object viaLambda() {
+                    Supplier<Object> s = () -> clone()
+                    s.get()
+                }
+            }
+
+            C c = new C()
+            def copy = c.viaLambda()
+            assert copy instanceof C
+            assert !copy.is(c)
+        '''
+
+        assertScript shell, '''
+            class C {
+                String clone(int n) { "clone $n" }
+                Object viaLambda() {
+                    Supplier<Object> s = () -> clone(2)
+                    s.get()
+                }
+            }
+
+            assert new C().viaLambda() == 'clone 2'
+        '''
+
+        def err = shouldFail shell, '''
+            class C implements Cloneable {
+                Object viaLambda() {
+                    Supplier<Object> s = () -> clone()
+                    s.get()
+                }
+            }
+        '''
+        assert err =~ /Cannot access method: clone\(\)/
+    }
+
     // GROOVY-12826
     @Test
     void testInstanceExtensionMethodInLambda() {

@@ -1025,4 +1025,18 @@ final class ClosuresStaticCompileTest extends ClosuresSTCTest implements StaticC
             assert new C().m() == 'C'
         '''
     }
+
+    @Test
+    void testUserOverloadOfCloneInClosure() {
+        assertScript '''
+            class C {
+                String clone(int n) { 'c' + n }
+                def m() {
+                    def k = { -> clone(2) }
+                    k.call()
+                }
+            }
+            assert new C().m() == 'c2'
+        '''
+    }
 }
