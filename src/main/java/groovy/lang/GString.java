@@ -19,7 +19,6 @@
 package groovy.lang;
 
 import org.apache.groovy.io.StringBuilderWriter;
-import org.codehaus.groovy.runtime.GStringImpl;
 import org.codehaus.groovy.runtime.GStringUtil;
 import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.runtime.StringGroovyMethods;
@@ -139,13 +138,15 @@ public abstract class GString extends GroovyObjectSupport implements Comparable,
     }
 
     /**
-     * Concatenates this GString with a String.
+     * Appends a String to the rendered text of this GString.
+     * Values are rendered now, and the result is a String, as when a
+     * GString is appended to a String.
      *
      * @param that the string to append
-     * @return the concatenated GString
+     * @return the rendered text with {@code that} appended
      */
-    public GString plus(String that) {
-        return plus(new GStringImpl(EMPTY_OBJECT_ARRAY, new String[]{that}));
+    public String plus(String that) {
+        return toString() + that;
     }
 
     /**

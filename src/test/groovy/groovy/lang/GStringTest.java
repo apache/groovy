@@ -19,7 +19,6 @@
 package groovy.lang;
 
 import groovy.test.GroovyTestCase;
-import org.codehaus.groovy.runtime.FormatHelper;
 
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 
@@ -37,18 +36,16 @@ public class GStringTest extends GroovyTestCase {
 
     public void testAppendString() {
         DummyGString a = new DummyGString(new Object[]{"James"});
-        GString result = a.plus(" how are you?");
-        assertEquals("Hello James! how are you?", result.toString());
+        String result = a.plus(" how are you?");
+        assertEquals("Hello James! how are you?", result);
         assertEquals('J', a.charAt(6));
         assertEquals("o J", a.subSequence(4, 7));
     }
 
     public void testAppendString2() {
         DummyGString a = new DummyGString(new Object[]{"James"}, new String[]{"Hello "});
-        GString result = a.plus(" how are you?");
-        System.out.println("Strings: " + FormatHelper.toString(result.getStrings()));
-        System.out.println("Values: " + FormatHelper.toString(result.getValues()));
-        assertEquals("Hello James how are you?", result.toString());
+        String result = a.plus(" how are you?");
+        assertEquals("Hello James how are you?", result);
     }
 
     public void testAppendGString() {

@@ -2309,6 +2309,37 @@ for interface default methods, method calls through `N.super` and through
 below the superclass declares. `ExpressionUtils.isOuterSuperExpression` is
 new; there are no other API changes.
 
+### Groovy 7 — appending a String to a GString returns a String (GROOVY-2994)
+
+`"${1}" + "2"` and `"${1}".plus("2")` now return a String, as `"1" + "${2}"`
+and `"1".plus("${2}")` already did. The text is unchanged (`"12"`).
+`GString.plus(String)` renders the receiver and appends the argument, so the
+two orders agree on the result type.
+
+Before, a GString on the left and a String on the right produced a GString.
+Its values stayed unrendered until `toString`, `writeTo` or `build`, and
+`getValues` / `getStrings` described the combined parts. `groovy.sql.Sql`
+therefore treated `"select ... ${id}" + " and active = 1"` as a query with a
+bound parameter. That expression is now the rendered String, and `Sql` takes
+the `String` overload.
+
+**Who is affected.** Code that needs that result to be a GString: a `GString`
+variable or parameter, `getValues()`, `getStrings()`, `writeTo` or `build` on
+the result, or a `Sql` call that bound a parameter from a query built by
+appending a plain String. A mutable value is read when `plus` runs, not when
+the result is later rendered. Under `@CompileStatic` and `@TypeChecked`,
+assigning the result to a `GString` is a compile error. A class compiled
+against the previous method, whose descriptor returned `GString`, throws
+`NoSuchMethodError` until it is recompiled. `japicmp` reports the return-type
+change on `groovy.lang.GString#plus(String)`.
+
+**What is unchanged.** `GString.plus(GString)` still returns a GString and
+still combines values and literal parts. A String on the left still returns a
+String. Appending a value that is not a String, such as a number, still goes
+through `StringGroovyMethods.plus(CharSequence, Object)` and returns a String.
+Dynamic call sites that look the method up by name pick up the new result
+without recompilation.
+
 ## The binary-compatibility check
 
 The [`subprojects/binary-compatibility/`](subprojects/binary-compatibility)
