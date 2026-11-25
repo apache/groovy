@@ -18,6 +18,7 @@
  */
 package org.codehaus.groovy.classgen.asm.sc;
 
+import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
@@ -98,6 +99,7 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.args;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.attrX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.bytecodeX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.callX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.castX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.classX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.ctorX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.inSamePackage;
@@ -260,7 +262,20 @@ public class StaticInvocationWriter extends InvocationWriter {
         return objectMethod != null && objectMethod.isPublic() && !objectMethod.isStatic() ? objectMethod : null;
     }
 
+    /**
+     * Returns the expression for the instance of {@code target} that code in {@code source} uses, which
+     * may be an enclosing instance of a subclass of {@code target}, see {@link #thisObjectExpression(ClassNode, ClassNode, boolean)}.
+     */
     private Expression thisObjectExpression(final ClassNode source, final ClassNode target) {
+        return thisObjectExpression(source, target, false);
+    }
+
+    /**
+     * Returns the expression for the instance of {@code target} that code in
+     * {@code source} uses: "this", or an enclosing instance. With {@code exact},
+     * the enclosing instance must be of {@code target} itself, not a subclass.
+     */
+    private Expression thisObjectExpression(final ClassNode source, final ClassNode target, final boolean exact) {
         ClassNode thisType = source;
         while (ClassHelper.isGeneratedFunction(thisType)) {
             thisType = thisType.getOuterClass();
@@ -273,20 +288,56 @@ public class StaticInvocationWriter extends InvocationWriter {
         } else {
             thisExpr = varX("thisObject", thisType);
             // adjust for multiple levels of nesting
-            while (!isSubtype(target, thisType)) {
-                FieldNode thisZero = thisType.getDeclaredField("this$0");
-                if (thisZero != null) {
-                    thisExpr = attrX(thisExpr, "this$0");
-                    thisExpr.setType(thisZero.getType());
-                    thisType = thisType.getOuterClass();
-                    if (thisType != null) continue;
-                }
-                break;
+            while (exact ? !thisType.equals(target) : !isSubtype(target, thisType)) {
+                Expression outer = enclosingInstanceOf(thisExpr, thisType);
+                if (outer == null) break;
+                thisExpr = outer;
+                thisType = thisType.getOuterClass();
+                if (thisType == null) break;
             }
         }
         return thisExpr;
     }
 
+
+    /**
+     * Returns the expression for the enclosing instance of {@code receiver} that
+     * has {@code method}: the chain of {@code this$0} fields from the receiver's
+     * class out to that outer class. {@code receiverType} is the type that the
+     * receiver is written with here, {@code selectedType} the type that the type
+     * checker selected the method for, which a safe or spread call writes as a
+     * wider type.
+     */
+    private static Expression enclosingInstanceExpression(final Expression receiver, final ClassNode receiverType, final ClassNode selectedType, final MethodNode method) {
+        ClassNode outer = StaticTypeCheckingSupport.findEnclosingInstanceTypeWithMethod(selectedType, method);
+        if (outer == null) throw new GroovyBugError("no enclosing instance with " + method.getTypeDescriptor() + " for " + selectedType.getName());
+        Expression expr = receiverType.equals(selectedType) ? receiver : castX(selectedType, receiver);
+        for (ClassNode type = selectedType; !type.equals(outer); type = type.getOuterClass()) {
+            expr = enclosingInstanceOf(expr, type);
+            if (expr == null) throw new GroovyBugError("no enclosing instance of " + outer.getName() + " for " + selectedType.getName());
+        }
+        return expr;
+    }
+
+    /**
+     * Returns the expression for the enclosing instance of {@code expr}, an instance
+     * of {@code type}: its {@code this$0} field or, for a class created in a closure,
+     * the this object of that closure, as for {@code Outer.this}; or {@code null} if
+     * {@code type} has no enclosing instance.
+     */
+    private static Expression enclosingInstanceOf(final Expression expr, final ClassNode type) {
+        FieldNode thisZero = type.getDeclaredField("this$0");
+        if (thisZero == null) return null;
+        Expression outer = attrX(expr, "this$0");
+        outer.setType(thisZero.getType());
+        if (ClassHelper.CLOSURE_TYPE.equals(thisZero.getType()) && type.getOuterClass() != null) {
+            MethodCallExpression thisObject = callX(outer, "getThisObject");
+            thisObject.setImplicitThis(false);
+            thisObject.setMethodTarget(ClassHelper.CLOSURE_TYPE.getMethod("getThisObject", Parameter.EMPTY_ARRAY));
+            outer = castX(type.getOuterClass(), thisObject);
+        }
+        return outer;
+    }
 
     /**
      * Attempts to make a direct method call on a bridge method, if it exists.
@@ -433,22 +484,30 @@ public class StaticInvocationWriter extends InvocationWriter {
             boolean isThisImplicit = implicitThis;
             Expression theReceiver = receiver;
             MethodNode theTarget = target;
-            if (implicitThis && isThisExpression(receiver)
-                    && (!isSubtype(declaringClass, enclosingClass)
+            ClassNode thisType = enclosingClass;
+            while (ClassHelper.isGeneratedFunction(thisType)) {
+                thisType = thisType.getOuterClass();
+            }
+            boolean enclosingPrivate = isPrivateMethodOfEnclosingInstance(target, thisType);
+            if (isThisExpression(receiver) && (implicitThis
+                    ? !isSubtype(declaringClass, enclosingClass) || enclosingPrivate
                         // a method of Object called in a closure or lambda is not called on it,
                         // unless it was resolved against the closure itself (TO_SELF)
                         || (ClassHelper.isObjectType(declaringClass) && controller.isInGeneratedFunction()
-                            && !isSubtype(ClassHelper.CLOSURE_TYPE, receiverType)))) {
+                            && !isSubtype(ClassHelper.CLOSURE_TYPE, receiverType))
+                    : !controller.isStaticContext() && (!isSubtype(declaringClass, thisType) || enclosingPrivate)
+                            && isMemberOfOuterClass(declaringClass, thisType, enclosingPrivate))) {
                 if (target.isStatic()) {
                     theReceiver = classX(declaringClass);
                 } else if (controller.isStaticMethod() && !controller.isInGeneratedFunction()) {
                     theReceiver = classX(enclosingClass); // method of the Class object, like getName()
                 } else if (!controller.isInGeneratedFunction()) {
-                    ClassNode outerType = getImplicitReceiverType(enclosingClass, declaringClass);
+                    // a private method is called on the instance of its declaring class, not of a subclass
+                    ClassNode outerType = enclosingPrivate ? null : getImplicitReceiverType(enclosingClass, declaringClass);
                     theReceiver = propX(classX(outerType != null ? outerType : declaringClass), "this");
                 } else {
-                    theReceiver = thisObjectExpression(enclosingClass, declaringClass);
-                    MethodNode objectMethod = getObjectMethod(target);
+                    theReceiver = thisObjectExpression(enclosingClass, declaringClass, enclosingPrivate);
+                    MethodNode objectMethod = implicitThis ? getObjectMethod(target) : null;
                     if (objectMethod != null && !enclosingClass.implementsInterface(ClassHelper.GENERATED_LAMBDA_TYPE)) {
                         // a closure without a this object, e.g. after rehydrate(), uses its owner's method,
                         // or its own method when it has no owner either, e.g. after dehydrate()
@@ -458,6 +517,11 @@ public class StaticInvocationWriter extends InvocationWriter {
                 }
                 if (!(theReceiver instanceof VariableExpression)) isThisImplicit = false;
                 theReceiver.putNodeMetaData(StaticTypesMarker.INFERRED_TYPE, theTarget.getDeclaringClass());
+            } else if (receiver != null && !target.isStatic() && currentCall != null
+                    && currentCall.getNodeMetaData(StaticTypesMarker.ENCLOSING_INSTANCE_OF_RECEIVER) instanceof ClassNode selectedType) {
+                // GROOVY-12511: the method is one of an enclosing instance of the receiver, not of the receiver
+                theReceiver = enclosingInstanceExpression(receiver, receiverType, selectedType, target);
+                theReceiver.putNodeMetaData(StaticTypesMarker.INFERRED_TYPE, theReceiver.getType());
             }
             if (theReceiver != null && !target.isStatic() && !isSuperExpression(receiver) && !isClassWithSuper(receiver)
                     && currentCall.getNodeMetaData(StaticTypesMarker.IMPLICIT_RECEIVER) == null) {
@@ -482,6 +546,31 @@ public class StaticInvocationWriter extends InvocationWriter {
             writeMethodAccessError(target, receiver != null ? receiver : args);
             return false;
         }
+    }
+
+    /**
+     * Determines if a call on "this", in code of {@code thisType}, to the given
+     * method is a call to a private method of an enclosing class. A private
+     * method is not inherited (JLS 8.2), so a nested class that extends the
+     * declaring class calls the method on its enclosing instance, not on itself.
+     * A nested class with no enclosing instance, such as an enum constant body,
+     * calls it on itself.
+     */
+    private static boolean isPrivateMethodOfEnclosingInstance(final MethodNode target, final ClassNode thisType) {
+        return target.isPrivate() && !target.isStatic() && !target.getDeclaringClass().equals(thisType)
+                && thisType.getDeclaredField("this$0") != null;
+    }
+
+    /**
+     * Determines if an outer class of {@code enclosingClass} is {@code declaringClass}
+     * or, unless {@code exact}, one of its subclasses: then this.name() in an inner
+     * class names a method of an enclosing instance, as in dynamic Groovy.
+     */
+    private static boolean isMemberOfOuterClass(final ClassNode declaringClass, final ClassNode enclosingClass, final boolean exact) {
+        for (ClassNode outer = enclosingClass.getOuterClass(); outer != null; outer = outer.getOuterClass()) {
+            if (exact ? outer.equals(declaringClass) : isSubtype(declaringClass, outer)) return true;
+        }
+        return false;
     }
 
     /**
@@ -811,6 +900,7 @@ public class StaticInvocationWriter extends InvocationWriter {
                 newMCE.setImplicitThis(false);
                 MethodNode target = oldMCE.getMethodTarget();
                 newMCE.setMethodTarget(target);
+                newMCE.putNodeMetaData(StaticTypesMarker.ENCLOSING_INSTANCE_OF_RECEIVER, oldMCE.getNodeMetaData(StaticTypesMarker.ENCLOSING_INSTANCE_OF_RECEIVER));
                 if (target == null || !target.isVoidMethod())
                     newMCE.setNodeMetaData(StaticTypesMarker.INFERRED_TYPE, valuesType);
                 newMCE.setSafe(true);

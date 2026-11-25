@@ -18,6 +18,7 @@
  */
 package org.codehaus.groovy.transform.stc;
 
+import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.expr.Expression;
 
 import java.util.Objects;
@@ -26,19 +27,57 @@ import java.util.Objects;
  * A utility class used to wrap an expression with additional metadata used by the type checker.
  * In particular, this is used to detect closure shared variables misuses. We need in some circumstances
  * to store the method call expression and its argument types.
+ * <p>
+ * The second pass also needs to find the same private members as the first pass, which depend on
+ * where and through what the expression was checked, not only on the types assigned to the variable:
+ * the declared type of the receiver variable, through which statically compiled code may use a private
+ * member of that type although flow typing narrowed the variable to a subclass, and the class whose
+ * code the expression is, which decides the private members it may use.
  */
 class SecondPassExpression<T> {
     private final Expression expression;
     private final T data;
+    private final ClassNode declaredReceiverType;
+    private final ClassNode enclosingClass;
 
     SecondPassExpression(final Expression expression) {
-        this.expression = expression;
-        this.data = null;
+        this(expression, null, null, null);
     }
 
     SecondPassExpression(final Expression expression, final T data) {
+        this(expression, data, null, null);
+    }
+
+    /**
+     * Wraps an expression for the second pass.
+     *
+     * @param expression the expression to check again
+     * @param data the auxiliary data, such as the argument types of a call, or {@code null}
+     * @param declaredReceiverType the declared type of the receiver variable through which the first pass
+     *        found a private member of that type, or {@code null}, see {@link #getDeclaredReceiverType()}
+     * @param enclosingClass the class whose code the first pass checked the expression in, or {@code null}
+     */
+    SecondPassExpression(final Expression expression, final T data, final ClassNode declaredReceiverType, final ClassNode enclosingClass) {
         this.data = data;
         this.expression = expression;
+        this.declaredReceiverType = declaredReceiverType;
+        this.enclosingClass = enclosingClass;
+    }
+
+    /**
+     * Returns the class whose code the first pass checked the expression in,
+     * which decides the private members it may use, or {@code null}.
+     */
+    ClassNode getEnclosingClass() {
+        return enclosingClass;
+    }
+
+    /**
+     * Returns the declared type of the receiver variable through which the first
+     * pass found a private member of that type, or {@code null}.
+     */
+    ClassNode getDeclaredReceiverType() {
+        return declaredReceiverType;
     }
 
     /**
@@ -56,7 +95,9 @@ class SecondPassExpression<T> {
     }
 
     /**
-     * Compares the wrapped expression and auxiliary data.
+     * Compares the wrapped expression and auxiliary data. The declared receiver type and the enclosing
+     * class are left out: both follow from the expression, which is one node of one class, with one
+     * receiver variable, so two wrappers of the same expression never differ in them.
      */
     @Override
     public boolean equals(final Object o) {
@@ -72,7 +113,7 @@ class SecondPassExpression<T> {
     }
 
     /**
-     * Returns the hash code of the wrapped expression and auxiliary data.
+     * Returns the hash code of the wrapped expression and auxiliary data, which {@link #equals} compares.
      */
     @Override
     public int hashCode() {

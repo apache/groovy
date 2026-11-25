@@ -1253,4 +1253,79 @@ final class FieldsAndPropertiesStaticCompileTest extends FieldsAndPropertiesSTCT
         assert inner.contains('GETFIELD Base.x')
         assert inner.contains('PUTFIELD Base.x')
     }
+
+    // GROOVY-12509
+    @Override @Test
+    void testPrivateAccessorOfNestMateViaPropertySyntax() {
+        super.testPrivateAccessorOfNestMateViaPropertySyntax()
+        String other = astTrees['Outer$Other'][1]
+        assert other.contains('INVOKEVIRTUAL Outer$Box.getX ()Ljava/lang/String;')
+        assert other.contains('INVOKEVIRTUAL Outer$Box.isB ()Z')
+        assert other.contains('INVOKEVIRTUAL Outer$Box.setY (Ljava/lang/String;)V')
+        assert other.contains('INVOKESTATIC Outer$Box.getZ ()Ljava/lang/String;')
+    }
+
+    // GROOVY-12610: static compilation reads the private fields of Base
+    @Override @Test
+    void testInterfaceConstantOrGetterBeyondPrivateFieldOfSuperclass() {
+        assertScript PRIVATE_FIELD_BEFORE_CONSTANT_OR_GETTER + '''
+            assert Base.Sub.read(new Base.Sub()) == [2, 4]
+        '''
+    }
+
+    // GROOVY-12610: static compilation reads the private field of Base
+    @Override @Test
+    void testPrivateFieldOfSuperclassHidingFieldViaStaticNestedSubclass() {
+        assertScript hiddenFieldOfSuperclass('s.f', 's.f') + '''
+            assert Base.Sub.read(new Base.Sub()) == 2
+            assert Base.Other.read(new Base.Sub()) == 2
+        '''
+    }
+
+    // GROOVY-12511: static compilation does not reach the enclosing instance of the
+    // receiver for property syntax, so it reports these instead of using the receiver
+    @Override @Test
+    void testPrivateAccessorOfEnclosingInstanceOfOtherReceiverInInnerSubclass() {
+        shouldFailWithMessages PRIVATE_ACCESSOR_OF_ENCLOSING_INSTANCE_OF_OTHER_RECEIVER,
+            'No such property: p for class: Box$Sub', 'No such property: q for class: Box$Sub'
+    }
+
+    // GROOVY-12513: the private setter of the declared type, as for b.setY(v)
+    @Override @Test
+    void testPrivateSetterThroughDeclaredTypeOfNarrowedVariable() {
+        ['b.y = "p"': 'p', 'b.y += "e"': 'ye', 'b.z = "z"': 'zz', 'b.setY("c")': 'c'].each { code, log ->
+            assertScript privateSetterOfNarrowedVariable(code) + "assert Outer.Other.test() == '$log'"
+        }
+    }
+
+    // GROOVY-12513
+    @Override @Test
+    void testPrivateFieldThroughDeclaredTypeOfNarrowedVariable() {
+        assertScript PRIVATE_FIELD_THROUGH_DECLARED_TYPE + '''
+            assert Outer.Other.read() == 'ffx'
+            assert Outer.Other.write() == 'w!'
+            assert Outer.Other.attribute() == 'a'
+            assert Outer.Other.viaClosure() == 'f'
+            assert Outer.Other.viaLambda() == 'f'
+            assert Outer.Other.narrowed(sub) == 'fx'
+            assert Outer.Other.cast() == 'f'
+            assert Outer.read() == 'fx'
+        '''
+    }
+
+    // GROOVY-12533: without an enclosing instance, a private field of the outer
+    // class is the field of this instance
+    @Test
+    void testPrivateFieldOfSuperclassFromNestedSubclassWithoutEnclosingInstanceIsItsOwn() {
+        assertScript '''
+            class Shape {
+                private String nm = 'shape'
+                static class Circle extends Shape {
+                    Circle() { nm = 'circle' }
+                    String d() { [nm, this.nm, { -> nm }()].join(',') }
+                }
+            }
+            assert new Shape.Circle().d() == 'circle,circle,circle'
+        '''
+    }
 }

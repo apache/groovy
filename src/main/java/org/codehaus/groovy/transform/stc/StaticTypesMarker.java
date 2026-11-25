@@ -73,5 +73,7 @@ public enum StaticTypesMarker {
     /** marks a method-reference ({@code ::}) argument type so overload selection prefers a functional-interface parameter over a {@code Closure} parameter: as a call argument a method reference is coerced only to a functional interface, so a {@code Closure} overload does not apply (unlike assignment, where {@code Closure<?> c = Foo::bar} is valid) */
     METHOD_REFERENCE_TYPE,
     /** on a {@code SwitchExpression} without a {@code default}: {@code Boolean.TRUE} when its labels were proven to cover every non-null selector value (a complete enum, an unconditional pattern, or a covered sealed hierarchy), so that matching nothing at run time means a constant or subtype was added after compilation */
-    SWITCH_EXHAUSTIVE
+    SWITCH_EXHAUSTIVE,
+    /** GROOVY-12511: on a method call or an operator whose selected method is not a member of the receiver but one of an enclosing instance of it, the receiver type that the method was selected for: the method is called on that enclosing instance, as dynamic Groovy calls it */
+    ENCLOSING_INSTANCE_OF_RECEIVER
 }

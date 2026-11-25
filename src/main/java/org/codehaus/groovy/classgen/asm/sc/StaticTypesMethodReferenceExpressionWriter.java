@@ -21,16 +21,20 @@ package org.codehaus.groovy.classgen.asm.sc;
 import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
+import org.codehaus.groovy.ast.EnumConstantClassNode;
 import org.codehaus.groovy.ast.ConstructorNode;
+import org.codehaus.groovy.ast.DynamicVariable;
 import org.codehaus.groovy.ast.GenericsType;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.Parameter;
+import org.codehaus.groovy.ast.Variable;
 import org.codehaus.groovy.ast.expr.ArgumentListExpression;
 import org.codehaus.groovy.ast.expr.ArrayExpression;
 import org.codehaus.groovy.ast.expr.ClassExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.MethodCallExpression;
 import org.codehaus.groovy.ast.expr.MethodReferenceExpression;
+import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.ast.stmt.Statement;
 import org.codehaus.groovy.ast.tools.GeneralUtils;
 import org.codehaus.groovy.classgen.AsmClassGenerator;
@@ -84,6 +88,7 @@ import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.findDG
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.implementsInterfaceOrIsSubclassOf;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.isAssignableTo;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.isClassClassNodeWrappingConcreteType;
+import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.isInheritedPrivateMethod;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.resolveClassNodeGenerics;
 import static org.objectweb.asm.Opcodes.ACC_PRIVATE;
 import static org.objectweb.asm.Opcodes.ACC_STATIC;
@@ -594,7 +599,7 @@ public class StaticTypesMethodReferenceExpressionWriter extends MethodReferenceE
     }
 
     private MethodNode findMethodRefMethod(final String methodName, final Parameter[] samParameters, final Expression typeOrTargetRef, final ClassNode typeOrTargetRefType) {
-        List<MethodNode> methods = findVisibleMethods(methodName, typeOrTargetRefType);
+        List<MethodNode> methods = findVisibleMethods(methodName, typeOrTargetRefType, typeOrTargetRef);
 
         ToIntFunction<Parameter[]> distance = (parameters) -> { // GROOVY-10972: select from closest matches
             return allParametersAndArgumentsMatch(parameters, Arrays.stream(samParameters).map(Parameter::getType).toArray(ClassNode[]::new));
@@ -670,7 +675,20 @@ public class StaticTypesMethodReferenceExpressionWriter extends MethodReferenceE
         }).thenComparing(StaticTypesMethodReferenceExpressionWriter::isExtensionMethod)).orElse(null);
     }
 
-    private List<MethodNode> findVisibleMethods(final String name, final ClassNode type) {
+    /**
+     * Returns the methods named {@code name} that a method reference on {@code type} may use: its methods,
+     * the default methods of its interfaces and, for an abstract type, their public instance methods, and the
+     * extension methods, that are visible from the current class.
+     * <p>
+     * A private method of a superclass is left out, since it is not a member of the type (JLS 8.2), unless it
+     * is declared by the declared type of the variable {@code typeOrTargetRef}, whose type flow typing narrowed
+     * to a subclass: the reference is then made through the declared type. As for a call, a private method of the
+     * enum of an enum constant body is kept, which the meta-class of the body finds, and so is a private static
+     * method of a class that encloses the type, which dynamic Groovy finds in the outer class. Unlike a call, any
+     * other private static method, a reference made in the declaring class and one on an anonymous class created in
+     * a static context are no exception, because dynamic Groovy fails on those.
+     */
+    private List<MethodNode> findVisibleMethods(final String name, final ClassNode type, final Expression typeOrTargetRef) {
         List<MethodNode> methods = type.getMethods(name);
         // GROOVY-10791, GROOVY-11467: include non-static interface methods
         Set<ClassNode> implemented = getInterfacesAndSuperInterfaces(type);
@@ -683,7 +701,28 @@ public class StaticTypesMethodReferenceExpressionWriter extends MethodReferenceE
             }
         }
         methods.addAll(findDGMMethodsForClassNode(controller.getSourceUnit().getClassLoader(), type, name));
-        return filterMethodsByVisibility(methods, controller.getClassNode());
+        methods = filterMethodsByVisibility(methods, controller.getClassNode());
+
+        ClassNode declaredType = getDeclaredType(typeOrTargetRef);
+        methods.removeIf(method -> isInheritedPrivateMethod(method, type) && !method.getDeclaringClass().equals(declaredType)
+                && !(method.isStatic() && type.getOuterClasses().contains(method.getDeclaringClass()))
+                && !(type.redirect() instanceof EnumConstantClassNode && method.getDeclaringClass().equals(type.getUnresolvedSuperClass())));
+        return methods;
+    }
+
+    /**
+     * Returns the declared type of a variable, which flow typing may have narrowed: the origin type of a
+     * variable that is not {@code this} or {@code super} and not a dynamic variable, or else {@code null}.
+     */
+    private static ClassNode getDeclaredType(final Expression expression) {
+        if (expression instanceof VariableExpression variable && !variable.isThisExpression() && !variable.isSuperExpression()) {
+            Variable target = variable;
+            while (target instanceof VariableExpression ve && ve.getAccessedVariable() != null && ve.getAccessedVariable() != ve) {
+                target = ve.getAccessedVariable();
+            }
+            if (!(target instanceof DynamicVariable)) return target.getOriginType();
+        }
+        return null;
     }
 
     private void addFatalError(final String msg, final ASTNode node) {

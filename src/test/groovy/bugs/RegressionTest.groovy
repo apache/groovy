@@ -4844,7 +4844,7 @@ def cfg = new ConfigSlurper().parse("""
     }
 
     // GROOVY-12510: STC accepts a private method of a superclass called through a subclass receiver
-    @NotYetImplemented @Test
+    @Test
     void testGroovy12510() {
         ['TypeChecked', 'CompileStatic'].each { mode ->
             def src = """
@@ -4929,7 +4929,7 @@ def cfg = new ConfigSlurper().parse("""
     }
 
     // GROOVY-12523: STC: x.@name is accepted for a private field of a superclass when the type of x is a subclass
-    @NotYetImplemented @Test
+    @Test
     void testGroovy12523() {
         ['TypeChecked', 'CompileStatic'].each { mode ->
             def src = """
@@ -5171,7 +5171,7 @@ def cfg = new ConfigSlurper().parse("""
     }
 
     // GROOVY-12637: CS: an Object method such as toString() or hashCode() called without a receiver inside an inner class (named or anonymous) is resolved to the *outer* class's override, instead of the method the inner class inherits
-    @NotYetImplemented @Test
+    @Test
     void testGroovy12637() {
         assertScript '''
             @groovy.transform.CompileStatic

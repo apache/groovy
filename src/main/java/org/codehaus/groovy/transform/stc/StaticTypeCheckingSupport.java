@@ -19,6 +19,7 @@
 package org.codehaus.groovy.transform.stc;
 
 import groovy.lang.GroovyClassLoader;
+import groovy.transform.Internal;
 import org.apache.groovy.util.Maps;
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.ast.ClassNode;
@@ -79,6 +80,8 @@ import java.util.regex.Matcher;
 import java.util.stream.BaseStream;
 
 import static org.apache.groovy.ast.tools.ClassNodeUtils.addGeneratedMethod;
+import static org.apache.groovy.ast.tools.ClassNodeUtils.getNestHost;
+import static org.apache.groovy.ast.tools.ClassNodeUtils.hasNoEnclosingInstance;
 import static org.apache.groovy.ast.tools.ClassNodeUtils.samePackageName;
 import static org.apache.groovy.ast.tools.ExpressionUtils.isNullConstant;
 import static org.codehaus.groovy.ast.ClassHelper.BigInteger_TYPE;
@@ -3274,7 +3277,11 @@ out:    for (ClassNode type : todo) {
     }
 
     /**
-     * Filter methods according to visibility
+     * Filter methods according to visibility. A private method or constructor is
+     * visible from every class of its nest, that is the top-level class that
+     * encloses its declaring class and every class nested in it, as in Java
+     * (JLS 6.6.1). The rules for protected and package-private members are
+     * unchanged.
      *
      * @param methodNodeList method nodes to filter
      * @param enclosingClassNode the enclosing class
@@ -3323,7 +3330,8 @@ out:    for (ClassNode type : todo) {
                 }
             }
 
-            if (methodNode.isPrivate() && !enclosingClassNode.equals(declaringClass)) {
+            if (methodNode.isPrivate() && !enclosingClassNode.equals(declaringClass)
+                    && !getNestHost(enclosingClassNode).equals(getNestHost(declaringClass))) {
                 continue;
             }
             if (methodNode.isProtected()
@@ -3339,6 +3347,48 @@ out:    for (ClassNode type : todo) {
         }
 
         return result;
+    }
+
+    /**
+     * Determines if a method is private, is not an extension method, and is declared
+     * by a class other than the given receiver type. For a method found on that type
+     * or its superclasses, that is a private method the receiver would only inherit
+     * from a superclass. Private members are not inherited (JLS 8.2), so such a
+     * method is not a member of the receiver type, and dynamic Groovy does not find
+     * it there either. An extension method is never one: it is not a method of a
+     * superclass but one that an extension class adds to the type.
+     *
+     * @param method the candidate method
+     * @param receiverType the type that the method is looked up on
+     * @return {@code true} if the method is private, is not an {@code ExtensionMethodNode},
+     *         and is declared by a class other than {@code receiverType}
+     * @since 7.0.0
+     */
+    @Internal
+    public static boolean isInheritedPrivateMethod(final MethodNode method, final ClassNode receiverType) {
+        return method.isPrivate() && !(method instanceof ExtensionMethodNode)
+                && !method.getDeclaringClass().equals(receiverType);
+    }
+
+    /**
+     * Finds the outer class of {@code type}, reached through its chain of
+     * enclosing instances, whose instance has the given method: the class that
+     * declares it, if it is private, or else a class that inherits it. Dynamic
+     * Groovy calls a method that an inner class instance lacks on its enclosing
+     * instance.
+     *
+     * @param type the type of the receiver, an inner class
+     * @param method the method of an outer class
+     * @return the outer class, or {@code null} if no enclosing instance has the method
+     * @since 7.0.0
+     */
+    @Internal
+    public static ClassNode findEnclosingInstanceTypeWithMethod(final ClassNode type, final MethodNode method) {
+        ClassNode declaringClass = method.getDeclaringClass();
+        for (ClassNode cn = type; !hasNoEnclosingInstance(cn) && (cn = cn.getOuterClass()) != null; ) {
+            if (method.isPrivate() ? cn.equals(declaringClass) : implementsInterfaceOrIsSubclassOf(cn, declaringClass)) return cn;
+        }
+        return null;
     }
 
     /**

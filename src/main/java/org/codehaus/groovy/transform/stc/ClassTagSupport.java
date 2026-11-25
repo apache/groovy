@@ -85,7 +85,7 @@ final class ClassTagSupport {
         for (Receiver<String> receiver : receivers) {
             ClassNode receiverType = receiver.getType();
             ClassNode plain = receiverType.getPlainNodeReference();
-            List<MethodNode> candidates = new ArrayList<>(visitor.findMethodsWithGenerated(plain, name));
+            List<MethodNode> candidates = new ArrayList<>(visitor.findCallableMethodsWithGenerated(plain, name));
             candidates.addAll(findDGMMethodsForClassNode(visitor.getSourceUnit().getClassLoader(), plain, name));
             ClassTagMatch best = bestMatch(candidates, receiver, receiverType, args.length);
             if (best != null) return best;
@@ -144,7 +144,7 @@ final class ClassTagSupport {
             }
         }
         if (instanceIncumbent) {
-            candidates.addAll(visitor.findMethodsWithGenerated(plain, name));
+            candidates.addAll(visitor.findCallableMethodsWithGenerated(plain, name));
         }
         candidates.removeIf(candidate -> !declaresPreemptIntent(candidate));
 

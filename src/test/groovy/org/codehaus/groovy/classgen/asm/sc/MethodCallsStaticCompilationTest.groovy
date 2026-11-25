@@ -58,4 +58,110 @@ final class MethodCallsStaticCompilationTest extends MethodCallsSTCTest implemen
         '''
         assert astTrees['Foo$Bar$Baz'][1].contains('INVOKEVIRTUAL Foo.d ()I')
     }
+
+    // GROOVY-12509
+    @Override @Test
+    void testCallToPrivateMethodOfSiblingClass() {
+        super.testCallToPrivateMethodOfSiblingClass()
+        String other = astTrees['Outer$Other'][1]
+        assert other.contains('INVOKESTATIC Outer$Box.sm ()Ljava/lang/String;')
+        assert other.contains('INVOKEVIRTUAL Outer$Box.im ()Ljava/lang/String;')
+        assert !other.contains('ScriptBytecodeAdapter.invoke')
+    }
+
+    // GROOVY-12509: dynamic Groovy and @TypeChecked reject a class that mixes
+    // private and public methods of one name, so these overloads exist only here
+    @Test
+    void testPrivateOverloadOfSiblingClassIsPreferred() {
+        assertScript '''
+            class Outer {
+                static class Box {
+                    private String m(int i) { 'm(int)' }
+                    String m(Object o) { 'm(Object)' }
+                    private static String sm(String s) { 'sm(String)' }
+                    static String sm(Object o) { 'sm(Object)' }
+                }
+                static class Other {
+                    static String test() { new Box().m(1) + Box.sm('x') }
+                    static String viaDelegate() { new Box().with { m(1) } }
+                }
+            }
+            assert Outer.Other.test() == 'm(int)sm(String)'
+            assert Outer.Other.viaDelegate() == 'm(int)'
+        '''
+    }
+    // GROOVY-12510
+    @Override @Test
+    void testCallToPrivateMethodOfSuperclassThroughReceiverOfItsType() {
+        assertScript PRIVATE_METHOD_THROUGH_DECLARING_TYPE + '''
+            def nested = new Outer.Box.Nested()
+            assert nested.viaSuper() == 'im:nested'
+            assert nested.viaCast() == 'im:nested'
+            assert Outer.param(sub) == 'im:sub'
+            assert Outer.result() == 'im:sub'
+            assert Outer.coerced() == 'im:sub'
+            assert sub.viaSuper() == 'im:sub'
+            assert sub.viaCast() == 'im:sub'
+            assert Outer.Other.param(sub) == 'im:sub'
+        '''
+    }
+
+    // GROOVY-12513
+    @Override @Test
+    void testCallToPrivateMethodOfSuperclassThroughNarrowedVariable() {
+        assertScript PRIVATE_METHOD_THROUGH_NARROWED_VARIABLE + '''
+            assert Outer.local() == 'im:sub'
+            assert Outer.narrowed(sub) == 'im:sub'
+            assert Outer.closure() == 'im:sub'
+            assert Outer.Other.local() == 'im:sub'
+        '''
+    }
+
+    // GROOVY-12510: compiles; running it throws ClassCastException, as it does for a
+    // public method, because static compilation casts the shared variable to Sub1
+    @Override @Test
+    void testPrivateMethodOfClosureSharedVariableInDeclaringClass() {
+        shell.parse(PRIVATE_METHOD_OF_SHARED_VARIABLE_IN_DECLARING_CLASS)
+    }
+
+    // GROOVY-12513
+    @Override @Test
+    void testPrivateOperatorMethodsThroughNarrowedVariable() {
+        [
+            'b + "x"'                                                     : "'plusx'",
+            'b++; b.log'                                                  : "'next'",
+            'b[1]'                                                        : "'getAt1'",
+            'b += "y"; b.log'                                             : "'plusAssigny'",
+            '"in" in b'                                                   : 'true',
+            'b.token()'                                                   : 'String',
+            'def c = { -> b.plus("x") + (b + "y") }; b = new Sub2(); c()' : "'plusxplusy'",
+        ].each { code, value ->
+            assertScript privateMethodOfNarrowedVariable(code) + "assert Outer.test() == $value"
+        }
+
+        // static compilation calls putAt for x[i] = v dynamically
+        shouldFailWithMessages privateMethodOfNarrowedVariable('b[2] = "v"'),
+            'Cannot find matching method Outer\$Sub#putAt(int, java.lang.String)'
+    }
+
+    // GROOVY-12510: dynamic Groovy and @TypeChecked reject a class that mixes private
+    // and public methods of one name. Through the subclass only the public method is
+    // a member; through a variable declared with the superclass type both are
+    @Test
+    void testPrivateOverloadOfSuperclassThroughSubclassOrDeclaredType() {
+        assertScript '''
+            class Outer {
+                static class Box {
+                    private String m(String s) { 'm(String)' }
+                    String m(Object o) { 'm(Object)' }
+                }
+                static class Sub extends Box {
+                }
+                static String viaSubclass() { new Sub().m('x') }
+                static String viaDeclaredType() { Box b = new Sub(); b.m('x') }
+            }
+            assert Outer.viaSubclass() == 'm(Object)'
+            assert Outer.viaDeclaredType() == 'm(String)'
+        '''
+    }
 }
