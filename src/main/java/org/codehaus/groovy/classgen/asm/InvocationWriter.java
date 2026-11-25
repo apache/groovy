@@ -1173,7 +1173,8 @@ public class InvocationWriter {
         MethodVisitor mv = controller.getMethodVisitor();
         OperandStack os = controller.getOperandStack();
         os.box();
-        (new ClassExpression(target)).visit(controller.getAcg());
+        // GROOVY-12834: coerce to the wrapper type, as the indy writer does; the cast converts to the primitive
+        (new ClassExpression(ClassHelper.getWrapper(target))).visit(controller.getAcg());
         os.remove(1);
         asTypeMethod.call(mv);
         BytecodeHelper.doCast(mv,target);
