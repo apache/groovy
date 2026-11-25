@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1795503559542,
+  "lastUpdate": 1795590185950,
   "repoUrl": "https://github.com/apache/groovy",
   "entries": {
     "Compiler Performance": [
@@ -10273,6 +10273,63 @@ window.BENCHMARK_DATA = {
             "name": "compile@groovy-6",
             "value": 363.6833333333333,
             "range": "±17.6",
+            "unit": "ms",
+            "extra": "6.0.0"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "Paul King",
+            "username": "paulk-asert",
+            "email": "paulk@asert.com.au"
+          },
+          "committer": {
+            "name": "Paul King",
+            "username": "paulk-asert",
+            "email": "paulk@asert.com.au"
+          },
+          "id": "f1115f25db8950fb73d4c005407034ba7bf89231",
+          "message": "GROOVY-12833: GINQ: an aliased method call on an aggregate in a groupby select fails with BUG!",
+          "timestamp": "2026-11-25T04:45:03Z",
+          "url": "https://github.com/apache/groovy/commit/f1115f25db8950fb73d4c005407034ba7bf89231"
+        },
+        "date": 1795590178364,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "compile@current",
+            "value": 468.87666666666667,
+            "range": "±17.03",
+            "unit": "ms",
+            "extra": "current"
+          },
+          {
+            "name": "compile@groovy-3",
+            "value": 653.92,
+            "range": "±213.41",
+            "unit": "ms",
+            "extra": "3.0.25"
+          },
+          {
+            "name": "compile@groovy-4",
+            "value": 607.0233333333332,
+            "range": "±150.69",
+            "unit": "ms",
+            "extra": "4.0.33"
+          },
+          {
+            "name": "compile@groovy-5",
+            "value": 482.21666666666664,
+            "range": "±22.91",
+            "unit": "ms",
+            "extra": "5.1.3"
+          },
+          {
+            "name": "compile@groovy-6",
+            "value": 473.61333333333334,
+            "range": "±21.28",
             "unit": "ms",
             "extra": "6.0.0"
           }
