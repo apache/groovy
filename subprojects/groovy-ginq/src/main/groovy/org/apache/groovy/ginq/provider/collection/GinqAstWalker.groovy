@@ -1170,9 +1170,11 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
                             if (isAggregateFunction(expr)) {
                                 return expr
                             }
-                            if (((MethodCallExpression) expr).implicitThis) {
+                            // an alias (`... as name`) wraps the call in a CastExpression
+                            def call = (MethodCallExpression) (expr instanceof CastExpression ? expr.expression : expr)
+                            if (call.implicitThis) {
                                 collectSyntaxError(new GinqSyntaxError(
-                                        "`${expr instanceof CastExpression ? expr.expression.text : expr.text}` is not an aggregate function",
+                                        "`${call.text}` is not an aggregate function",
                                         expr.getLineNumber(), expr.getColumnNumber()
                                 ))
                             }
