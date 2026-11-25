@@ -7375,6 +7375,18 @@ class GinqTest {
         '''
     }
 
+    @Test
+    void "testGinq - from groupby select - aliased method call on aggregate"() {
+        assertGinqScript '''
+            assert [[0, 6, '12'], [1, 5, '4']] == GQ {
+                from n in [1, 2, 3, 4, 6]
+                groupby n % 2 as parity
+                orderby parity
+                select parity, Math.max(max(n), 5) as top, sum(n).toString() as total
+            }.toList()
+        '''
+    }
+
     private static void assertGinqScript(String script) {
         String deoptimizedScript = script.replaceAll(/\bGQ\s*[{]/, 'GQ(optimize:false) {')
         List<String> scriptList = [deoptimizedScript, script]

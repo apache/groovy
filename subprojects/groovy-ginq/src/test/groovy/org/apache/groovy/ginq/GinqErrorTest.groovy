@@ -362,6 +362,19 @@ final class GinqErrorTest {
     }
 
     @Test
+    void "testGinq - from groupby select - 6"() {
+        def err = shouldFail '''\
+            GQ {
+                from n in [1, 2, 3]
+                groupby n
+                select n, hello(n) as h
+            }.toList()
+        '''
+
+        assert err.message.toString().contains('`this.hello(n)` is not an aggregate function @ line 4, column 27.')
+    }
+
+    @Test
     void "testGinq - from groupby into where - not yet supported"() {
         def err = shouldFail '''\
             GQ {
