@@ -164,22 +164,6 @@ public class CompilerConfiguration {
     @Incubating
     public static final String LAMBDA_HOISTING = "groovy.target.lambda.hoist";
 
-    /**
-     * System-property name for the incubating option that compiles a {@code @CompileStatic} lambda passed for a
-     * parameter declared with a type parameter, such as {@code E} of {@code List.add(E)}, for the functional
-     * interface the call binds the type parameter to, instead of as a closure. Callers can tell the difference:
-     * the value is an instance of the interface only, so dynamic code can no longer call it as a closure. A method
-     * reference in such a parameter is compiled for the interface whether or not the option is set.
-     * <p>
-     * The option is read from the system properties of the compiling JVM whenever such a call is type checked;
-     * there is no {@code CompilerConfiguration} setting for it.
-     * Incubating: this switch may change or be removed until the feature graduates.
-     *
-     * @since 6.0.1
-     */
-    @Incubating
-    public static final String LAMBDA_TYPE_ARGUMENT = "groovy.target.lambda.typearg";
-
     /** Historical bytecode level {@code "1.4"}. Not an accepted compilation target; accepted levels are 17 through 28. */
     @Deprecated public static final String JDK4 = "1.4";
     /** Historical bytecode level {@code "1.5"}. Not an accepted compilation target; accepted levels are 17 through 28. */
