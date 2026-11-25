@@ -114,7 +114,6 @@ import org.codehaus.groovy.ast.tools.WideningCategories;
 import org.codehaus.groovy.classgen.ReturnAdder;
 import org.codehaus.groovy.classgen.asm.InvocationWriter;
 import org.codehaus.groovy.control.CompilationUnit;
-import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.control.ErrorCollector;
 import org.codehaus.groovy.control.ResolveVisitor;
 import org.codehaus.groovy.control.SourceUnit;
@@ -4466,15 +4465,12 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
     }
 
     /**
-     * Tells if the expression is a lambda or method reference written where the type checker resolves the
-     * functional interface of a parameter declared with a type parameter: only in statically compiled code, and
-     * for a lambda only with {@link CompilerConfiguration#LAMBDA_TYPE_ARGUMENT} set, since a lambda for such a
-     * parameter is otherwise compiled as a closure. Dynamic and type-checked calls pass such an argument as they are.
+     * Tells if the expression is a method reference written where the type checker resolves the functional
+     * interface of a parameter declared with a type parameter: only in statically compiled code. A lambda for
+     * such a parameter is compiled as a closure, and dynamic and type-checked calls pass a method reference as
+     * they did.
      */
     private boolean isFunctionalLiteral(final Expression expression) {
-        if (expression instanceof LambdaExpression) {
-            return isStaticDispatchScope() && SystemUtil.getBooleanSafe(CompilerConfiguration.LAMBDA_TYPE_ARGUMENT);
-        }
         return expression instanceof MethodReferenceExpression && isStaticDispatchScope();
     }
 
@@ -6940,18 +6936,6 @@ trying: for (ClassNode[] signature : signatures) {
 
             storeTargetMethod(expr, method);
             typeCheckMethodsWithGenericsOrFail(left, new ClassNode[]{right}, method, expr);
-
-            Parameter[] parameters = (method instanceof ExtensionMethodNode emn ? emn.getExtensionMethodNode() : method).getParameters();
-            if (parameters.length > 0 && isFunctionalLiteral(rightExpression)) { // an operand is compiled like an argument
-                ClassNode functionalType = getFunctionalTypeArgument(left, method, args(rightExpression), 0, parameters[parameters.length - 1].getType());
-                if (functionalType != null) {
-                    rightExpression.putNodeMetaData(PARAMETER_TYPE, functionalType);
-                    // a method reference was visited before the operator method gave its functional interface
-                    // type; the method it calls is selected by the parameter types of that type, as for an argument
-                    if (rightExpression instanceof MethodReferenceExpression)
-                        rightExpression.putNodeMetaData(CLOSURE_ARGUMENTS, GenericsUtils.parameterizeSAM(functionalType).getV1());
-                }
-            }
 
             if (isAssignment(op)) return left;
             if (!"compareTo".equals(operationName))
