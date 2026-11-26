@@ -1314,6 +1314,26 @@ final class GroovyMethodsTest {
         def l = ['first']
         l << l
         assert l.toListString() == '[first, (this Collection)]'
+        // a size limit must not unroll a direct self-reference
+        assert l.toListString(80) == '[first, (this Collection)]'
+
+        def nestedList = []
+        nestedList << [nestedList]
+        assert nestedList.toListString() == '[[(ancestor Collection)]]'
+        assert nestedList.toString() == '[[(ancestor Collection)]]'
+        assert nestedList.inspect() == '[[(ancestor Collection)]]'
+
+        def nestedMap = [:]
+        nestedMap.nested = [self: nestedMap]
+        assert nestedMap.toMapString() == '[nested:[self:(ancestor Map)]]'
+        assert nestedMap.toString() == '[nested:[self:(ancestor Map)]]'
+        assert nestedMap.inspect() == "['nested':['self':(ancestor Map)]]"
+
+        def mixedList = []
+        def mixedMap = [child: mixedList]
+        mixedList << mixedMap
+        assert mixedList.toString() == '[[child:(ancestor Collection)]]'
+        assert mixedMap.toString() == '[child:[(ancestor Map)]]'
 
         def animals = ['ant', 'bee', 'cat']
         animals << [pets:animals]

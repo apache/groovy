@@ -233,4 +233,196 @@ class InvokerHelperFormattingTest {
         assert '[(this Map):(this Map)]' == FormatHelper.toString(m)
     }
 
+    // GROOVY-3250
+    @Test
+    void testNestedAndMixedCycles() {
+        List nestedList = []
+        nestedList << [nestedList]
+        assert '[[(ancestor Collection)]]' == nestedList.toString()
+        assert '[[(ancestor Collection)]]' == nestedList.toListString()
+        assert '[[(ancestor Collection)]]' == InvokerHelper.toListString(nestedList)
+        assert '[[(ancestor Collection)]]' == FormatHelper.toString(nestedList)
+        assert '[[(ancestor Collection)]]' == FormatHelper.toListString(nestedList)
+        assert '[[(ancestor Collection)]]' == FormatHelper.inspect(nestedList)
+        assert '[[(ancestor Collection)]]' == FormatHelper.format(nestedList, false, -1, true)
+
+        List withNull = [null]
+        withNull << withNull
+        assert '[null, (this Collection)]' == withNull.toString()
+
+        List direct = ['first']
+        direct << direct
+        assert '[first, (this Collection)]' == direct.toListString(100)
+
+        Map nestedMap = [:]
+        nestedMap.nested = [self: nestedMap]
+        assert '[nested:[self:(ancestor Map)]]' == nestedMap.toString()
+        assert '[nested:[self:(ancestor Map)]]' == nestedMap.toMapString()
+        assert '[nested:[self:(ancestor Map)]]' == InvokerHelper.toMapString(nestedMap)
+        assert '[nested:[self:(ancestor Map)]]' == FormatHelper.toMapString(nestedMap)
+        assert "['nested':['self':(ancestor Map)]]" == FormatHelper.inspect(nestedMap)
+
+        Map nullKey = [:]
+        nullKey[null] = nullKey
+        assert '[null:(this Map)]' == nullKey.toString()
+
+        Map directMap = [a: 1]
+        directMap.self = directMap
+        assert '[a:1, self:(this Map)]' == directMap.toMapString(100)
+
+        List mixedList = []
+        Map mixedMap = [child: mixedList]
+        mixedList << mixedMap
+        assert '[[child:(ancestor Collection)]]' == mixedList.toString()
+        assert '[child:[(ancestor Map)]]' == mixedMap.toString()
+
+        List outer = []
+        Map mid = [:]
+        List inner = []
+        outer << mid
+        mid.n = inner
+        inner << mid
+        assert '[[n:[(ancestor Map)]]]' == outer.toString()
+
+        List first = []
+        List second = []
+        List third = []
+        first << second
+        second << third
+        third << first
+        assert '[[[(ancestor Collection)]]]' == first.toString()
+        assert '[[[(ancestor Collection)]]]' == second.toString()
+        assert '[[[(ancestor Collection)]]]' == third.toString()
+
+        List again = []
+        List middle = []
+        List loop = []
+        again << middle
+        middle << loop
+        loop << middle
+        assert '[[[(ancestor Collection)]]]' == again.toString()
+        assert '[[(ancestor Collection)]]' == middle.toString()
+        assert '[[(ancestor Collection)]]' == loop.toString()
+
+        Set set = new LinkedHashSet()
+        List setList = [set]
+        set.add(setList)
+        assert '[[(ancestor Collection)]]' == set.toString()
+        assert '[[(ancestor Collection)]]' == setList.toString()
+
+        Map keyed = [:]
+        List key = [keyed]
+        keyed[key] = 'v'
+        assert '[[(ancestor Map)]:v]' == keyed.toString()
+
+        // a repeated child is not a cycle
+        List shared = [1]
+        assert '[[1], [1]]' == [shared, shared].toString()
+        assert '[[[1]]]' == [[[1]]].toString()
+        Map sharedMap = [a: 1]
+        assert '[[a:1], [a:1]]' == [sharedMap, sharedMap].toString()
+
+        List reentered = []
+        reentered << new Object() {
+            String toString() { reentered.toString() }
+        }
+        assert '[(this Collection)]' == reentered.toString()
+
+        Map reenteredMap = [:]
+        reenteredMap.k = new Object() {
+            String toString() { reenteredMap.toString() }
+        }
+        assert '[k:(this Map)]' == reenteredMap.toString()
+
+        List boundedDuring = []
+        List sample = ['a', 'b', 'c']
+        boundedDuring << new Object() {
+            String toString() { sample.toListString(2) }
+        }
+        assert '[[a, ...]]' == boundedDuring.toString()
+
+        Object[] selfArray = new Object[1]
+        selfArray[0] = selfArray
+        assert '[(this array)]' == FormatHelper.toString(selfArray)
+        assert '[(this array)]' == FormatHelper.toArrayString(selfArray, 100, false)
+
+        Object[] left = new Object[1]
+        Object[] right = new Object[1]
+        left[0] = right
+        right[0] = left
+        assert '[[(ancestor array)]]' == FormatHelper.toString(left)
+        assert '[[(ancestor array)]]' == FormatHelper.toString(right)
+
+        List arrayList = []
+        Object[] array = [arrayList] as Object[]
+        arrayList << array
+        assert '[[(ancestor Collection)]]' == arrayList.toString()
+        assert '[[(ancestor array)]]' == FormatHelper.toString(array)
+
+        Object[] reenteredArray = new Object[1]
+        reenteredArray[0] = new Object() {
+            String toString() { FormatHelper.toArrayString(reenteredArray) }
+        }
+        assert '[(this array)]' == FormatHelper.toArrayString(reenteredArray)
+
+        def boundedPair = FormatHelper.toArrayString(left, 5, false)
+        assert boundedPair.contains('...')
+        assert boundedPair.startsWith('[')
+        assert boundedPair.endsWith(']')
+    }
+
+    // GROOVY-3250: a cycle further up the render path is an ancestor, not the container being printed
+    @Test
+    void testAncestorCycleMarker() {
+        List nestedList1 = [1]
+        nestedList1 << [nestedList1]
+        List nestedList2 = [2]
+        nestedList2 << [nestedList2]
+        List nestedList3 = [3]
+        List nestedList4 = [nestedList1, nestedList2, nestedList3]
+        assert '[[1, [(ancestor Collection)]], [2, [(ancestor Collection)]], [3]]' == nestedList4.toString()
+
+        nestedList3 << nestedList4
+        assert '[[1, [(ancestor Collection)]], [2, [(ancestor Collection)]], [3, (ancestor Collection)]]' == nestedList4.toString()
+    }
+
+    // GROOVY-3250
+    @Test
+    void testRenderPathClearedAfterFailure() {
+        shouldFail(NullPointerException) {
+            FormatHelper.toListString(null)
+        }
+        shouldFail(NullPointerException) {
+            FormatHelper.toMapString(null)
+        }
+        List badList = [new ExceptionOnToString()]
+        shouldFail(UnsupportedOperationException) {
+            FormatHelper.toListString(badList)
+        }
+        // a failed render must not leave the path recorded, or this repeats as a false cycle
+        shouldFail(UnsupportedOperationException) {
+            FormatHelper.toString([badList])
+        }
+        Map badMap = [x: new ExceptionOnToString()]
+        shouldFail(UnsupportedOperationException) {
+            FormatHelper.toMapString(badMap)
+        }
+        shouldFail(UnsupportedOperationException) {
+            FormatHelper.toString([badMap])
+        }
+
+        List nested = []
+        nested << [nested]
+        assert '[[(ancestor Collection)]]' == FormatHelper.toString(nested)
+        assert '[1]' == FormatHelper.toString([1])
+        assert '[[1]]' == FormatHelper.toString([[1]])
+        assert '[]' == FormatHelper.toString([])
+        assert '[:]' == FormatHelper.toString([:])
+        assert '[]' == FormatHelper.toString(new Object[0])
+        assert 'null' == FormatHelper.toArrayString(null)
+        Object[] cycle = new Object[1]
+        cycle[0] = cycle
+        assert '[(this array)]' == FormatHelper.toString(cycle)
+    }
+
 }
