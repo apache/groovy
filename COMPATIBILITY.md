@@ -1121,8 +1121,7 @@ metaclass or, once it has an `ExpandoMetaClass` (after
 `ExpandoMetaClass.enableGlobally()` or after adding to a closure's metaclass),
 through `MetaClassImpl`. A method call compiled against the owner is
 unchanged. Property access is unchanged: with a null owner or delegate it can
-still throw `NullPointerException` (Groovy 7 skips the null there too,
-GROOVY-12671).
+still throw `NullPointerException` (see GROOVY-12671).
 
 **Who is affected.** Code that catches `NullPointerException` around a method
 call in a closure with a null owner or delegate, and code that relied on
@@ -1326,8 +1325,7 @@ Both `defaultPackageFirst` and `defaultPackageSources` are off by default.
 The resolution order of 6.0.0 is unchanged unless the optimization option
 `defaultPackageFirst` is `true`, and with it only the compiled classes of
 the default package come before the default imports unless
-`defaultPackageSources` is `true` as well. Groovy 7 enables both unless they
-are set to `false`; that is not the 6.0.x default.
+`defaultPackageSources` is `true` as well.
 
 When `defaultPackageFirst` is `true`, a compilation unit of the default
 package looks up a simple type name that the unit neither declares nor
@@ -1451,8 +1449,7 @@ captures the closure, and the name resolves as it would in the closure.
 
 **What is unchanged.** A serializable lambda does not capture the closure, so
 its serialized form is the same as in 6.0.0 and such a name in it still throws
-`ClassCastException`. Groovy 7 also supports it in serializable lambdas
-(GROOVY-12830).
+`ClassCastException` (see GROOVY-12830).
 
 ## The binary-compatibility check
 
