@@ -31,7 +31,9 @@ import groovy.lang.MetaClassImpl.MetaConstructor;
 import groovy.lang.MetaMethod;
 import groovy.lang.MetaProperty;
 import groovy.lang.MissingMethodException;
+import groovy.lang.MutableMetaClass;
 import groovy.lang.ProxyMetaClass;
+import org.apache.groovy.internal.metaclass.FunctionalCallSupport;
 import org.apache.groovy.internal.metaclass.GroovyObjectOverrides;
 import org.apache.groovy.runtime.indy.IndyInvalidation;
 import org.codehaus.groovy.GroovyBugError;
@@ -68,6 +70,8 @@ import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.lang.reflect.Proxy;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -842,7 +846,25 @@ public abstract class Selector {
      */
     private static class MethodSelector extends Selector {
         private static final Object[] SINGLE_NULL_ARRAY = {null};
+        private static final Class<?>[] GENERIC_GET_PARAMS = {String.class};
+        private static final Class<?>[] METHOD_MISSING_PARAMS = {String.class, Object.class};
+        private static final MethodHandle COERCION_PROXY_GUARD;
+        static {
+            try {
+                COERCION_PROXY_GUARD = MethodHandles.lookup().findStatic(FunctionalCallSupport.class, "isCoercionProxy", MethodType.methodType(boolean.class, Object.class));
+            } catch (ReflectiveOperationException e) {
+                throw new GroovyBugError(e);
+            }
+        }
         private boolean isCategoryMethod;
+        /**
+         * Class-domain SwitchPoints of the supertypes of the receiver's class, when the
+         * selected method is the one call syntax on a functional value stands for;
+         * {@code null} otherwise.
+         *
+         * @see #chooseFunctionalCall(MetaClassImpl, Object, Object[])
+         */
+        private List<SwitchPoint> functionalCallSwitchPoints;
         /**
          * Metaclass used while selecting and invoking the target.
          */
@@ -982,6 +1004,9 @@ public abstract class Selector {
                     name = "doCall";
                 }
                 method = mci.getMethodWithCaching(selectionBase, name, newArgs, false);
+                if (method == null && "call".equals(name)) {
+                    chooseFunctionalCall(mci, receiver, newArgs);
+                }
             }
             // a method reference picks among functional-interface overloads by its arity,
             // which its class does not tell, so such a choice is not cached by class
@@ -993,6 +1018,52 @@ public abstract class Selector {
                 }
             }
             if (LOG_ENABLED) LOG.info("retrieved method from meta class: " + method);
+        }
+
+        /**
+         * Call syntax on a functional value: selects the abstract method of the
+         * functional interface of a lambda, a method reference or a Groovy coercion
+         * proxy for {@code f(x)} or {@code f.call(x)}, so that the call is bound
+         * here instead of taking the missing-method path of the meta-class each time.
+         * <p>
+         * The meta-class invokes that method only when it found nothing else to
+         * invoke. The method is therefore selected here only if nothing else can
+         * answer the call: the meta-class is a plain {@link MetaClassImpl} with no
+         * {@code call} method, no {@code call} property and no missing-method or
+         * generic property hook, no category is in use, no meta-class of a
+         * supertype has been modified, and the sender has no outer class to ask.
+         * Otherwise the call stays with the meta-class. The guards of the handle
+         * repeat what can change later: see {@link #setGuards(Object)}.
+         */
+        private void chooseFunctionalCall(MetaClassImpl mci, Object receiver, Object[] newArgs) {
+            functionalCallSwitchPoints = null;
+            if (callType != CallType.METHOD || spread || thisCall || !cache) return;
+            CachedMethod callMethod = FunctionalCallSupport.getCallMethod(receiver, newArgs);
+            if (callMethod == null) return;
+
+            Class<?> receiverClass = receiver.getClass();
+            if (mci.getClass() != MetaClassImpl.class || mci.getTheClass() != receiverClass) return;
+            if (GroovyCategorySupport.hasCategoryInCurrentThread()) return;
+            if (sender.isAssignableFrom(receiverClass)) return;
+            if (!mci.respondsTo(receiver, "call").isEmpty() || mci.getMetaProperty("call") != null) return;
+            if (mci.pickMethod("methodMissing", METHOD_MISSING_PARAMS) != null
+                    || mci.pickMethod("get", GENERIC_GET_PARAMS) != null) return;
+
+            // tokens first, state second: a change after a token was read retires it
+            List<SwitchPoint> switchPoints = new ArrayList<>();
+            var hierarchy = ClassInfo.getClassInfo(receiverClass).getCachedClass().getHierarchy();
+            for (ClassInfo ci : hierarchy) {
+                if (ci.getTheClass() != receiverClass) {
+                    switchPoints.add(IndyInvalidation.classSwitchPointFor(ci.getTheClass()));
+                }
+            }
+            for (ClassInfo ci : hierarchy) {
+                if (ci.getStrongMetaClass() instanceof MutableMetaClass mmc && mmc.isModified()) return;
+            }
+
+            method = callMethod;
+            functionalCallSwitchPoints = switchPoints;
+            if (LOG_ENABLED) LOG.info("selected the abstract method of a functional value for call syntax: " + method);
         }
 
         /**
@@ -1429,6 +1500,19 @@ public abstract class Selector {
                 handle = applyMopSwitchPoints(handle, fallback, metaClassSwitchPoint);
                 if (LOG_ENABLED) LOG.info("added metaclass owner switch point guard");
             }
+            if (functionalCallSwitchPoints != null) {
+                // the method was selected because the meta-class found nothing to invoke, which
+                // a method added to a supertype, a category or another handler of a proxy changes
+                for (SwitchPoint switchPoint : functionalCallSwitchPoints) {
+                    handle = applyMopSwitchPoints(handle, fallback, switchPoint);
+                }
+                handle = MethodHandles.guardWithTest(HAS_CATEGORY_IN_CURRENT_THREAD_GUARD, fallback, handle);
+                if (Proxy.isProxyClass(receiver.getClass())) {
+                    MethodHandle test = COERCION_PROXY_GUARD.asType(MethodType.methodType(boolean.class, targetType.parameterType(0)));
+                    handle = MethodHandles.guardWithTest(test, handle, fallback);
+                }
+                if (LOG_ENABLED) LOG.info("added guards for call syntax on a functional value");
+            }
 
             Predicate<Class<?>> nonFinalOrNullUnsafe = (t) -> {
                 return !Modifier.isFinal(t.getModifiers())
@@ -1573,7 +1657,8 @@ public abstract class Selector {
             MetaClassImpl mci = getMetaClassImpl(mc, true);
             if (mci == null) return null;
             chooseMeta(mci);
-            return method;
+            // call syntax on a functional value needs the guards of the full handle path
+            return functionalCallSwitchPoints != null ? null : method;
         }
 
         @Override
