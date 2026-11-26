@@ -23,6 +23,7 @@ import groovy.lang.EmptyRange;
 import groovy.lang.GroovyInterceptable;
 import groovy.lang.GroovyObject;
 import groovy.lang.GroovyRuntimeException;
+import groovy.lang.GString;
 import groovy.lang.IntRange;
 import groovy.lang.MetaClass;
 import groovy.lang.MissingMethodException;
@@ -1777,19 +1778,60 @@ public class ScriptBytecodeAdapter {
     }
 
     /**
+     * Reports whether {@code value} is a {@code Double} or {@code Float} NaN.
+     */
+    private static boolean isFloatingPointNaN(final Object value) {
+        if (value instanceof Double number) {
+            return number.isNaN();
+        }
+        if (value instanceof Float number) {
+            return number.isNaN();
+        }
+        return false;
+    }
+
+    /**
+     * Reports whether {@code value} is compared numerically: a {@code Number}, a
+     * {@code Character}, or a one-character {@code String} or {@code GString}.
+     */
+    private static boolean isNumericOperand(final Object value) {
+        if (value instanceof Number || value instanceof Character) {
+            return true;
+        }
+        if (value instanceof String || value instanceof GString) {
+            return value.toString().length() == 1;
+        }
+        return false;
+    }
+
+    /**
+     * A boolean comparison with a NaN {@code Double} or {@code Float} and a numeric operand is
+     * unordered, as for a primitive {@code double} or {@code float}. {@code <=>} is a total order
+     * and is not decided here.
+     */
+    private static boolean isUnorderedNaN(final Object left, final Object right) {
+        if (isFloatingPointNaN(left)) {
+            return isNumericOperand(right);
+        }
+        return isFloatingPointNaN(right) && isNumericOperand(left);
+    }
+
+    /**
      * Compares {@code left} and {@code right} for equality.
      * <p>
-     * The same reference is equal, including both null. When both values are non-null and have
-     * the same class, {@code Integer}, {@code Long}, {@code Double}, {@code Float},
-     * {@code String}, and {@code GStringImpl} use {@code equals}, and {@code BigDecimal} and
-     * {@code BigInteger} are equal when {@code compareTo} returns 0. Every other pair is
-     * compared with {@link DefaultTypeTransformation#compareEqual(Object, Object)}.
+     * A NaN {@code Double} or {@code Float} is not equal to a numeric operand, including itself
+     * and the same reference. Otherwise the same reference is equal, including both null. When
+     * both values are non-null and have the same class, {@code Integer}, {@code Long},
+     * {@code Double}, {@code Float}, {@code String}, and {@code GStringImpl} use {@code equals},
+     * and {@code BigDecimal} and {@code BigInteger} are equal when {@code compareTo} returns 0.
+     * Every other pair is compared with {@link DefaultTypeTransformation#compareEqual(Object, Object)}.
      *
      * @param left the left operand
      * @param right the right operand
      * @return true when the operands are equal
      */
     public static boolean compareEqual(final Object left, final Object right) {
+        if (isUnorderedNaN(left, right)) return false;
         if (left == right) return true;
         if (left != null && right != null) {
             Class leftClass = left.getClass();
@@ -1838,7 +1880,9 @@ public class ScriptBytecodeAdapter {
      * Compares {@code left} with {@code right} and returns a boxed {@code -1}, {@code 0}, or
      * {@code 1}. The comparison is {@link DefaultTypeTransformation#compareTo(Object, Object)}.
      * A zero result is returned as {@code 0}, a positive result as {@code 1}, and a negative
-     * result as {@code -1}.
+     * result as {@code -1}. A NaN {@code Double} or {@code Float} compares as
+     * {@code Double.compare} does: greater than every other value and equal to a NaN.
+     * Boolean comparisons do not.
      *
      * @param left the left operand
      * @param right the right operand
@@ -1856,6 +1900,7 @@ public class ScriptBytecodeAdapter {
     /**
      * Reports whether {@code left} is less than {@code right}.
      * <p>
+     * A NaN {@code Double} or {@code Float} compared with a numeric operand is not less.
      * When both values are non-null and have the same class, {@code Integer}, {@code Long},
      * {@code Double}, and {@code Float} use the {@code <} operator, and {@code BigDecimal} and
      * {@code BigInteger} are less when {@code compareTo} is negative. Every other pair is less
@@ -1866,6 +1911,7 @@ public class ScriptBytecodeAdapter {
      * @return true when {@code left} is less than {@code right}
      */
     public static boolean compareLessThan(final Object left, final Object right) {
+        if (isUnorderedNaN(left, right)) return false;
         if (left != null && right != null) {
             Class leftClass = left.getClass();
             if (leftClass == right.getClass()) {
@@ -1895,6 +1941,7 @@ public class ScriptBytecodeAdapter {
     /**
      * Reports whether {@code left} is less than or equal to {@code right}.
      * <p>
+     * A NaN {@code Double} or {@code Float} compared with a numeric operand is not less or equal.
      * When both values are non-null and have the same class, {@code Integer}, {@code Long},
      * {@code Double}, and {@code Float} use the {@code <=} operator, and {@code BigDecimal} and
      * {@code BigInteger} are less or equal when {@code compareTo} is not positive. Every other
@@ -1906,6 +1953,7 @@ public class ScriptBytecodeAdapter {
      * @return true when {@code left} is less than or equal to {@code right}
      */
     public static boolean compareLessThanEqual(final Object left, final Object right) {
+        if (isUnorderedNaN(left, right)) return false;
         if (left != null && right != null) {
             Class leftClass = left.getClass();
             if (leftClass == right.getClass()) {
@@ -1936,6 +1984,7 @@ public class ScriptBytecodeAdapter {
     /**
      * Reports whether {@code left} is greater than {@code right}.
      * <p>
+     * A NaN {@code Double} or {@code Float} compared with a numeric operand is not greater.
      * When both values are non-null and have the same class, {@code Integer}, {@code Long},
      * {@code Double}, and {@code Float} use the {@code >} operator, and {@code BigDecimal} and
      * {@code BigInteger} are greater when {@code compareTo} is positive. Every other pair is
@@ -1946,6 +1995,7 @@ public class ScriptBytecodeAdapter {
      * @return true when {@code left} is greater than {@code right}
      */
     public static boolean compareGreaterThan(final Object left, final Object right) {
+        if (isUnorderedNaN(left, right)) return false;
         if (left != null && right != null) {
             Class leftClass = left.getClass();
             if (leftClass == right.getClass()) {
@@ -1975,6 +2025,7 @@ public class ScriptBytecodeAdapter {
     /**
      * Reports whether {@code left} is greater than or equal to {@code right}.
      * <p>
+     * A NaN {@code Double} or {@code Float} compared with a numeric operand is not greater or equal.
      * When both values are non-null and have the same class, {@code Integer}, {@code Long},
      * {@code Double}, and {@code Float} use the {@code >=} operator, and {@code BigDecimal} and
      * {@code BigInteger} are greater or equal when {@code compareTo} is not negative. Every
@@ -1986,6 +2037,7 @@ public class ScriptBytecodeAdapter {
      * @return true when {@code left} is greater than or equal to {@code right}
      */
     public static boolean compareGreaterThanEqual(final Object left, final Object right) {
+        if (isUnorderedNaN(left, right)) return false;
         if (left != null && right != null) {
             Class leftClass = left.getClass();
             if (leftClass == right.getClass()) {

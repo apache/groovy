@@ -186,7 +186,7 @@ final class RegressionTest {
     }
 
     // GROOVY-3309: comparisons with NaN should always return false
-    @NotYetImplemented @Test
+    @Test
     void testGroovy3309() {
         assertScript '''
             assert !(Double.NaN == 0)
