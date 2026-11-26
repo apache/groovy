@@ -115,7 +115,7 @@ final class RegressionTest {
     }
 
     // GROOVY-3056: Cannot override getter of property starting with "_" using ExpandoMetaClass
-    @NotYetImplemented @Test
+    @Test
     void testGroovy3056() {
         assertScript '''
             class TestClass {

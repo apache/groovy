@@ -20,6 +20,7 @@ package groovy.lang;
 
 import groovy.transform.stc.ClosureParams;
 import groovy.transform.stc.SimpleType;
+import org.apache.groovy.util.BeanUtils;
 import org.codehaus.groovy.reflection.CachedClass;
 import org.codehaus.groovy.reflection.MixinInMetaClass;
 import org.codehaus.groovy.runtime.DefaultCachedMethodKey;
@@ -1327,19 +1328,48 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
     }
 
     /**
-     * Determine if this method name suffix is a legitimate bean property name.
-     * Either the first or second letter must be upperCase for that to be true.
+     * Reports whether {@code name} is the property portion of a bean accessor,
+     * already in the form appended to {@code get}, {@code set} or {@code is}.
+     * <p>
+     * That form is the text {@link BeanUtils#capitalize(String)} produces, so a
+     * suffix is an accessor suffix exactly when capitalizing it changes nothing.
+     * Capitalization is a no-op when the first character is not a lowercase
+     * letter ({@code Foo}, {@code URL}, {@code _ajax}, {@code $id}, {@code 1st})
+     * and when the second character is uppercase, the JavaBeans exception that
+     * leaves {@code uRL} unchanged. A suffix that still needs its first letter
+     * capitalized, such as {@code foo}, is not an accessor suffix: the accessor
+     * for that property is {@code getFoo}, not {@code getfoo}.
+     * <p>
+     * An empty suffix is not a property. A {@code null} suffix throws
+     * {@link NullPointerException}; callers pass the remainder of a method name
+     * they have already rejected when the name itself is {@code null}.
+     *
+     * @param name the text after the {@code get}, {@code set} or {@code is} prefix
+     * @return {@code true} when {@code name} is already an accessor suffix
+     * @throws NullPointerException if {@code name} is {@code null}
      */
     private static boolean isPropertyName(String name) {
-        return (!name.isEmpty() && Character.isUpperCase(name.charAt(0))) || (name.length() > 1 && Character.isUpperCase(name.charAt(1)));
+        return !name.isEmpty() && name.equals(BeanUtils.capitalize(name));
     }
 
     /**
-     * Returns true if the name of the method specified and the number of arguments make it a javabean property
+     * Reports whether a registered method should be installed as a property read.
+     * <p>
+     * A getter has no parameters and a name of {@code get} or {@code is} followed
+     * by an accessor suffix, as recognized by {@code isPropertyName}. The property
+     * name is that suffix decapitalized by {@link MetaClassHelper#convertPropertyName(String)}.
+     * {@code getFoo} reads {@code foo}, {@code getURL} reads {@code URL},
+     * {@code get_ajax} reads {@code _ajax}, and {@code is_flag} reads {@code _flag}.
+     * {@code getfoo} is not a getter.
+     * <p>
+     * The return type is not consulted. A zero-argument {@code is} method is a
+     * getter even when it does not return {@code boolean}, which is how an
+     * expando closure is recorded. A {@code null} name, a {@code null} parameter
+     * array, or any parameter at all yields {@code false} and does not throw.
      *
-     * @param name True if it's a Javabean property
-     * @param args The arguments
-     * @return True if it is a javabean property method
+     * @param name the method name, or {@code null}
+     * @param args the parameter types, or {@code null}
+     * @return {@code true} when the signature is a getter
      */
     private boolean isGetter(String name, CachedClass[] args) {
         if (name == null || name.isEmpty() || args == null) return false;
@@ -1357,10 +1387,29 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
     }
 
     /**
-     * Returns a property name equivalent for the given getter name or null if it is not a getter
+     * Returns the property name for a getter method name.
+     * <p>
+     * A leading {@code get} or {@code is} is stripped and the remainder is passed
+     * to {@link MetaClassHelper#convertPropertyName(String)}. A leading uppercase
+     * letter is decapitalized ({@code getFoo} gives {@code foo}) unless the second
+     * character is also uppercase ({@code getURL} gives {@code URL}). A remainder
+     * that does not start with an uppercase letter is kept, so {@code get_ajax}
+     * and {@code is_flag} give {@code _ajax} and {@code _flag}, and a remainder
+     * that starts with a digit is kept ({@code get1st} gives {@code 1st}).
+     * {@code get} is tried before {@code is}. The conversion does not itself
+     * decide that the name is a getter: {@code getfoo} gives {@code foo}.
+     * <p>
+     * {@code null}, an empty name, or a name that starts with neither prefix
+     * returns {@code null}. The names {@code get} and {@code is} have an empty
+     * remainder, and {@code convertPropertyName} then throws
+     * {@link StringIndexOutOfBoundsException} because it reads the first
+     * character. Callers recognize a getter before converting, so a registered
+     * accessor does not produce that input.
      *
-     * @param getterName The getter name
-     * @return The property name equivalent
+     * @param getterName the getter name, or {@code null}
+     * @return the property name, or {@code null} when {@code getterName} is
+     *         {@code null}, empty, or not prefixed by {@code get} or {@code is}
+     * @throws StringIndexOutOfBoundsException if the name is exactly {@code get} or {@code is}
      */
     private String getPropertyForGetter(String getterName) {
         if (getterName == null || getterName.isEmpty()) return null;
@@ -1377,10 +1426,28 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
     }
 
     /**
-     * Returns a property name equivalent for the given setter name or null if it is not a getter
+     * Returns the property name for a setter method name.
+     * <p>
+     * A leading {@code set} is stripped and the remainder is passed to
+     * {@link MetaClassHelper#convertPropertyName(String)}. A leading uppercase
+     * letter is decapitalized ({@code setFoo} gives {@code foo}) unless the
+     * second character is also uppercase ({@code setURL} gives {@code URL}).
+     * A remainder that does not start with an uppercase letter is kept, so
+     * {@code set_ajax} gives {@code _ajax}, {@code set$id} gives {@code $id},
+     * and a remainder that starts with a digit is kept ({@code set1st} gives
+     * {@code 1st}). The conversion does not itself decide that the name is a
+     * setter: {@code setfoo} gives {@code foo}.
+     * <p>
+     * {@code null}, an empty name, or a name that does not start with {@code set}
+     * returns {@code null}. The name {@code set} has an empty remainder, and
+     * {@code convertPropertyName} then throws {@link StringIndexOutOfBoundsException}
+     * because it reads the first character. Callers recognize a setter before
+     * converting, so a registered accessor does not produce that input.
      *
-     * @param setterName The setter name
-     * @return The property name equivalent
+     * @param setterName the setter name, or {@code null}
+     * @return the property name, or {@code null} when {@code setterName} is
+     *         {@code null}, empty, or not prefixed by {@code set}
+     * @throws StringIndexOutOfBoundsException if the name is exactly {@code set}
      */
     public String getPropertyForSetter(String setterName) {
         if (setterName == null || setterName.isEmpty()) return null;
@@ -1393,10 +1460,24 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
     }
 
     /**
-     * Determines whether the supplied method signature represents a Groovy bean setter.
+     * Determines whether the supplied method signature represents a Groovy bean
+     * setter that should be installed as a property write.
+     * <p>
+     * A setter has one parameter and a name of {@code set} followed by an
+     * accessor suffix. The suffix must already be in the form produced by
+     * {@link BeanUtils#capitalize(String)}: a first character that is not a
+     * lowercase letter ({@code setFoo}, {@code setURL}, {@code set_ajax},
+     * {@code set$id}, {@code set1st}), or a second character that is uppercase
+     * ({@code setuRL}, the JavaBeans exception that is left unchanged).
+     * {@code setfoo} is not a setter; the setter for {@code foo} is {@code setFoo}.
+     * The property written is the suffix decapitalized under the same rules, so
+     * {@code set_ajax} writes {@code _ajax} and {@code setURL} writes {@code URL}.
+     * <p>
+     * A {@code null} name, an empty name, a {@code null} parameter-type array, or
+     * any arity other than one yields {@code false}. None of those inputs throws.
      *
-     * @param name the candidate method name
-     * @param args the candidate parameter types
+     * @param name the candidate method name, or {@code null}
+     * @param args the candidate parameter types, or {@code null}
      * @return {@code true} if the signature represents a setter
      */
     public boolean isSetter(String name, CachedClass[] args) {
