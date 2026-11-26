@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1795590185950,
+  "lastUpdate": 1795676668041,
   "repoUrl": "https://github.com/apache/groovy",
   "entries": {
     "Compiler Performance": [
@@ -10330,6 +10330,63 @@ window.BENCHMARK_DATA = {
             "name": "compile@groovy-6",
             "value": 473.61333333333334,
             "range": "±21.28",
+            "unit": "ms",
+            "extra": "6.0.0"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "James Daugherty",
+            "username": "jdaugherty",
+            "email": "jdaugherty@jdresources.net"
+          },
+          "committer": {
+            "name": "Paul King",
+            "username": "paulk-asert",
+            "email": "paulk@asert.com.au"
+          },
+          "id": "40d90fabe32f4d38aa60f1ed410192260f844282",
+          "message": "GROOVY-12834: Coerce null to boolean with classic call sites\n\n`x as boolean` on a null value threw \"IllegalArgumentException: null to\nboolean\" when compiled with classic call sites, because the writer\npassed the primitive type to asType and NullObject.asType rejects\nprimitive types since GROOVY-11196. The indy writer coerces to the\nwrapper type and lets the cast convert to the primitive; the classic\nwriter now does the same.",
+          "timestamp": "2026-11-25T13:48:00Z",
+          "url": "https://github.com/apache/groovy/commit/40d90fabe32f4d38aa60f1ed410192260f844282"
+        },
+        "date": 1795676659382,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "compile@current",
+            "value": 473.6566666666667,
+            "range": "±17.01",
+            "unit": "ms",
+            "extra": "current"
+          },
+          {
+            "name": "compile@groovy-3",
+            "value": 680.1233333333333,
+            "range": "±229.14",
+            "unit": "ms",
+            "extra": "3.0.25"
+          },
+          {
+            "name": "compile@groovy-4",
+            "value": 601.56,
+            "range": "±151.91",
+            "unit": "ms",
+            "extra": "4.0.33"
+          },
+          {
+            "name": "compile@groovy-5",
+            "value": 479.1,
+            "range": "±22.56",
+            "unit": "ms",
+            "extra": "5.1.3"
+          },
+          {
+            "name": "compile@groovy-6",
+            "value": 484.4433333333333,
+            "range": "±21.83",
             "unit": "ms",
             "extra": "6.0.0"
           }
