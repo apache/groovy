@@ -36,6 +36,7 @@ import org.codehaus.groovy.ast.ImportNode;
 import org.codehaus.groovy.ast.InnerClassNode;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.ModuleNode;
+import org.codehaus.groovy.ast.NodeMetaDataHandler;
 import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.PropertyNode;
 import org.codehaus.groovy.ast.Variable;
@@ -77,6 +78,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.IdentityHashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -266,16 +268,22 @@ public class JavaStubGenerator {
             // if it is an anonymous inner class, don't generate the stub code for it.
             return;
         }
+        // GROOVY-3330: verification rewrites the class so the stub can be printed.
+        // Those edits belong to class generation; put the AST back afterwards.
+        VerificationMemento memento = VerificationMemento.capture(classNode);
         try {
             Verifier verifier = new Verifier() {
                 @Override
                 public void visitClass(ClassNode node) {
                     List<Statement> objectInitializers = node.getObjectInitializerStatements();
                     List<Statement> savedStatements = new ArrayList<>(objectInitializers);
-                    super.visitClass(node);
-                    // restore the initializers: cleared for a class, but kept for an interface or trait
-                    objectInitializers.clear();
-                    objectInitializers.addAll(savedStatements);
+                    try {
+                        super.visitClass(node);
+                    } finally {
+                        // restore the initializers: cleared for a class, but kept for an interface or trait
+                        objectInitializers.clear();
+                        objectInitializers.addAll(savedStatements);
+                    }
 
                     for (ClassNode trait : findTraits(node)) {
                         // GROOVY-9031: replace property type placeholder with resolved type from trait generics
@@ -283,8 +291,11 @@ public class JavaStubGenerator {
                         for (PropertyNode traitProperty : trait.getProperties()) {
                             ClassNode traitPropertyType = traitProperty.getType();
                             traitProperty.setType(correctToGenericsSpecRecurse(generics, traitPropertyType));
-                            super.visitProperty(traitProperty);
-                            traitProperty.setType(traitPropertyType);
+                            try {
+                                super.visitProperty(traitProperty);
+                            } finally {
+                                traitProperty.setType(traitPropertyType);
+                            }
                         }
                     }
                 }
@@ -483,6 +494,7 @@ public class JavaStubGenerator {
 
             out.println("}");
         } finally {
+            memento.restore();
             constructors.clear();
             propertyMethods.clear();
         }
@@ -1312,5 +1324,274 @@ public class JavaStubGenerator {
 
         javaFileObjectStream.forEach(FileObject::delete);
         javaStubCompilationUnitSet.clear();
+    }
+
+    /**
+     * Verification edits made while a stub is printed. The stub text needs them
+     * (property accessors, default-argument overloads, {@code GroovyObject} on
+     * the implements list, the Java {@code main} signature). Later phases must
+     * still see the class as it was before verification.
+     */
+    private static final class VerificationMemento {
+        private final ClassNode classNode;
+        private final int modifiers;
+        private final boolean usingGenerics;
+        private final ClassNode[] interfaces;
+        private final List<FieldNode> fields;
+        private final List<Expression> fieldInitializers;
+        private final List<MethodNode> methods;
+        private final List<ConstructorNode> constructors;
+        private final List<MemberState> members;
+        private final List<Statement> objectInitializers;
+        private final Map<Object, Object> metadata;
+        private final Map<ClassNode, MethodNode> enclosingMethods;
+
+        private VerificationMemento(ClassNode classNode, int modifiers, boolean usingGenerics,
+                                    ClassNode[] interfaces, List<FieldNode> fields,
+                                    List<Expression> fieldInitializers, List<MethodNode> methods,
+                                    List<ConstructorNode> constructors, List<MemberState> members,
+                                    List<Statement> objectInitializers, Map<Object, Object> metadata,
+                                    Map<ClassNode, MethodNode> enclosingMethods) {
+            this.classNode = classNode;
+            this.modifiers = modifiers;
+            this.usingGenerics = usingGenerics;
+            this.interfaces = interfaces;
+            this.fields = fields;
+            this.fieldInitializers = fieldInitializers;
+            this.methods = methods;
+            this.constructors = constructors;
+            this.members = members;
+            this.objectInitializers = objectInitializers;
+            this.metadata = metadata;
+            this.enclosingMethods = enclosingMethods;
+        }
+
+        static VerificationMemento capture(ClassNode classNode) {
+            List<FieldNode> fields = new ArrayList<>(classNode.getFields());
+            List<Expression> fieldInitializers = new ArrayList<>(fields.size());
+            for (FieldNode field : fields) {
+                fieldInitializers.add(field.getInitialValueExpression());
+            }
+            List<MethodNode> methods = new ArrayList<>(classNode.getMethods());
+            List<ConstructorNode> constructors = new ArrayList<>(classNode.getDeclaredConstructors());
+            List<MemberState> members = new ArrayList<>(methods.size() + constructors.size());
+            for (MethodNode method : methods) {
+                members.add(MemberState.capture(method));
+            }
+            for (ConstructorNode constructor : constructors) {
+                members.add(MemberState.capture(constructor));
+            }
+            ClassNode[] faces = classNode.getInterfaces();
+            Map<ClassNode, MethodNode> enclosingMethods = new IdentityHashMap<>();
+            collectEnclosingMethods(classNode, enclosingMethods);
+            return new VerificationMemento(
+                    classNode,
+                    classNode.getModifiers(),
+                    classNode.isUsingGenerics(),
+                    faces == null ? null : faces.clone(),
+                    fields,
+                    fieldInitializers,
+                    methods,
+                    constructors,
+                    members,
+                    new ArrayList<>(classNode.getObjectInitializerStatements()),
+                    copyMetadata(classNode),
+                    enclosingMethods);
+        }
+
+        void restore() {
+            if (classNode.getModifiers() != modifiers) {
+                classNode.setModifiers(modifiers);
+            }
+            if (!Arrays.equals(classNode.getInterfaces(), interfaces)) {
+                classNode.setInterfaces(interfaces);
+            }
+            if (classNode.isUsingGenerics() != usingGenerics) {
+                classNode.setUsingGenerics(usingGenerics);
+            }
+            restoreFields();
+            restoreMethods();
+            restoreConstructors();
+            for (MemberState member : members) {
+                member.restore();
+            }
+            restoreObjectInitializers();
+            restoreMetadata(classNode, metadata);
+            for (Map.Entry<ClassNode, MethodNode> entry : enclosingMethods.entrySet()) {
+                ClassNode inner = entry.getKey();
+                if (inner.getEnclosingMethod() != entry.getValue()) {
+                    inner.setEnclosingMethod(entry.getValue());
+                }
+            }
+        }
+
+        private void restoreFields() {
+            Set<FieldNode> original = identitySet(fields);
+            for (FieldNode field : new ArrayList<>(classNode.getFields())) {
+                if (!original.contains(field)) {
+                    classNode.removeField(field.getName());
+                }
+            }
+            Set<FieldNode> present = identitySet(classNode.getFields());
+            for (FieldNode field : fields) {
+                if (!present.contains(field)) {
+                    classNode.addField(field);
+                }
+            }
+            for (int i = 0; i < fields.size(); i++) {
+                FieldNode field = fields.get(i);
+                Expression initial = fieldInitializers.get(i);
+                if (field.getInitialValueExpression() != initial) {
+                    field.setInitialValueExpression(initial);
+                }
+            }
+        }
+
+        private void restoreMethods() {
+            Set<MethodNode> original = identitySet(methods);
+            for (MethodNode method : new ArrayList<>(classNode.getMethods())) {
+                if (!original.contains(method)) {
+                    classNode.removeMethod(method);
+                }
+            }
+            Set<MethodNode> present = identitySet(classNode.getMethods());
+            for (MethodNode method : methods) {
+                if (!present.contains(method)) {
+                    classNode.addMethod(method);
+                }
+            }
+        }
+
+        private void restoreConstructors() {
+            Set<ConstructorNode> original = identitySet(constructors);
+            for (ConstructorNode constructor : new ArrayList<>(classNode.getDeclaredConstructors())) {
+                if (!original.contains(constructor)) {
+                    classNode.removeConstructor(constructor);
+                }
+            }
+            for (ConstructorNode constructor : constructors) {
+                boolean present = false;
+                for (ConstructorNode existing : classNode.getDeclaredConstructors()) {
+                    if (existing == constructor) {
+                        present = true;
+                        break;
+                    }
+                }
+                if (!present) {
+                    classNode.addConstructor(constructor);
+                }
+            }
+        }
+
+        private void restoreObjectInitializers() {
+            List<Statement> current = classNode.getObjectInitializerStatements();
+            boolean same = current.size() == objectInitializers.size();
+            for (int i = 0; same && i < current.size(); i++) {
+                same = current.get(i) == objectInitializers.get(i);
+            }
+            if (!same) {
+                current.clear();
+                current.addAll(objectInitializers);
+            }
+        }
+
+        private static void collectEnclosingMethods(ClassNode node, Map<ClassNode, MethodNode> saved) {
+            for (Iterator<InnerClassNode> it = node.getInnerClasses(); it.hasNext(); ) {
+                ClassNode inner = it.next().redirect();
+                if (saved.containsKey(inner)) {
+                    continue;
+                }
+                saved.put(inner, inner.getEnclosingMethod());
+                collectEnclosingMethods(inner, saved);
+            }
+        }
+
+        private static <T> Set<T> identitySet(List<T> nodes) {
+            Set<T> set = Collections.newSetFromMap(new IdentityHashMap<>());
+            set.addAll(nodes);
+            return set;
+        }
+
+        private static Map<Object, Object> copyMetadata(NodeMetaDataHandler node) {
+            Map<Object, Object> copy = new LinkedHashMap<>();
+            for (Map.Entry<?, ?> entry : node.getNodeMetaData().entrySet()) {
+                copy.put(entry.getKey(), entry.getValue());
+            }
+            return copy;
+        }
+
+        private static void restoreMetadata(NodeMetaDataHandler node, Map<Object, Object> saved) {
+            for (Object key : node.getNodeMetaData().keySet()) {
+                if (!saved.containsKey(key)) {
+                    node.removeNodeMetaData(key);
+                }
+            }
+            for (Map.Entry<Object, Object> entry : saved.entrySet()) {
+                if (node.getNodeMetaData(entry.getKey()) != entry.getValue()) {
+                    node.putNodeMetaData(entry.getKey(), entry.getValue());
+                }
+            }
+        }
+
+        /**
+         * Signature and body of one method or constructor, so an in-place edit
+         * such as the {@code main} parameter rewrite can be undone.
+         */
+        private static final class MemberState {
+            private final MethodNode method;
+            private final ClassNode returnType;
+            private final Statement code;
+            private final ClassNode[] parameterTypes;
+            private final Expression[] initialExpressions;
+            private final List<Map<Object, Object>> parameterMetadata;
+
+            private MemberState(MethodNode method, ClassNode returnType, Statement code,
+                                ClassNode[] parameterTypes, Expression[] initialExpressions,
+                                List<Map<Object, Object>> parameterMetadata) {
+                this.method = method;
+                this.returnType = returnType;
+                this.code = code;
+                this.parameterTypes = parameterTypes;
+                this.initialExpressions = initialExpressions;
+                this.parameterMetadata = parameterMetadata;
+            }
+
+            static MemberState capture(MethodNode method) {
+                Parameter[] parameters = method.getParameters();
+                int n = parameters.length;
+                ClassNode[] parameterTypes = new ClassNode[n];
+                Expression[] initialExpressions = new Expression[n];
+                List<Map<Object, Object>> parameterMetadata = new ArrayList<>(n);
+                for (int i = 0; i < n; i++) {
+                    Parameter parameter = parameters[i];
+                    parameterTypes[i] = parameter.getType();
+                    initialExpressions[i] = parameter.getInitialExpression();
+                    parameterMetadata.add(copyMetadata(parameter));
+                }
+                return new MemberState(method, method.getReturnType(), method.getCode(),
+                        parameterTypes, initialExpressions, parameterMetadata);
+            }
+
+            void restore() {
+                if (method.getReturnType() != returnType) {
+                    method.setReturnType(returnType);
+                }
+                if (method.getCode() != code) {
+                    method.setCode(code);
+                }
+                Parameter[] parameters = method.getParameters();
+                int n = Math.min(parameters.length, parameterTypes.length);
+                for (int i = 0; i < n; i++) {
+                    Parameter parameter = parameters[i];
+                    if (parameter.getType() != parameterTypes[i]) {
+                        parameter.setType(parameterTypes[i]);
+                    }
+                    if (parameter.getInitialExpression() != initialExpressions[i]) {
+                        parameter.setInitialExpression(initialExpressions[i]);
+                    }
+                    restoreMetadata(parameter, parameterMetadata.get(i));
+                }
+            }
+        }
     }
 }
