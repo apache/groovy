@@ -74,7 +74,8 @@ public class StaticTypesTypeChooser extends StatementMetaTypeChooser {
      */
     private static ClassNode getCompiledFunctionalInterface(final Expression exp) {
         if (!(exp instanceof LambdaExpression || exp instanceof MethodReferenceExpression)
-                || exp.getNodeMetaData(StaticTypesMarker.DYNAMIC_RESOLUTION) != null) {
+                || exp.getNodeMetaData(StaticTypesMarker.DYNAMIC_RESOLUTION) != null
+                || exp.getNodeMetaData(StaticTypesMarker.CLOSURE_TARGET_INTERFACE) != null) { // a closure
             return null;
         }
         ClassNode type = exp.getNodeMetaData(StaticTypesMarker.PARAMETER_TYPE);

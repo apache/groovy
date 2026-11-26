@@ -22,8 +22,6 @@ import org.codehaus.groovy.control.CompilationUnit
 import org.codehaus.groovy.control.CompilerConfiguration
 import org.codehaus.groovy.control.Phases
 import org.codehaus.groovy.control.messages.WarningMessage
-import org.junit.jupiter.api.AfterEach
-import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 
 import static groovy.test.GroovyAssert.assertScript
@@ -32,37 +30,13 @@ import static groovy.test.GroovyAssert.shouldFail
 /**
  * A closure, lambda or method reference written for a slot declared with a type parameter, such as {@code E} of
  * {@code List.add(E)} or {@code V} of {@code putAt(Map<K, V>, K, V)}, where the call or assignment binds the type
- * parameter to a functional interface: statically compiled code compiles a method reference for that interface,
- * and a lambda too with the incubating {@code groovy.target.lambda.typearg} option, which these tests set unless
- * they say otherwise; the class of a closure literal implements it. Dynamic and type-checked code pass them as
- * they did.
+ * parameter to a functional interface: statically compiled code compiles a method reference argument for that
+ * interface, and the class of a closure literal or lambda implements it. Dynamic and type-checked code pass them
+ * as they did.
+ *
+ * @see FunctionalLiteralSiteTest
  */
 final class FunctionalTypeArgumentTest {
-
-    private static final String PROP = CompilerConfiguration.LAMBDA_TYPE_ARGUMENT
-
-    private String previous
-
-    @BeforeEach
-    void setUp() {
-        previous = System.getProperty(PROP)
-        System.setProperty(PROP, 'true')
-    }
-
-    @AfterEach
-    void tearDown() {
-        if (previous != null) System.setProperty(PROP, previous) else System.clearProperty(PROP)
-    }
-
-    /** Runs the work with the option cleared; the property is read whenever a call is type checked. */
-    private static <T> T withoutLambdaTypeArgument(Closure<T> work) {
-        String value = System.clearProperty(PROP)
-        try {
-            work.call()
-        } finally {
-            if (value != null) System.setProperty(PROP, value)
-        }
-    }
 
     private final GroovyShell shell = GroovyShell.withConfig {
         imports {
@@ -72,7 +46,7 @@ final class FunctionalTypeArgumentTest {
     }
 
     @Test
-    void testLambdaOrMethodReferenceIsCompiledForTheInterfaceTheCallBindsItTo() {
+    void testLambdaImplementsAndMethodReferenceIsCompiledForTheInterfaceTheCallBindsItTo() {
         assertScript shell, '''
             import java.util.concurrent.atomic.AtomicReference
             interface Shout extends Function<String, String> { }
@@ -107,59 +81,69 @@ final class FunctionalTypeArgumentTest {
 
             def suppliers = C.suppliers()
             assert suppliers*.get() == ['set', 'add', 'shift', 'vararg', 'varargs', 'constructor', 'type argument']
-            assert suppliers.every { it instanceof Supplier && !(it instanceof Closure) }
+            // a lambda is a closure, as before, whose class implements the interface
+            assert suppliers.every { it instanceof Supplier && it instanceof Closure }
             def functions = C.functions()
             assert functions.collectEntries { k, f -> [k, f.apply('ab')] } == [lambda: 'ab?', implicit: 'AB', reference: 'AB']
-            assert functions.values().every { !(it instanceof Closure) }
+            assert functions.lambda instanceof Closure && functions.implicit instanceof Closure
+            assert !(functions.reference instanceof Closure) // a method reference argument is compiled for the interface
             def shout = C.shout()
             assert shout.apply('a') == 'a?'
-            assert shout instanceof Shout
+            assert shout instanceof Shout && shout instanceof Closure
         '''
     }
 
     @Test
-    void testLambdaIsCompiledAsAClosureWithoutTheOption() {
-        withoutLambdaTypeArgument {
-            assertScript shell, '''
-                @CompileStatic
-                class C {
-                    static List<Supplier<String>> suppliers() {
-                        List<Supplier<String>> list = []
-                        list.add(() -> 'add')
-                        list << (() -> 'shift')
-                        list
-                    }
-                    static Map<String, Function<String, String>> functions() {
-                        Map<String, Function<String, String>> map = [:]
-                        map.put('shout', (String s) -> s.toUpperCase())
-                        map.put('reference', String::toUpperCase)
-                        map
-                    }
-                    static List<Function<String, String>> references() {
-                        List<Function<String, String>> list = []
-                        list.add(String::toUpperCase)
-                        list << String::trim
-                        list
-                    }
+    void testLambdaStaysAClosureAndMethodReferenceOperandAMethodClosure() {
+        assertScript shell, '''
+            @CompileStatic
+            class C {
+                static List<Supplier<String>> suppliers() {
+                    List<Supplier<String>> list = []
+                    list.add(() -> 'add')
+                    list << (() -> 'shift')
+                    list
                 }
+                static Map<String, Function<String, String>> functions() {
+                    Map<String, Function<String, String>> map = [:]
+                    map.put('shout', (String s) -> s.toUpperCase())
+                    map.put('reference', String::toUpperCase)
+                    map
+                }
+                static List<Function<String, String>> references(boolean flag) {
+                    List<Function<String, String>> list = []
+                    list.add(String::toUpperCase)
+                    list << String::trim
+                    list.add(flag ? String::trim : String::strip)
+                    list
+                }
+                static String read(List<Function<String, String>> list, int i) {
+                    list[i].apply(' ab ')
+                }
+            }
 
-                // a lambda is compiled as a closure, as before, and dynamic code calls it as one
-                def suppliers = C.suppliers()
-                assert suppliers.every { it instanceof Closure }
-                assert suppliers.collect { it() } == ['add', 'shift']
-                def functions = C.functions()
-                assert functions.shout instanceof Closure
-                assert functions.shout('hi') == 'HI'
-                assert functions.shout.call('hi') == 'HI'
+            // a lambda is compiled as a closure, as before, and dynamic code calls it as one
+            def suppliers = C.suppliers()
+            assert suppliers.every { it instanceof Closure }
+            assert suppliers.collect { it() } == ['add', 'shift']
+            def functions = C.functions()
+            assert functions.shout instanceof Closure
+            assert functions.shout('hi') == 'HI'
+            assert functions.shout.call('hi') == 'HI'
 
-                // a method reference is compiled for the interface whether or not the option is set
-                assert !(functions.reference instanceof Closure)
-                assert functions.reference.apply('hi') == 'HI'
-                def references = C.references()
-                assert references*.apply(' ab ') == [' AB ', 'ab']
-                assert references.every { it instanceof Function && !(it instanceof Closure) }
-            '''
-        }
+            // a method reference argument is compiled for the interface
+            assert !(functions.reference instanceof Closure)
+            assert functions.reference.apply('hi') == 'HI'
+            def references = C.references(true)
+            assert references[0] instanceof Function && !(references[0] instanceof Closure)
+            assert C.read(references, 0) == ' AB '
+
+            // a method reference operand or branch of a conditional argument is a method closure, as before
+            assert references[1] instanceof org.codehaus.groovy.runtime.MethodClosure
+            assert references[2] instanceof org.codehaus.groovy.runtime.MethodClosure
+            assert references[1](' ab ') == 'ab' && references[2](' ab ') == 'ab'
+            groovy.test.GroovyAssert.shouldFail(ClassCastException) { C.read(references, 1) }
+        '''
     }
 
     @Test
@@ -181,23 +165,19 @@ final class FunctionalTypeArgumentTest {
 
             def list = make()
             assert list[0].get() == 'x'
-            // a lambda is an instance of the interface, not a closure
-            groovy.test.GroovyAssert.shouldFail(MissingMethodException) { list[0]() }
-            groovy.test.GroovyAssert.shouldFail(MissingMethodException) { list[0].call() }
+            // a lambda is an instance of the interface and still a closure
+            assert list[0]() == 'x'
+            assert list[0].call() == 'x'
             def commands = commands()
             assert commands.shout.apply('hi') == 'HI'
-            groovy.test.GroovyAssert.shouldFail(MissingMethodException) { commands.shout('hi') }
-            groovy.test.GroovyAssert.shouldFail(MissingMethodException) { commands.shout.call('hi') }
+            assert commands.shout('hi') == 'HI'
+            assert commands.shout.call('hi') == 'HI'
+            assert commands.shout.curry('hi')() == 'HI'
         '''
     }
 
     @Test
     void testTypeCheckedCodePassesALambdaOrMethodReferenceAsBefore() {
-        typeCheckedCodePassesALambdaOrMethodReferenceAsBefore()
-        withoutLambdaTypeArgument { typeCheckedCodePassesALambdaOrMethodReferenceAsBefore() }
-    }
-
-    private void typeCheckedCodePassesALambdaOrMethodReferenceAsBefore() {
         def err = shouldFail shell, '''
             @TypeChecked
             void test() {
@@ -216,7 +196,7 @@ final class FunctionalTypeArgumentTest {
             }
 
             def list = make()
-            assert list[0] instanceof Closure
+            assert list[0] instanceof Closure && !(list[0] instanceof Supplier)
             groovy.test.GroovyAssert.shouldFail(MissingMethodException) { list[0].get() }
         '''
     }
@@ -337,7 +317,7 @@ final class FunctionalTypeArgumentTest {
                     List<Function<String, String>> list = []
                     list << { it.toUpperCase() }                          // operand of leftShift(List<T>, T)
                     list.add(flag ? { it.toUpperCase() } : { it.trim() }) // branches of a conditional argument
-                    list.add(flag ? (s -> s * 2) : (s -> s))              // lambdas, with the option
+                    list.add(flag ? (s -> s * 2) : (s -> s))              // lambdas
                     list << new Holder<Function<String, String>>(value: { it.toUpperCase() }).value // named argument
                     list
                 }
@@ -345,8 +325,7 @@ final class FunctionalTypeArgumentTest {
 
             def list = C.make(true)
             assert list*.apply(' a ') == [' A ', ' A ', ' a  a ', ' A ']
-            assert list[0] instanceof Closure && list[1] instanceof Closure && list[3] instanceof Closure
-            assert list.every { it instanceof Function }
+            assert list.every { it instanceof Closure && it instanceof Function }
             assert C.make(false)[1].apply(' a ') == 'a'
         '''
 
@@ -435,6 +414,62 @@ final class FunctionalTypeArgumentTest {
     }
 
     @Test
+    void testComposedCurriedOrWritableClosureAnswersTheInterfaceMethodOfTheClosureItWrapsByCallingItself() {
+        assertScript shell, '''
+            @CompileStatic
+            List<Function<String, String>> make() {
+                List<Function<String, String>> list = []
+                list.add { String s -> s.trim() }
+                list
+            }
+            @CompileStatic
+            List<BiFunction<String, String, String>> make2() {
+                List<BiFunction<String, String, String>> list = []
+                list.add { String a, String b -> a + '|' + b }
+                list
+            }
+
+            def f = make()[0], b = make2()[0]
+            def up = { it.toUpperCase() }
+            // the wrappers do not implement the interface, but answer its method as calling them does
+            [f.andThen(up), f >> up, up << f].each { g ->
+                assert g.apply(' a ') == 'A'
+                assert g(' a ') == 'A'
+            }
+            assert f.asWritable().apply(' a ') == 'a'
+            assert f.memoize().apply(' a ') == 'a'
+            assert f.memoizeAtMost(2).apply(' a ') == 'a'
+            assert f.trampoline().apply(' a ') == 'a'
+            assert (f >> up).memoize().apply(' a ') == 'A'
+            assert (f >> up).trampoline().apply(' a ') == 'A'
+            assert b.curry('x').apply('y') == 'x|y'
+            assert b.rcurry('y').apply('x') == 'x|y'
+            groovy.test.GroovyAssert.shouldFail(MissingMethodException) { b.curry('x', 'y').apply('p', 'q') }
+            assert b.curry('x', 'y')() == 'x|y'
+            // the wrapped closure itself still answers it
+            assert f.apply(' a ') == 'a'
+            assert b.apply('p', 'q') == 'p|q'
+        '''
+
+        assertScript shell, '''
+            interface Shout { String shout(String s); default String twice(String s) { shout(s) + shout(s) } }
+            @CompileStatic
+            List<Shout> make() {
+                List<Shout> list = []
+                list.add { String s -> s + '!' }
+                list
+            }
+
+            def shout = make()[0]
+            def g = shout >> { it.toUpperCase() }
+            assert g.shout('a') == 'A!'
+            // a default method is not the wrapper's: answering it from the wrapped closure would skip the wrapper
+            groovy.test.GroovyAssert.shouldFail(MissingMethodException) { g.twice('a') }
+            assert shout.twice('a') == 'a!a!'
+        '''
+    }
+
+    @Test
     void testClosureValueIsStoredAsItIs() {
         assertScript shell, '''
             @CompileStatic
@@ -468,7 +503,7 @@ final class FunctionalTypeArgumentTest {
             }
         '''
         assert warnings.size() == 3
-        assert warnings.every { it == "The Closure is stored as it is, not converted to java.util.function.Supplier<java.lang.String>; write 'as java.util.function.Supplier<java.lang.String>' to convert it" }
+        assert warnings.every { it == warning('java.util.function.Supplier<java.lang.String>') }
     }
 
     // GROOVY-12561
@@ -493,12 +528,8 @@ final class FunctionalTypeArgumentTest {
                 }
             }
         '''
-        for (option in [true, false]) {
-            Closure<List<String>> compile = { warnings(source) }
-            def warnings = option ? compile() : withoutLambdaTypeArgument(compile)
-            // the assignment compiles a lambda or method reference for the interface, so only the closure is stored as it is
-            assert warnings == ["The Closure is stored as it is, not converted to java.util.function.Function<java.lang.String, java.lang.String>; write 'as java.util.function.Function<java.lang.String, java.lang.String>' to convert it"]
-        }
+        // the assignment compiles a lambda or method reference for the interface, so only the closure is stored as it is
+        assert warnings(source) == [warning('java.util.function.Function<java.lang.String, java.lang.String>')]
 
         assertScript shell, source + '''
             def values = W.make { it }
@@ -526,18 +557,15 @@ final class FunctionalTypeArgumentTest {
                     map['function'] = function
                     map['lambdas'] = flag ? ((String s) -> s) : ((String s) -> s.trim())
                     map['references'] = flag ? String::trim : String::strip
+                    new Holder<Function<String, String>>(value: (String s) -> s) // its class implements the interface
                     list.add(closure)                                    // warning
-                    new Holder<Function<String, String>>(value: (String s) -> s) // warning: stored as a Closure
                     map['branches'] = flag ? closure : closure           // warning for each
                 }
             }
         '''
-        for (option in [true, false]) {
-            Closure<List<String>> compile = { warnings(source) }
-            def warnings = option ? compile() : withoutLambdaTypeArgument(compile)
-            assert warnings.size() == 4
-            assert warnings.every { it.startsWith('The Closure is stored as it is, not converted to java.util.function.Function') }
-        }
+        def warnings = warnings(source)
+        assert warnings.size() == 3
+        assert warnings.every { it == warning('java.util.function.Function<java.lang.String, java.lang.String>') }
     }
 
     // GROOVY-12561
@@ -562,7 +590,7 @@ final class FunctionalTypeArgumentTest {
         '''
         def warnings = warnings(source)
         assert warnings.size() == 3
-        assert warnings.every { it == "The Closure is stored as it is, not converted to java.util.function.Function<java.lang.String, java.lang.String>; write 'as java.util.function.Function<java.lang.String, java.lang.String>' to convert it" }
+        assert warnings.every { it == warning('java.util.function.Function<java.lang.String, java.lang.String>') }
 
         assertScript shell, source + '''
             // a method pointer is a MethodClosure, which dynamic code calls as a closure
@@ -731,7 +759,12 @@ final class FunctionalTypeArgumentTest {
                 list.add { 'x' }
             }
         '''
-        assert err.message.contains('written for a type parameter bound to a functional interface')
+        assert err.message.contains('written for a type parameter bound to java.util.function.Supplier<java.lang.String>')
+        assert err.message.contains('use mode LENIENT or WARN to compile it unpacked')
+    }
+
+    private static String warning(String type) {
+        "the closure is stored as a Closure, not as $type: a statically compiled read through $type will fail; write 'as $type' to convert it"
     }
 
     private static List<String> warnings(String source) {
@@ -749,8 +782,8 @@ final class FunctionalTypeArgumentTest {
             @CompileStatic
             class H {
                 static List<Supplier<String>> make() {
-                    List<Supplier<String>> list = []
-                    list.add(() -> 'y')
+                    List<Supplier<String>> list = [null]
+                    list[0] = () -> 'y' // an assignment compiles a lambda for the interface
                     list
                 }
             }

@@ -38,6 +38,7 @@ import org.codehaus.groovy.reflection.ParameterTypes;
 import org.codehaus.groovy.reflection.ReflectionCache;
 import org.codehaus.groovy.reflection.android.AndroidSupport;
 import org.codehaus.groovy.runtime.ArrayTypeUtils;
+import org.codehaus.groovy.runtime.ComposedClosure;
 import org.codehaus.groovy.runtime.ConvertedClosure;
 import org.codehaus.groovy.runtime.CurriedClosure;
 import org.codehaus.groovy.runtime.DefaultGroovyMethods;
@@ -49,6 +50,7 @@ import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.runtime.InvokerInvocationException;
 import org.codehaus.groovy.runtime.MetaClassHelper;
 import org.codehaus.groovy.runtime.MethodClosure;
+import org.codehaus.groovy.runtime.memoize.Memoize;
 import org.codehaus.groovy.runtime.metaclass.ClosureMetaMethod;
 import org.codehaus.groovy.runtime.metaclass.MetaClassRegistryImpl;
 import org.codehaus.groovy.runtime.metaclass.MetaMethodIndex;
@@ -81,6 +83,7 @@ import java.beans.PropertyDescriptor;
 import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.lang.reflect.Proxy;
 import java.net.URL;
 import java.util.ArrayDeque;
@@ -1340,7 +1343,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         MetaMethod method = getMetaMethod(sender, object, methodName, isCallToSuper, arguments);
 
         if (object instanceof Closure closure) {
-            final Object owner = closure.getOwner();
+            Object owner = closure.getOwner();
 
             if (CALL_METHOD.equals(methodName) || DO_CALL_METHOD.equals(methodName)) {
                 var closureClass = closure.getClass();
@@ -1353,7 +1356,20 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
                 if (method == null) invokeMissingMethod(object, methodName, arguments);
             }
 
-            final Object delegate = closure.getDelegate();
+            Object delegate = closure.getDelegate();
+            // a composed, curried or writable closure keeps the closure it wraps as its owner and, by default, its
+            // delegate, so an interface method of that closure would skip the wrapper's own behaviour
+            int wrapped = method == null ? interfaceMethodOfWrappedClosure(closure, owner, methodName) : NOT_WRAPPED;
+            if (wrapped == WRAPPED_ABSTRACT) {
+                // the method the wrapped closure implements: the wrapper answers it by calling itself
+                return invokeMethod(sender, object, CALL_METHOD, originalArguments, false, fromInsideClass);
+            }
+            if (wrapped == WRAPPED_OTHER) {
+                // any other method of the interface, such as a default method, is not the wrapper's: the closure itself
+                // stands for "none" below
+                if (delegate == owner) delegate = closure;
+                owner = closure;
+            }
             final int resolveStrategy = closure.getResolveStrategy();
 
             final Class[] argClasses = MetaClassHelper.convertToTypeArray(arguments);
@@ -4451,6 +4467,53 @@ out:    if (metaClass instanceof MetaClassImpl metaClassImpl) {
         public Object invoke(Object object, Object[] arguments) {
             return null;
         }
+    }
+
+    private static final int NOT_WRAPPED = 0, WRAPPED_ABSTRACT = 1, WRAPPED_OTHER = 2;
+
+    /**
+     * Whether the closure wraps another, as a composed, curried, writable, memoized or trampoline closure does, and
+     * the method is declared by an interface the closure it wraps implements, as statically compiled code makes a
+     * closure written for a functional interface implement it. A wrapper of a wrapper is followed to the closure
+     * that implements the interface. {@code WRAPPED_ABSTRACT} is for the abstract method of the interface;
+     * {@code WRAPPED_OTHER} is for any other method of it, and only for a wrapper whose owner is the closure it wraps,
+     * which the lookup would otherwise reach.
+     */
+    private static int interfaceMethodOfWrappedClosure(final Closure<?> closure, final Object owner, final String methodName) {
+        Closure<?> wrapped = wrappedClosure(closure);
+        if (wrapped == null) return NOT_WRAPPED;
+        for (int depth = 0; depth < 16; depth += 1) {
+            int found = NOT_WRAPPED;
+            for (Class<?> type : wrapped.getClass().getInterfaces()) {
+                if (type == GeneratedClosure.class) continue;
+                for (Method m : type.getMethods()) {
+                    if (!m.getName().equals(methodName)) continue;
+                    if (Modifier.isAbstract(m.getModifiers())) return WRAPPED_ABSTRACT;
+                    found = WRAPPED_OTHER;
+                }
+            }
+            if (found != NOT_WRAPPED) return wrappedClosure(closure) == owner ? found : NOT_WRAPPED;
+            Closure<?> next = wrappedClosure(wrapped);
+            if (next == null) break;
+            wrapped = next;
+        }
+        return NOT_WRAPPED;
+    }
+
+    /**
+     * The closure a wrapper closure calls through: the owner of a composed, curried or writable closure, and the
+     * one reference a memoized or trampoline closure declares; {@code null} for any other closure.
+     */
+    private static Closure<?> wrappedClosure(final Closure<?> closure) {
+        if (closure instanceof ComposedClosure || closure instanceof CurriedClosure
+                || closure.getClass().getEnclosingClass() == Closure.class) {
+            return closure.getOwner() instanceof Closure<?> owner ? owner : null;
+        }
+        if (closure instanceof TrampolineClosure || closure.getClass().getEnclosingClass() == Memoize.class) {
+            Object[] references = closure.additionalReferences();
+            return references.length == 1 && references[0] instanceof Closure<?> wrapped ? wrapped : null;
+        }
+        return null;
     }
 
     private Tuple2<Object, MetaMethod> invokeMethod(MetaMethod method,

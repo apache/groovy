@@ -675,6 +675,10 @@ public class ClosureWriter {
         if (mode == PackMode.LENIENT || mode == PackMode.DISABLED) return;
         String msg = "@PackedClosures: closure was not packed -- " + declineReason(expression);
         if (mode == PackMode.STRICT) {
+            if (implementsTargetInterface(expression)) {
+                // since GEP-33 such a closure implements its interface, so STRICT code that compiled before reaches here
+                msg += "; use mode LENIENT or WARN to compile it unpacked";
+            }
             controller.getSourceUnit().getErrorCollector()
                     .addErrorAndContinue(msg, expression, controller.getSourceUnit());
         } else {
@@ -751,7 +755,8 @@ public class ClosureWriter {
             return "it is cast to an intersection type, whose marker interfaces the shared adapter cannot declare";
         }
         if (implementsTargetInterface(expression)) {
-            return "it is written for a type parameter bound to a functional interface, which its class implements "
+            ClassNode type = expression.getNodeMetaData(StaticTypesMarker.CLOSURE_TARGET_INTERFACE);
+            return "it is written for a type parameter bound to " + type.toString(false) + ", which its class implements "
                     + "and the shared adapter cannot";
         }
         if (isInTraitContext()) {

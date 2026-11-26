@@ -377,14 +377,18 @@ public class StaticTypesClosureWriter extends ClosureWriter {
     /**
      * Makes the closure class implement the functional interface that the type checker found the closure
      * literal written for, in a slot declared with a type parameter, such as {@code E} of {@code List.add(E)}
-     * for a {@code List<Supplier<String>>}. Its abstract method is declared with the interface's parameterized
-     * signature and calls {@code doCall}, as the direct {@code call} methods do; the verifier adds the bridge
-     * for its erasure. The closure is then stored as it is: dynamic code can still call it as a closure.
+     * for a {@code List<Supplier<String>>}. Its abstract method calls the closure as a coercion proxy for it would,
+     * with its arguments converted and its exceptions translated, so a call through the interface behaves as one
+     * through {@code closure as F}; if the adapter's methods cannot be declared, it is declared with the
+     * interface's parameterized signature and calls {@code doCall}, and the verifier adds the bridge for its
+     * erasure. The closure is then stored as it is: dynamic code can still call it as a closure.
      */
     private static void addTargetInterface(final ClassNode closureClass, final MethodNode doCallMethod, final ClosureExpression expression) {
         ClassNode target = expression.getNodeMetaData(CLOSURE_TARGET_INTERFACE);
         if (target == null || closureClass.implementsInterface(target)) return;
         ClassNode type = withoutWildcards(target);
+        closureClass.addInterface(type);
+        if (SamAdapterFactory.implement(closureClass, doCallMethod, expression, type)) return;
 
         MethodNode sam = ClassHelper.findSAM(type);
         Tuple2<ClassNode[], ClassNode> signature = GenericsUtils.parameterizeSAM(type);
@@ -416,7 +420,6 @@ public class StaticTypesClosureWriter extends ClosureWriter {
         ClassNode returnType = erasure(signature.getV2());
         Statement code = ClassHelper.isPrimitiveVoid(returnType) ? stmt(call) : returnS(castX(returnType, call));
 
-        closureClass.addInterface(type);
         addGeneratedMethod(closureClass, new MethodNode(sam.getName(), Opcodes.ACC_PUBLIC, returnType, parameters, sam.getExceptions(), code), true);
     }
 
