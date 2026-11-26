@@ -5739,6 +5739,10 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
                         targetType = targetType.getComponentType();
                     ClassNode functionalType = (i < nSelf || !(isFunctionalLiteral(expression) || (closureConditional && isStaticDispatchScope())) ? null
                             : getFunctionalTypeArgument(receiver, selectedMethod, arguments, i - nSelf, targetType));
+                    if (functionalType == null && i >= nSelf && !(expression instanceof MethodPointerExpression)
+                            && (isFunctionalLiteral(expression) || (closureConditional && isStaticDispatchScope()))) {
+                        warnIfTypeVariableSlot(receiver, selectedMethod, arguments, targetType, expression);
+                    }
                     if (functionalType != null && closureConditional) { // its closure branches implement the interface
                         convertClosureValue(expression, functionalType, targetType, false);
                         if (takesParameterTypesFrom(expression, functionalType)) applyTypeParameterTarget(functionalType, targetType, expression);
@@ -5799,7 +5803,8 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
                     convertClosureArgument(receiver, selectedMethod, arguments, parameters, i, nSelf, expression); // a MethodClosure
                 }
             } else if (visitFunctors && nthParameter != -1 && i >= nSelf && isStaticDispatchScope()
-                    && implementsInterfaceOrIsSubclassOf(getType(expression), CLOSURE_TYPE)) {
+                    && implementsInterfaceOrIsSubclassOf(getType(expression), CLOSURE_TYPE)
+                    && expression.getNodeMetaData(DEFERRED_METHOD_REFERENCES) == null) { // a call whose method reference is resolved below
                 // a conditional expression or a value of type Closure, such as a variable
                 convertClosureArgument(receiver, selectedMethod, arguments, parameters, i, nSelf, expression);
             }
@@ -5895,7 +5900,69 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
         if (targetType.isArray() && i >= last)
             targetType = targetType.getComponentType();
         ClassNode functionalType = getFunctionalTypeArgument(receiver, method, arguments, i - nSelf, targetType);
-        if (functionalType != null) convertClosureValue(expression, functionalType, targetType, false);
+        if (functionalType != null) {
+            convertClosureValue(expression, functionalType, targetType, false);
+        } else {
+            warnIfTypeVariableSlot(receiver, method, arguments, targetType, expression);
+        }
+    }
+
+    /**
+     * Warns of a closure value passed for a parameter declared with a type parameter that the call binds to a type
+     * variable of the enclosing method or class, rather than to a functional interface, where that type variable
+     * has a functional interface as its bound.
+     */
+    private void warnIfTypeVariableSlot(final ClassNode receiver, final MethodNode method, final ArgumentListExpression arguments,
+                                        final ClassNode parameterType, final Expression expression) {
+        if (!parameterType.isGenericsPlaceHolder()) return;
+        ClassNode slotType = applyGenericsContext(extractPlaceHoldersVisibleToDeclaration(receiver, method, arguments), parameterType);
+        if (!slotType.isGenericsPlaceHolder() || slotType.getUnresolvedName().equals(parameterType.getUnresolvedName())) return;
+        ClassNode bound = getDeclaredBound(slotType.getUnresolvedName());
+        if (bound != null && isSAMType(bound)) warnClosureForTypeVariable(expression, slotType.getUnresolvedName(), bound);
+    }
+
+    /**
+     * Returns the first bound of the type variable of the given name that the enclosing method, or else an
+     * enclosing class, declares, or {@code null} if none declares it.
+     */
+    private ClassNode getDeclaredBound(final String name) {
+        List<GenericsType[]> scopes = new ArrayList<>();
+        MethodNode enclosingMethod = typeCheckingContext.getEnclosingMethod();
+        if (enclosingMethod != null) scopes.add(enclosingMethod.getGenericsTypes());
+        for (ClassNode c = typeCheckingContext.getEnclosingClassNode(); c != null; c = c.getOuterClass()) {
+            scopes.add(c.getGenericsTypes());
+        }
+        for (GenericsType[] declared : scopes) {
+            if (declared == null) continue;
+            for (GenericsType gt : declared) {
+                if (gt.isPlaceholder() && name.equals(gt.getName())) {
+                    return gt.getUpperBounds() != null && gt.getUpperBounds().length > 0 ? gt.getUpperBounds()[0] : null;
+                }
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Warns of a closure value stored in a slot whose type is a type variable of the enclosing method or class with
+     * a functional interface as its bound, such as {@code l.add { .. }} for a {@code List<T>} in
+     * {@code <T extends Function<String, String>> void fill(List<T> l)}. The value is stored as a plain closure,
+     * which is neither a {@code T} nor its bound; implementing the bound would not help, since {@code T} may be a
+     * subinterface of it.
+     */
+    private void warnClosureForTypeVariable(final Expression value, final String name, final ClassNode bound) {
+        if (value instanceof TernaryExpression ternary) { // or Elvis
+            warnClosureForTypeVariable(ternary.getTrueExpression(), name, bound);
+            warnClosureForTypeVariable(ternary.getFalseExpression(), name, bound);
+            return;
+        }
+        ClassNode valueType = value instanceof ClosureExpression ? CLOSURE_TYPE : getType(value);
+        if (implementsInterfaceOrIsSubclassOf(valueType, CLOSURE_TYPE)
+                && value.putNodeMetaData(CLOSURE_VALUE_NOT_CONVERTED, Boolean.TRUE) == null) {
+            addWarning(WarningMessage.LIKELY_ERRORS, "the closure is stored as a Closure, not as " + name + ": "
+                    + name + " is a type variable, and the closure is neither a " + name + " nor a " + prettyPrintType(bound)
+                    + ", so a statically compiled read through either will fail; take the value as a parameter of type " + name, value);
+        }
     }
 
     /**

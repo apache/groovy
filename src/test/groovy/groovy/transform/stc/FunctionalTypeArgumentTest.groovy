@@ -763,6 +763,49 @@ final class FunctionalTypeArgumentTest {
         assert err.message.contains('use mode LENIENT or WARN to compile it unpacked')
     }
 
+    @Test
+    void testNoWarningForAMethodReferenceResolvedFromTheEnclosingCall() {
+        String source = '''
+            import groovy.transform.CompileStatic
+            import java.util.function.Function
+            @CompileStatic
+            class W {
+                static <T> T id(T t) { t }
+                static <T> T wrap(T t) { t }
+                static String take(Function<String, String> f) { f.apply(' a ') }
+                static String test() {
+                    Function<String, String> f = wrap(id(String::trim))
+                    take(wrap(id(String::trim))) + f.apply(' b ')
+                }
+            }
+        '''
+        assert !warnings(source)
+    }
+
+    @Test
+    void testWarningForAClosureStoredInASlotOfATypeVariable() {
+        String source = '''
+            import groovy.transform.CompileStatic
+            import java.util.function.Function
+            @CompileStatic
+            class W {
+                static <T extends Function<String, String>> void fill(List<T> list, Closure<String> closure, boolean flag) {
+                    list.add { String s -> s.trim() }                    // warning
+                    list.add((String s) -> s.trim())                     // warning
+                    list.add(closure)                                    // warning
+                    list.add(flag ? { String s -> s } : closure)         // warning for each
+                }
+                static <T> void any(List<T> list) {
+                    list.add { 'x' }                                     // T has no functional bound
+                }
+            }
+        '''
+        def warnings = warnings(source)
+        assert warnings.size() == 5
+        assert warnings.every { it.startsWith('the closure is stored as a Closure, not as T: T is a type variable, ' +
+                'and the closure is neither a T nor a java.util.function.Function<java.lang.String, java.lang.String>') }
+    }
+
     private static String warning(String type) {
         "the closure is stored as a Closure, not as $type: a statically compiled read through $type will fail; write 'as $type' to convert it"
     }
