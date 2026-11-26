@@ -30,9 +30,9 @@ import static groovy.test.GroovyAssert.shouldFail
 /**
  * A closure, lambda or method reference written for a slot declared with a type parameter, such as {@code E} of
  * {@code List.add(E)} or {@code V} of {@code putAt(Map<K, V>, K, V)}, where the call or assignment binds the type
- * parameter to a functional interface: statically compiled code compiles a method reference argument for that
- * interface, and the class of a closure literal or lambda implements it. Dynamic and type-checked code pass them
- * as they did.
+ * parameter to a functional interface: statically compiled code compiles a lambda or method reference as a native
+ * lambda for that interface, and the class of a closure literal implements it. In type-checked code the class of
+ * a closure literal or lambda implements it. Dynamic code passes them as it did.
  *
  * @see FunctionalLiteralSiteTest
  */
@@ -46,7 +46,7 @@ final class FunctionalTypeArgumentTest {
     }
 
     @Test
-    void testLambdaImplementsAndMethodReferenceIsCompiledForTheInterfaceTheCallBindsItTo() {
+    void testLambdaAndMethodReferenceAreCompiledForTheInterfaceTheCallBindsItTo() {
         assertScript shell, '''
             import java.util.concurrent.atomic.AtomicReference
             interface Shout extends Function<String, String> { }
@@ -81,20 +81,19 @@ final class FunctionalTypeArgumentTest {
 
             def suppliers = C.suppliers()
             assert suppliers*.get() == ['set', 'add', 'shift', 'vararg', 'varargs', 'constructor', 'type argument']
-            // a lambda is a closure, as before, whose class implements the interface
-            assert suppliers.every { it instanceof Supplier && it instanceof Closure }
+            // a lambda is a native lambda, an instance of the interface only
+            assert suppliers.every { it instanceof Supplier && !(it instanceof Closure) }
             def functions = C.functions()
             assert functions.collectEntries { k, f -> [k, f.apply('ab')] } == [lambda: 'ab?', implicit: 'AB', reference: 'AB']
-            assert functions.lambda instanceof Closure && functions.implicit instanceof Closure
-            assert !(functions.reference instanceof Closure) // a method reference argument is compiled for the interface
+            assert functions.values().every { !(it instanceof Closure) }
             def shout = C.shout()
             assert shout.apply('a') == 'a?'
-            assert shout instanceof Shout && shout instanceof Closure
+            assert shout instanceof Shout && !(shout instanceof Closure)
         '''
     }
 
     @Test
-    void testLambdaStaysAClosureAndMethodReferenceOperandAMethodClosure() {
+    void testLambdaAndMethodReferenceOperandOrConditionalArgumentAreNativeLambdas() {
         assertScript shell, '''
             @CompileStatic
             class C {
@@ -103,12 +102,6 @@ final class FunctionalTypeArgumentTest {
                     list.add(() -> 'add')
                     list << (() -> 'shift')
                     list
-                }
-                static Map<String, Function<String, String>> functions() {
-                    Map<String, Function<String, String>> map = [:]
-                    map.put('shout', (String s) -> s.toUpperCase())
-                    map.put('reference', String::toUpperCase)
-                    map
                 }
                 static List<Function<String, String>> references(boolean flag) {
                     List<Function<String, String>> list = []
@@ -122,27 +115,14 @@ final class FunctionalTypeArgumentTest {
                 }
             }
 
-            // a lambda is compiled as a closure, as before, and dynamic code calls it as one
             def suppliers = C.suppliers()
-            assert suppliers.every { it instanceof Closure }
-            assert suppliers.collect { it() } == ['add', 'shift']
-            def functions = C.functions()
-            assert functions.shout instanceof Closure
-            assert functions.shout('hi') == 'HI'
-            assert functions.shout.call('hi') == 'HI'
+            assert suppliers.every { it instanceof Supplier && !(it instanceof Closure) }
+            assert suppliers*.get() == ['add', 'shift']
 
-            // a method reference argument is compiled for the interface
-            assert !(functions.reference instanceof Closure)
-            assert functions.reference.apply('hi') == 'HI'
+            // a method reference is compiled for the interface as an argument, an operand or a branch
             def references = C.references(true)
-            assert references[0] instanceof Function && !(references[0] instanceof Closure)
-            assert C.read(references, 0) == ' AB '
-
-            // a method reference operand or branch of a conditional argument is a method closure, as before
-            assert references[1] instanceof org.codehaus.groovy.runtime.MethodClosure
-            assert references[2] instanceof org.codehaus.groovy.runtime.MethodClosure
-            assert references[1](' ab ') == 'ab' && references[2](' ab ') == 'ab'
-            groovy.test.GroovyAssert.shouldFail(ClassCastException) { C.read(references, 1) }
+            assert references.every { it instanceof Function && !(it instanceof Closure) }
+            assert (0..2).collect { C.read(references, it) } == [' AB ', 'ab', 'ab']
         '''
     }
 
@@ -160,24 +140,23 @@ final class FunctionalTypeArgumentTest {
             Map<String, Function<String, String>> commands() {
                 Map<String, Function<String, String>> commands = [:]
                 commands.put('shout', (String s) -> s.toUpperCase())
+                commands.put('closure', { String s -> s.toUpperCase() })
                 commands
             }
 
             def list = make()
             assert list[0].get() == 'x'
-            // a lambda is an instance of the interface and still a closure
-            assert list[0]() == 'x'
-            assert list[0].call() == 'x'
             def commands = commands()
             assert commands.shout.apply('hi') == 'HI'
-            assert commands.shout('hi') == 'HI'
-            assert commands.shout.call('hi') == 'HI'
-            assert commands.shout.curry('hi')() == 'HI'
+            // a lambda is not a closure; a closure literal is where dynamic code needs one
+            assert !(commands.shout instanceof Closure)
+            groovy.test.GroovyAssert.shouldFail(MissingMethodException) { commands.shout.curry('hi') }
+            assert commands.closure('hi') == 'HI' && commands.closure.curry('hi')() == 'HI'
         '''
     }
 
     @Test
-    void testTypeCheckedCodePassesALambdaOrMethodReferenceAsBefore() {
+    void testTypeCheckedCodeRejectsAMethodReferenceAndStoresALambdaThatImplementsTheInterface() {
         def err = shouldFail shell, '''
             @TypeChecked
             void test() {
@@ -191,13 +170,13 @@ final class FunctionalTypeArgumentTest {
             @TypeChecked
             List<Supplier<String>> make() {
                 List<Supplier<String>> list = []
-                list.add(() -> 'x') // compiled as a closure
+                list.add(() -> 'x') // a closure whose class implements the interface
                 list
             }
 
             def list = make()
-            assert list[0] instanceof Closure && !(list[0] instanceof Supplier)
-            groovy.test.GroovyAssert.shouldFail(MissingMethodException) { list[0].get() }
+            assert list[0] instanceof Closure && list[0] instanceof Supplier
+            assert list[0].get() == 'x' && list[0]() == 'x'
         '''
     }
 
@@ -325,18 +304,22 @@ final class FunctionalTypeArgumentTest {
 
             def list = C.make(true)
             assert list*.apply(' a ') == [' A ', ' A ', ' a  a ', ' A ']
-            assert list.every { it instanceof Closure && it instanceof Function }
+            assert list.every { it instanceof Function }
+            assert list.collect { it instanceof Closure } == [true, true, false, true] // a lambda is native
             assert C.make(false)[1].apply(' a ') == 'a'
         '''
 
-        def err = shouldFail shell, '''
+        // type-checked code gives the closure the types of the interface too
+        assertScript shell, '''
             @TypeChecked
-            void test() {
+            List<Function<String, String>> make() {
                 List<Function<String, String>> list = []
-                list << { it.toUpperCase() } // passed as it is
+                list << { it.toUpperCase() }
+                list
             }
+
+            assert make()[0].apply('a') == 'A'
         '''
-        assert err.message.contains('Cannot find matching method java.lang.Object#toUpperCase()')
     }
 
     // GROOVY-12561
@@ -714,27 +697,19 @@ final class FunctionalTypeArgumentTest {
     }
 
     @Test
-    void testTypeCheckedCodePassesAClosureAsBefore() {
-        def err = shouldFail shell, '''
-            @TypeChecked
-            void test() {
-                List<Function<String, String>> list = []
-                list.add { it.toUpperCase() }
-            }
-        '''
-        assert err.message.contains('Cannot find matching method java.lang.Object#toUpperCase()')
-
+    void testTypeCheckedCodeStoresAClosureThatImplementsTheInterface() {
         assertScript shell, '''
             @TypeChecked
             List<Function<String, String>> make() {
                 List<Function<String, String>> list = []
+                list.add { it.toUpperCase() }
                 list.add { String s -> s.toUpperCase() }
                 list
             }
 
             def list = make()
-            assert list[0] instanceof Closure && !(list[0] instanceof Function)
-            groovy.test.GroovyAssert.shouldFail(MissingMethodException) { list[0].apply('x') }
+            assert list.every { it instanceof Closure && it instanceof Function }
+            assert list*.apply('x') == ['X', 'X'] && list[1]('y') == 'Y'
         '''
     }
 
@@ -791,7 +766,7 @@ final class FunctionalTypeArgumentTest {
             class W {
                 static <T extends Function<String, String>> void fill(List<T> list, Closure<String> closure, boolean flag) {
                     list.add { String s -> s.trim() }                    // warning
-                    list.add((String s) -> s.trim())                     // warning
+                    list << { String s -> s.trim() }                     // warning
                     list.add(closure)                                    // warning
                     list.add(flag ? { String s -> s } : closure)         // warning for each
                 }
@@ -804,6 +779,76 @@ final class FunctionalTypeArgumentTest {
         assert warnings.size() == 5
         assert warnings.every { it.startsWith('the closure is stored as a Closure, not as T: T is a type variable, ' +
                 'and the closure is neither a T nor a java.util.function.Function<java.lang.String, java.lang.String>') }
+    }
+
+    @Test
+    void testLambdaParameterDeclaredWithASupertypeOfTheParameterOfTheInterface() {
+        assertScript shell, '''
+            @CompileStatic
+            List<Function<String, String>> make() {
+                List<Function<String, String>> list = []
+                list.add((CharSequence s) -> s.toString().trim()) // a superinterface
+                list.add((Object o) -> o.toString().trim())       // a superclass
+                Function<String, String> declared = (Comparable<String> c) -> c.toString().trim()
+                list << declared
+                list
+            }
+
+            def list = make()
+            assert list.every { it instanceof Function && !(it instanceof Closure) }
+            assert list*.apply(' a ') == ['a'] * 3
+        '''
+    }
+
+    @Test
+    void testLambdaForASlotOfATypeVariableIsAnError() {
+        Map<String, String> sites = [
+            'list.add((String s) -> s.trim())'       : 'T',
+            'list.add(s -> s)'                       : 'T',
+            'list << ((String s) -> s.trim())'       : 'T',
+            'list.add(flag ? (s -> s) : list[0])'    : 'T',
+            'T t = s -> s'                           : 'T',
+            'list[0] = s -> s'                       : 'T',
+            'any.add(() -> 1)'                       : 'U', // no bound: not a functional interface either
+            'box.set(s -> s)'                        : 'V'  // a type variable of the class
+        ]
+        sites.each { statement, name ->
+            def err = shouldFail shell, """
+                @CompileStatic
+                class Box<V extends Function<String, String>> {
+                    void set(V v) { }
+                    def <T extends Function<String, String>, U> void fill(List<T> list, List<U> any, Box<V> box, boolean flag) {
+                        $statement
+                    }
+                }
+            """
+            assert err.message.contains("The lambda is written for $name, which is a type variable: $name is not a functional interface") : statement
+        }
+
+        // neither is the capture of a wildcard a functional interface
+        def err = shouldFail shell, '''
+            @CompileStatic
+            void test(List<? super Function<String, String>> list) {
+                list.add(s -> s)
+            }
+        '''
+        assert err.message.contains('Cannot call java.util.List#add(capture-of ? super java.util.function.Function<java.lang.String, java.lang.String>)')
+
+        // a closure is stored as it is, as before, and a type variable that the call binds is no such slot
+        assertScript shell, '''
+            @CompileStatic
+            class C {
+                static <T> T id(T t) { t }
+                static <T extends Function<String, String>> List<T> fill(List<T> list) {
+                    list.add { String s -> s.trim() }
+                    list
+                }
+                static Function<String, String> bound() { id((String s) -> s.trim()) }
+            }
+
+            assert C.fill([])[0] instanceof Closure
+            assert C.bound().apply(' a ') == 'a'
+        '''
     }
 
     private static String warning(String type) {

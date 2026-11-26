@@ -74,6 +74,6 @@ public enum StaticTypesMarker {
     METHOD_REFERENCE_TYPE,
     /** on a {@code SwitchExpression} without a {@code default}: {@code Boolean.TRUE} when its labels were proven to cover every non-null selector value (a complete enum, an unconditional pattern, or a covered sealed hierarchy), so that matching nothing at run time means a constant or subtype was added after compilation */
     SWITCH_EXHAUSTIVE,
-    /** on a closure literal or lambda written in statically compiled code for a slot declared with a type parameter, such as {@code E} of {@code List.add(E)}, that the call or assignment binds to a functional interface: that interface, which the generated closure class implements */
+    /** on a closure literal, or on a lambda in type-checked code, written for a slot declared with a type parameter, such as {@code E} of {@code List.add(E)}, that the call or assignment binds to a functional interface: that interface, which the generated closure class implements */
     CLOSURE_TARGET_INTERFACE
 }

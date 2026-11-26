@@ -995,55 +995,85 @@ closure outside the parenthesis, improving the readability of your code.
 A method may declare the parameter a closure, lambda or method reference is passed for with a type parameter, such as
 `E` of `List.add(E)` or `V` of `Map.put(K, V)`, whose erasure is `Object`. When statically compiled code binds that
 type parameter to a SAM interface, for instance `Function<String, String>` for a
-`Map<String, Function<String, String>>`, the class generated for a closure literal or a lambda implements the
-interface, so the closure is stored as an instance of it. A method reference argument is compiled for the interface:
+`Map<String, Function<String, String>>`, a lambda or method reference is compiled for the interface, as it is for a
+variable of the interface type, and the class generated for a closure literal implements the interface, so the closure
+is stored as an instance of it:
 
 [source,groovy]
 ----
 include::../test/CoercionTest.groovy[tags=functional_literal_for_type_parameter,indent=0]
 ----
 
-The closure or lambda is still a closure, so dynamically compiled code can call it either way, and `delegate`,
-`curry`, `memoize` and the like work as before. A method reference argument is only an instance of the interface, as
-when it is assigned to a variable of the interface type, and dynamically compiled code calls it through the
-interface's method:
+The closure is still a closure, so dynamically compiled code can call it either way, and `delegate`, `curry`,
+`memoize` and the like work as before. A lambda or method reference is only an instance of the interface, and
+dynamically compiled code calls it through the interface's method. Write a closure where dynamically compiled code
+uses the value as a closure:
 
 [source,groovy]
 ----
 include::../test/CoercionTest.groovy[tags=functional_literal_for_type_parameter_assertions,indent=0]
 ----
 
-This applies to a closure literal or lambda passed as an argument or as the operand of an operator such as `<<`,
-written as a named constructor argument, or written as a branch of a conditional expression in such a place, and to a
-closure literal assigned to a subscript or a property. There it gets the types of its parameters from the interface,
+This applies to a closure, lambda or method reference passed as an argument or as the operand of an operator such as
+`<<`, written as a named constructor argument, assigned to a subscript or a property, or written as a branch of a
+conditional expression in such a place. A closure or lambda gets the types of its parameters from the interface there,
 so `list.add { it.toUpperCase() }` and `list << (s -> s.toUpperCase())` compile for a
-`List<Function<String, String>>`. A lambda or method reference assigned to a subscript or a property, as in
-`list[0] = s -> s.trim()` or `holder.value = String::trim`, is compiled for the interface as it is for a variable of
-the interface type: it is an instance of the interface only.
+`List<Function<String, String>>`.
+
+The type parameter may also be bound by the context of the call, as in Java: the type that the call's value is
+assigned, returned or cast to, or the parameter that the call is passed for. The element type of a list literal and
+the value type of a map literal are the target type of the closures, lambdas and method references written in them,
+and a branch of a conditional argument that is a value does not keep the other branch from getting the parameter's
+type:
+
+[source,groovy]
+----
+include::../test/CoercionTest.groovy[tags=functional_literal_typed_by_context,indent=0]
+----
+
+A lambda or method reference that cannot be compiled for the type its slot is bound to is an error: one for an
+abstract class or a sealed interface, a lambda for an interface whose method declares type parameters, which takes a
+method reference only, and a lambda whose parameters are not those of the interface method. For a raw interface, such
+as the `Function` of a `List<Function>`, the parameters of the method are `Object`. Where the type parameter is declared
+with several bounds, as in `<T extends Function<String, String> & Serializable>`, the lambda or method reference
+implements each of them, and another bound that is a functional interface is an error.
 
 A value of type `Closure`, such as a variable, a method pointer (`this.&m`) or the result of a call, is stored as it
-is, and so is a method reference written as the operand of an operator (`list << String::trim`), as a named
-constructor argument or as a branch of a conditional argument. The compiler warns that the value is stored as a
-`Closure`, since a statically compiled read through the interface would fail; `as` converts it:
+is. The compiler warns that the value is stored as a `Closure`, since a statically compiled read through the interface
+would fail; `as` converts it:
 
 [source,groovy]
 ----
 include::../test/CoercionTest.groovy[tags=closure_value_for_type_parameter,indent=0]
 ----
 
-A closure literal or lambda is also stored as it is, with the same warning, where its class cannot implement the
-interface: for an interface whose method has the name of a method of `Closure`, such as `call`, or declares type
-parameters, or with a default method that a method of `Closure` would replace, such as `getOwner()`, for a sealed
-interface, a trait, a non-public interface not compiled with the closure, and for an abstract class. So is one whose
-parameters cannot be those of the interface method: one with a default value or a variadic parameter, with more or
-fewer parameters than the method, or with a parameter type that does not accept the method's. For a raw interface,
-such as the `Function` of a `List<Function>`, the parameters of the method are `Object` and the arguments are cast to
-the types the closure declares. An interface that `Closure` already implements, such as `Runnable` or `Callable`,
-needs no conversion and gets no warning. Closure packing (`@PackedClosures`) does not pack a closure that implements
-an interface this way.
+A closure literal is also stored as it is, with the same warning, where its class cannot implement the interface: for
+an interface whose method has the name of a method of `Closure`, such as `call`, or declares type parameters, or with
+a default method that a method of `Closure` would replace, such as `getOwner()`, for a sealed interface, a trait, a
+non-public interface not compiled with the closure, and for an abstract class. So is one whose parameters cannot be
+those of the interface method: one with a default value or a variadic parameter, with more or fewer parameters than
+the method, or with a parameter type that does not accept the method's. For a raw interface the arguments are
+converted to the types the closure declares when it is called. An interface that `Closure` already implements, such as
+`Runnable` or `Callable`, needs no conversion and gets no warning. Closure packing (`@PackedClosures`) does not pack a
+closure that implements an interface this way.
 
-Dynamically compiled and type-checked (`@TypeChecked`) code are unchanged: there a closure or lambda for such a
-parameter is passed as a closure, and type-checked code rejects a method reference for it.
+A slot whose type is a type variable of the enclosing method or class, such as the parameter of `list.add(..)` for a
+`List<T>` in `<T extends Function<String, String>> void fill(List<T> list)`, is not bound to a functional interface.
+A lambda written for it is an error, as in Java. A closure is stored as it is, with a warning where the type variable
+has a functional interface as its bound.
+
+A closure literal whose target is declared, because it is assigned to a variable of the interface type, passed for a
+parameter of that type, returned or cast, is converted as described in the previous sections.
+
+Type-checked (`@TypeChecked`) code stores closures in the same way, and compiles a lambda as a closure whose class
+implements the interface. A method reference is a method closure there: one written as an argument for a type
+parameter is rejected, and one written as an operand, assigned to a subscript or a property, or written as a branch
+of a conditional argument is stored as it is, with the warning. Dynamically compiled code is unchanged: there a
+closure or lambda for such a parameter is passed as a closure.
+
+The system property `groovy.target.functional.report`, set to `true` for the compiler, makes it warn of each lambda or
+method reference that was a closure or method closure in Groovy 6 and is now an instance of the interface only, and of
+each call whose type arguments come from its context. It does not change the generated code.
 
 ==== Closure to arbitrary type coercion
 

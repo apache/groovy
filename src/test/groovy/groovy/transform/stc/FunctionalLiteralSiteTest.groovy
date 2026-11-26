@@ -33,13 +33,15 @@ import static groovy.test.GroovyAssert.shouldFail
  * {@code Closure}, at each kind of slot declared with a type parameter that the call or assignment binds to a
  * functional interface, and whether a statically compiled read through the interface works:
  * <ul>
- * <li>{@code C+I}: a closure whose class implements the interface, which dynamic code still calls as a closure;
- * <li>{@code L}: a native lambda, an instance of the interface only;
- * <li>{@code MC}: a method closure, stored as it is, with a warning;
- * <li>{@code C}: a closure, stored as it is, with a warning.
+ * <li>{@code C+I}: a closure whose class implements the interface, which dynamic code still calls as a closure,
+ *     for a closure literal;
+ * <li>{@code L}: a native lambda, an instance of the interface only, for a lambda or method reference;
+ * <li>{@code MC}: a method closure, stored as it is, with a warning, for a method pointer;
+ * <li>{@code C}: a closure, stored as it is, with a warning, for any other value of type {@code Closure}.
  * </ul>
  *
  * @see FunctionalTypeArgumentTest
+ * @see FunctionalContextInferenceTest
  */
 final class FunctionalLiteralSiteTest {
 
@@ -158,11 +160,7 @@ final class FunctionalLiteralSiteTest {
                         assert K.read([value]) == 'a' : where
                     }
                     if (kind == 'L') { // not a closure
-                        try {
-                            value(' a ')
-                            assert false : "$where: expected a MissingMethodException"
-                        } catch (MissingMethodException expected) {
-                        }
+                        assert !(value instanceof Closure) && !(value instanceof GroovyObject) : where
                     } else {
                         assert value(' a ') == 'a' && value.call(' a ') == 'a' : where
                     }
@@ -191,24 +189,15 @@ final class FunctionalLiteralSiteTest {
     }
 
     @Test
-    void testLambdaImplementsTheInterfaceWhereItWasAClosure() {
-        checkAll(ARGUMENT_SITES + OPERAND_SITES + CONDITIONAL_ARGUMENT_SITES, LAMBDAS, 'C+I')
+    void testLambdaIsANativeLambdaAtEverySite() {
+        def sites = ARGUMENT_SITES + OPERAND_SITES + ASSIGNMENT_SITES + CONDITIONAL_ARGUMENT_SITES + CONDITIONAL_ASSIGNMENT_SITES
+        checkAll(sites, LAMBDAS, 'L')
     }
 
     @Test
-    void testLambdaAssignedToASubscriptOrPropertyStaysANativeLambda() {
-        checkAll(ASSIGNMENT_SITES + CONDITIONAL_ASSIGNMENT_SITES, LAMBDAS, 'L')
-    }
-
-    @Test
-    void testMethodReferenceArgumentOrAssignedIsCompiledForTheInterface() {
-        checkAll(ARGUMENT_SITES + ASSIGNMENT_SITES + CONDITIONAL_ASSIGNMENT_SITES, REFERENCES, 'L')
-    }
-
-    @Test
-    void testMethodReferenceOperandOrConditionalArgumentStaysAMethodClosure() {
-        checkAll(OPERAND_SITES, REFERENCES, 'MC', 1)
-        checkAll(CONDITIONAL_ARGUMENT_SITES, REFERENCES, 'MC', 2) // each branch
+    void testMethodReferenceIsANativeLambdaAtEverySite() {
+        def sites = ARGUMENT_SITES + OPERAND_SITES + ASSIGNMENT_SITES + CONDITIONAL_ARGUMENT_SITES + CONDITIONAL_ASSIGNMENT_SITES
+        checkAll(sites, REFERENCES, 'L')
     }
 
     @Test
@@ -235,16 +224,29 @@ final class FunctionalLiteralSiteTest {
 
             for (flag in [true, false]) {
                 def list = T.test(flag)
-                assert list.collect { K.kind(it) } == ['C+I', 'C+I']
+                // each branch has its own representation
+                assert list.collect { K.kind(it) } == (flag ? ['C+I', 'L'] : ['L', 'C+I'])
                 assert list*.apply(' a ') == ['a', 'a']
             }
         '''
     }
 
     @Test
-    void testPlusAssignIsRejected() {
-        // DefaultGroovyMethods#plus(List<T>, T) is called with T as Object, so the result is no List<Function>
-        for (literal in ['{ String s -> s.trim() }', '(String s) -> s.trim()', 'String::trim']) {
+    void testPlusAssign() {
+        // the class of the closure implements the interface, so DefaultGroovyMethods#plus(List<T>, T) gives a List<Function>
+        assertScript shell, IMPORTS + HELPER + '''
+            @CompileStatic
+            List<Function<String, String>> test() {
+                List<Function<String, String>> list = []
+                list += { String s -> s.trim() }
+                list
+            }
+
+            assert K.kind(test()[0]) == 'C+I' && K.read(test()) == 'a'
+        '''
+
+        // a lambda or method reference is checked before the overload of plus is chosen: an error, not a closure
+        for (literal in ['(String s) -> s.trim()', 'String::trim']) {
             shouldFail shell, IMPORTS + """
                 @CompileStatic
                 void test() {
@@ -281,7 +283,7 @@ final class FunctionalLiteralSiteTest {
                     consumers[0].accept(strings)
                     [pairs[0].apply('ab', 2), pairs[1].apply('abc', 1), overloads[0].apply('x'), strings,
                      comparators[0].compare('a', 'bb'), operators[0].applyAsInt(3, 4),
-                     [pairs[0], overloads[0], consumers[0], comparators[0], operators[0]].every { it instanceof Closure }]
+                     [pairs[0], overloads[0], consumers[0], comparators[0], operators[0]].every { !(it instanceof Closure) }]
                 }
             }
 
@@ -290,7 +292,7 @@ final class FunctionalLiteralSiteTest {
     }
 
     @Test
-    void testLambdaThatImplementsTheInterfaceIsCheckedAsAClosure() {
+    void testLambdaForATypeParameterIsCheckedAsANativeLambda() {
         assertScript shell, IMPORTS + '''
             @CompileStatic
             class T {
@@ -300,7 +302,6 @@ final class FunctionalLiteralSiteTest {
                     List<Supplier<String>> list = []
                     String local = 'local'
                     list.add(() -> name + ' ' + local + ' ' + hello() + ' ' + this.name)
-                    list.add(() -> owner.getClass().simpleName + delegate.getClass().simpleName) // a closure has an owner
                     list << (() -> { Supplier<String> nested = () -> name + ' ' + local; nested.get() })
                     list.add(() -> { List<Supplier<String>> inner = []; inner.add(() -> hello() + ' ' + local); inner[0].get() })
                     list
@@ -314,9 +315,8 @@ final class FunctionalLiteralSiteTest {
             }
 
             def list = new T().make()
-            assert list*.get() == ['field local hello field', 'TT', 'field local', 'hello local']
-            assert list.every { it instanceof Closure && it instanceof Supplier }
-            assert list[0].owner instanceof T && list[0].thisObject instanceof T
+            assert list*.get() == ['field local hello field', 'field local', 'hello local']
+            assert list.every { it instanceof Supplier && !(it instanceof Closure) }
             assert T.count() == [1, 2, 2]
         '''
     }
@@ -339,12 +339,12 @@ final class FunctionalLiteralSiteTest {
 
             def list = new T().make()
             assert list*.get() == ['trait!', 'trait?']
-            assert list.every { it instanceof Closure && it instanceof Supplier }
+            assert list.every { it instanceof Supplier && !(it instanceof Closure) }
         '''
     }
 
     @Test
-    void testLambdaThatImplementsTheInterfaceKeepsWhatAClosureDoes() {
+    void testClosureKeepsWhatAClosureDoesAndALambdaDoesNot() {
         assertScript shell, IMPORTS + '''
             class D {
                 static String m(Closure c) { 'closure' }
@@ -354,69 +354,95 @@ final class FunctionalLiteralSiteTest {
             class T {
                 static List<Function<String, String>> functions() {
                     List<Function<String, String>> list = []
+                    list.add { String s -> s.trim() }
                     list.add((String s) -> s.trim())
                     list
                 }
                 static List<Predicate<String>> predicates() {
                     List<Predicate<String>> list = []
+                    list.add { String s -> s.startsWith('a') }
                     list.add(s -> s.startsWith('a'))
                     list
                 }
             }
 
             def list = T.functions()
-            def function = list[0]
-            def predicate = T.predicates()[0]
-            assert D.m(function) == 'closure' // dynamic code selects the Closure overload, as before
-            assert function.curry(' x ')() == 'x'
-            assert function.memoize()(' y ') == 'y'
-            assert [' a ', ' b '].collect(function) == ['a', 'b']
-            assert ['abc', 'b'].grep(predicate) == ['abc']
-            assert (switch ('abc') { case predicate -> 'case'; default -> 'default' }) == 'case'
-            assert function.andThen { it + '!' }(' z ') == 'z!' // Closure#andThen(Closure)
-            assert predicate.test('abc') && function.apply(' w ') == 'w'
-            assert list.contains(function) && list.indexOf(function) == 0 && list.remove(function)
-            assert function instanceof Serializable && function.maximumNumberOfParameters == 1
+            def (closure, lambda) = list
+            def (closurePredicate, lambdaPredicate) = T.predicates()
+            // the one rule for code that needs closure behaviour: write a closure
+            assert D.m(closure) == 'closure' // dynamic code selects the Closure overload, as before
+            assert closure.curry(' x ')() == 'x'
+            assert closure.memoize()(' y ') == 'y'
+            assert [' a ', ' b '].collect(closure) == ['a', 'b']
+            assert ['abc', 'b'].grep(closurePredicate) == ['abc']
+            assert (switch ('abc') { case closurePredicate -> 'case'; default -> 'default' }) == 'case'
+            assert closure.andThen { it + '!' }(' z ') == 'z!' // Closure#andThen(Closure)
+            assert closure instanceof Serializable && closure.maximumNumberOfParameters == 1
+            assert list.contains(closure) && list.indexOf(closure) == 0
+
+            // a lambda is an instance of the interface only
+            assert D.m(lambda) == 'function'
+            assert lambda.apply(' w ') == 'w' && lambdaPredicate.test('abc')
+            assert !(lambda instanceof Closure) && !(lambda instanceof Serializable)
+            assert ['abc', 'b'].grep(lambdaPredicate) == [] // isCase is equals, not a call
+            assert (switch ('abc') { case lambdaPredicate -> 'case'; default -> 'default' }) == 'default'
+            assert lambda.andThen(closure).apply(' v ') == 'v' // Function#andThen(Function)
+            groovy.test.GroovyAssert.shouldFail(MissingMethodException) { lambda.curry(' x ') }
+            groovy.test.GroovyAssert.shouldFail(MissingMethodException) { lambda.memoize() }
+            assert list.contains(lambda) && list.indexOf(lambda) == 1 && list.remove(lambda)
         '''
     }
 
     @Test
-    void testTypeCheckedAndDynamicCodePassALambdaAsBefore() {
-        for (mode in ['@TypeChecked', '']) {
-            assertScript shell, IMPORTS + HELPER + """
-                $mode
-                class T {
-                    static List<Object> test() {
-                        List<Function<String, String>> list = []
-                        list.add((String s) -> s.trim())
-                        list << ((String s) -> s.trim())
-                        Collections.addAll(list, (String s) -> s.trim())
-                        list.add(true ? ((String s) -> s.trim()) : ((String s) -> s.strip()))
-                        [list[0], list[1], list[2], list[3], new Named<Function<String, String>>(value: (String s) -> s.trim()).value]
-                    }
+    void testTypeCheckedCodeStoresALambdaThatImplementsTheInterfaceAndDynamicCodeAClosure() {
+        assertScript shell, IMPORTS + HELPER + """
+            @TypeChecked
+            class T {
+                static List<Object> test() {
+                    List<Function<String, String>> list = []
+                    list.add((String s) -> s.trim())
+                    list << ((String s) -> s.trim())
+                    Collections.addAll(list, (String s) -> s.trim())
+                    list.add(true ? ((String s) -> s.trim()) : ((String s) -> s.strip()))
+                    [list[0], list[1], list[2], list[3], new Named<Function<String, String>>(value: (String s) -> s.trim()).value]
                 }
+            }
 
-                assert T.test().collect { K.kind(it) } == ['C'] * 5
-            """
-        }
+            assert T.test().collect { K.kind(it) } == ['C+I'] * 5
+            assert T.test().every { it.apply(' a ') == 'a' && it(' a ') == 'a' }
+        """
+
+        assertScript shell, IMPORTS + HELPER + """
+            class T {
+                static List<Object> test() {
+                    List<Function<String, String>> list = []
+                    list.add((String s) -> s.trim())
+                    list << ((String s) -> s.trim())
+                    Collections.addAll(list, (String s) -> s.trim())
+                    list.add(true ? ((String s) -> s.trim()) : ((String s) -> s.strip()))
+                    [list[0], list[1], list[2], list[3], new Named<Function<String, String>>(value: (String s) -> s.trim()).value]
+                }
+            }
+
+            assert T.test().collect { K.kind(it) } == ['C'] * 5
+        """
     }
 
     //--------------------------------------------------------------------------
     // raw and mismatched targets
 
     @Test
-    void testTypedLiteralImplementsARawInterface() {
+    void testRawInterface() {
         assertScript shell, IMPORTS + HELPER + '''
             @CompileStatic
             class T {
                 static List<Function> functions() {
                     List<Function> list = []
                     list.add { String s -> s.trim() }
-                    list.add((String s) -> s.trim())
                     list << { String s -> s.trim() }
-                    list << ((String s) -> s.trim())
                     list.add { it.toString().trim() }
                     list.add(s -> s.toString().trim())
+                    list << ((Object o) -> o.toString().trim())
                     list.add(String::valueOf)
                     list
                 }
@@ -433,28 +459,38 @@ final class FunctionalLiteralSiteTest {
             }
 
             def list = T.functions()
-            assert list.collect { K.kind(it) } == ['C+I'] * 6 + ['L']
-            assert T.read(list) == ['a'] * 6 + [' a ']
-            // the closure is called as a coercion proxy for it would call it, so a wrong argument fails as it does there
+            assert list.collect { K.kind(it) } == ['C+I'] * 3 + ['L'] * 3
+            assert T.read(list) == ['a'] * 5 + [' a ']
+            // the argument is not checked at compile time: the closure is called with it, as through a proxy
             groovy.test.GroovyAssert.shouldFail(MissingMethodException) { T.wrongArgument() }
         '''
+
+        // the parameters of a raw interface are of type Object: a lambda declares no other type, as in Java
+        for (statement in ['list.add((String s) -> s.trim())', 'list << ((String s) -> s.trim())']) {
+            def err = shouldFail shell, IMPORTS + """
+                @CompileStatic
+                void test() {
+                    List<Function> list = []
+                    $statement
+                }
+            """
+            assert err.message.contains('Expected type java.lang.Object for lambda parameter: s')
+        }
     }
 
     @Test
-    void testLiteralWhoseParametersDoNotFitIsStoredAsItIs() {
+    void testClosureWhoseParametersDoNotFitIsStoredAsItIs() {
         String source = IMPORTS + '''
             @CompileStatic
             class W {
                 static List<Object> make() {
                     List<Function<Object, String>> list = []
                     list.add { String s -> s.trim() }               // a String for an Object
-                    list.add((String s) -> s.trim())
                     list << { String s -> s.trim() }
                     List<BiFunction<Object, Object, String>> pairs = []
                     pairs << { String a, b -> a + b }
                     List<Function<String, String>> functions = []
                     functions.add { String a, String b -> a + b }   // two parameters for one
-                    functions.add((String a, String b) -> a + b)
                     functions.add { String s = 'x' -> s }           // a default value
                     List<Object> values = []
                     values.addAll(list)
@@ -465,7 +501,7 @@ final class FunctionalLiteralSiteTest {
                 static List<Object> fits() {
                     List<Function<String, String>> list = []
                     list.add { Object o -> o.toString() }           // an Object for a String
-                    list.add((CharSequence s) -> s.toString())
+                    list.add((Object o) -> o.toString())
                     list << { def s -> s.toString() }
                     List<Object> values = []
                     values.addAll(list)
@@ -474,21 +510,23 @@ final class FunctionalLiteralSiteTest {
             }
         '''
         def reported = warnings(source)
-        assert reported.size() == 7
+        assert reported.size() == 5
         assert reported.every { it.startsWith('the closure is stored as a Closure, not as java.util.function.') }
 
         assertScript shell, source + '''
             assert W.make().every { it instanceof Closure && !(it instanceof Function) && !(it instanceof BiFunction) }
             assert W.make()[0](' a ') == 'a'
-            assert W.fits().every { it instanceof Closure && it instanceof Function }
+            assert W.fits().every { it instanceof Function }
+            assert W.fits().collect { it instanceof Closure } == [true, false, true] // the lambda is native
         '''
+        // a lambda whose parameters do not fit is an error: see FunctionalContextInferenceTest
     }
 
     //--------------------------------------------------------------------------
     // warnings
 
     @Test
-    void testWarningForALiteralThatCannotImplementTheInterface() {
+    void testWarningForAClosureThatCannotImplementTheInterface() {
         String types = '''
             interface Caller { String call(String s) }
             interface Runner { String run(String s) }
@@ -502,12 +540,12 @@ final class FunctionalLiteralSiteTest {
         '''
         Map<String, String> literals = [
             Caller : '{ String s -> s }',       // the name of a method of Closure
-            Runner : '(String s) -> s',
+            Runner : '{ String s -> s }',
             Caser  : '{ String s -> true }',
-            Owned  : '(String s) -> s',         // a default method that Closure would replace
+            Owned  : '{ String s -> s }',       // a default method that Closure would replace
             Generic: '{ Object o -> o }',       // a method with type parameters
             Task   : '{ String s -> s }',       // an abstract class
-            Shout  : '(String s) -> s',         // a sealed interface
+            Shout  : '{ String s -> s }',       // a sealed interface
             Greeter: '{ String s -> s }'        // a trait
         ]
         literals.each { type, literal ->
@@ -536,7 +574,43 @@ final class FunctionalLiteralSiteTest {
     }
 
     @Test
-    void testWarningForALiteralOfAnInterfaceTheClosureClassCannotAccess() {
+    void testLambdaIsCompiledForAnInterfaceThatAClosureClassCannotImplement() {
+        // a native lambda does not inherit from Closure
+        assertScript shell, IMPORTS + '''
+            interface Caller { String call(String s) }
+            interface Runner { String run(String s) }
+            interface Caser { boolean isCase(String s) }
+            interface Owned { String apply(String s); default Object getOwner() { 'default owner' } }
+            trait Greeter { abstract String greet(String s) }
+            @CompileStatic
+            class W {
+                static List<Object> make() {
+                    List<Caller> callers = []; callers.add((String s) -> s + '1')
+                    List<Runner> runners = []; runners << ((String s) -> s + '2')
+                    List<Caser> casers = []; casers.add(true ? ((String s) -> s == 'a') : null)
+                    List<Owned> owned = [(String s) -> s + '4']
+                    List<Greeter> greeters = []; greeters.add(s -> s + '5')
+                    assert callers[0].call('a') == 'a1' && runners[0].run('a') == 'a2' && casers[0].isCase('a')
+                    assert owned[0].apply('a') == 'a4' && owned[0].owner == 'default owner' && greeters[0].greet('a') == 'a5'
+                    [callers[0], runners[0], casers[0], owned[0], greeters[0]]
+                }
+            }
+
+            assert W.make().every { !(it instanceof Closure) }
+        '''
+        assert warnings(IMPORTS + '''
+            interface Runner { String run(String s) }
+            @CompileStatic
+            void test() {
+                List<Runner> runners = []
+                runners.add((String s) -> s)
+                runners << ((String s) -> s)
+            }
+        ''').isEmpty()
+    }
+
+    @Test
+    void testWarningForAClosureOfAnInterfaceTheClosureClassCannotAccess() {
         def parent = new GroovyClassLoader()
         parent.parseClass '''
             package p
@@ -558,7 +632,7 @@ final class FunctionalLiteralSiteTest {
             }
         '''
         unit.compile(Phases.CLASS_GENERATION)
-        assert unit.errorCollector.warnings*.message == [warning('p.Callback')] * 2
+        assert unit.errorCollector.warnings*.message == [warning('p.Callback')] // the lambda is compiled for the interface
     }
 
     @Test
@@ -689,7 +763,7 @@ final class FunctionalLiteralSiteTest {
             assert foo == 4
             assert bar() == 5 && lambda() == 6 && named() == 7
             assert [bar, lambda, named].every { it instanceof Closure && !(it instanceof Supplier) } // a value of the map
-            assert literal instanceof Closure && literal instanceof Supplier && literal.get() == 8
+            assert !(literal instanceof Closure) && literal instanceof Supplier && literal.get() == 8
         '''
     }
 

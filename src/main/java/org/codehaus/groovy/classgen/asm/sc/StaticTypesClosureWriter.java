@@ -26,7 +26,6 @@ import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.CodeVisitorSupport;
-import org.codehaus.groovy.ast.GenericsType;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.Variable;
@@ -50,7 +49,6 @@ import org.codehaus.groovy.transform.stc.ExtensionMethodNode;
 import org.objectweb.asm.Opcodes;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
@@ -346,6 +344,12 @@ public class StaticTypesClosureWriter extends ClosureWriter {
         return closureClass;
     }
 
+    /** {@inheritDoc} */
+    @Override
+    protected void addTargetInterface(final ClassNode closureClass, final ClosureExpression expression) {
+        // added in createClosureClass, with a method that calls doCall directly
+    }
+
     /**
      * A closure class that can be adapted to a functional interface (see {@code SamAdapterFactory}) is
      * typed as itself, so that converting an instance to that interface wraps it in the adapter instead of
@@ -354,6 +358,7 @@ public class StaticTypesClosureWriter extends ClosureWriter {
     @Override
     protected ClassNode getClosureInstanceType(final ClassNode closureClass) {
         return closureClass.getNodeMetaData(StaticCompilationMetadataKeys.FUNCTIONAL_INTERFACE_ADAPTER) != null
+                || closureClass.getNodeMetaData(CLOSURE_TARGET_INTERFACE) != null // an instance of the interface as it is
                 ? closureClass : super.getClosureInstanceType(closureClass);
     }
 
@@ -377,17 +382,18 @@ public class StaticTypesClosureWriter extends ClosureWriter {
     /**
      * Makes the closure class implement the functional interface that the type checker found the closure
      * literal written for, in a slot declared with a type parameter, such as {@code E} of {@code List.add(E)}
-     * for a {@code List<Supplier<String>>}. Its abstract method calls the closure as a coercion proxy for it would,
-     * with its arguments converted and its exceptions translated, so a call through the interface behaves as one
-     * through {@code closure as F}; if the adapter's methods cannot be declared, it is declared with the
-     * interface's parameterized signature and calls {@code doCall}, and the verifier adds the bridge for its
-     * erasure. The closure is then stored as it is: dynamic code can still call it as a closure.
+     * for a {@code List<Supplier<String>>}. Its abstract method is declared with the interface's parameterized
+     * signature and calls {@code doCall}, as the direct {@code call} methods do; the verifier adds the bridge
+     * for its erasure. The closure is then stored as it is: dynamic code can still call it as a closure.
      */
     private static void addTargetInterface(final ClassNode closureClass, final MethodNode doCallMethod, final ClosureExpression expression) {
         ClassNode target = expression.getNodeMetaData(CLOSURE_TARGET_INTERFACE);
         if (target == null || closureClass.implementsInterface(target)) return;
-        ClassNode type = withoutWildcards(target);
+        ClassNode type = implementedInterface(target);
+
         closureClass.addInterface(type);
+        closureClass.putNodeMetaData(CLOSURE_TARGET_INTERFACE, type);
+        // called through the interface as a proxy for it would call it, or else as its call method is
         if (SamAdapterFactory.implement(closureClass, doCallMethod, expression, type)) return;
 
         MethodNode sam = ClassHelper.findSAM(type);
@@ -421,32 +427,6 @@ public class StaticTypesClosureWriter extends ClosureWriter {
         Statement code = ClassHelper.isPrimitiveVoid(returnType) ? stmt(call) : returnS(castX(returnType, call));
 
         addGeneratedMethod(closureClass, new MethodNode(sam.getName(), Opcodes.ACC_PUBLIC, returnType, parameters, sam.getExceptions(), code), true);
-    }
-
-    /**
-     * The interface as a class can implement it: a type argument may not be a wildcard. {@code ? super X} and
-     * {@code ? extends X} become {@code X}, as for the parameter and return types of the interface method, and
-     * {@code ?} the erasure of the type parameter, so the verifier finds the method that the bridge calls.
-     */
-    private static ClassNode withoutWildcards(final ClassNode type) {
-        GenericsType[] arguments = type.getGenericsTypes();
-        if (arguments == null || Arrays.stream(arguments).noneMatch(GenericsType::isWildcard)) return type;
-        GenericsType[] parameters = type.redirect().getGenericsTypes();
-        GenericsType[] concrete = new GenericsType[arguments.length];
-        for (int i = 0; i < arguments.length; i += 1) {
-            GenericsType argument = arguments[i];
-            if (!argument.isWildcard()) {
-                concrete[i] = argument;
-            } else if (argument.getLowerBound() != null) {
-                concrete[i] = argument.getLowerBound().asGenericsType();
-            } else if (argument.getUpperBounds() != null) {
-                concrete[i] = argument.getUpperBounds()[0].asGenericsType();
-            } else {
-                ClassNode[] bounds = parameters != null ? parameters[i].getUpperBounds() : null;
-                concrete[i] = (bounds != null ? GenericsUtils.erasure(bounds[0]) : ClassHelper.OBJECT_TYPE).asGenericsType();
-            }
-        }
-        return GenericsUtils.makeClassSafeWithGenerics(type.redirect(), concrete);
     }
 
     private static MethodCallExpression callDoCall(final ClassNode closureClass, final MethodNode doCallMethod, final Expression arguments) {

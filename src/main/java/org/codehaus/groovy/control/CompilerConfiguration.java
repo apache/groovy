@@ -196,6 +196,22 @@ public class CompilerConfiguration {
     public static final String LAMBDA_HOISTING = "groovy.target.lambda.hoist";
 
     /**
+     * System-property name for the report of the functional literals and calls that statically compiled code
+     * compiles differently than Groovy 6 did. With the value {@code true}, the type checker adds a warning for
+     * each lambda or method reference that was a closure, a method closure or a coercion proxy and is now a native
+     * lambda, which dynamic code cannot use as a closure, and for each call whose type arguments come from the
+     * type its value is assigned, passed, returned or cast to. The report changes nothing about the generated code.
+     * <p>
+     * The option is read from the system properties of the compiling JVM; there is no
+     * {@code CompilerConfiguration} setting for it.
+     * Incubating: this switch may change or be removed until the feature graduates.
+     *
+     * @since 7.0.0
+     */
+    @Incubating
+    public static final String FUNCTIONAL_REPORT = "groovy.target.functional.report";
+
+    /**
      * System-property name for the incubating option that converts a {@code @CompileStatic} closure literal
      * to the functional interface it is passed, assigned, returned or cast to with a class generated at
      * compile time, instead of a {@code java.lang.reflect.Proxy} created at run time. The generated class

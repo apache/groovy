@@ -4633,7 +4633,7 @@ def cfg = new ConfigSlurper().parse("""
     }
 
     // GROOVY-11447: Using a conditional when expecting a SAM type leads to type unsafe results
-    @NotYetImplemented @Test
+    @Test
     void testGroovy11447() {
         def err = shouldFail(MultipleCompilationErrorsException) {
             new GroovyClassLoader().parseClass('''

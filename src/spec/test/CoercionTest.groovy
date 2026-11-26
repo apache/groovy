@@ -273,10 +273,24 @@ final class CoercionTest {
             def commands = commands()
             assert commands.shout.apply('Hi') == 'HI'     // the closure is a Function
             assert commands.whisper('Hi') == 'hi'         // and still a Closure
-            assert commands.twice.apply('Hi') == 'HiHi'   // so is the lambda
-            assert commands.twice('Hi') == 'HiHi'
-            assert commands.trim.apply(' Hi ') == 'Hi'    // the method reference is only a Function
+            assert commands.twice.apply('Hi') == 'HiHi'   // the lambda is only a Function,
+            assert commands.trim.apply(' Hi ') == 'Hi'    // and so is the method reference
+            assert !(commands.twice instanceof Closure) && !(commands.trim instanceof Closure)
             // end::functional_literal_for_type_parameter_assertions[]
+
+            // tag::functional_literal_typed_by_context[]
+            @CompileStatic
+            List<Function<String, String>> inferred(Function<String, String> custom) {
+                Optional<Function<String, String>> shout = Optional.of(s -> s.toUpperCase()) // T of of(T), from the assignment
+                List<Function<String, String>> list = [String::trim, { it.toLowerCase() }]   // the element type
+                list.add(custom ?: (s -> s))                                                 // the parameter, for the lambda branch
+                list.add(Objects.requireNonNull(s -> s * 2))                                 // T of requireNonNull(T), from the parameter of add
+                list << shout.get()
+                list
+            }
+            // end::functional_literal_typed_by_context[]
+
+            assert inferred(null)*.apply(' Hi ') == ['Hi', ' hi ', ' Hi ', ' Hi  Hi ', ' HI ']
 
             // tag::closure_value_for_type_parameter[]
             @CompileStatic

@@ -19,6 +19,7 @@
 package org.codehaus.groovy.classgen.asm;
 
 import groovy.lang.Closure;
+import groovy.lang.Tuple2;
 import groovy.transform.Internal;
 import groovy.transform.PackedClosures.PackMode;
 import org.codehaus.groovy.GroovyBugError;
@@ -33,6 +34,7 @@ import org.codehaus.groovy.ast.CodeVisitorSupport;
 import org.codehaus.groovy.ast.DynamicVariable;
 import org.codehaus.groovy.ast.ConstructorNode;
 import org.codehaus.groovy.ast.FieldNode;
+import org.codehaus.groovy.ast.GenericsType;
 import org.codehaus.groovy.ast.PropertyNode;
 import org.codehaus.groovy.ast.InnerClassNode;
 import org.codehaus.groovy.ast.MethodNode;
@@ -111,6 +113,7 @@ import org.objectweb.asm.Handle;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
+import static org.objectweb.asm.Opcodes.ACC_BRIDGE;
 import static org.objectweb.asm.Opcodes.ACC_FINAL;
 import static org.objectweb.asm.Opcodes.ACC_PRIVATE;
 import static org.objectweb.asm.Opcodes.ACC_PUBLIC;
@@ -2073,8 +2076,121 @@ public class ClosureWriter {
 
         addSerialVersionUIDField(answer);
 
+        addTargetInterface(answer, expression);
+
         return answer;
     }
+
+    /**
+     * Makes the closure class implement the functional interface that the type checker found the closure
+     * literal or lambda written for in type-checked code, such as {@code Supplier<String>} for
+     * {@code list.add { 'x' }} on a {@code List<Supplier<String>>}. Its abstract method calls the closure, as a
+     * coercion proxy would. The closure is then stored as it is, an instance of the interface that dynamic code
+     * still calls as a closure. Statically compiled code declares the method with the parameterized signature.
+     *
+     * @param closureClass the generated closure class
+     * @param expression   the closure expression it is generated for
+     */
+    protected void addTargetInterface(final ClassNode closureClass, final ClosureExpression expression) {
+        ClassNode target = expression.getNodeMetaData(StaticTypesMarker.CLOSURE_TARGET_INTERFACE);
+        if (target == null || closureClass.implementsInterface(target)) return;
+        MethodNode sam = ClassHelper.findSAM(target);
+        if (sam == null) return;
+
+        ClassNode type = implementedInterface(target);
+        Tuple2<ClassNode[], ClassNode> signature = GenericsUtils.parameterizeSAM(type);
+        closureClass.addInterface(type);
+        MethodNode method = targetInterfaceMethod(sam, signature.getV1(), signature.getV2());
+        addGeneratedMethod(closureClass, method, true);
+        // the method as the interface declares it, so that an argument reaches the closure without a cast to
+        // the type that the interface is parameterized with, as through a proxy
+        ClassNode[] declared = Arrays.stream(sam.getParameters()).map(Parameter::getType).toArray(ClassNode[]::new);
+        MethodNode erased = targetInterfaceMethod(sam, declared, sam.getReturnType());
+        if (!sameParameterTypes(erased, method)) { // the verifier adds a bridge for another return type
+            erased.setModifiers(ACC_PUBLIC | ACC_SYNTHETIC | ACC_BRIDGE);
+            addGeneratedMethod(closureClass, erased, true);
+        }
+    }
+
+    private static boolean sameParameterTypes(final MethodNode one, final MethodNode other) {
+        Parameter[] p = one.getParameters(), q = other.getParameters();
+        if (p.length != q.length) return false;
+        for (int i = 0; i < p.length; i += 1) {
+            if (!p[i].getType().equals(q[i].getType())) return false;
+        }
+        return true;
+    }
+
+    private static MethodNode targetInterfaceMethod(final MethodNode sam, final ClassNode[] types, final ClassNode type) {
+        Parameter[] parameters = new Parameter[types.length];
+        Expression[] arguments = new Expression[types.length];
+        for (int i = 0; i < types.length; i += 1) {
+            parameters[i] = new Parameter(erasureOf(types[i]), "arg" + i);
+            arguments[i] = varX(parameters[i]);
+        }
+        ClassNode returnType = erasureOf(type);
+        Expression call = callThisX("call", args(arguments));
+        Statement code = ClassHelper.isPrimitiveVoid(returnType) ? stmt(call) : returnS(new CastExpression(returnType, call));
+        return new MethodNode(sam.getName(), ACC_PUBLIC, returnType, parameters, sam.getExceptions(), code);
+    }
+
+    /**
+     * Returns the functional interface as a closure class declares it: without wildcards, and without the type
+     * parameters that are not in scope in the closure class.
+     *
+     * @param target the functional interface that a closure literal is written for
+     * @return the type to implement
+     */
+    protected static ClassNode implementedInterface(final ClassNode target) {
+        return withoutPlaceholders(withoutWildcards(target));
+    }
+
+    private static ClassNode erasureOf(final ClassNode type) {
+        if (type.isArray()) return erasureOf(type.getComponentType()).makeArray();
+        return type.isGenericsPlaceHolder() || type.getGenericsTypes() != null ? GenericsUtils.erasure(type) : type;
+    }
+
+    /**
+     * The interface as a class can implement it: a type argument may not be a wildcard. {@code ? super X} and
+     * {@code ? extends X} become {@code X}, as for the parameter and return types of the interface method, and
+     * {@code ?} the erasure of the type parameter, so the verifier finds the method that the bridge calls.
+     */
+    private static ClassNode withoutWildcards(final ClassNode type) {
+        GenericsType[] arguments = type.getGenericsTypes();
+        if (arguments == null || Arrays.stream(arguments).noneMatch(GenericsType::isWildcard)) return type;
+        GenericsType[] parameters = type.redirect().getGenericsTypes();
+        GenericsType[] concrete = new GenericsType[arguments.length];
+        for (int i = 0; i < arguments.length; i += 1) {
+            GenericsType argument = arguments[i];
+            if (!argument.isWildcard()) {
+                concrete[i] = argument;
+            } else if (argument.getLowerBound() != null) {
+                concrete[i] = argument.getLowerBound().asGenericsType();
+            } else if (argument.getUpperBounds() != null) {
+                concrete[i] = argument.getUpperBounds()[0].asGenericsType();
+            } else {
+                ClassNode[] bounds = parameters != null ? parameters[i].getUpperBounds() : null;
+                concrete[i] = (bounds != null ? GenericsUtils.erasure(bounds[0]) : ClassHelper.OBJECT_TYPE).asGenericsType();
+            }
+        }
+        return GenericsUtils.makeClassSafeWithGenerics(type.redirect(), concrete);
+    }
+
+    /**
+     * The interface as the closure class declares it: a type parameter that is left in a type argument, such as
+     * one of the method the closure is passed to, is not in scope in the closure class and becomes its erasure.
+     */
+    private static ClassNode withoutPlaceholders(final ClassNode type) {
+        GenericsType[] arguments = type.getGenericsTypes();
+        if (arguments == null || !GenericsUtils.hasUnresolvedGenerics(type)) return type;
+        GenericsType[] concrete = new GenericsType[arguments.length];
+        for (int i = 0; i < arguments.length; i += 1) {
+            concrete[i] = GenericsUtils.hasUnresolvedGenerics(arguments[i].getType()) || arguments[i].isPlaceholder()
+                    ? GenericsUtils.erasure(arguments[i].getType()).getPlainNodeReference().asGenericsType() : arguments[i];
+        }
+        return GenericsUtils.makeClassSafeWithGenerics(type.redirect(), concrete);
+    }
+
 
     /**
      * Adds a synthetic {@code serialVersionUID} field to the closure class,
