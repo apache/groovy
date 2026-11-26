@@ -261,7 +261,7 @@ final class RegressionTest {
     }
 
     // GROOVY-3676: Explicitly dereferenced hash values created by variables return null
-    @NotYetImplemented @Test
+    @Test
     void testGroovy3676() {
         assertScript '''
             def key1 = "VARIABLE_1"

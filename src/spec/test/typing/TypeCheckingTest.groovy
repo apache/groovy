@@ -513,12 +513,33 @@ final class TypeCheckingTest extends StaticTypeCheckingTestCase {
         @ASTTest(phase=INSTRUCTION_SELECTION,value={
              def inft = node.getNodeMetaData(INFERRED_TYPE)
              assert inft == make(LinkedHashMap)
-             assert inft.genericsTypes[0].type == GSTRING_TYPE
+             assert inft.genericsTypes[0].type == STRING_TYPE
              assert inft.genericsTypes[1].type == STRING_TYPE
         })
         // tag::map_literal_inference_gstring[]
         def map = ["${someKey}": 'someValue']
         // end::map_literal_inference_gstring[]
+        '''
+
+        assertScript '''
+        def someKey = 'k'
+        def flag = true
+        @ASTTest(phase=INSTRUCTION_SELECTION,value={
+             def inft = node.getNodeMetaData(INFERRED_TYPE)
+             assert inft.genericsTypes[0].type == STRING_TYPE
+        })
+        def fromBound = [(flag ? 'a' : "${someKey}"): 'v']
+
+        class GS extends GString {
+            GS() { super(new Object[0]) }
+            String[] getStrings() { ['sub'] as String[] }
+        }
+        GS sub = new GS()
+        @ASTTest(phase=INSTRUCTION_SELECTION,value={
+             def inft = node.getNodeMetaData(INFERRED_TYPE)
+             assert inft.genericsTypes[0].type == STRING_TYPE
+        })
+        def fromSub = [(sub): 'v']
         '''
 
         assertScript '''

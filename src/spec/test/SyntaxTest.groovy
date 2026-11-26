@@ -472,7 +472,8 @@ final class SyntaxTest extends CompilableTestSupport {
         def key = "a"
         def m = ["${key}": "letter ${key}"]     // <1>
 
-        assert m["a"] == null                   // <2>
+        assert m["a"] == "letter a"             // <2>
+        assert m["${key}"] == "letter a"
         // end::gstring_hashcode_2[]
     }
 

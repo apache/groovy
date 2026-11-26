@@ -441,8 +441,8 @@ Maps generated using the map literal syntax are using the object `equals` and `h
 you should *never* use an object which hash code is subject to change over time, or you wouldn't be able to get
 the associated value back.
 
-It is also worth noting that you should *never* use a `GString` as the key of a map, because the hash code of a `GString`
-is not the same as the hash code of an equivalent `String`:
+A map literal renders a `GString` key to a `String` when the map is created, so lookup with that `String` or with an equivalent `GString` finds the entry.
+`Map.put` does not. The hash code of a `GString` is not the hash code of the equivalent `String`, so a key stored with `put` is missed by `get` of that `String`:
 
 [source,groovy]
 ---------------------

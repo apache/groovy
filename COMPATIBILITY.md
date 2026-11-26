@@ -1704,6 +1704,43 @@ is still rejected.
 `CompilerConfiguration.setClassTagPreemptionDisabled`) keeps the previous
 behaviour.
 
+### Groovy 7 — a map literal stores a GString key as a String (GROOVY-3676)
+
+A map literal such as `["${key}": value]` used to store the key as a
+`GString`. A subscript renders a `GString` to a `String` before `Map.get`,
+and `String.equals` does not treat a `GString` as equal, so both
+`map["${key}"]` and `map[key]` returned null while iteration still showed
+the entry. The literal now stores the `String` from one `toString()` call,
+taken when the literal is evaluated. That is the same rendering a dynamic
+subscript assignment `map["${key}"] = value` already stored. A later change
+to an interpolated value does not rename the entry. Two literal keys that
+render the same text are one entry; the later value wins and the first
+position is kept.
+
+A subscript whose argument is compiled as `Object` rather than `String` or
+`GString` looks the `GString` up as itself and, only when that key is
+absent, as the rendered `String`. An entry stored under the `GString` still
+wins over a `String` of the same text.
+
+**Who is affected.** Code that read a map-literal key back as a `GString`
+(`instanceof`, `is`, or a cast) or depended on a later change to an
+interpolated value being visible in the key. `Map.get`, `containsKey` and
+`remove` with a `GString` no longer find a literal's entry, because the
+stored key is a `String` and `GString.equals` does not accept a `String`.
+Use the `String`, or a subscript. Static type inference of a literal whose
+key is a `GString`, a subclass of `GString`, or the `String`/`GString`
+least upper bound now reports `String`.
+
+**What is unchanged.** Values are not rendered. `null` and every key that
+is not a `GString` are stored as themselves. A spread copies the source
+map's keys unchanged, so a `GString` passed to `Map.put` stays a `GString`
+and remains distinct from a `String` of the same text. `Map.put` and
+`Map.get` are not otherwise changed. The map is still a `LinkedHashMap`.
+
+**Who is not affected (binary).** `InvokerHelper.createMap` and
+`ScriptBytecodeAdapter.createMap` keep their signatures. `japicmp` does
+not report this.
+
 ### Groovy 6.0.1 — a closure method call skips a null owner or delegate (GROOVY-12667)
 
 A closure's owner or delegate can be null: after `dehydrate()`, after

@@ -9702,6 +9702,27 @@ trying: for (ClassNode[] signature : signatures) {
     }
 
     /**
+     * Static type of one direct key in a map literal.
+     * <p>
+     * The literal stores a {@code GString} as the {@code String} it renders,
+     * and the same for the least upper bound of {@code String} and
+     * {@code GString}, because either value is a {@code String} after the
+     * literal is built. A subclass of {@code GString} is rendered too. A
+     * spread entry does not use this method: its key type is the key type of
+     * the spread map, which may still be a {@code GString} placed with
+     * {@code Map.put}. Every other key type is left as inferred.
+     *
+     * @param keyType the inferred type of the key expression, or null
+     * @return {@code String} when the stored key is that rendering, otherwise {@code keyType}
+     */
+    private static ClassNode mapLiteralKeyType(final ClassNode keyType) {
+        if (keyType != null && (isGStringOrGStringStringLUB(keyType) || keyType.isDerivedFrom(ClassHelper.GSTRING_TYPE))) {
+            return STRING_TYPE;
+        }
+        return keyType;
+    }
+
+    /**
      * Infers the static type of a map literal.
      */
     protected ClassNode inferMapExpressionType(final MapExpression map) {
@@ -9721,7 +9742,7 @@ trying: for (ClassNode[] signature : signatures) {
                 for (MapEntryExpression entryExpression : entryExpressions) {
                     valueType = getType(entryExpression.getValueExpression());
                     if (!(entryExpression.getKeyExpression() instanceof SpreadMapExpression)) {
-                        keyType = getType(entryExpression.getKeyExpression());
+                        keyType = mapLiteralKeyType(getType(entryExpression.getKeyExpression()));
                     } else { // GROOVY-7247
                         valueType = GenericsUtils.parameterizeType(valueType, MAP_TYPE);
                         keyType = getCombinedBoundType(valueType.getGenericsTypes()[0]);

@@ -1528,9 +1528,10 @@ public class ScriptBytecodeAdapter {
 
     /**
      * Creates a {@link Map} from {@code values} by calling {@code InvokerHelper.createMap}.
-     * Entries are taken as alternating keys and values, in pair order. A {@code SpreadMap}
-     * followed by a {@link Map} contributes that map's entries. A trailing value left without a
-     * pair is ignored.
+     * Entries are taken as alternating keys and values, in pair order. A direct key that is a
+     * {@code GString} is stored as the {@link String} it renders then, so the entry can be read
+     * back with that text. A {@code SpreadMap} followed by a {@link Map} contributes that map's
+     * entries with their existing keys. A trailing value left without a pair is ignored.
      *
      * @param values alternating keys and values, with optional spread pairs
      * @return the new map
