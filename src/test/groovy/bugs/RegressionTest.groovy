@@ -273,7 +273,7 @@ final class RegressionTest {
     }
 
     // GROOVY-3905: XMLNodePrinter doesn't keep namespace required for attribute value
-    @NotYetImplemented @Test
+    @Test
     void testGroovy3905() {
         def xml = '''<ns2:getTableReport xmlns:ns2="http://www.jdisc.com">
                 <ns2:genericFilters xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="ns2:containsCondition">

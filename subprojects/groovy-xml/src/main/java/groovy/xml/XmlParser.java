@@ -79,6 +79,11 @@ public class XmlParser implements ContentHandler {
 
     private StringBuilder bodyText = new StringBuilder();
     private final List<Node> stack = new ArrayList<Node>();
+    /**
+     * Prefix bindings reported by SAX for the element whose start tag has not yet been seen.
+     * {@code startPrefixMapping} runs before {@code startElement} for every declaration on that element.
+     */
+    private final Map<String, String> pendingNamespaceDeclarations = new LinkedHashMap<>();
     private Locator locator;
     private XMLReader reader;
     private Node parent;
@@ -624,6 +629,7 @@ public class XmlParser implements ContentHandler {
     @Override
     public void startDocument() throws SAXException {
         parent = null;
+        pendingNamespaceDeclarations.clear();
     }
 
     /**
@@ -634,6 +640,7 @@ public class XmlParser implements ContentHandler {
     @Override
     public void endDocument() throws SAXException {
         stack.clear();
+        pendingNamespaceDeclarations.clear();
     }
 
     /**
@@ -659,7 +666,15 @@ public class XmlParser implements ContentHandler {
             String value = list.getValue(i);
             attributes.put(attributeName, value);
         }
+        Map<String, String> declaredNamespaces = null;
+        if (!pendingNamespaceDeclarations.isEmpty()) {
+            declaredNamespaces = new LinkedHashMap<>(pendingNamespaceDeclarations);
+        }
+        pendingNamespaceDeclarations.clear();
         parent = createNode(parent, nodeName, attributes);
+        if (declaredNamespaces != null) {
+            parent.setLocalNamespaceDeclarations(declaredNamespaces);
+        }
         stack.add(parent);
     }
 
@@ -697,8 +712,11 @@ public class XmlParser implements ContentHandler {
     }
 
     /**
-     * Receives namespace prefix mapping notifications.
-     * The default implementation does not retain separate prefix state.
+     * Records a prefix binding declared on the element that is about to start.
+     * Default (empty) prefixes and empty URIs are ignored. Element and attribute
+     * names already carry their own namespace URIs; these bindings are the ones
+     * referenced only from namespace-qualified attribute values such as {@code xsi:type}.
+     * Subclasses that override this method should call {@code super}.
      *
      * @param prefix the declared prefix
      * @param namespaceURI the namespace URI bound to the prefix
@@ -706,6 +724,10 @@ public class XmlParser implements ContentHandler {
      */
     @Override
     public void startPrefixMapping(String prefix, String namespaceURI) throws SAXException {
+        if (!namespaceAware || prefix == null || prefix.isEmpty() || namespaceURI == null || namespaceURI.isEmpty()) {
+            return;
+        }
+        pendingNamespaceDeclarations.put(prefix, namespaceURI);
     }
 
     /**
