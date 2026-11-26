@@ -60,6 +60,7 @@ import java.util.function.Predicate;
 
 import static org.apache.groovy.ast.tools.ClassNodeUtils.getField;
 import static org.apache.groovy.ast.tools.ClassNodeUtils.getMethod;
+import static org.apache.groovy.ast.tools.ClassNodeUtils.hasNoEnclosingInstance;
 import static org.apache.groovy.ast.tools.ClassNodeUtils.isSubtype;
 import static org.apache.groovy.ast.tools.ClassNodeUtils.samePackageName;
 import static org.apache.groovy.ast.tools.ExpressionUtils.isOuterSuperExpression;
@@ -657,6 +658,32 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter {
                 call.setSourcePosition(argument);
                 call.visit(controller.getAcg());
                 return;
+            }
+            // GROOVY-12820: an instance of an inner class without getAt uses the getAt of its enclosing instance
+            Expression outer = receiver;
+            for (ClassNode type = rType; !hasNoEnclosingInstance(type) && type.getOuterClass() != null; ) {
+                FieldNode thisZero = type.getDeclaredField("this$0");
+                if (thisZero == null) break;
+                outer = new AttributeExpression(outer, constX("this$0"), safe);
+                outer.setType(thisZero.getType());
+                type = type.getOuterClass();
+                if (ClassHelper.CLOSURE_TYPE.equals(thisZero.getType())) { // a class created in a closure: the closure's this object
+                    MethodCallExpression thisObject = callX(outer, "getThisObject");
+                    thisObject.setImplicitThis(false);
+                    thisObject.setMethodTarget(ClassHelper.CLOSURE_TYPE.getMethod("getThisObject", Parameter.EMPTY_ARRAY));
+                    thisObject.setSafe(safe);
+                    outer = castX(type, thisObject);
+                }
+                getAt = findGetAt(type, aType);
+                if (getAt != null) {
+                    MethodCallExpression call = callX(outer, "getAt", argument);
+                    call.setImplicitThis(false);
+                    call.setMethodTarget(getAt);
+                    call.setSafe(safe);
+                    call.setSourcePosition(argument);
+                    call.visit(controller.getAcg());
+                    return;
+                }
             }
         }
 
