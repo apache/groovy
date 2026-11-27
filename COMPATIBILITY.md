@@ -588,7 +588,7 @@ entry of its own, in the same order.
 |---|---|
 | Parsing and statements | GROOVY-12831, GROOVY-12832, GROOVY-12478, GROOVY-12790 |
 | Static type checking rejects more code | GROOVY-12714, GROOVY-12525, GROOVY-12484, GROOVY-12428, GROOVY-12599, GROOVY-12568, GROOVY-12569, GROOVY-12526, GROOVY-12717 |
-| Static compilation gives different results | GROOVY-12469, GROOVY-12761, GROOVY-12488, GROOVY-12534, GROOVY-12649, GROOVY-12476, GROOVY-12470, GROOVY-12700, GROOVY-12479, GROOVY-12560, GROOVY-12574, GROOVY-12535, GROOVY-12576, GROOVY-12826 |
+| Static compilation gives different results | GROOVY-12469, GROOVY-12761, GROOVY-12488, GROOVY-12534, GROOVY-12649, GROOVY-12476, GROOVY-12470, GROOVY-12700, GROOVY-12479, GROOVY-12560, GROOVY-12574, GROOVY-12576, GROOVY-12826 |
 | Dynamic dispatch and properties | GROOVY-12439, GROOVY-12521, GROOVY-12520, GROOVY-12592, GROOVY-12489, GROOVY-12538, GROOVY-12619, GROOVY-12622, GROOVY-12613, GROOVY-12558, GROOVY-12580, GROOVY-12490 |
 | Closures | GROOVY-12673, GROOVY-12667, GROOVY-12578, GROOVY-12829 |
 | Traits | GROOVY-12608, GROOVY-12597, GROOVY-12590, GROOVY-12611, GROOVY-12618, GROOVY-12612, GROOVY-12624, GROOVY-12575 |
@@ -919,21 +919,6 @@ initializer with `@CompileDynamic` constructors) failed with `VerifyError` or
 levels deep, where an intermediate and the outer class both inherit the
 called method. The result now comes from the intermediate instance. Write
 `Outer.this.base()` to keep the old target.
-
-### Groovy 6.0.1 — a value written to a typed map is converted to the map's value type (GROOVY-12535)
-
-Under `@TypeChecked` and `@CompileStatic`, a property or subscript write to a
-map whose value type is known (`m.k = v`, `m['k'] = v`, `m.k ?= v`,
-`m.with { k = v }`) now converts the value as an assignment to a variable of
-that type does. For a `Map<String,String>`, `"$name"` is stored as a `String`
-and `123` as `"123"`; for a `Map<String,Long>`, an `Integer` is stored as a
-`Long`. Before, the property write stored the value unchanged and the
-subscript write was rejected.
-
-**Who is affected.** Code that read such a value back with its original type,
-or compared it with `is`. Maps whose value type is not known, and dynamic
-code, are unchanged. `groovy.classtag.preemption.disable` keeps the previous
-behaviour.
 
 ### Groovy 6.0.1 — `Object` methods in statically compiled closures and lambdas use the enclosing object (GROOVY-12576, GROOVY-12826)
 

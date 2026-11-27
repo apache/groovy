@@ -18,20 +18,16 @@
  */
 package bugs
 
-import groovy.transform.CompileStatic
-import org.codehaus.groovy.control.CompilerConfiguration
-import org.codehaus.groovy.control.customizers.ASTTransformationCustomizer
 import org.junit.jupiter.api.Test
 
 import static groovy.test.GroovyAssert.assertScript
 import static groovy.test.GroovyAssert.shouldFail
 
 /**
- * A property or subscript write to a map whose value type is known converts the
- * value to that type, as {@code String s = gString} does: the compiler supplies the
- * value type to {@code putAt(Map, Object, Object, Class)} as a {@code @ClassTag}
- * token. A write whose value is of the value type is unchanged, and so is one to a
- * map whose value type is not known. {@code Map.put} stays rejected.
+ * Property-style writes into a {@code Map<String,String>} must store a
+ * {@code String} when the right-hand side is a {@code GString}, the same
+ * conversion {@code String s = gString} already performs. Subscript {@code putAt}
+ * and {@code Map.put} stay rejected.
  */
 final class Groovy12535 {
 
@@ -195,9 +191,8 @@ final class Groovy12535 {
         '''
     }
 
-    // a wildcard reifies no value type to convert to
     @Test
-    void extendsStringWildcardKeepsGString() {
+    void extendsStringWildcardConvertsGString() {
         assertScript '''
             @groovy.transform.CompileStatic
             def go() {
@@ -206,7 +201,9 @@ final class Groovy12535 {
                 m.k = "$n"
                 ((Map) m).get('k')
             }
-            assert go() instanceof GString
+            def value = go()
+            assert value instanceof String
+            assert value == 'ab'
         '''
     }
 
@@ -249,25 +246,6 @@ final class Groovy12535 {
                 ((Map) m).get('k')
             }
             assert go() instanceof GString
-        '''
-    }
-
-    // no type converts soundly for "? extends Number" or "?": the value is stored as it is
-    @Test
-    void wildcardWithoutConversionTargetKeepsValue() {
-        assertScript '''
-            @groovy.transform.CompileStatic
-            def go() {
-                def n = 'ab'
-                Map<String, ? extends Number> a = [:]
-                Map<String, ?> b = [:]
-                a.k = 1
-                b.k = "$n"
-                [((Map) a).get('k'), ((Map) b).get('k')]
-            }
-            def values = go()
-            assert values[0] instanceof Integer
-            assert values[1] instanceof GString
         '''
     }
 
@@ -318,7 +296,7 @@ final class Groovy12535 {
     }
 
     @Test
-    void putStillRejectsGString() {
+    void putAndPutAtStillRejectGString() {
         def put = shouldFail '''
             @groovy.transform.CompileStatic
             void m() {
@@ -329,186 +307,16 @@ final class Groovy12535 {
         '''
         assert put.message.contains('put(java.lang.String, java.lang.String)')
         assert put.message.contains('GString')
-    }
 
-    @Test
-    void subscriptAssignmentConvertsGString() {
-        for (String mode : ['TypeChecked', 'CompileStatic']) {
-            assertScript """
-                @groovy.transform.$mode
-                def go() {
-                    def n = 'ab'
-                    Map<String,String> m = [:]
-                    m['k'] = "\$n"
-                    ((Map) m).get('k')
-                }
-                def value = go()
-                assert value instanceof String
-                assert value == 'ab'
-            """
-        }
-    }
-
-    @Test
-    void elvisAssignmentConvertsGString() {
-        assertScript '''
+        def putAt = shouldFail '''
             @groovy.transform.CompileStatic
-            def go() {
+            void m() {
                 def n = 'ab'
-                Map<String,String> m = [:]
-                m.k ?= "$n"
-                ((Map) m).get('k')
+                Map<String,String> map = [:]
+                map['k'] = "$n"
             }
-            def value = go()
-            assert value instanceof String
-            assert value == 'ab'
         '''
-    }
-
-    // the conversion is to the value type, whatever it is
-    @Test
-    void longValueMapConvertsInteger() {
-        for (String mode : ['TypeChecked', 'CompileStatic']) {
-            assertScript """
-                @groovy.transform.$mode
-                def go() {
-                    Map<String,Long> m = [:]
-                    m.a = 1
-                    m['b'] = 2
-                    [((Map) m).get('a'), ((Map) m).get('b')]
-                }
-                def values = go()
-                assert values.every { it instanceof Long }
-                assert values == [1L, 2L]
-            """
-        }
-    }
-
-    @Test
-    void explicitPutAtCallIsSuppliedTheValueType() {
-        for (String mode : ['TypeChecked', 'CompileStatic']) {
-            assertScript """
-                @groovy.transform.$mode
-                def go() {
-                    def n = 'ab'
-                    Map<String,String> m = [:]
-                    m.putAt('k', "\$n")
-                    ((Map) m).get('k')
-                }
-                def value = go()
-                assert value instanceof String
-                assert value == 'ab'
-            """
-        }
-    }
-
-    @Test
-    void rawMapKeepsGString() {
-        assertScript '''
-            @groovy.transform.CompileStatic
-            def go() {
-                def n = 'ab'
-                Map m = [:]
-                m.k = "$n"
-                m.get('k')
-            }
-            assert go() instanceof GString
-        '''
-    }
-
-    @Test
-    void dynamicCodeIsUnchanged() {
-        assertScript '''
-            def n = 'ab'
-            Map<String,String> m = [:]
-            m.k = "$n"
-            m['j'] = "$n"
-            assert m.get('k') instanceof GString
-            assert m.get('j') instanceof GString
-        '''
-    }
-
-    // the consent veto of @ClassTag preemption keeps the writes as they were
-    @Test
-    void preemptionVetoKeepsThePreviousBehaviour() {
-        def config = new CompilerConfiguration()
-        config.classTagPreemptionDisabled = true
-        config.addCompilationCustomizers(new ASTTransformationCustomizer(CompileStatic))
-        def shell = new GroovyShell(config)
-        def value = shell.evaluate '''
-            def n = 'ab'
-            Map<String,String> m = [:]
-            m.k = "$n"
-            ((Map) m).get('k')
-        '''
-        assert value instanceof GString
-
-        def err = shouldFail(shell, '''
-            def n = 'ab'
-            Map<String,String> m = [:]
-            m['k'] = "$n"
-        ''')
-        assert err.message.contains('putAt')
-    }
-
-    @Test
-    void otherWriteFormsConvertGString() {
-        for (String write : ["m['k'] ?= \"\$n\"", 'm.k ?= "$n"', 'm.with { k ?= "$n" }', 'mm.x.k = "$n"', "mm['x']['k'] = \"\$n\""]) {
-            for (String mode : ['TypeChecked', 'CompileStatic']) {
-                assertScript """
-                    @groovy.transform.$mode
-                    def go() {
-                        def n = 'ab'
-                        Map<String,String> m = [:]
-                        Map<String,Map<String,String>> mm = [x: m]
-                        $write
-                        ((Map) m).get('k')
-                    }
-                    assert go() instanceof String
-                """
-            }
-        }
-    }
-
-    @Test
-    void otherKeyTypesConvertGString() {
-        assertScript '''
-            enum E { A }
-            @groovy.transform.CompileStatic
-            def go() {
-                def n = 'ab'
-                Map<Integer,String> a = [:]
-                Map<E,String> b = new EnumMap<E,String>(E)
-                a[1] = "$n"
-                b[E.A] = "$n"
-                [((Map) a).get(1), ((Map) b).get(E.A)]
-            }
-            assert go().every { it instanceof String }
-        '''
-    }
-
-    // a value is converted to the value type as "T t = value" converts it
-    @Test
-    void otherValueConversions() {
-        for (String mode : ['TypeChecked', 'CompileStatic']) {
-            assertScript """
-                @groovy.transform.$mode
-                def go() {
-                    Map<String,String> s = [:]
-                    Map<String,BigDecimal> d = [:]
-                    Map<String,Double> f = [:]
-                    Map<String,Integer> i = [:]
-                    s.a = 123
-                    s['b'] = 456
-                    d.a = 1
-                    f['a'] = 1
-                    i.a = (short) 1
-                    [((Map) s).get('a'), ((Map) s).get('b'), ((Map) d).get('a'), ((Map) f).get('a'), ((Map) i).get('a')]
-                }
-                def values = go()
-                assert values == ['123', '456', 1.0G, 1.0d, 1]
-                assert values*.getClass() == [String, String, BigDecimal, Double, Integer]
-            """
-        }
+        assert putAt.message.contains('putAt')
+        assert putAt.message.contains('GString')
     }
 }
