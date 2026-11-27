@@ -247,6 +247,27 @@ public class JavacJavaCompiler implements JavaCompiler {
         }
 
         @Override
+        public Iterable<JavaFileObject> list(final Location location, final String packageName,
+                final Set<JavaFileObject.Kind> kinds, final boolean recurse) throws IOException {
+            Iterable<JavaFileObject> entries = super.list(location, packageName, kinds, recurse);
+            if (!hideStaleModuleInfo
+                    || location != StandardLocation.CLASS_OUTPUT
+                    || !packageName.isEmpty()
+                    || !kinds.contains(JavaFileObject.Kind.CLASS)) {
+                return entries;
+            }
+            List<JavaFileObject> filtered = new ArrayList<>();
+            for (JavaFileObject entry : entries) {
+                if (entry.getKind() == JavaFileObject.Kind.CLASS
+                        && ModuleInfoNode.CLASS_FILE_NAME.equals(inferBinaryName(location, entry))) {
+                    continue;
+                }
+                filtered.add(entry);
+            }
+            return filtered;
+        }
+
+        @Override
         public JavaFileObject getJavaFileForOutput(final Location location, final String className,
                 final JavaFileObject.Kind kind, final FileObject sibling) throws IOException {
             if (location == StandardLocation.CLASS_OUTPUT && kind == JavaFileObject.Kind.CLASS && !isStubSibling(sibling)) {

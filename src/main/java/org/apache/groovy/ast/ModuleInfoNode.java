@@ -18,6 +18,7 @@
  */
 package org.apache.groovy.ast;
 
+import groovy.lang.GroovyRuntimeException;
 import groovy.transform.Internal;
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.ast.ASTNode;
@@ -167,7 +168,12 @@ public final class ModuleInfoNode extends AnnotatedNode {
             return file != null ? file.getName() : null;
         }
         if (reader instanceof URLReaderSource urlSource) {
-            return leafFileNameFromUri(urlSource.getURI());
+            try {
+                return leafFileNameFromUri(urlSource.getURI());
+            } catch (GroovyRuntimeException ignored) {
+                // URLs with unencoded characters (e.g., spaces via legacy File.toURL()) fail URI conversion;
+                // fall back to SourceUnit#getName() instead of aborting parsing of ordinary Groovy files.
+            }
         }
         return leafFileName(sourceUnit.getName(), File.separatorChar);
     }

@@ -123,6 +123,28 @@ final class ModuleInfoNodeTest {
         assert ModuleInfoNode.isModuleInfoSource(jarUrlUnit)
         assert ModuleInfoNode.sourceFileName(jarUrlUnit) == 'module-info.groovy'
 
+        // URL with unencoded spaces (e.g., legacy File.toURL()) fails URI conversion in URLReaderSource#getURI();
+        // sourceFileName must fall back cleanly instead of throwing GroovyRuntimeException during parsing.
+        def spaceDir = new File(tmp, 'dir with space')
+        spaceDir.mkdirs()
+        def spaceRegular = new File(spaceDir, 'SpaceRegular.groovy')
+        spaceRegular.text = 'class SpaceRegular { static int value() { 42 } }'
+        def unencodedRegularUrl = new URL("file:${spaceRegular.absolutePath}")
+        def spaceRegularUnit = new SourceUnit(unencodedRegularUrl, config, loader, errors)
+        assert !ModuleInfoNode.isModuleInfoSource(spaceRegularUnit)
+        assert ModuleInfoNode.sourceFileName(spaceRegularUnit) == 'SpaceRegular.groovy'
+        spaceRegularUnit.parse()
+        spaceRegularUnit.completePhase()
+        spaceRegularUnit.convert()
+        assert spaceRegularUnit.AST.classes*.name == ['SpaceRegular']
+
+        def spaceMod = new File(spaceDir, 'module-info.groovy')
+        spaceMod.text = 'module demo.space {}'
+        def unencodedModUrl = new URL("file:${spaceMod.absolutePath}")
+        def spaceModUnit = new SourceUnit(unencodedModUrl, config, loader, errors)
+        assert ModuleInfoNode.isModuleInfoSource(spaceModUnit)
+        assert ModuleInfoNode.sourceFileName(spaceModUnit) == 'module-info.groovy'
+
         // InputStreamReaderSource and null ReaderSource fall back to SourceUnit.name
         def streamSource = new InputStreamReaderSource(new ByteArrayInputStream('module a {}'.getBytes(StandardCharsets.UTF_8)), config)
         def streamUnit = new SourceUnit('src/module-info.groovy', streamSource, config, loader, errors)
