@@ -117,12 +117,23 @@ public class ExtendedVerifier extends ClassCodeVisitorSupport {
      * @param declaration the module declaration
      */
     public void visitModuleAnnotations(final ModuleInfoNode declaration) {
-        if (declaration == null || declaration.getAnnotations().isEmpty()) {
+        if (declaration == null) {
+            return;
+        }
+        ModuleNode module = declaration.getSourceModule();
+        boolean hasModuleAnnotations = !declaration.getAnnotations().isEmpty();
+        boolean hasModule = module != null && visitedModules.add(module);
+        if (!hasModuleAnnotations && !hasModule) {
             return;
         }
         this.currentClass = new ClassNode(ModuleInfoNode.CLASS_FILE_NAME, Opcodes.ACC_ABSTRACT | Opcodes.ACC_INTERFACE, ClassHelper.OBJECT_TYPE);
         try {
-            visitAnnotations(declaration, MODULE_TARGET);
+            if (hasModule) {
+                visitImportAnnotations(module);
+            }
+            if (hasModuleAnnotations) {
+                visitAnnotations(declaration, MODULE_TARGET);
+            }
         } finally {
             this.currentClass = null;
         }
@@ -495,8 +506,8 @@ public class ExtendedVerifier extends ClassCodeVisitorSupport {
     }
 
     private boolean isTypeUseScenario(final AnnotationNode visited, final int target) {
-        // allow type use everywhere except package
-        return (visited.isTargetAllowed(TYPE_USE_TARGET) && ((target & PACKAGE_TARGET) == 0));
+        // allow type use everywhere except package and module declarations (JLS §9.6.4.1)
+        return (visited.isTargetAllowed(TYPE_USE_TARGET) && ((target & (PACKAGE_TARGET | MODULE_TARGET)) == 0));
     }
 
     private void processDuplicateAnnotationContainers(final AnnotatedNode node, final Map<String, List<AnnotationNode>> nonSourceAnnotations) {

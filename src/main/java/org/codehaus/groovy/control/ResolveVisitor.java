@@ -21,6 +21,7 @@ package org.codehaus.groovy.control;
 import groovy.lang.Tuple2;
 import groovy.transform.Internal;
 import org.apache.groovy.ast.ModuleInfoNode;
+import org.apache.groovy.control.ModuleOptions;
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.AnnotatedNode;
@@ -77,6 +78,8 @@ import org.codehaus.groovy.transform.trait.Traits;
 import org.codehaus.groovy.vmplugin.VMPluginFactory;
 import org.objectweb.asm.Opcodes;
 
+import java.lang.module.FindException;
+import java.lang.module.ModuleFinder;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -133,6 +136,9 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
      */
     @Internal
     public static final String CAST_RESOLVE_HINT = "_CAST_RESOLVE_HINT";
+    private static final String UNABLE_TO_RESOLVE_CLASS = "unable to resolve class ";
+    private static final String UNKNOWN_MODULE = "Unknown module: ";
+    private static final String JAVA_LANG_PREFIX = "java.lang.";
 
     private final CompilationUnit compilationUnit;
     private ClassNodeResolver classNodeResolver;
@@ -648,9 +654,43 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
         if (index != null && index.contains(resolved.getName())) {
             return;
         }
-        if (!declaration.canAccess(resolved)) {
+        if (!declaration.canAccess(resolved, currentClass)) {
             addError("class " + resolved.getName() + " is not accessible in module " + declaration.getName(), node == null ? type : node);
         }
+    }
+
+    /**
+     * Rejects an explicit package star import whose package belongs to an
+     * explicit module not readable or exported to the current module declaration.
+     *
+     * @param packageName the imported package name (without trailing dot)
+     * @param node the import node to report
+     */
+    protected void checkModulePackageAccessibility(final String packageName, final ASTNode node) {
+        if (compilationUnit == null || packageName == null || packageName.isEmpty()) {
+            return;
+        }
+        CompileUnit unit = compilationUnit.getAST();
+        ModuleInfoNode declaration = unit == null ? null : unit.getModuleInfo();
+        if (declaration == null || !declaration.isReadsReady()) {
+            return;
+        }
+        if (packageDeclaredInCompilation(unit, packageName)) {
+            return;
+        }
+        if (!declaration.canAccessPackage(packageName)) {
+            addError("package " + packageName + " is not accessible in module " + declaration.getName(), node);
+        }
+    }
+
+    private boolean packageDeclaredInCompilation(final CompileUnit unit, final String packageName) {
+        for (ClassNode cn : unit.getClasses()) {
+            if (packageName.equals(cn.getPackageName())) {
+                return true;
+            }
+        }
+        CompiledClassIndex index = compilationUnit.getCompiledClasses();
+        return index != null && index.getPackages().contains(packageName);
     }
 
     /**
@@ -1122,68 +1162,113 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
     }
 
     /**
-     * Binds a simple name from on-demand imports.
+     * Binds a simple name from on-demand imports and module imports.
      * <p>
-     * A source import shadows every default import, including implicit
-     * {@code java.lang.*} and star imports added by a compilation customizer.
-     * Source static-import-on-demand, source type-import-on-demand, and the
-     * packages expanded from one source {@code import module} are walked in
-     * source order. The packages of a single module import are one statement:
-     * the first accessible type among them is bound, and an inaccessible type
-     * in an earlier exported package does not hide a later package of that
-     * same statement.
-     * <p>
-     * Separate source statements are not a fallback for each other. The first
-     * statement that finds the type claims it. An accessible type is bound.
-     * That is the long-standing rule: {@code import java.util.*} before
-     * {@code import java.sql.*} selects {@code java.util.Date}, and the
-     * reverse selects {@code java.sql.Date}. Two accessible source stars are
-     * not an ambiguity. An inaccessible type also claims the name, so a later
-     * source statement does not bind a different type that would be displaced
-     * if the earlier type became visible. The name then falls through to
-     * customizer on-demand imports and the language defaults. A non-static
-     * member type is not claimed, because a type star does not import it.
-     * <p>
-     * Customizer on-demand imports have no source location. They are tried
-     * when no source statement bound the name, including when one claimed
-     * an inaccessible type, and before the language defaults, so a
-     * configured star can still supply {@code Date} or {@code String}.
-     * Within that tier an inaccessible type is skipped. Static stars
-     * precede package stars because the two are stored separately. An
-     * explicit single-type import is resolved earlier and therefore wins
-     * over every on-demand import.
+     * Resolution proceeds in strict tiers aligning Groovy's star-import rules
+     * with JEP 511 / JLS §6.4.1:
+     * <ol>
+     *   <li>Source type-import-on-demand ({@code import pkg.*}, {@code import Type.*})
+     *       and source static-import-on-demand ({@code import static Type.*}) in
+     *       source order. The first statement that finds the type claims it: an
+     *       accessible type is bound ({@code import java.util.*} before
+     *       {@code import java.sql.*} selects {@code java.util.Date}, and the
+     *       reverse selects {@code java.sql.Date}), while an inaccessible type
+     *       stops later source stars and falls through to lower tiers. A
+     *       non-static member type is not claimed.</li>
+     *   <li>Customizer star imports (no source location), skipping inaccessible
+     *       types so a configured star can still supply {@code Date} or
+     *       {@code String}. Static stars precede package stars.</li>
+     *   <li>Implicit {@code java.lang.*} (when module imports are present), so
+     *       standard {@code java.lang} types shadow {@code import module}
+     *       declarations per JLS §6.4.1 while explicit and customizer stars
+     *       above still shadow {@code java.lang.*}.</li>
+     *   <li>Source {@code import module} declarations. All exported packages
+     *       imported in this tier are checked together; if two distinct
+     *       accessible types match the simple name, a compile-time ambiguity
+     *       error is reported per JLS §7.5.5 / JEP 511.</li>
+     *   <li>Customizer {@code import module} declarations, with the same
+     *       ambiguity check.</li>
+     * </ol>
+     * Groovy's remaining default imports ({@code java.util.*}, {@code java.io.*},
+     * {@code groovy.lang.*}, etc.) are consulted only if this method returns
+     * {@code false}, so {@code import module java.desktop} binds {@code List} to
+     * {@code java.awt.List} and {@code import module java.sql} binds {@code Date}
+     * to {@code java.sql.Date}. Explicit single-type and single-static imports
+     * are resolved earlier and therefore shadow every tier here.
      *
-     * @return {@code true} if the name was bound
+     * @return {@code true} if the name was bound (or reported ambiguous)
      */
     private boolean resolveFromOnDemandImports(final ClassNode type, final String name, final ModuleNode module) {
         OnDemandImports order = onDemandImports(module);
-        if (bindOnDemandTier(type, name, order.declared, true)) return true;
-        return bindOnDemandTier(type, name, order.customizer, false);
+        if (bindOnDemandTier(type, name, order.declaredStars, true)) return true;
+        if (bindOnDemandTier(type, name, order.customizerStars, false)) return true;
+        if (order.declaredModules.isEmpty() && order.customizerModules.isEmpty()) {
+            return false;
+        }
+        if (resolveImplicitJavaLang(type, name)) {
+            return true;
+        }
+        if (bindModuleImportTier(type, name, order.declaredModules)) return true;
+        return bindModuleImportTier(type, name, order.customizerModules);
     }
 
     /**
-     * @param claim when {@code true}, a group that finds the type but cannot
-     *              access it stops later groups in this tier. Customizer
-     *              imports pass {@code false} and skip that group.
+     * @param claim when {@code true}, an import that finds the type but cannot
+     *              access it stops later imports in this tier. Customizer
+     *              imports pass {@code false} and skip that import.
      * @return {@code true} if a type was bound
      */
-    private boolean bindOnDemandTier(final ClassNode type, final String name, final List<List<ImportNode>> groups, final boolean claim) {
-        for (List<ImportNode> group : groups) {
-            OnDemandHit hit = bindOnDemandGroup(type, name, group);
+    private boolean bindOnDemandTier(final ClassNode type, final String name, final List<ImportNode> imports, final boolean claim) {
+        for (ImportNode importNode : imports) {
+            OnDemandHit hit = bindOnDemand(type, name, importNode);
             if (hit == OnDemandHit.BOUND) return true;
             if (claim && hit == OnDemandHit.BLOCKED) return false;
         }
         return false;
     }
 
-    private OnDemandHit bindOnDemandGroup(final ClassNode type, final String name, final List<ImportNode> group) {
-        boolean blocked = false;
-        for (ImportNode importNode : group) {
-            OnDemandHit hit = bindOnDemand(type, name, importNode);
-            if (hit == OnDemandHit.BOUND) return OnDemandHit.BOUND;
-            if (hit == OnDemandHit.BLOCKED) blocked = true;
+    private boolean resolveImplicitJavaLang(final ClassNode type, final String name) {
+        ConstructedClassWithPackage tmp = new ConstructedClassWithPackage(JAVA_LANG_PREFIX, name);
+        if (resolve(tmp, false, false, true) && isStarImportAccessible(tmp, null)) {
+            type.setRedirect(tmp.redirect());
+            return true;
         }
-        return blocked ? OnDemandHit.BLOCKED : OnDemandHit.MISS;
+        return false;
+    }
+
+    private boolean bindModuleImportTier(final ClassNode type, final String name, final List<ImportNode> imports) {
+        ClassNode matched = null;
+        for (ImportNode importNode : imports) {
+            ClassNode candidate = resolveModuleImportCandidate(name, importNode);
+            if (candidate == null) {
+                continue;
+            }
+            if (matched == null) {
+                matched = candidate;
+            } else if (!matched.getName().equals(candidate.getName())) {
+                addError("reference to " + name + " is ambiguous, both class "
+                        + matched.getName() + " and " + candidate.getName() + " match", type);
+                type.setRedirect(matched);
+                return true;
+            }
+        }
+        if (matched != null) {
+            type.setRedirect(matched);
+            return true;
+        }
+        return false;
+    }
+
+    private ClassNode resolveModuleImportCandidate(final String name, final ImportNode importNode) {
+        String packageName = importNode.getPackageName();
+        if (packageName == null) {
+            return null;
+        }
+        ClassNode tmp = new ConstructedClassWithPackage(packageName, name);
+        if (!resolve(tmp, false, false, true) || !isStarImportAccessible(tmp, null)) {
+            return null;
+        }
+        return tmp.redirect();
     }
 
     private OnDemandHit bindOnDemand(final ClassNode type, final String name, final ImportNode importNode) {
@@ -1214,61 +1299,45 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
     }
 
     /**
-     * Source on-demand imports in source order, grouped by statement, then
-     * customizer on-demand imports. Recomputed when needed: the lists are
-     * small, and storing them as module metadata would keep them for the
-     * rest of compilation.
-     * <p>
-     * {@code import module} expands to one star per exported package, but only
-     * the last of those nodes carries the statement's line and column. The
-     * packages before it have no position of their own and must inherit that
-     * position, in export order, as one statement. Sorting separate nodes by
-     * the line numbers they actually store would place those packages, and
-     * every customizer import (line &lt;= 0), ahead of the source imports.
-     * {@code List.sort} is stable, so statements that share a position keep
-     * the order they were added.
+     * Partitions on-demand and module imports into declared (source-positioned)
+     * and customizer (unpositioned) tiers. Source stars are sorted by source
+     * position using a stable sort so statements sharing a position keep the
+     * order they were added. Recomputed when needed: the lists are small, and
+     * storing them as module metadata would keep them for the rest of compilation.
      */
     private static OnDemandImports onDemandImports(final ModuleNode module) {
-        List<PositionedImport> positioned = new ArrayList<>();
+        List<ImportNode> declaredStars = new ArrayList<>();
+        List<ImportNode> customizerStars = new ArrayList<>();
         for (ImportNode node : module.getStaticStarImports().values()) {
-            if (node.getLineNumber() > 0) positioned.add(single(node));
-        }
-        for (ImportNode node : module.getStarImports()) {
-            if (node.getLineNumber() > 0) positioned.add(single(node));
-        }
-        List<ImportNode> pendingModule = new ArrayList<>();
-        for (ImportNode node : module.getModuleStarImports()) {
-            pendingModule.add(node);
             if (node.getLineNumber() > 0) {
-                positioned.add(new PositionedImport(node.getLineNumber(), node.getColumnNumber(), List.copyOf(pendingModule)));
-                pendingModule.clear();
+                declaredStars.add(node);
+            } else {
+                customizerStars.add(node);
             }
         }
-        positioned.sort((a, b) -> {
-            int byLine = Integer.compare(a.line, b.line);
+        for (ImportNode node : module.getStarImports()) {
+            if (node.getLineNumber() > 0) {
+                declaredStars.add(node);
+            } else {
+                customizerStars.add(node);
+            }
+        }
+        declaredStars.sort((a, b) -> {
+            int byLine = Integer.compare(a.getLineNumber(), b.getLineNumber());
             if (byLine != 0) return byLine;
-            return Integer.compare(a.column, b.column);
+            return Integer.compare(a.getColumnNumber(), b.getColumnNumber());
         });
 
-        List<List<ImportNode>> declared = new ArrayList<>(positioned.size());
-        for (PositionedImport positionedImport : positioned) {
-            declared.add(positionedImport.nodes);
+        List<ImportNode> declaredModules = new ArrayList<>();
+        List<ImportNode> customizerModules = new ArrayList<>();
+        for (ImportNode node : module.getModuleStarImports()) {
+            if (node.getLineNumber() > 0) {
+                declaredModules.add(node);
+            } else {
+                customizerModules.add(node);
+            }
         }
-        List<List<ImportNode>> customizer = new ArrayList<>();
-        for (ImportNode node : module.getStaticStarImports().values()) {
-            if (node.getLineNumber() <= 0) customizer.add(List.of(node));
-        }
-        for (ImportNode node : module.getStarImports()) {
-            if (node.getLineNumber() <= 0) customizer.add(List.of(node));
-        }
-        for (ImportNode node : pendingModule) {
-            customizer.add(List.of(node));
-        }
-        return new OnDemandImports(declared, customizer);
-    }
-
-    private static PositionedImport single(final ImportNode node) {
-        return new PositionedImport(node.getLineNumber(), node.getColumnNumber(), List.of(node));
+        return new OnDemandImports(declaredStars, customizerStars, declaredModules, customizerModules);
     }
 
     private enum OnDemandHit {
@@ -1281,24 +1350,17 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
     }
 
     private static final class OnDemandImports {
-        final List<List<ImportNode>> declared;
-        final List<List<ImportNode>> customizer;
+        final List<ImportNode> declaredStars;
+        final List<ImportNode> customizerStars;
+        final List<ImportNode> declaredModules;
+        final List<ImportNode> customizerModules;
 
-        OnDemandImports(final List<List<ImportNode>> declared, final List<List<ImportNode>> customizer) {
-            this.declared = declared;
-            this.customizer = customizer;
-        }
-    }
-
-    private static final class PositionedImport {
-        final int line;
-        final int column;
-        final List<ImportNode> nodes;
-
-        PositionedImport(final int line, final int column, final List<ImportNode> nodes) {
-            this.line = line;
-            this.column = column;
-            this.nodes = nodes;
+        OnDemandImports(final List<ImportNode> declaredStars, final List<ImportNode> customizerStars,
+                final List<ImportNode> declaredModules, final List<ImportNode> customizerModules) {
+            this.declaredStars = declaredStars;
+            this.customizerStars = customizerStars;
+            this.declaredModules = declaredModules;
+            this.customizerModules = customizerModules;
         }
     }
 
@@ -2260,7 +2322,20 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
     }
 
     /**
-     * Resolves a module's imports once. Single-type, star, and static imports
+     * Reports an error on an {@code import module} declaration.
+     * Subclasses such as {@code ModuleInfoResolveVisitor} may defer reporting
+     * until full module-graph verification.
+     *
+     * @param message the diagnostic text
+     * @param node the module import AST node
+     * @since 7.0.0
+     */
+    protected void checkModuleImportError(final String message, final ASTNode node) {
+        addError(message, node);
+    }
+
+    /**
+     * Resolves a module's imports once. Single-type, star, static, and module imports
      * share this path for classes and for a module declaration.
      *
      * @param module the module whose imports are resolved
@@ -2269,12 +2344,13 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
         if (module.hasImportsResolved()) {
             return;
         }
+        resolveModuleImports(module);
         for (ImportNode importNode : module.getImports()) {
             currentImport = importNode;
             try {
                 ClassNode type = importNode.getType();
                 if (!resolve(type, false, false, true)) {
-                    addError("unable to resolve class " + type.getName(), type);
+                    addError(UNABLE_TO_RESOLVE_CLASS + type.getName(), type);
                 } else {
                     checkModuleAccessibility(type, importNode);
                 }
@@ -2292,6 +2368,8 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
                     if (resolve(type, false, false, true)) {
                         importNode.setType(type);
                         checkModuleAccessibility(type, importNode);
+                    } else {
+                        checkModulePackageAccessibility(importName, importNode);
                     }
                 } finally {
                     currentImport = null;
@@ -2301,7 +2379,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
         for (ImportNode importNode : module.getStaticImports().values()) {
             ClassNode type = importNode.getType();
             if (!resolve(type, true, true, true)) {
-                addError("unable to resolve class " + type.getName(), type);
+                addError(UNABLE_TO_RESOLVE_CLASS + type.getName(), type);
             } else {
                 // A static member use rewrites the name and does not resolve the
                 // owner again, so the owner is tested here.
@@ -2311,12 +2389,126 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
         for (ImportNode importNode : module.getStaticStarImports().values()) {
             ClassNode type = importNode.getType();
             if (!resolve(type, true, true, true)) {
-                addError("unable to resolve class " + type.getName(), type);
+                addError(UNABLE_TO_RESOLVE_CLASS + type.getName(), type);
             } else {
                 checkModuleAccessibility(type, importNode);
             }
         }
         module.setImportsResolved(true);
+    }
+
+    private void resolveModuleImports(final ModuleNode module) {
+        List<ImportNode> moduleImports = module.getModuleImports();
+        if (moduleImports.isEmpty()) {
+            return;
+        }
+        CompileUnit unit = compilationUnit != null ? compilationUnit.getAST() : null;
+        ModuleInfoNode declaration = unit != null ? unit.getModuleInfo() : null;
+        if (declaration == null) {
+            resolveUnnamedModuleImports(module, moduleImports);
+            return;
+        }
+        if (!declaration.isReadsReady()) {
+            return;
+        }
+        ModuleFinder finder = declaration.getAccessibilityFinder();
+        if (finder == null) {
+            return;
+        }
+        resolveNamedModuleImports(module, moduleImports, declaration, finder);
+    }
+
+    private void resolveUnnamedModuleImports(final ModuleNode module, final List<ImportNode> moduleImports) {
+        CompilerConfiguration config = source != null ? source.getConfiguration() : null;
+        ModuleFinder finder = source != null ? ModuleImportHelper.moduleFinder(source) : ModuleFinder.ofSystem();
+        Map<String, Set<String>> extraExports = config != null
+                ? ModuleOptions.parseAddExports(config.getAddExports(), ModuleOptions.ALL_UNNAMED,
+                        msg -> checkModuleImportError(msg, moduleImports.get(0)))
+                : Map.of();
+        module.getModuleStarImports().clear();
+        Set<String> declaredSkip = baseModuleImportSkip(module);
+        Set<String> customizerSkip = new HashSet<>(declaredSkip);
+        for (ImportNode modImp : moduleImports) {
+            String name = modImp.getPackageName();
+            if (!isModuleObservable(finder, name)) {
+                checkModuleImportError(UNKNOWN_MODULE + name, modImp);
+                continue;
+            }
+            if (!ModuleOptions.isReadableByUnnamedModule(name, finder, config)) {
+                checkModuleImportError("module " + name + " is not readable in the unnamed module", modImp);
+                continue;
+            }
+            Set<String> skip = modImp.getLineNumber() > 0 ? declaredSkip : customizerSkip;
+            expandResolvedModuleImport(module, modImp, name, finder, null, extraExports, skip);
+        }
+    }
+
+    private void resolveNamedModuleImports(final ModuleNode module, final List<ImportNode> moduleImports,
+            final ModuleInfoNode declaration, final ModuleFinder finder) {
+        String self = declaration.getName();
+        module.getModuleStarImports().clear();
+        Set<String> declaredSkip = baseModuleImportSkip(module);
+        Set<String> customizerSkip = new HashSet<>(declaredSkip);
+        for (ImportNode modImp : moduleImports) {
+            String imported = modImp.getPackageName();
+            boolean isSelf = self.equals(imported);
+            if (!isSelf && !isModuleObservable(finder, imported)) {
+                checkModuleImportError(UNKNOWN_MODULE + imported, modImp);
+                continue;
+            }
+            if (!isSelf && !declaration.getReads().contains(imported)) {
+                checkModuleImportError("module " + imported + " is not readable in module " + self, modImp);
+                continue;
+            }
+            Set<String> skip = modImp.getLineNumber() > 0 ? declaredSkip : customizerSkip;
+            expandResolvedModuleImport(module, modImp, imported, finder, self, declaration.getExtraExports(), skip);
+        }
+    }
+
+    private static void expandResolvedModuleImport(final ModuleNode module, final ImportNode modImp,
+            final String imported, final ModuleFinder finder, final String readerModule,
+            final Map<String, Set<String>> extraExports, final Set<String> skip) {
+        List<String> packages;
+        try {
+            packages = ModuleImportHelper.resolveModulePackages(imported, finder, readerModule, extraExports);
+        } catch (IllegalArgumentException | FindException ignored) {
+            // Finder and descriptor errors are reported during module-graph resolution.
+            return;
+        }
+        boolean hasSourcePos = modImp.getLineNumber() > 0;
+        for (String pkg : packages) {
+            String withDot = pkg + ".";
+            if (skip.add(withDot)) {
+                module.addModuleStarImport(withDot, modImp.getAnnotations());
+                if (hasSourcePos) {
+                    List<ImportNode> stars = module.getModuleStarImports();
+                    stars.get(stars.size() - 1).setSourcePosition(modImp);
+                }
+            }
+        }
+    }
+
+    private static Set<String> baseModuleImportSkip(final ModuleNode module) {
+        Set<String> skip = new HashSet<>();
+        skip.add(JAVA_LANG_PREFIX);
+        for (ImportNode star : module.getStarImports()) {
+            String pkg = star.getPackageName();
+            if (pkg != null) {
+                skip.add(pkg);
+            }
+        }
+        return skip;
+    }
+
+    private static boolean isModuleObservable(final ModuleFinder finder, final String name) {
+        if (finder == null || name == null || name.isEmpty()) {
+            return false;
+        }
+        try {
+            return finder.find(name).isPresent();
+        } catch (FindException ignored) {
+            return false;
+        }
     }
 
     /**

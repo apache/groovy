@@ -142,7 +142,7 @@ moduleCompilationUnit
 
 // JLS 7.3 ModularCompilationUnit: {ImportDeclaration} ModuleDeclaration
 modularCompilationUnit
-    :   (importDeclaration sep)* moduleDeclaration sep?
+    :   (importDeclaration sep)* moduleDeclaration NL*
     ;
 
 // JLS 7.7 ModuleDeclaration
@@ -151,12 +151,12 @@ moduleDeclaration
     ;
 
 moduleHeader
-    :   {contextualKeyword("open")}? identifier NL* MODULE NL* qualifiedName
-    |   MODULE NL* qualifiedName
+    :   {contextualKeyword("open")}? identifier NL* MODULE NL* moduleQualifiedName
+    |   MODULE NL* moduleQualifiedName
     ;
 
 moduleDirectives
-    :   moduleDirective (sep? moduleDirective)* sep?
+    :   moduleDirective (NL* moduleDirective)*
     ;
 
 moduleDirective
@@ -168,7 +168,7 @@ moduleDirective
     ;
 
 requiresDirective
-    :   {contextualKeyword("requires")}? identifier (NL* requiresModifier)* NL* qualifiedName NL* SEMI
+    :   {contextualKeyword("requires")}? identifier (NL* requiresModifier)* NL* moduleQualifiedName NL* SEMI
     ;
 
 requiresModifier
@@ -177,24 +177,28 @@ requiresModifier
     ;
 
 exportsDirective
-    :   {contextualKeyword("exports")}? identifier NL* qualifiedName toClause? NL* SEMI
+    :   {contextualKeyword("exports")}? identifier NL* moduleQualifiedName toClause? NL* SEMI
     ;
 
 opensDirective
-    :   {contextualKeyword("opens")}? identifier NL* qualifiedName toClause? NL* SEMI
+    :   {contextualKeyword("opens")}? identifier NL* moduleQualifiedName toClause? NL* SEMI
     ;
 
 toClause
-    :   NL* {contextualKeyword("to")}? identifier NL* qualifiedName (NL* COMMA NL* qualifiedName)*
+    :   NL* {contextualKeyword("to")}? identifier NL* moduleQualifiedName (NL* COMMA NL* moduleQualifiedName)*
     ;
 
 usesDirective
-    :   {contextualKeyword("uses")}? identifier NL* qualifiedName NL* SEMI
+    :   {contextualKeyword("uses")}? identifier NL* moduleQualifiedName NL* SEMI
     ;
 
 providesDirective
-    :   {contextualKeyword("provides")}? identifier NL* service=qualifiedName NL*
-        {contextualKeyword("with")}? identifier NL* qualifiedName (NL* COMMA NL* qualifiedName)* NL* SEMI
+    :   {contextualKeyword("provides")}? identifier NL* service=moduleQualifiedName NL*
+        {contextualKeyword("with")}? identifier NL* moduleQualifiedName (NL* COMMA NL* moduleQualifiedName)* NL* SEMI
+    ;
+
+moduleQualifiedName
+    :   qualifiedNameElement (NL* DOT NL* qualifiedNameElement)*
     ;
 
 scriptStatements
@@ -216,7 +220,7 @@ packageDeclaration
 
 importDeclaration
     :   annotationsOpt IMPORT
-        (   MODULE qualifiedName
+        (   MODULE moduleQualifiedName
         |   STATIC? qualifiedName (DOT MUL | AS alias=identifier)?
         )
     ;

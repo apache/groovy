@@ -17,7 +17,14 @@
  *  under the License.
  */
 
+import org.codehaus.groovy.control.CompilationUnit
+import org.codehaus.groovy.control.CompilerConfiguration
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.io.TempDir
+
+import java.lang.module.ModuleDescriptor
+import java.nio.file.Files
+import java.nio.file.Path
 
 import static groovy.test.GroovyAssert.assertScript
 
@@ -205,5 +212,60 @@ final class PackageTest {
             assert List.name == 'java.util.List'
             // end::module_import_with_explicit[]
         '''
+    }
+
+    @Test
+    void testModuleImportShadowedByStar() {
+        assertScript '''
+            // tag::module_import_shadowed_by_star[]
+            import module java.base
+            import module java.desktop
+            import java.util.*
+
+            // The explicit package star import shadows both module imports (JLS §6.4.1)
+            assert List.name == 'java.util.List'
+            // end::module_import_shadowed_by_star[]
+        '''
+    }
+
+    @Test
+    void testModuleDeclaration(@TempDir Path tempDir) {
+        def config = new CompilerConfiguration()
+        config.targetDirectory = tempDir.toFile()
+        def unit = new CompilationUnit(config)
+        unit.addSource('Greeter.groovy', '''
+            package com.example.app.api
+            interface Greeter { String greet() }
+        ''')
+        unit.addSource('DefaultGreeter.groovy', '''
+            package com.example.app.internal
+            import com.example.app.api.Greeter
+            class DefaultGreeter implements Greeter {
+                String greet() { 'hello' }
+            }
+        ''')
+        unit.addSource('module-info.groovy', '''
+            // tag::module_declaration[]
+            module com.example.app {
+                requires java.logging;
+                exports com.example.app.api;
+                opens com.example.app.internal;
+                uses com.example.app.api.Greeter;
+                provides com.example.app.api.Greeter
+                    with com.example.app.internal.DefaultGreeter;
+            }
+            // end::module_declaration[]
+        ''')
+        unit.compile()
+
+        def descriptor = Files.newInputStream(tempDir.resolve('module-info.class')).withCloseable {
+            ModuleDescriptor.read(it)
+        }
+        assert descriptor.name() == 'com.example.app'
+        assert descriptor.requires()*.name().containsAll(['java.base', 'java.logging'])
+        assert descriptor.exports()*.source() == ['com.example.app.api']
+        assert descriptor.opens()*.source() == ['com.example.app.internal']
+        assert descriptor.uses() == ['com.example.app.api.Greeter'] as Set
+        assert descriptor.provides()*.service() == ['com.example.app.api.Greeter']
     }
 }

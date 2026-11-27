@@ -351,8 +351,8 @@ public class CompilationUnit extends ProcessingUnit {
 
             @Override
             public void call(final SourceUnit source, final GeneratorContext context, final ModuleInfoNode declaration) {
-                new ExtendedVerifier(source).visitModuleAnnotations(declaration);
                 ModuleInfoVerifier.check(source, declaration, CompilationUnit.this);
+                new ExtendedVerifier(source).visitModuleAnnotations(declaration);
                 getErrorCollector().failIfErrors();
                 byte[] bytes = ModuleInfoClassGenerator.generate(source, context, declaration);
                 getClasses().add(new GroovyClass(ModuleInfoNode.CLASS_FILE_NAME, bytes));
@@ -837,7 +837,9 @@ public class CompilationUnit extends ProcessingUnit {
     public void compile(int throughPhase) throws CompilationFailedException {
         // to support incremental compilation, always restart the compiler;
         // individual passes are responsible for not re-processing old code
-        compiledClasses.clear();
+        if (phase < Phases.SEMANTIC_ANALYSIS || phase >= Phases.OUTPUT || getErrorCollector().hasErrors()) {
+            compiledClasses.clear();
+        }
         flushModuleInfoConflict();
         gotoPhase(Phases.INITIALIZATION);
         throughPhase = Math.min(throughPhase, Phases.ALL);

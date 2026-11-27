@@ -31,6 +31,7 @@ import org.codehaus.groovy.control.CompilationUnit;
 import org.codehaus.groovy.control.CompiledClassIndex;
 import org.codehaus.groovy.control.CompilePhase;
 import org.codehaus.groovy.control.CompilerConfiguration;
+import org.codehaus.groovy.control.MultipleCompilationErrorsException;
 import org.codehaus.groovy.control.Phases;
 import org.codehaus.groovy.control.ResolveVisitor;
 import org.codehaus.groovy.control.SourceUnit;
@@ -46,7 +47,6 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.URL;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.attribute.BasicFileAttributes;
@@ -54,11 +54,8 @@ import java.nio.file.attribute.FileTime;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 import static org.codehaus.groovy.control.CompilerConfiguration.MEM_STUB;
@@ -210,18 +207,16 @@ public class JavaAwareCompilationUnit extends CompilationUnit {
                             "memClassOutput requires the default javac joint compiler", this));
                 }
                 addJavaCompilationUnits(stubGenerator.getJavaStubCompilationUnitSet()); // add java stubs
-                Object snapshot = snapshotCompiledClassOutput();
-                Map<String, byte[]> memoryBefore = memoryClassOutputSnapshot();
+                getCompiledClasses().clear();
+                // JavacJavaCompiler records exact emitted class names through its
+                // JavaFileManager; only a custom JavaCompiler falls back to diffing
+                // newly written class files in the target directory.
+                Map<String, ClassFileStamp> before = compiler instanceof JavacJavaCompiler
+                        ? null
+                        : snapshotTargetClassFiles();
                 compiler.compile(new ArrayList<>(javaSources), this);
-                Set<String> compiledNames = new LinkedHashSet<>();
-                Set<String> fromHook = collectCompiledClassNames(snapshot);
-                if (fromHook != null) {
-                    compiledNames.addAll(fromHook);
-                }
-                compiledNames.addAll(memoryClassNamesWrittenSince(memoryBefore));
-                CompiledClassIndex index = getCompiledClasses();
-                for (String name : compiledNames) {
-                    index.add(name);
+                if (before != null && getCompiledClasses().isEmpty()) {
+                    indexWrittenClassFiles(before);
                 }
                 warnIfShadowed();
             } finally {
@@ -411,7 +406,7 @@ public class JavaAwareCompilationUnit extends CompilationUnit {
         // to javac would put the joint compilation in single-module mode, where
         // the unnamed classpath (Groovy stubs and the runtime) is unreadable.
         // Groovy parses and emits module-info; javac compiles the sibling .java files.
-        if (ModuleInfoNode.isModuleInfoSource(file.getName())) {
+        if (ModuleInfoNode.isModuleInfoSource(file)) {
             addSource(file);
         } else if (file.getName().endsWith(".java")) {
             addJavaSource(file);
@@ -420,112 +415,33 @@ public class JavaAwareCompilationUnit extends CompilationUnit {
         }
     }
 
-    /**
-     * Snapshots whatever state is needed to identify class files produced by
-     * the upcoming javac invocation.
-     * <p>
-     * The default implementation records stamps of {@code .class} files under
-     * the configured target directory. An absent or non-directory target yields
-     * an empty snapshot. When in-memory javac output is bound, that directory
-     * is not this invocation's output, so the default implementation skips the
-     * disk walk and returns an empty snapshot. A failure to walk that directory
-     * must not fail the compile. In-memory names are indexed by this class
-     * after javac. A subclass that writes class files somewhere else may
-     * return {@code null}.
-     *
-     * @return an opaque snapshot consumed by {@link #collectCompiledClassNames(Object)},
-     *         or {@code null} when no snapshot is required
-     * @throws CompilationFailedException if the default snapshot of the target directory fails
-     * @since 7.0.0
-     */
-    protected Object snapshotCompiledClassOutput() {
-        if (memClassBytes != null) {
-            return new LinkedHashMap<String, ClassFileStamp>();
-        }
+    private Map<String, ClassFileStamp> snapshotTargetClassFiles() {
         File targetDir = this.configuration.getTargetDirectory();
         try {
             return snapshotClassFiles(targetDir);
         } catch (IOException e) {
-            failIndexing(targetDir, e);
-            return null;
+            throw failIndexing(targetDir, e);
         }
     }
 
-    /**
-     * Returns the binary names of classes produced by this javac invocation.
-     * Each returned name is recorded on this unit's {@link CompiledClassIndex}.
-     * <p>
-     * The default implementation compares the target directory against
-     * {@code snapshot} and also includes inner classes of just-compiled Java
-     * sources. When there is no target directory, or this compile publishes
-     * javac output in memory, the default returns an empty set: in-memory
-     * names are recorded by this class after javac, not by this hook. A
-     * subclass that stores class bytes somewhere else overrides this method
-     * so those names are recorded for module verification or {@code ModulePackages}.
-     *
-     * @param snapshot the value returned by {@link #snapshotCompiledClassOutput()}
-     *                 before javac ran, which may be {@code null}
-     * @return binary names of classes produced by this javac invocation;
-     *         never {@code null}
-     * @throws CompilationFailedException if the default scan of the target directory fails
-     * @since 7.0.0
-     */
-    protected Set<String> collectCompiledClassNames(final Object snapshot) {
-        return indexCompiledClassFiles(classFileStamps(snapshot));
-    }
-
-    /**
-     * After javac writes sibling .java classes (and Groovy stubs) to the target
-     * directory, collect the binary names of class files written by this
-     * invocation so module verification and {@code ModulePackages} treat them
-     * as members of the module being compiled. A reused target directory may
-     * already contain leftover {@code .class} files; those are ignored unless
-     * javac replaces them, or they are an inner class of a just-compiled source.
-     * When there is no target directory this default index is empty.
-     */
-    private Set<String> indexCompiledClassFiles(final Map<String, ClassFileStamp> before) {
-        // javac wrote these classes into memory. The directory is not this
-        // invocation's output, so a leftover class file there is not indexed.
-        if (memClassBytes != null) {
-            return Set.of();
-        }
+    private void indexWrittenClassFiles(final Map<String, ClassFileStamp> before) {
         File targetDir = this.configuration.getTargetDirectory();
-        if (targetDir == null || !targetDir.isDirectory()) {
-            return Set.of();
-        }
         Map<String, ClassFileStamp> after;
         try {
             after = snapshotClassFiles(targetDir);
         } catch (IOException e) {
-            failIndexing(targetDir, e);
-            return Set.of();
+            throw failIndexing(targetDir, e);
         }
-        Set<String> names = new LinkedHashSet<>();
-        Set<String> compiledSources = binaryNamesFromJavaSources();
+        CompiledClassIndex index = getCompiledClasses();
         for (Map.Entry<String, ClassFileStamp> entry : after.entrySet()) {
             String relative = entry.getKey();
             ClassFileStamp previous = before.get(relative);
-            boolean written = previous == null || !previous.sameAs(entry.getValue());
-            String binary = relative.substring(0, relative.length() - 6).replace('/', '.');
-            if (written || isInnerClassOfCompiledSource(binary, compiledSources)) {
-                names.add(binary);
+            if (previous == null || !previous.sameAs(entry.getValue())) {
+                index.add(relative.substring(0, relative.length() - 6).replace('/', '.'));
             }
         }
-        return names;
     }
 
-    @SuppressWarnings("unchecked")
-    private Map<String, ClassFileStamp> classFileStamps(final Object snapshot) {
-        if (snapshot instanceof Map<?, ?>) {
-            return (Map<String, ClassFileStamp>) snapshot;
-        }
-        return Map.of();
-    }
-
-    /**
-     * Snapshots {@code .class} files under {@code targetDir}. An absent or
-     * non-directory path yields an empty snapshot (nothing has been written yet).
-     */
     private Map<String, ClassFileStamp> snapshotClassFiles(final File targetDir) throws IOException {
         Map<String, ClassFileStamp> stamps = new LinkedHashMap<>();
         if (targetDir == null || !targetDir.isDirectory()) {
@@ -550,136 +466,17 @@ public class JavaAwareCompilationUnit extends CompilationUnit {
         return stamps;
     }
 
-    private Set<String> binaryNamesFromJavaSources() {
-        Set<String> names = new LinkedHashSet<>();
-        for (String path : javaSources) {
-            String binary = binaryNameFromJavaSource(new File(path));
-            if (binary != null) {
-                names.add(binary);
-            }
-        }
-        return names;
-    }
-
-    private static final Pattern JAVA_PACKAGE = Pattern.compile("package\\s+([\\w.]+)\\s*;");
-    private static final Pattern BLOCK_COMMENT = Pattern.compile("/\\*.*?\\*/", Pattern.DOTALL);
-
-    /**
-     * Top-level binary name inferred from a {@code .java} file's package
-     * declaration and file name. {@code module-info.java} is skipped.
-     * Inner classes are recognized separately by prefix ({@code Top$Inner}).
-     */
-    private static String binaryNameFromJavaSource(final File file) {
-        String name = file.getName();
-        if (!name.endsWith(".java")) {
-            return null;
-        }
-        String simple = name.substring(0, name.length() - 5);
-        if ("module-info".equals(simple)) {
-            return null;
-        }
-        String pkg = packageNameFromJavaSource(file);
-        if (pkg == null || pkg.isEmpty()) {
-            return simple;
-        }
-        return pkg + "." + simple;
-    }
-
-    private static String packageNameFromJavaSource(final File file) {
-        String content;
-        try {
-            content = Files.readString(file.toPath(), StandardCharsets.UTF_8);
-        } catch (IOException ignored) {
-            // The snapshot of new/replaced files is the primary index; this is a supplement.
-            return null;
-        }
-        content = BLOCK_COMMENT.matcher(content).replaceAll(" ");
-        for (String line : content.split("\\R")) {
-            int comment = line.indexOf("//");
-            if (comment >= 0) {
-                line = line.substring(0, comment);
-            }
-            String trimmed = line.trim();
-            if (trimmed.isEmpty() || trimmed.startsWith("@")) {
-                continue;
-            }
-            Matcher matcher = JAVA_PACKAGE.matcher(trimmed);
-            if (matcher.matches()) {
-                return matcher.group(1);
-            }
-            break;
-        }
-        return null;
-    }
-
-    private static boolean isInnerClassOfCompiledSource(final String binary, final Set<String> compiledSources) {
-        for (String top : compiledSources) {
-            if (binary.equals(top) || binary.startsWith(top + "$")) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    private void failIndexing(final File targetDir, final IOException e) {
+    private MultipleCompilationErrorsException failIndexing(final File targetDir, final IOException e) {
         String detail = e.getMessage() == null || e.getMessage().isBlank() ? e.getClass().getSimpleName() : e.getMessage();
-        String where = targetDir == null ? "the compiler class output" : targetDir.toString();
-        getErrorCollector().addError(Message.create(
-                "Failed to index class files in " + where + " for joint compilation: " + detail, this));
-        throw new CompilationFailedException(getPhase(), this);
+        getErrorCollector().addErrorAndContinue(Message.create(
+                "Failed to index class files in " + targetDir + " for joint compilation: " + detail, this));
+        return new MultipleCompilationErrorsException(getErrorCollector());
     }
 
     /**
-     * Names of class files in the in-memory stage before javac runs.
-     * An empty map means there is no in-memory output, or the stage is empty.
-     */
-    private Map<String, byte[]> memoryClassOutputSnapshot() {
-        if (memClassBytes == null || memClassBytes.isEmpty()) {
-            return Map.of();
-        }
-        return new LinkedHashMap<>(memClassBytes);
-    }
-
-    /**
-     * Binary names of class files javac published to the in-memory stage.
-     * A name already present with the same byte array was not written by this
-     * invocation. {@code module-info} is left for {@link CompiledClassIndex} to ignore.
-     */
-    private Set<String> memoryClassNamesWrittenSince(final Map<String, byte[]> before) {
-        if (memClassBytes == null || memClassBytes.isEmpty()) {
-            return Set.of();
-        }
-        Set<String> names = new LinkedHashSet<>();
-        for (Map.Entry<String, byte[]> entry : memClassBytes.entrySet()) {
-            byte[] previous = before.get(entry.getKey());
-            if (previous != null && previous == entry.getValue()) {
-                continue;
-            }
-            String binary = binaryNameFromResource(entry.getKey());
-            if (binary != null) {
-                names.add(binary);
-            }
-        }
-        return names;
-    }
-
-    /**
-     * {@code com/example/Outer$Inner.class} becomes {@code com.example.Outer$Inner}.
-     * A name that is not a class resource is ignored.
-     */
-    private static String binaryNameFromResource(final String resourceName) {
-        if (resourceName == null || !resourceName.endsWith(".class")) {
-            return null;
-        }
-        String binary = resourceName.substring(0, resourceName.length() - 6).replace('/', '.');
-        if (binary.isEmpty()) {
-            return null;
-        }
-        return binary;
-    }
-
-    /**
-     * Identity of a class file used to detect replacements in a reused target directory.
+     * Identity of a class file used by the fallback scanner for custom {@link JavaCompiler}
+     * implementations that write directly to the target directory without populating
+     * {@link CompiledClassIndex}.
      */
     private static final class ClassFileStamp {
         private final long size;
@@ -698,9 +495,6 @@ public class JavaAwareCompilationUnit extends CompilationUnit {
         }
 
         boolean sameAs(final ClassFileStamp other) {
-            if (other == null) {
-                return false;
-            }
             if (size != other.size || !lastModified.equals(other.lastModified)) {
                 return false;
             }

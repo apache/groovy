@@ -19,12 +19,7 @@
 package groovy
 
 import org.codehaus.groovy.control.CompilerConfiguration
-import org.codehaus.groovy.control.ModuleImportHelper
-import org.codehaus.groovy.control.ResolveVisitor
 import org.junit.jupiter.api.Test
-
-import java.lang.module.ModuleFinder
-import java.lang.reflect.Modifier
 
 import static groovy.test.GroovyAssert.assertScript
 import static groovy.test.GroovyAssert.shouldFail
@@ -279,38 +274,44 @@ final class ImportTest {
         '''
     }
 
-    // A module import is a star import of each exported package. The first
-    // accessible type in that expansion supplies the simple name. A later
-    // single-type import is how a program picks a different one.
+    // GROOVY-11896 / JEP 511: JLS §7.5.5 — when a module import exposes two
+    // packages that both contain a public type with the same simple name,
+    // referencing that simple name is a deterministic compile-time ambiguity error.
+    // java.desktop exports both javax.swing.text.Element and javax.swing.text.html.parser.Element
+    // (as well as org.w3c.dom.Element via requires transitive java.xml).
     @Test
-    void testImportModuleUsesFirstExportedPackage() {
-        def finder = ModuleFinder.ofSystem()
-        def names = []
-        ModuleImportHelper.collectModuleExports(
-                finder.find('java.desktop').orElseThrow(), finder, names, new LinkedHashSet<>())
-        String expected = null
-        for (String pkg : names) {
-            if (ResolveVisitor.DEFAULT_IMPORTS.contains(pkg + '.')) continue
-            try {
-                def type = Class.forName(pkg + '.Element')
-                if (Modifier.isPublic(type.modifiers)) {
-                    expected = type.name
-                    break
-                }
-            } catch (ClassNotFoundException ignored) {
-            }
-        }
-        assert expected != null
-        assertScript """
+    void testImportModuleAmbiguousSimpleName() {
+        def err = shouldFail '''
             import module java.desktop
-            assert Element.name == '${expected}'
-        """
+            Element e = null
+        '''
+        assert err.message.contains('ambiguous') : "expected ambiguity error, got: ${err.message}"
     }
 
-    // Source order decides between a module import and a star import.
-    // The module import is not a separate tier that a later star always hides.
+    // JEP 511 / JLS §7.5.5: ambiguity across two module imports (including java.base packages
+    // that are also Groovy default imports, such as java.util.List vs java.awt.List and
+    // java.util.Date vs java.sql.Date).
     @Test
-    void testImportModuleAndStarImportUseSourceOrder() {
+    void testImportModuleAmbiguousAcrossTwoModules() {
+        def listErr = shouldFail '''
+            import module java.base
+            import module java.desktop
+            List items = null
+        '''
+        assert listErr.message.contains('ambiguous') : "expected ambiguity error, got: ${listErr.message}"
+
+        def dateErr = shouldFail '''
+            import module java.base
+            import module java.sql
+            Date value = null
+        '''
+        assert dateErr.message.contains('ambiguous') : "expected ambiguity error, got: ${dateErr.message}"
+    }
+
+    // JEP 511 / JLS §6.4.1: explicit type-import-on-demand (star import) and
+    // single-type imports shadow module imports regardless of source order.
+    @Test
+    void testImportModuleShadowedByStarImport() {
         assertScript '''
             import module java.desktop
             assert List.name == 'java.awt.List'
@@ -318,12 +319,95 @@ final class ImportTest {
         assertScript '''
             import module java.desktop
             import java.util.*
-            assert List.name == 'java.awt.List'
+            assert List.name == 'java.util.List'
         '''
         assertScript '''
             import java.util.*
             import module java.desktop
             assert List.name == 'java.util.List'
         '''
+        assertScript '''
+            import module java.base
+            import module java.desktop
+            import java.util.*
+            assert List.name == 'java.util.List'
+        '''
+        assertScript '''
+            import module java.base
+            import module java.sql
+            import java.sql.Date
+            assert Date.name == 'java.sql.Date'
+        '''
+    }
+
+    // JEP 511 / JLS §7.5.5: duplicate module imports are permitted and do not self-collide;
+    // dotted module names may span lines and contain comments.
+    @Test
+    void testImportModuleDuplicateAndMultilineName() {
+        assertScript '''
+            import module java.sql
+            import module java.sql
+            assert Connection.name == 'java.sql.Connection'
+            assert String.name == 'java.lang.String'
+        '''
+        assertScript '''
+            import module java
+                .sql
+            import module java /* comment */ .logging
+            assert Connection.name == 'java.sql.Connection'
+            assert Logger.name == 'java.util.logging.Logger'
+        '''
+    }
+
+    // JEP 261 / JEP 511: aggregator module java.se is not in the default unnamed-module
+    // root set and requires --add-modules java.se (or ALL-SYSTEM) to be readable.
+    @Test
+    void testImportModuleJavaSeUnnamedRequiresAddModules() {
+        def err = shouldFail '''
+            import module java.se
+            assert Connection.name == 'java.sql.Connection'
+        '''
+        assert err.message.contains('module java.se is not readable in the unnamed module')
+
+        def seConfig = new CompilerConfiguration()
+        seConfig.addModules = ['java.se']
+        new GroovyShell(seConfig).evaluate '''
+            import module java.se
+            assert Connection.name == 'java.sql.Connection'
+            assert Logger.name == 'java.util.logging.Logger'
+        '''
+
+        def allSysConfig = new CompilerConfiguration()
+        allSysConfig.addModules = ['ALL-SYSTEM']
+        new GroovyShell(allSysConfig).evaluate '''
+            import module java.se
+            assert Connection.name == 'java.sql.Connection'
+        '''
+    }
+
+    // JEP 261 / JEP 511: --add-exports <module>/<pkg>=ALL-UNNAMED extends unnamed-module import module.
+    @Test
+    void testImportModuleUnnamedAddExports() {
+        def config = new CompilerConfiguration()
+        config.addExports = ['java.base/sun.security.util=ALL-UNNAMED']
+        new GroovyClassLoader(this.class.classLoader, config).withCloseable { gcl ->
+            def clazz = gcl.parseClass('''
+                import module java.base
+                class UseExported {
+                    SecurityConstants sc
+                }
+            ''')
+            assert clazz.getDeclaredField('sc').type.name == 'sun.security.util.SecurityConstants'
+        }
+
+        def badConfig = new CompilerConfiguration()
+        badConfig.addExports = ['malformed-spec']
+        def err = shouldFail {
+            new GroovyShell(badConfig).evaluate '''
+                import module java.base
+                assert List.name == 'java.util.List'
+            '''
+        }
+        assert err.message.contains('invalid --add-exports option:')
     }
 }

@@ -25,8 +25,11 @@ import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.AnnotationNode;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
+import org.codehaus.groovy.ast.DynamicVariable;
 import org.codehaus.groovy.ast.ImportNode;
 import org.codehaus.groovy.ast.ModuleNode;
+import org.codehaus.groovy.ast.expr.Expression;
+import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.control.CompilationUnit;
 import org.codehaus.groovy.control.ResolveVisitor;
 import org.codehaus.groovy.control.SourceUnit;
@@ -51,6 +54,7 @@ public final class ModuleInfoResolveVisitor extends ResolveVisitor {
 
     private final CompilationUnit unit;
     private final ModuleInfoNode declaration;
+    private boolean visitingAnnotations;
 
     private ModuleInfoResolveVisitor(final CompilationUnit compilationUnit, final ModuleInfoNode declaration) {
         super(compilationUnit);
@@ -76,23 +80,37 @@ public final class ModuleInfoResolveVisitor extends ResolveVisitor {
         visitor.withResolveContext(source, contextClass(module), () -> {
             if (module != null) {
                 visitor.resolveImports(module);
-                for (AnnotationNode annotation : declaration.getAnnotations()) {
-                    visitor.visitAnnotation(annotation);
-                }
+                visitor.resolveAnnotations(module);
             }
-            for (Uses uses : declaration.getUses()) {
-                uses.setResolvedType(visitor.resolveType(uses.getServiceName(), uses));
-            }
-            for (Provides provides : declaration.getProvides()) {
-                provides.setResolvedService(visitor.resolveType(provides.getServiceName(), provides));
-                List<ClassNode> providers = new ArrayList<>();
-                for (String providerName : provides.getProviderNames()) {
-                    providers.add(visitor.resolveType(providerName, provides));
-                }
-                provides.setResolvedProviders(providers);
-            }
+            visitor.resolveDirectives();
             declaration.markTypesResolved();
         });
+    }
+
+    private void resolveAnnotations(final ModuleNode module) {
+        visitingAnnotations = true;
+        try {
+            visitImports(module);
+            for (AnnotationNode annotation : declaration.getAnnotations()) {
+                visitAnnotation(annotation);
+            }
+        } finally {
+            visitingAnnotations = false;
+        }
+    }
+
+    private void resolveDirectives() {
+        for (Uses uses : declaration.getUses()) {
+            uses.setResolvedType(resolveType(uses.getServiceName(), uses));
+        }
+        for (Provides provides : declaration.getProvides()) {
+            provides.setResolvedService(resolveType(provides.getServiceName(), provides));
+            List<ClassNode> providers = new ArrayList<>();
+            for (String providerName : provides.getProviderNames()) {
+                providers.add(resolveType(providerName, provides));
+            }
+            provides.setResolvedProviders(providers);
+        }
     }
 
     /**
@@ -110,88 +128,109 @@ public final class ModuleInfoResolveVisitor extends ResolveVisitor {
 
     @Override
     protected void checkModuleAccessibility(final ClassNode type, final ASTNode node) {
-        // Directive types are checked by ModuleInfoVerifier once the graph is final.
+        // Directive types and imports are checked by ModuleInfoVerifier once the graph is final.
+        // Record types resolved inside annotation member expressions before transformInlineConstants
+        // replaces constant field reads (e.g. KeyEvent.VK_ENTER) with literal values.
+        if (visitingAnnotations && !(node instanceof AnnotationNode)) {
+            declaration.addAnnotationTypeRef(type, node);
+        }
+    }
+
+    @Override
+    protected void checkModulePackageAccessibility(final String packageName, final ASTNode node) {
+        // Star imports on module-info are checked by ModuleInfoVerifier once the graph is final.
+    }
+
+    @Override
+    protected void checkModuleImportError(final String message, final ASTNode node) {
+        // Module imports on module-info are checked by ModuleInfoVerifier once the graph is final.
+    }
+
+    @Override
+    protected Expression transformVariableExpression(final VariableExpression ve) {
+        // VariableScopeVisitor does not visit ModuleInfoNode (it is not a ClassNode),
+        // so bare type/primitive names inside module annotations still have a null accessed variable.
+        if (ve.getAccessedVariable() == null) {
+            ve.setAccessedVariable(new DynamicVariable(ve.getName(), false));
+        }
+        return super.transformVariableExpression(ve);
     }
 
     private ClassNode resolveType(final String sourceName, final ASTNode where) {
-        String qualified = qualify(sourceName, where);
-        if (qualified == null) {
-            return null;
-        }
-        ClassNode resolved = resolveBinary(qualified);
-        if (resolved == null) {
-            addError("unable to resolve class " + sourceName, where);
-        }
-        return resolved;
-    }
-
-    /**
-     * A simple name follows single-type imports, static single-type imports,
-     * on-demand imports, {@code java.lang}, then {@code import module}.
-     * A qualified name tries its leftmost identifier as an in-scope type so
-     * {@code System.LoggerFinder} and {@code Outer.Inner} resolve to nested types.
-     *
-     * @return a binary name, or {@code null} when the simple name is ambiguous or unknown
-     */
-    private String qualify(final String sourceName, final ASTNode where) {
         ModuleNode module = declaration.getSourceModule();
         if (module == null) {
-            return sourceName;
+            return resolveOrReport(sourceName, sourceName, where);
         }
         int dot = sourceName.indexOf('.');
         if (dot >= 0) {
             String head = sourceName.substring(0, dot);
             String tail = sourceName.substring(dot + 1);
-            String resolvedHead = resolveSimpleType(head, where, false);
-            if (resolvedHead != null) {
-                return resolvedHead + "$" + tail.replace('.', '$');
+            SimpleResolution headResult = resolveSimpleType(head);
+            if (headResult.ambiguous) {
+                addError("reference to " + head + " is ambiguous", where);
+                return null;
             }
-            return sourceName;
+            if (headResult.binaryName != null) {
+                ClassNode nested = resolveBinary(headResult.binaryName + "$" + tail.replace('.', '$'));
+                if (nested != null) {
+                    return nested;
+                }
+            }
+            return resolveOrReport(sourceName, sourceName, where);
         }
-        return resolveSimpleType(sourceName, where, true);
+        SimpleResolution result = resolveSimpleType(sourceName);
+        if (result.ambiguous) {
+            addError("reference to " + sourceName + " is ambiguous", where);
+            return null;
+        }
+        if (result.binaryName == null) {
+            addError("unable to resolve class " + sourceName, where);
+            return null;
+        }
+        return resolveOrReport(result.binaryName, sourceName, where);
     }
 
-    private String resolveSimpleType(final String simple, final ASTNode where, final boolean reportAmbiguous) {
+    private ClassNode resolveOrReport(final String binaryCandidate, final String displayName, final ASTNode where) {
+        ClassNode resolved = resolveBinary(binaryCandidate);
+        if (resolved == null) {
+            addError("unable to resolve class " + displayName, where);
+        }
+        return resolved;
+    }
+
+    /**
+     * Resolves a simple name following single-type imports, static single-type imports,
+     * on-demand imports, {@code java.lang}, then {@code import module}.
+     */
+    private SimpleResolution resolveSimpleType(final String simple) {
         ModuleNode module = declaration.getSourceModule();
         ImportNode single = module.getImport(simple);
         if (single != null && single.getType() != null) {
-            return single.getType().getName();
+            return SimpleResolution.found(single.getType().getName());
         }
         String fromStatic = staticSingleType(simple);
         if (fromStatic != null) {
-            return fromStatic;
+            return SimpleResolution.found(fromStatic);
         }
         List<String> onDemand = new ArrayList<>();
         collectStarCandidates(module.getStarImports(), simple, onDemand);
         collectStaticStarCandidates(simple, onDemand);
-        String fromJavaLang = "java.lang." + simple;
-        if (lookup(fromJavaLang) != null && !onDemand.contains(fromJavaLang)) {
-            onDemand.add(fromJavaLang);
-        }
+        addPublicCandidate("java.lang." + simple, onDemand);
         if (onDemand.size() == 1) {
-            return onDemand.get(0);
+            return SimpleResolution.found(onDemand.get(0));
         }
         if (onDemand.size() > 1) {
-            if (reportAmbiguous) {
-                addError("reference to " + simple + " is ambiguous", where);
-            }
-            return null;
+            return SimpleResolution.AMBIGUOUS;
         }
         List<String> fromModules = new ArrayList<>();
         collectStarCandidates(module.getModuleStarImports(), simple, fromModules);
         if (fromModules.size() == 1) {
-            return fromModules.get(0);
+            return SimpleResolution.found(fromModules.get(0));
         }
         if (fromModules.size() > 1) {
-            if (reportAmbiguous) {
-                addError("reference to " + simple + " is ambiguous", where);
-            }
-            return null;
+            return SimpleResolution.AMBIGUOUS;
         }
-        if (reportAmbiguous) {
-            addError("unable to resolve class " + simple, where);
-        }
-        return null;
+        return SimpleResolution.NOT_FOUND;
     }
 
     private String staticSingleType(final String simple) {
@@ -205,30 +244,34 @@ public final class ModuleInfoResolveVisitor extends ResolveVisitor {
     }
 
     private void collectStarCandidates(final List<ImportNode> stars, final String simple, final List<String> candidates) {
-        if (stars == null) {
-            return;
-        }
         for (ImportNode star : stars) {
-            String packageName = packagePrefix(star.getPackageName());
-            if (packageName == null) {
+            if (star.getType() != null) {
+                addPublicCandidate(star.getType().getName() + "$" + simple, candidates);
                 continue;
             }
-            String qualified = packageName + simple;
-            if (lookup(qualified) != null && !candidates.contains(qualified)) {
-                candidates.add(qualified);
+            String packageName = packagePrefix(star.getPackageName());
+            if (packageName != null) {
+                addPublicCandidate(packageName + simple, candidates);
             }
         }
     }
 
     private void collectStaticStarCandidates(final String simple, final List<String> candidates) {
         for (ImportNode star : declaration.getSourceModule().getStaticStarImports().values()) {
-            if (star.getType() == null) {
-                continue;
+            if (star.getType() != null) {
+                addPublicCandidate(star.getType().getName() + "$" + simple, candidates);
             }
-            String qualified = star.getType().getName() + "$" + simple;
-            if (lookup(qualified) != null && !candidates.contains(qualified)) {
-                candidates.add(qualified);
-            }
+        }
+    }
+
+    private void addPublicCandidate(final String qualified, final List<String> candidates) {
+        if (candidates.contains(qualified)) {
+            return;
+        }
+        ClassNode found = lookup(qualified);
+        // On-demand and module imports in a module declaration only import public types (JLS §7.5.2).
+        if (found != null && ModuleInfoNode.isPublicIncludingEnclosing(found)) {
+            candidates.add(qualified);
         }
     }
 
@@ -274,13 +317,7 @@ public final class ModuleInfoResolveVisitor extends ResolveVisitor {
         ModuleNode module = declaration.getSourceModule();
         if (unit != null && module != null && module.getUnit() != null) {
             ClassNode candidate = ClassHelper.makeWithoutCaching(binary);
-            boolean[] found = new boolean[1];
-            withResolveContext(getSourceUnit(), contextClass(module), () -> {
-                if (resolveFromCompileUnit(candidate) || resolveToOuter(candidate)) {
-                    found[0] = true;
-                }
-            });
-            if (found[0]) {
+            if (resolveFromCompileUnit(candidate) || resolveToOuter(candidate)) {
                 return candidate.redirect();
             }
             return null;
@@ -299,5 +336,22 @@ public final class ModuleInfoResolveVisitor extends ResolveVisitor {
             return source.getClassLoader();
         }
         return ClassLoader.getSystemClassLoader();
+    }
+
+    private static final class SimpleResolution {
+        static final SimpleResolution NOT_FOUND = new SimpleResolution(null, false);
+        static final SimpleResolution AMBIGUOUS = new SimpleResolution(null, true);
+
+        final String binaryName;
+        final boolean ambiguous;
+
+        private SimpleResolution(final String binaryName, final boolean ambiguous) {
+            this.binaryName = binaryName;
+            this.ambiguous = ambiguous;
+        }
+
+        static SimpleResolution found(final String binaryName) {
+            return new SimpleResolution(binaryName, false);
+        }
     }
 }

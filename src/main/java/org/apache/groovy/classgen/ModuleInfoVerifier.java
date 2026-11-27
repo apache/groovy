@@ -26,19 +26,26 @@ import org.apache.groovy.ast.ModuleInfoNode.Provides;
 import org.apache.groovy.ast.ModuleInfoNode.Requires;
 import org.apache.groovy.ast.ModuleInfoNode.Uses;
 import org.apache.groovy.control.ModuleInfoResolveVisitor;
+import org.apache.groovy.control.ModuleOptions;
 import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.AnnotationNode;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
+import org.codehaus.groovy.ast.CodeVisitorSupport;
 import org.codehaus.groovy.ast.CompileUnit;
 import org.codehaus.groovy.ast.ConstructorNode;
+import org.codehaus.groovy.ast.ImportNode;
 import org.codehaus.groovy.ast.InnerClassNode;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.ModuleNode;
+import org.codehaus.groovy.ast.decompiled.DecompiledClassNode;
+import org.codehaus.groovy.ast.expr.AnnotationConstantExpression;
+import org.codehaus.groovy.ast.expr.ClassExpression;
+import org.codehaus.groovy.ast.expr.ConstantExpression;
+import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.control.CompilationUnit;
 import org.codehaus.groovy.control.CompiledClassIndex;
 import org.codehaus.groovy.control.CompilerConfiguration;
-import org.codehaus.groovy.control.ModuleImportHelper;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.control.messages.WarningMessage;
 import org.codehaus.groovy.syntax.SyntaxException;
@@ -53,8 +60,10 @@ import java.lang.module.ModuleReference;
 import java.lang.module.ResolutionException;
 import java.lang.reflect.Modifier;
 import java.net.URI;
+import java.util.ArrayDeque;
+import java.util.Deque;
+import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -72,6 +81,9 @@ import static org.codehaus.groovy.ast.tools.WideningCategories.implementsInterfa
 public final class ModuleInfoVerifier {
 
     private static final String JAVA_BASE = "java.base";
+    private static final String MODULE_NOT_FOUND = "module not found: ";
+    private static final String NOT_ACCESSIBLE_IN_MODULE = " is not accessible in module ";
+    private static final String PROVIDER_PREFIX = "provider ";
 
     private final SourceUnit source;
     private final CompilationUnit compilationUnit;
@@ -82,8 +94,11 @@ public final class ModuleInfoVerifier {
     private final ModuleFinder accessibilityFinder;
     private final boolean reportGraphErrors;
     private final Set<String> modulePackages = new LinkedHashSet<>();
+    private final Set<String> allModulePackages = new LinkedHashSet<>();
     private ModuleFinder finder = ModuleFinder.ofSystem();
     private Set<String> reads = Set.of(JAVA_BASE);
+    private Map<String, Set<String>> extraExports = Map.of();
+    private Set<String> accessiblePackages;
     private boolean resolutionFailed;
 
     private ModuleInfoVerifier(final SourceUnit source, final ModuleInfoNode declaration,
@@ -187,9 +202,6 @@ public final class ModuleInfoVerifier {
     }
 
     private void verify() {
-        if (!declaration.hasResolvedTypes()) {
-            ModuleInfoResolveVisitor.resolve(source, declaration, compilationUnit);
-        }
         collectPackages();
         boolean requiresValid = checkRequires();
         checkPackageDirectives(declaration.getExports(), false);
@@ -197,30 +209,46 @@ public final class ModuleInfoVerifier {
         if (requiresValid) {
             resolveModuleGraph();
         }
+        if (!declaration.hasResolvedTypes()) {
+            ModuleInfoResolveVisitor.resolve(source, declaration, compilationUnit);
+        }
+        if (requiresValid && !resolutionFailed) {
+            checkImports();
+        }
         checkAnnotations();
         checkUses();
         checkProvides();
     }
 
     private void collectPackages() {
-        boolean unnamedReported = false;
-        if (compileUnit != null) {
-            for (ClassNode cn : compileUnit.getClasses()) {
-                String pkg = cn.getPackageName();
-                if (pkg == null || pkg.isEmpty()) {
-                    error("unnamed package is not allowed in named modules", cn);
-                    unnamedReported = true;
-                } else {
-                    modulePackages.add(pkg);
-                }
-            }
-        }
+        boolean unnamedReported = collectCompileUnitPackages();
         if (compiledClasses != null) {
-            modulePackages.addAll(compiledClasses.getPackages());
+            allModulePackages.addAll(compiledClasses.getPackages());
+            modulePackages.addAll(compiledClasses.getTypePackages());
             if (compiledClasses.hasUnnamedClass() && !unnamedReported) {
                 error("unnamed package is not allowed in named modules", declaration);
             }
         }
+    }
+
+    private boolean collectCompileUnitPackages() {
+        boolean unnamedReported = false;
+        if (compileUnit == null) {
+            return false;
+        }
+        for (ClassNode cn : compileUnit.getClasses()) {
+            String pkg = cn.getPackageName();
+            if (pkg == null || pkg.isEmpty()) {
+                error("unnamed package is not allowed in named modules", cn);
+                unnamedReported = true;
+            } else {
+                allModulePackages.add(pkg);
+                if (!"package-info".equals(cn.getNameWithoutPackage())) {
+                    modulePackages.add(pkg);
+                }
+            }
+        }
+        return unnamedReported;
     }
 
     /**
@@ -263,134 +291,272 @@ public final class ModuleInfoVerifier {
         }
         Set<String> seen = new HashSet<>();
         for (PackageDirective directive : directives) {
-            String packageName = directive.getPackageName();
-            if (!seen.add(packageName)) {
-                error("duplicate " + (opens ? "opens" : "exports") + " of package " + packageName, directive);
+            checkPackageDirective(directive, opens, seen);
+        }
+    }
+
+    private void checkPackageDirective(final PackageDirective directive, final boolean opens, final Set<String> seen) {
+        String packageName = directive.getPackageName();
+        if (!seen.add(packageName)) {
+            error("duplicate " + (opens ? "opens" : "exports") + " of package " + packageName, directive);
+        }
+        if (!modulePackages.contains(packageName)) {
+            // javac: exports of an empty or missing package is an error; opens is a warning.
+            String message = "package is empty or does not exist: " + packageName;
+            if (opens) {
+                warn(WarningMessage.LIKELY_ERRORS, message, directive);
+            } else {
+                error(message, directive);
             }
-            if (!modulePackages.contains(packageName)) {
-                // javac: exports of an empty or missing package is an error; opens is a warning.
-                String message = "package is empty or does not exist: " + packageName;
-                if (opens) {
-                    source.addWarning(WarningMessage.LIKELY_ERRORS, message, directive);
-                } else {
-                    error(message, directive);
-                }
-            }
-            Set<String> friends = new HashSet<>();
-            for (String target : directive.getTargets()) {
-                if (!friends.add(target)) {
-                    error("duplicate module " + target + " in to clause", directive);
-                }
+        }
+        Set<String> friends = new HashSet<>();
+        for (String target : directive.getTargets()) {
+            if (!friends.add(target)) {
+                error("duplicate module " + target + " in to clause", directive);
             }
         }
     }
 
     private void resolveModuleGraph() {
         String moduleName = declaration.getName();
+        CompilerConfiguration config = source.getConfiguration();
+        ModuleOptions.AddReads extraReads = config != null
+                ? ModuleOptions.parseAddReads(config.getAddReads(), moduleName, msg -> error(msg, declaration))
+                : ModuleOptions.AddReads.EMPTY;
+        extraExports = config != null
+                ? ModuleOptions.parseAddExports(config.getAddExports(), moduleName, msg -> error(msg, declaration))
+                : Map.of();
+        Set<String> boundedPackages = Set.of();
+        try {
+            ModuleOptions.Observation observation = observeModules(moduleName, buildModuleDescriptor(moduleName));
+            ModuleFinder resolutionFinder = observation.finder();
+            boundedPackages = observation.boundedPackages();
+            finder = accessibilityFinder != null ? accessibilityFinder : resolutionFinder;
+            accessiblePackages = null;
+            Configuration configuration = Configuration.resolve(
+                    resolutionFinder, List.of(Configuration.empty()), ModuleFinder.of(), Set.of(moduleName));
+            reads = collectReadableModules(moduleName, configuration, resolutionFinder, extraReads);
+            // requires static is optional at resolution time, but javac still requires the
+            // module to be observable and acyclic at compile time.
+            checkRequiresFound(resolutionFinder);
+            checkStaticRequiresCycles(resolutionFinder);
+            if (reportGraphErrors) {
+                checkExtraExportsSources(resolutionFinder);
+                checkModuleWarnings(resolutionFinder);
+                checkSplitPackages();
+            }
+        } catch (FindException | ResolutionException | IllegalArgumentException e) {
+            handleResolutionFailure(moduleName, e);
+        }
+        declaration.adoptResolution(reads, finder, resolutionFailed, extraExports, boundedPackages, extraReads.isReadsUnnamed());
+    }
+
+    private ModuleDescriptor buildModuleDescriptor(final String moduleName) {
         ModuleDescriptor.Builder builder = declaration.isOpen()
                 ? ModuleDescriptor.newOpenModule(moduleName)
                 : ModuleDescriptor.newModule(moduleName);
-        try {
-            if (!JAVA_BASE.equals(moduleName)) {
-                for (Requires requires : declaration.getRequires()) {
-                    Set<ModuleDescriptor.Requires.Modifier> modifiers = new LinkedHashSet<>();
-                    if (requires.isTransitive()) {
-                        modifiers.add(ModuleDescriptor.Requires.Modifier.TRANSITIVE);
-                    }
-                    if (requires.isStaticPhase()) {
-                        modifiers.add(ModuleDescriptor.Requires.Modifier.STATIC);
-                    }
-                    if (modifiers.isEmpty()) {
-                        builder.requires(requires.getModuleName());
-                    } else {
-                        builder.requires(modifiers, requires.getModuleName());
-                    }
-                }
-            }
-            Set<String> builtExports = new HashSet<>();
-            for (Exports exports : declaration.getExports()) {
-                if (!modulePackages.contains(exports.getPackageName()) || !builtExports.add(exports.getPackageName())) {
-                    continue;
-                }
+        applyModuleVersion(builder);
+        if (!JAVA_BASE.equals(moduleName)) {
+            addRequiresToDescriptor(builder);
+        }
+        Set<String> builtExports = new HashSet<>();
+        for (Exports exports : declaration.getExports()) {
+            if ((!reportGraphErrors || modulePackages.contains(exports.getPackageName()))
+                    && builtExports.add(exports.getPackageName())) {
                 addPackage(builder, exports, true);
             }
-            if (!declaration.isOpen()) {
-                Set<String> builtOpens = new HashSet<>();
-                for (Opens opens : declaration.getOpens()) {
-                    if (!builtOpens.add(opens.getPackageName())) {
-                        continue;
-                    }
+        }
+        if (!declaration.isOpen()) {
+            Set<String> builtOpens = new HashSet<>();
+            for (Opens opens : declaration.getOpens()) {
+                if (builtOpens.add(opens.getPackageName())) {
                     addPackage(builder, opens, false);
                 }
             }
-            ModuleDescriptor descriptor = builder.build();
-            ModuleReference reference = new CompilingModuleReference(descriptor);
-            ModuleFinder compiling = new ModuleFinder() {
-                @Override
-                public Optional<ModuleReference> find(final String name) {
-                    return moduleName.equals(name) ? Optional.of(reference) : Optional.empty();
-                }
-
-                @Override
-                public Set<ModuleReference> findAll() {
-                    return Set.of(reference);
-                }
-            };
-            // Compile-time resolution is independent of the host boot layer (JEP 511):
-            // unbooted platform modules such as java.se must still be observable.
-            // Configuration.resolve (not resolveAndBind) is the compile-time graph;
-            // binding would scan every classpath JAR for service providers.
-            // Platform modules come first so a classpath JAR cannot shadow them.
-            ModuleFinder classpath = classpathFinder != null
-                    ? classpathFinder
-                    : ModuleImportHelper.classpathModuleFinder(source);
-            ModuleFinder resolutionFinder = dedupe(ModuleFinder.compose(compiling, ModuleFinder.ofSystem(), classpath));
-            finder = accessibilityFinder != null ? accessibilityFinder : resolutionFinder;
-            Configuration configuration = Configuration.resolve(
-                    resolutionFinder, List.of(Configuration.empty()), ModuleFinder.of(), Set.of(moduleName));
-            Set<String> readable = new LinkedHashSet<>();
-            configuration.findModule(moduleName).ifPresent(resolved ->
-                    resolved.reads().forEach(other -> readable.add(other.name())));
-            // requires static is not added to the runtime graph, but it is readable
-            // at compile time when the module is observable (javac / JLS §7.7.1).
-            for (Requires requires : declaration.getRequires()) {
-                addCompileTimeReads(requires.getModuleName(), readable);
-            }
-            if (!JAVA_BASE.equals(moduleName)) {
-                readable.add(JAVA_BASE);
-            }
-            reads = readable;
-            // requires static is optional at resolution time, but javac still requires the
-            // module to be observable at compile time. Check every requires edge here.
-            checkRequiresFound(resolutionFinder);
-            checkSplitPackages();
-        } catch (FindException | ResolutionException | IllegalArgumentException e) {
-            String message = e.getMessage();
-            error(message == null || message.isBlank() ? "module resolution failed for " + moduleName : message, declaration);
-            // Keep java.base readable so later checks do not emit cascading
-            // "is not accessible" errors for JDK types.
-            reads = Set.of(JAVA_BASE);
-            finder = ModuleFinder.ofSystem();
-            resolutionFailed = true;
         }
-        declaration.adoptResolution(reads, finder, resolutionFailed);
+        return builder.build();
+    }
+
+    private void applyModuleVersion(final ModuleDescriptor.Builder builder) {
+        CompilerConfiguration config = source.getConfiguration();
+        String version = config != null ? config.getModuleVersion() : null;
+        if (version == null || version.isEmpty()) {
+            return;
+        }
+        try {
+            builder.version(ModuleOptions.validateModuleVersion(version));
+        } catch (IllegalArgumentException e) {
+            error("bad value for --module-version option: '" + version + "'", declaration);
+        }
+    }
+
+    private void addRequiresToDescriptor(final ModuleDescriptor.Builder builder) {
+        for (Requires requires : declaration.getRequires()) {
+            Set<ModuleDescriptor.Requires.Modifier> modifiers = new LinkedHashSet<>();
+            if (requires.isTransitive()) {
+                modifiers.add(ModuleDescriptor.Requires.Modifier.TRANSITIVE);
+            }
+            if (requires.isStaticPhase()) {
+                modifiers.add(ModuleDescriptor.Requires.Modifier.STATIC);
+            }
+            if (modifiers.isEmpty()) {
+                builder.requires(requires.getModuleName());
+            } else {
+                builder.requires(modifiers, requires.getModuleName());
+            }
+        }
+    }
+
+    private ModuleOptions.Observation observeModules(final String moduleName, final ModuleDescriptor descriptor) {
+        ModuleReference reference = new CompilingModuleReference(descriptor);
+        ModuleFinder compiling = new ModuleFinder() {
+            @Override
+            public Optional<ModuleReference> find(final String name) {
+                return moduleName.equals(name) ? Optional.of(reference) : Optional.empty();
+            }
+
+            @Override
+            public Set<ModuleReference> findAll() {
+                return Set.of(reference);
+            }
+        };
+        // Compile-time resolution follows JEP 261 search order independent of the host boot layer:
+        // compiling module -> --upgrade-module-path -> system modules -> --module-path -> classpath,
+        // restricted by --limit-modules / --add-modules when configured.
+        return ModuleOptions.observeModules(source, compiling, moduleName, classpathFinder);
+    }
+
+    private Set<String> collectReadableModules(final String moduleName, final Configuration configuration,
+            final ModuleFinder resolutionFinder, final ModuleOptions.AddReads extraReads) {
+        Set<String> readable = new LinkedHashSet<>();
+        configuration.findModule(moduleName).ifPresent(resolved ->
+                resolved.reads().forEach(other -> readable.add(other.name())));
+        if (!JAVA_BASE.equals(moduleName)) {
+            readable.add(JAVA_BASE);
+        }
+        Set<String> seeds = new LinkedHashSet<>(readable);
+        for (Requires requires : declaration.getRequires()) {
+            seeds.add(requires.getModuleName());
+        }
+        for (String target : extraReads.getModules()) {
+            if (findModule(resolutionFinder, target).isPresent()) {
+                seeds.add(target);
+            } else {
+                warn(WarningMessage.LIKELY_ERRORS, "module name in --add-reads option not found: " + target, declaration);
+            }
+        }
+        expandCompileTimeReads(seeds, readable);
+        return readable;
+    }
+
+    private void handleResolutionFailure(final String moduleName, final RuntimeException e) {
+        String message = e.getMessage();
+        error(message == null || message.isBlank() ? "module resolution failed for " + moduleName : message, declaration);
+        // Keep java.base readable so later checks do not emit cascading
+        // "is not accessible" errors for JDK types.
+        reads = Set.of(JAVA_BASE);
+        finder = ModuleFinder.ofSystem();
+        extraExports = Map.of();
+        accessiblePackages = null;
+        resolutionFailed = true;
     }
 
     /**
-     * Adds {@code name} and its {@code requires transitive} edges to the compile-time
-     * readability set, walking only modules the finder can still observe.
+     * Expands compile-time readability from {@code seeds} across every
+     * {@code requires transitive} edge (including {@code requires static transitive},
+     * which {@link Configuration#resolve} omits) and across automatic modules
+     * (which grant implied readability to all other observable automatic modules per JEP 261).
      */
-    private void addCompileTimeReads(final String name, final Set<String> readable) {
-        if (!readable.add(name)) {
-            return;
+    private void expandCompileTimeReads(final Set<String> seeds, final Set<String> readable) {
+        Set<String> visited = new HashSet<>();
+        Deque<String> queue = new ArrayDeque<>(seeds);
+        boolean automaticAdded = false;
+        while (!queue.isEmpty()) {
+            String name = queue.removeFirst();
+            if (!visited.add(name)) {
+                continue;
+            }
+            readable.add(name);
+            Optional<ModuleReference> reference = findModule(finder, name);
+            if (reference.isEmpty()) {
+                continue;
+            }
+            ModuleDescriptor descriptor = reference.get().descriptor();
+            if (descriptor.isAutomatic()) {
+                if (!automaticAdded) {
+                    automaticAdded = true;
+                    addAllObservableAutomaticModules(readable, visited);
+                }
+                continue;
+            }
+            for (ModuleDescriptor.Requires required : descriptor.requires()) {
+                if (required.modifiers().contains(ModuleDescriptor.Requires.Modifier.TRANSITIVE)) {
+                    queue.addLast(required.name());
+                }
+            }
         }
-        Optional<ModuleReference> reference = finder.find(name);
-        if (reference.isEmpty()) {
-            return;
+    }
+
+    private void addAllObservableAutomaticModules(final Set<String> readable, final Set<String> visited) {
+        try {
+            for (ModuleReference ref : finder.findAll()) {
+                ModuleDescriptor descriptor = ref.descriptor();
+                if (descriptor.isAutomatic()) {
+                    readable.add(descriptor.name());
+                    visited.add(descriptor.name());
+                }
+            }
+        } catch (FindException ignored) {
+            // Resolution has already validated observable modules.
         }
-        for (ModuleDescriptor.Requires required : reference.get().descriptor().requires()) {
-            if (required.modifiers().contains(ModuleDescriptor.Requires.Modifier.TRANSITIVE)) {
-                addCompileTimeReads(required.name(), readable);
+    }
+
+    private static Optional<ModuleReference> findModule(final ModuleFinder moduleFinder, final String name) {
+        try {
+            return moduleFinder.find(name);
+        } catch (FindException ignored) {
+            return Optional.empty();
+        }
+    }
+
+    private void checkExtraExportsSources(final ModuleFinder resolutionFinder) {
+        for (String sourceModule : extraExports.keySet()) {
+            if (findModule(resolutionFinder, sourceModule).isEmpty()) {
+                warn(WarningMessage.LIKELY_ERRORS, "module name in --add-exports option not found: " + sourceModule, declaration);
+            }
+        }
+    }
+
+    /**
+     * Emits JEP 261 compile-time warnings matching {@code javac}:
+     * {@code requires transitive} on an automatic module (default warning),
+     * non-transitive {@code requires} on an automatic module (level 2),
+     * and qualified {@code exports}/{@code opens} targeting an unobservable module.
+     */
+    private void checkModuleWarnings(final ModuleFinder resolutionFinder) {
+        for (Requires requires : declaration.getRequires()) {
+            Optional<ModuleReference> ref = findModule(resolutionFinder, requires.getModuleName());
+            if (ref.isPresent() && ref.get().descriptor().isAutomatic()) {
+                if (requires.isTransitive()) {
+                    warn(WarningMessage.LIKELY_ERRORS,
+                            "requires transitive directive for an automatic module: " + requires.getModuleName(), requires);
+                } else {
+                    warn(WarningMessage.POSSIBLE_ERRORS,
+                            "requires directive for an automatic module: " + requires.getModuleName(), requires);
+                }
+            }
+        }
+        checkQualifiedTargetsExist(declaration.getExports(), resolutionFinder);
+        checkQualifiedTargetsExist(declaration.getOpens(), resolutionFinder);
+    }
+
+    private void checkQualifiedTargetsExist(final List<? extends PackageDirective> directives, final ModuleFinder resolutionFinder) {
+        String self = declaration.getName();
+        for (PackageDirective directive : directives) {
+            for (String target : directive.getTargets()) {
+                if (!self.equals(target) && findModule(resolutionFinder, target).isEmpty()) {
+                    warn(WarningMessage.LIKELY_ERRORS, MODULE_NOT_FOUND + target, directive);
+                }
             }
         }
     }
@@ -404,36 +570,93 @@ public final class ModuleInfoVerifier {
             String dependency = requires.getModuleName();
             try {
                 if (resolutionFinder.find(dependency).isEmpty()) {
-                    error("module not found: " + dependency, requires);
+                    error(MODULE_NOT_FOUND + dependency, requires);
                 }
             } catch (FindException e) {
                 String message = e.getMessage();
-                error(message == null || message.isBlank() ? "module not found: " + dependency : message, requires);
+                error(message == null || message.isBlank() ? MODULE_NOT_FOUND + dependency : message, requires);
             }
         }
     }
 
     /**
-     * A package of this module must not also be exported to this module by a
-     * module it reads (JLS §7.4.3). Concealed packages and exports qualified to
-     * some other module do not collide at compile time. Automatic modules export
-     * every package, so their complete package set is checked.
+     * {@code Configuration.resolve} ignores {@code requires static}, so cycles
+     * through a static dependence are checked directly (JLS §7.7.1).
+     */
+    private void checkStaticRequiresCycles(final ModuleFinder resolutionFinder) {
+        String self = declaration.getName();
+        for (Requires requires : declaration.getRequires()) {
+            if (!requires.isStaticPhase()) {
+                continue;
+            }
+            if (reachesModule(resolutionFinder, requires.getModuleName(), self)) {
+                error("cyclic dependence involving " + requires.getModuleName(), requires);
+                resolutionFailed = true;
+            }
+        }
+    }
+
+    private static boolean reachesModule(final ModuleFinder resolutionFinder, final String start, final String target) {
+        Set<String> visited = new HashSet<>();
+        Deque<String> queue = new ArrayDeque<>();
+        queue.add(start);
+        visited.add(start);
+        while (!queue.isEmpty()) {
+            String current = queue.removeFirst();
+            Optional<ModuleReference> reference;
+            try {
+                reference = resolutionFinder.find(current);
+            } catch (FindException ignored) {
+                continue;
+            }
+            if (reference.isEmpty()) {
+                continue;
+            }
+            for (ModuleDescriptor.Requires edge : reference.get().descriptor().requires()) {
+                String next = edge.name();
+                if (target.equals(next)) {
+                    return true;
+                }
+                if (visited.add(next)) {
+                    queue.addLast(next);
+                }
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Checks JLS §7.4.3 split-package constraints:
+     * <ul>
+     *   <li>a package of this module must not also be exported to this module by a module it reads;</li>
+     *   <li>two distinct modules read by this module (including via {@code requires static}) must not
+     *       both export the same package to this module.</li>
+     * </ul>
+     * Concealed packages and exports qualified to some other module do not collide at compile time.
+     * Automatic modules export every package, so their complete package set is checked.
      */
     private void checkSplitPackages() {
-        if (reads.isEmpty() || modulePackages.isEmpty()) {
+        if (reads.isEmpty()) {
             return;
         }
         String moduleName = declaration.getName();
+        Map<String, String> packageOwners = new HashMap<>();
         for (String dependency : reads) {
-            Optional<ModuleReference> reference = finder.find(dependency);
+            Optional<ModuleReference> reference = findModule(finder, dependency);
             if (reference.isEmpty()) {
                 continue;
             }
             ModuleDescriptor descriptor = reference.get().descriptor();
             Set<String> visible = visiblePackages(descriptor, moduleName);
-            for (String pkg : modulePackages) {
+            for (String pkg : allModulePackages) {
                 if (visible.contains(pkg)) {
                     error("package " + pkg + " exists in another module: " + dependency, classInPackage(pkg));
+                }
+            }
+            for (String pkg : visible) {
+                String first = packageOwners.putIfAbsent(pkg, dependency);
+                if (first != null && !first.equals(dependency)) {
+                    error("module " + moduleName + " reads package " + pkg + " from both " + first + " and " + dependency, declaration);
                 }
             }
         }
@@ -459,7 +682,7 @@ public final class ModuleInfoVerifier {
      */
     private boolean allowsTransitiveJavaBase() {
         CompilerConfiguration config = source.getConfiguration();
-        return config != null && config.getBytecodeVersion() >= Opcodes.V25;
+        return config != null && (config.getBytecodeVersion() & ~Opcodes.V_PREVIEW) >= Opcodes.V25;
     }
 
     private ASTNode classInPackage(final String pkg) {
@@ -488,20 +711,134 @@ public final class ModuleInfoVerifier {
         }
     }
 
+    private void checkImports() {
+        ModuleNode module = declaration.getSourceModule();
+        if (module == null) {
+            return;
+        }
+        for (ImportNode importNode : module.getImports()) {
+            checkImportedType(importNode.getType(), importNode);
+        }
+        for (ImportNode importNode : module.getStaticImports().values()) {
+            checkImportedType(importNode.getType(), importNode);
+        }
+        for (ImportNode importNode : module.getStaticStarImports().values()) {
+            checkImportedType(importNode.getType(), importNode);
+        }
+        checkStarImports(module);
+        checkModuleImports(module);
+    }
+
+    private void checkModuleImports(final ModuleNode module) {
+        String self = declaration.getName();
+        for (ImportNode importNode : module.getModuleImports()) {
+            String imported = importNode.getPackageName();
+            if (imported == null || imported.isEmpty() || self.equals(imported)) {
+                continue;
+            }
+            if (findModule(finder, imported).isEmpty()) {
+                error("Unknown module: " + imported, importNode);
+            } else if (!reads.contains(imported)) {
+                error("module " + imported + " is not readable in module " + self, importNode);
+            }
+        }
+    }
+
+    private void checkStarImports(final ModuleNode module) {
+        for (ImportNode importNode : module.getStarImports()) {
+            if (importNode.getLineNumber() <= 0) {
+                continue;
+            }
+            if (importNode.getType() != null) {
+                checkImportedType(importNode.getType(), importNode);
+                continue;
+            }
+            String pkg = importNode.getPackageName();
+            if (pkg != null && pkg.endsWith(".")) {
+                pkg = pkg.substring(0, pkg.length() - 1);
+            }
+            if (pkg != null && !pkg.isEmpty() && !allModulePackages.contains(pkg) && !isPackageAccessible(pkg)) {
+                error("package " + pkg + NOT_ACCESSIBLE_IN_MODULE + declaration.getName(), importNode);
+            }
+        }
+    }
+
+    private void checkImportedType(final ClassNode type, final ASTNode where) {
+        if (type == null) {
+            return;
+        }
+        ClassNode resolved = type.redirect();
+        if (!resolved.isResolved() && !resolved.isPrimaryClassNode() && resolved.getCompileUnit() == null) {
+            return;
+        }
+        if (!isAccessible(resolved)) {
+            error("class " + resolved.getName() + NOT_ACCESSIBLE_IN_MODULE + declaration.getName(), where);
+        }
+    }
+
     private void checkAnnotations() {
+        Set<String> reportedRefs = new HashSet<>();
+        for (AnnotationNode collector : declaration.getExpandedCollectors()) {
+            checkAnnotation(collector, reportedRefs);
+        }
         for (AnnotationNode annotation : declaration.getAnnotations()) {
-            ClassNode type = annotation.getClassNode();
-            ClassNode resolved = type.redirect();
-            if (!resolved.isResolved() && !resolved.isPrimaryClassNode() && resolved.getCompileUnit() == null) {
-                continue;
+            checkAnnotation(annotation, reportedRefs);
+        }
+        for (Map.Entry<ClassNode, ASTNode> ref : declaration.getAnnotationTypeRefs()) {
+            checkAnnotationReferencedType(ref.getKey(), ref.getValue(), reportedRefs);
+        }
+    }
+
+    private void checkAnnotation(final AnnotationNode annotation, final Set<String> reportedRefs) {
+        checkAnnotationType(annotation);
+        if (annotation.getMembers().isEmpty()) {
+            return;
+        }
+        CodeVisitorSupport valueVisitor = new CodeVisitorSupport() {
+            @Override
+            public void visitClassExpression(final ClassExpression expression) {
+                checkAnnotationReferencedType(expression.getType(), expression, reportedRefs);
             }
-            if ("groovy.lang.Groovydoc".equals(resolved.getName())) {
-                // Compiler-attached documentation; groovy.lang is typically on the
-                // classpath (unnamed module), not a required named module.
-                continue;
+
+            @Override
+            public void visitConstantExpression(final ConstantExpression expression) {
+                if (expression instanceof AnnotationConstantExpression && expression.getValue() instanceof AnnotationNode nested) {
+                    checkAnnotationType(nested);
+                }
             }
-            if (!isAccessible(resolved)) {
-                error("annotation @" + resolved.getName() + " is not accessible in module " + declaration.getName(), annotation);
+        };
+        for (Expression value : annotation.getMembers().values()) {
+            value.visit(valueVisitor);
+        }
+    }
+
+    private void checkAnnotationType(final AnnotationNode annotation) {
+        ClassNode resolved = annotation.getClassNode().redirect();
+        if ((resolved.isResolved() || resolved.isPrimaryClassNode() || resolved.getCompileUnit() != null)
+                && !"groovy.lang.Groovydoc".equals(resolved.getName())
+                && !isAccessible(resolved)) {
+            error("annotation @" + resolved.getName() + NOT_ACCESSIBLE_IN_MODULE + declaration.getName(), annotation);
+        }
+    }
+
+    private void checkAnnotationReferencedType(final ClassNode type, final ASTNode where, final Set<String> reportedRefs) {
+        if (type == null) {
+            return;
+        }
+        ClassNode resolved = type.redirect();
+        while (resolved.isArray()) {
+            resolved = resolved.getComponentType();
+        }
+        if (ClassHelper.isPrimitiveType(resolved)) {
+            return;
+        }
+        if (!resolved.isResolved() && !resolved.isPrimaryClassNode() && resolved.getCompileUnit() == null) {
+            return;
+        }
+        if (!isAccessible(resolved)) {
+            String key = resolved.getName() + "@" + where.getLineNumber() + ":" + where.getColumnNumber();
+            if (reportedRefs.add(key)) {
+                error("class " + resolved.getName() + NOT_ACCESSIBLE_IN_MODULE + declaration.getName(), where);
             }
         }
     }
@@ -520,7 +857,7 @@ public final class ModuleInfoVerifier {
             if (type.isEnum()) {
                 error("uses directive specifies an enum class " + binary, uses);
             } else if (!isAccessible(type)) {
-                error("service " + binary + " is not accessible in module " + declaration.getName(), uses);
+                error("service " + binary + NOT_ACCESSIBLE_IN_MODULE + declaration.getName(), uses);
             }
         }
     }
@@ -538,12 +875,10 @@ public final class ModuleInfoVerifier {
             }
             // An enum service is legal when a provider() method returns it. uses rejects enums.
             if (!isAccessible(service)) {
-                error("service " + serviceName + " is not accessible in module " + declaration.getName(), provides);
+                error("service " + serviceName + NOT_ACCESSIBLE_IN_MODULE + declaration.getName(), provides);
             }
             Set<String> providersSeen = new HashSet<>();
-            List<ClassNode> resolvedProviders = provides.getResolvedProviders();
-            for (int i = 0; i < resolvedProviders.size(); i++) {
-                ClassNode provider = resolvedProviders.get(i);
+            for (ClassNode provider : provides.getResolvedProviders()) {
                 if (provider == null) {
                     continue;
                 }
@@ -559,14 +894,14 @@ public final class ModuleInfoVerifier {
 
     private void checkProvider(final Provides provides, final ClassNode service, final ClassNode type) {
         String name = type.getName();
-        if (!isPublicIncludingEnclosing(type)) {
-            error("provider " + name + " must be public", provides);
+        if (!ModuleInfoNode.isPublicIncludingEnclosing(type)) {
+            error(PROVIDER_PREFIX + name + " must be public", provides);
         }
         if (!isTopLevelOrStatic(type)) {
-            error("provider " + name + " must be a top-level or static nested type", provides);
+            error(PROVIDER_PREFIX + name + " must be a top-level or static nested type", provides);
         }
         if (!inThisModule(type)) {
-            error("provider " + name + " must be declared in the current module", provides);
+            error(PROVIDER_PREFIX + name + " must be declared in the current module", provides);
         }
         MethodNode providerMethod = findProviderMethod(type);
         if (providerMethod != null) {
@@ -574,17 +909,17 @@ public final class ModuleInfoVerifier {
             if (ClassHelper.isPrimitiveType(returnType) || !implementsInterfaceOrSubclassOf(returnType, service)) {
                 error("provider method of " + name + " must return a subtype of " + service.getName(), provides);
             } else if (!isAccessible(returnType)) {
-                error("return type " + returnType.getName() + " of provider method is not accessible in module " + declaration.getName(), provides);
+                error("return type " + returnType.getName() + " of provider method" + NOT_ACCESSIBLE_IN_MODULE + declaration.getName(), provides);
             }
             return;
         }
         // Interfaces, enums, and abstract classes have no provider constructor ServiceLoader can call.
         if (type.isInterface() || type.isAbstract() || type.isEnum() || !hasPublicNoArgConstructor(type)) {
-            error("provider " + name + " must have a public no-arg constructor or a public static provider() method", provides);
+            error(PROVIDER_PREFIX + name + " must have a public no-arg constructor or a public static provider() method", provides);
             return;
         }
         if (!implementsInterfaceOrSubclassOf(type, service)) {
-            error("provider " + name + " must be a subtype of " + service.getName(), provides);
+            error(PROVIDER_PREFIX + name + " must be a subtype of " + service.getName(), provides);
         }
     }
 
@@ -616,78 +951,68 @@ public final class ModuleInfoVerifier {
 
     private static boolean isTopLevelOrStatic(final ClassNode type) {
         if (type instanceof InnerClassNode inner) {
-            if (inner.isAnonymous() || !Modifier.isStatic(inner.getModifiers())) {
+            return isStaticInnerClass(inner);
+        }
+        if (type instanceof DecompiledClassNode decompiled && decompiled.getMemberDeclaringClassName() != null) {
+            return isStaticDecompiledMember(decompiled);
+        }
+        Class<?> loaded = ModuleInfoNode.resolvedClass(type);
+        if (loaded != null) {
+            return isTopLevelOrStaticLoaded(type, loaded);
+        }
+        return isTopLevelOrStaticAst(type);
+    }
+
+    private static boolean isTopLevelOrStaticAst(final ClassNode type) {
+        return type.getName().indexOf('$') < 0 || isImplicitlyOrExplicitlyStatic(type);
+    }
+
+    private static boolean isStaticInnerClass(final InnerClassNode inner) {
+        if (inner.isAnonymous() || !isImplicitlyOrExplicitlyStatic(inner)) {
+            return false;
+        }
+        for (ClassNode outer = inner.getOuterClass(); outer instanceof InnerClassNode; outer = outer.getOuterClass()) {
+            if (!isImplicitlyOrExplicitlyStatic(outer)) {
                 return false;
             }
-            for (ClassNode outer = inner.getOuterClass(); outer instanceof InnerClassNode; outer = outer.getOuterClass()) {
-                if (!Modifier.isStatic(outer.getModifiers())) {
-                    return false;
-                }
-            }
-            return true;
         }
-        Class<?> loaded = resolvedClass(type);
-        if (loaded != null) {
+        return true;
+    }
+
+    private static boolean isStaticDecompiledMember(final DecompiledClassNode member) {
+        DecompiledClassNode current = member;
+        while (current != null && current.getMemberDeclaringClassName() != null) {
+            if (!isImplicitlyOrExplicitlyStatic(current)) {
+                return false;
+            }
+            ClassNode outer = current.resolveClassNullable(current.getMemberDeclaringClassName());
+            current = outer instanceof DecompiledClassNode decompiled ? decompiled : null;
+        }
+        return true;
+    }
+
+    /**
+     * Member interfaces, enums, and records are implicitly {@code static}
+     * (JLS §8.5.1, §8.9, §8.10, §9.1.1).
+     */
+    private static boolean isImplicitlyOrExplicitlyStatic(final ClassNode type) {
+        return Modifier.isStatic(type.getModifiers()) || type.isInterface() || type.isEnum() || type.isRecord();
+    }
+
+    private static boolean isTopLevelOrStaticLoaded(final ClassNode type, final Class<?> loaded) {
+        try {
             if (loaded.isAnonymousClass() || loaded.isLocalClass()) {
                 return false;
             }
-            Class<?> enclosing = loaded.getDeclaringClass();
-            if (enclosing == null) {
-                return true;
-            }
-            if (!Modifier.isStatic(loaded.getModifiers())) {
-                return false;
-            }
-            for (Class<?> outer = enclosing; outer != null && outer.getDeclaringClass() != null; outer = outer.getDeclaringClass()) {
-                if (!Modifier.isStatic(outer.getModifiers())) {
+            for (Class<?> current = loaded; current.getDeclaringClass() != null; current = current.getDeclaringClass()) {
+                if (!Modifier.isStatic(current.getModifiers())) {
                     return false;
                 }
             }
             return true;
-        }
-        return true;
-    }
-
-    private static boolean isPublicIncludingEnclosing(final ClassNode type) {
-        if (!Modifier.isPublic(type.getModifiers())) {
-            return false;
-        }
-        if (type instanceof InnerClassNode inner) {
-            for (ClassNode outer = inner.getOuterClass(); outer != null; outer = outer.getOuterClass()) {
-                if (!Modifier.isPublic(outer.getModifiers())) {
-                    return false;
-                }
-            }
-            return true;
-        }
-        Class<?> loaded = resolvedClass(type);
-        if (loaded != null) {
-            if (!Modifier.isPublic(loaded.getModifiers())) {
-                return false;
-            }
-            for (Class<?> outer = loaded.getDeclaringClass(); outer != null; outer = outer.getDeclaringClass()) {
-                if (!Modifier.isPublic(outer.getModifiers())) {
-                    return false;
-                }
-            }
-            return true;
-        }
-        for (ClassNode outer = type.getOuterClass(); outer != null; outer = outer.getOuterClass()) {
-            if (!Modifier.isPublic(outer.getModifiers())) {
-                return false;
-            }
-        }
-        return true;
-    }
-
-    private static Class<?> resolvedClass(final ClassNode type) {
-        if (!type.isResolved()) {
-            return null;
-        }
-        try {
-            return type.getTypeClass();
-        } catch (RuntimeException ignored) {
-            return null;
+        } catch (LinkageError | RuntimeException ignored) {
+            // Fall back to AST modifiers if InnerClasses metadata is inconsistent (e.g., stale inner .class).
+            return isTopLevelOrStaticAst(type);
         }
     }
 
@@ -704,37 +1029,28 @@ public final class ModuleInfoVerifier {
      * type's package to the current module (JLS §6.6 / §7.7).
      */
     private boolean isAccessible(final ClassNode type) {
-        if (!isPublicIncludingEnclosing(type)) {
+        if (!ModuleInfoNode.isPublicIncludingEnclosing(type)) {
             return false;
         }
         if (inThisModule(type)) {
             return true;
         }
         String pkg = type.getPackageName();
-        if (pkg == null) {
-            return false;
+        return pkg != null && !pkg.isEmpty() && isPackageAccessible(pkg);
+    }
+
+    private boolean isPackageAccessible(final String pkg) {
+        if (declaration.isReadsReady() && declaration.getAccessibilityFinder() == finder) {
+            return declaration.isReadsUnnamed()
+                    ? declaration.canAccessPackage(pkg)
+                    : declaration.isPackageExportedToSelf(pkg);
         }
-        String moduleName = declaration.getName();
-        for (String dependency : reads) {
-            Optional<ModuleReference> reference = finder.find(dependency);
-            if (reference.isEmpty()) {
-                continue;
-            }
-            ModuleDescriptor descriptor = reference.get().descriptor();
-            if (descriptor.isAutomatic()) {
-                if (descriptor.packages().contains(pkg)) {
-                    return true;
-                }
-                continue;
-            }
-            for (ModuleDescriptor.Exports exports : descriptor.exports()) {
-                if (exports.source().equals(pkg)
-                        && (exports.targets().isEmpty() || exports.targets().contains(moduleName))) {
-                    return true;
-                }
-            }
+        Set<String> packages = accessiblePackages;
+        if (packages == null) {
+            packages = ModuleInfoNode.computeAccessiblePackages(reads, finder, declaration.getName(), extraExports);
+            accessiblePackages = packages;
         }
-        return false;
+        return packages.contains(pkg);
     }
 
     private void error(final String message, final ASTNode node) {
@@ -744,28 +1060,11 @@ public final class ModuleInfoVerifier {
         source.addErrorAndContinue(new SyntaxException(message, node));
     }
 
-    /**
-     * {@code findAll} on a composed finder can surface the same module twice
-     * (platform module and a copy reachable from the compiler class loader).
-     * Resolution rejects that, including for automatic modules that read everything.
-     * The first occurrence wins, matching {@code ModuleFinder.find}.
-     */
-    private static ModuleFinder dedupe(final ModuleFinder finder) {
-        return new ModuleFinder() {
-            @Override
-            public Optional<ModuleReference> find(final String name) {
-                return finder.find(name);
-            }
-
-            @Override
-            public Set<ModuleReference> findAll() {
-                Map<String, ModuleReference> unique = new LinkedHashMap<>();
-                for (ModuleReference reference : finder.findAll()) {
-                    unique.putIfAbsent(reference.descriptor().name(), reference);
-                }
-                return new HashSet<>(unique.values());
-            }
-        };
+    private void warn(final int importance, final String message, final ASTNode node) {
+        if (!reportGraphErrors) {
+            return;
+        }
+        source.addWarning(importance, message, node);
     }
 
     /**
@@ -792,6 +1091,7 @@ public final class ModuleInfoVerifier {
 
                 @Override
                 public void close() {
+                    // Nothing to release for a descriptor-only reference.
                 }
             };
         }

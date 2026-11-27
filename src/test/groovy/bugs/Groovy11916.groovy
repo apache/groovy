@@ -864,7 +864,7 @@ class Use {
         ], 'user.Use')
         assert awt == 'java.awt.List' : awt
 
-        // The module import is earlier, so java.awt.List wins over the later star.
+        // JEP 511 / JLS §6.4.1: an explicit package star import shadows import module regardless of source order.
         def moduleFirst = classifyUse([
             'user/Use': '''
                 package user
@@ -876,7 +876,7 @@ class Use {
                 }
             '''
         ], 'user.Use')
-        assert moduleFirst == 'java.awt.List' : moduleFirst
+        assert moduleFirst == 'java.util.List' : moduleFirst
 
         def starFirst = classifyUse([
             'user/Use': '''

@@ -178,7 +178,7 @@ include::../test/PackageTest.groovy[tags=alias_import,indent=0]
 
 === Module import
 
-Groovy supports Java's module import declarations (https://openjdk.org/jeps/476[JEP 476], finalized in Java 25).
+Groovy supports Java's module import declarations (https://openjdk.org/jeps/511[JEP 511], previewed in https://openjdk.org/jeps/476[JEP 476]).
 A module import imports all public types from all packages exported by the named module with a single statement:
 
 [source,groovy]
@@ -197,18 +197,35 @@ include::../test/PackageTest.groovy[tags=module_import_transitive,indent=0]
 ----
 
 Module imports work with system modules (JDK modules like `java.base`, `java.sql`, `java.desktop`),
-JPMS modules from modular JARs on the classpath (those containing `module-info.class`),
-and automatic modules (JARs with an `Automatic-Module-Name` manifest entry).
+JPMS modules from `--upgrade-module-path`, `--module-path` (modular JARs, exploded module directories, and `.jmod` archives),
+or modular JARs on the classpath, as well as automatic modules (including JARs with an `Automatic-Module-Name` manifest entry).
+In the unnamed module, system modules outside the default root set (such as the aggregator module `java.se` or incubator modules)
+must be added with `--add-modules` (for example `--add-modules java.se` or `--add-modules ALL-SYSTEM`), and `--add-exports <module>/<pkg>=ALL-UNNAMED`
+extends the imported packages across transitive dependencies.
+Inside a named module, `import module` requires that the current module reads the imported module (or imports itself),
+and includes packages qualified-exported (or granted via `--add-exports`) to the current module.
 
-Explicit single-type imports take priority over module-expanded imports, which allows you to
-resolve any ambiguity by adding a specific import:
+Simple-name resolution follows JLS §6.4.1 / JEP 511 specificity:
+
+* Single-type and single-static imports shadow star imports and module imports.
+* Explicit star imports (`import pkg.*`) and implicit `java.lang.*` shadow `import module` declarations regardless of source order.
+* If two distinct public types with the same simple name are exposed by module imports (within a single module or across multiple `import module` declarations, such as `List` from `java.base` and `java.desktop`, or `Date` from `java.base` and `java.sql`), referencing that simple name is a compile-time ambiguity error.
+* Groovy's remaining default imports (`java.util.*`, `java.io.*`, `java.net.*`, `groovy.lang.*`, etc.) apply only when no star or module import matches, so `import module java.desktop` alone resolves `List` to `java.awt.List`.
+
+You can resolve any ambiguity with an explicit single-type import or a package star import:
 
 [source,groovy]
 ----
 include::../test/PackageTest.groovy[tags=module_import_with_explicit,indent=0]
 ----
 
+[source,groovy]
+----
+include::../test/PackageTest.groovy[tags=module_import_shadowed_by_star,indent=0]
+----
+
 NOTE: The `module` keyword is context-sensitive — it can still be used as a variable, method, or class name.
+Duplicate `import module` declarations are permitted and ignored.
 Wildcard (`import module java.base.*`) and alias (`import module java.base as jb`) forms are not supported.
 
 === Namespace conflicts
@@ -238,6 +255,33 @@ class Main {
     class List { } // allowed; "List" refers to this type within `Main`'s scope and `java.util.List` elsewhere
 }
 ----
+
+== Module declarations (JPMS)
+
+Groovy supports Java Platform Module System (JPMS, https://openjdk.org/jeps/261[JEP 261]) module declarations
+written in `module-info.groovy` (or `module-info.java` when compiled with Groovy, including joint compilation):
+
+[source,groovy]
+----
+include::../test/PackageTest.groovy[tags=module_declaration,indent=0]
+----
+
+A module declaration follows JLS §7.7 and emits a standard `module-info.class` (JVMS §4.7.25):
+
+* `requires [transitive] [static] <module>;` declares compile-time and/or runtime module dependences (`java.base` is implicitly required with `ACC_MANDATED` unless declared explicitly; `requires transitive java.base;` is permitted when targeting JDK 25+ per JEP 511 / JLS §7.7.1).
+* `exports <package> [to <module>, ...];` exposes public types of `<package>` at compile time and run time.
+* `opens <package> [to <module>, ...];` (or `open module`) grants deep reflective access at run time without granting compile-time access.
+* `uses <service>;` and `provides <service> with <provider>, ...;` declare `ServiceLoader` consumption and implementations.
+* Module annotations (such as `@Deprecated`) and `@AnnotationCollector` annotations are supported.
+
+When compiling a named module, Groovy enforces compile-time strong encapsulation (https://openjdk.org/jeps/261[JEP 261],
+https://openjdk.org/jeps/396[JEP 396], https://openjdk.org/jeps/403[JEP 403]): source classes and `module-info` can only
+reference public types (or inherited `protected` nested types) in packages exported to the module by modules it reads.
+Compile-time options `-p`/`--module-path`, `--upgrade-module-path`, `--module-version`, `--add-modules`, `--limit-modules`,
+`--add-reads`, and `--add-exports` are supported on `groovyc` and `CompilerConfiguration`.
+
+NOTE: Directive keywords (`open`, `requires`, `transitive`, `exports`, `opens`, `to`, `uses`, `provides`, `with`)
+remain ordinary identifiers outside `module-info.groovy` / `module-info.java`.
 
 == Scripts versus classes
 

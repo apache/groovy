@@ -20,13 +20,14 @@ package org.codehaus.groovy.control.customizers;
 
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
+import org.codehaus.groovy.ast.ImportNode;
 import org.codehaus.groovy.ast.ModuleNode;
 import org.codehaus.groovy.classgen.GeneratorContext;
 import org.codehaus.groovy.control.CompilePhase;
 import org.codehaus.groovy.control.ModuleImportHelper;
-import org.codehaus.groovy.control.ResolveVisitor;
 import org.codehaus.groovy.control.SourceUnit;
 
+import java.lang.module.FindException;
 import java.lang.module.ModuleFinder;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -96,13 +97,21 @@ public class ImportCustomizer extends CompilationCustomizer {
     }
 
     private static void expandModuleImport(final SourceUnit sourceUnit, final ModuleNode moduleNode, final String moduleName) {
+        moduleNode.addModuleImport(new ImportNode(moduleName));
         ModuleFinder finder = ModuleImportHelper.moduleFinder(sourceUnit);
-        List<String> packageNames = ModuleImportHelper.resolveModulePackages(moduleName, finder);
+        List<String> packageNames;
+        try {
+            packageNames = ModuleImportHelper.resolveModulePackages(moduleName, finder);
+        } catch (IllegalArgumentException | FindException ignored) {
+            // Defer unknown-module, self-module, and finder diagnostics to semantic analysis.
+            return;
+        }
         Set<String> skip = new HashSet<>();
-        Collections.addAll(skip, ResolveVisitor.DEFAULT_IMPORTS);
+        skip.add("java.lang.");
         for (var in : moduleNode.getStarImports()) skip.add(in.getPackageName());
         for (var in : moduleNode.getModuleStarImports()) skip.add(in.getPackageName());
-        for (String pn : packageNames) { String packageName = pn + ".";
+        for (String pn : packageNames) {
+            String packageName = pn + ".";
             if (skip.add(packageName)) {
                 moduleNode.addModuleStarImport(packageName, Collections.emptyList());
             }
@@ -187,10 +196,12 @@ public class ImportCustomizer extends CompilationCustomizer {
 
     /**
      * Adds module imports. Each module name (e.g. {@code "java.sql"}) is expanded
-     * at compilation time into star imports for all packages exported by that module,
-     * including packages from transitively required modules (per JEP 476).
+     * at compilation time into on-demand imports for all packages exported by that module
+     * to the current module, including packages from transitively required modules
+     * (per JEP 511 / JLS §7.5.5).
      *
      * @param moduleNames the JPMS module names to import
+     * @return this customizer
      * @since 6.0.0
      */
     public ImportCustomizer addModuleImports(final String... moduleNames) {

@@ -18,6 +18,8 @@
  */
 package org.codehaus.groovy.control;
 
+import groovy.transform.Internal;
+
 import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.Set;
@@ -35,6 +37,7 @@ public final class CompiledClassIndex {
 
     private final Set<String> names = new LinkedHashSet<>();
     private final Set<String> packages = new LinkedHashSet<>();
+    private final Set<String> typePackages = new LinkedHashSet<>();
     private boolean unnamedClass;
 
     /**
@@ -52,7 +55,11 @@ public final class CompiledClassIndex {
         if (dot < 0) {
             unnamedClass = true;
         } else {
-            packages.add(binaryName.substring(0, dot));
+            String pkg = binaryName.substring(0, dot);
+            packages.add(pkg);
+            if (!"package-info".equals(binaryName.substring(dot + 1))) {
+                typePackages.add(pkg);
+            }
         }
     }
 
@@ -67,12 +74,34 @@ public final class CompiledClassIndex {
     }
 
     /**
-     * Packages of the recorded class files.
+     * Whether no class files have been recorded.
+     *
+     * @return {@code true} when empty
+     */
+    public boolean isEmpty() {
+        return names.isEmpty();
+    }
+
+    /**
+     * Packages of all recorded class files (including {@code package-info}),
+     * used for the {@code ModulePackages} class-file attribute.
      *
      * @return an unmodifiable set of package names
      */
     public Set<String> getPackages() {
         return Collections.unmodifiableSet(packages);
+    }
+
+    /**
+     * Packages that contain at least one type declaration (excluding
+     * {@code package-info}), used to verify {@code exports} and {@code opens}
+     * directives per JLS §7.7.2.
+     *
+     * @return an unmodifiable set of non-empty package names
+     */
+    @Internal
+    public Set<String> getTypePackages() {
+        return Collections.unmodifiableSet(typePackages);
     }
 
     /**
@@ -89,9 +118,10 @@ public final class CompiledClassIndex {
      * so a reused compilation unit does not keep class names from the previous
      * compilation.
      */
-    void clear() {
+    public void clear() {
         names.clear();
         packages.clear();
+        typePackages.clear();
         unnamedClass = false;
     }
 }

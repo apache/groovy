@@ -160,6 +160,7 @@ import org.objectweb.asm.Opcodes;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.lang.annotation.Annotation;
+import java.lang.module.FindException;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -226,7 +227,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
         // `module` / `requires` / `exports` / … stay ordinary identifiers.
         // Parsed via a separate start rule so regular-file diagnostics keep
         // their local unexpected-token span.
-        this.moduleDescriptor = ModuleInfoNode.isModuleInfoSource(sourceUnit.getName());
+        this.moduleDescriptor = ModuleInfoNode.isModuleInfoSource(sourceUnit);
 
         this.groovydocManager = new GroovydocManager(groovydocEnabled, runtimeGroovydocEnabled);
         this.tryWithResourcesASTTransformation = new TryWithResourcesASTTransformation(this);
@@ -481,7 +482,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
         List<AnnotationNode> annotations = this.visitAnnotationsOpt(ctx.annotationsOpt());
 
         if (asBoolean(ctx.MODULE())) {
-            String moduleName = this.visitQualifiedName(ctx.qualifiedName());
+            String moduleName = this.visitModuleQualifiedName(ctx.moduleQualifiedName());
             return expandModuleImport(moduleName, annotations, ctx);
         }
 
@@ -537,7 +538,9 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
 
     @Override
     public ModuleNode visitModuleCompilationUnit(final ModuleCompilationUnitContext ctx) {
-        this.visitModularCompilationUnit(ctx.modularCompilationUnit());
+        if (ctx.modularCompilationUnit() != null) {
+            this.visitModularCompilationUnit(ctx.modularCompilationUnit());
+        }
         if (this.numberFormatError != null) {
             throw createParsingFailedException(this.numberFormatError.getV2().getMessage(), this.numberFormatError.getV1());
         }
@@ -549,18 +552,27 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
         for (ImportDeclarationContext importDeclaration : ctx.importDeclaration()) {
             this.visitImportDeclaration(importDeclaration);
         }
-        return this.visitModuleDeclaration(ctx.moduleDeclaration());
+        if (ctx.moduleDeclaration() != null) {
+            return this.visitModuleDeclaration(ctx.moduleDeclaration());
+        }
+        return this.moduleNode;
     }
 
     @Override
     public ModuleNode visitModuleDeclaration(final ModuleDeclarationContext ctx) {
         ModuleHeaderContext header = ctx.moduleHeader();
+        if (header == null || header.moduleQualifiedName() == null) {
+            return this.moduleNode;
+        }
         boolean open = header.identifier() != null;
-        String name = this.visitQualifiedName(header.qualifiedName());
+        String name = this.visitModuleQualifiedName(header.moduleQualifiedName());
         List<Directive> directives = new ArrayList<>();
         if (ctx.moduleDirectives() != null) {
             for (ModuleDirectiveContext directive : ctx.moduleDirectives().moduleDirective()) {
-                directives.add(this.visitModuleDirective(directive));
+                Directive built = this.visitModuleDirective(directive);
+                if (built != null) {
+                    directives.add(built);
+                }
             }
         }
         ModuleInfoNode declaration = new ModuleInfoNode(name, open, directives);
@@ -590,7 +602,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
         if (ctx.providesDirective() != null) {
             return this.visitProvidesDirective(ctx.providesDirective());
         }
-        throw createParsingFailedException("unsupported module directive: " + ctx.getText(), ctx);
+        return null;
     }
 
     @Override
@@ -610,39 +622,46 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
                 transitive = true;
             }
         }
-        Requires requires = new Requires(this.visitQualifiedName(ctx.qualifiedName()), transitive, staticPhase);
+        Requires requires = new Requires(this.visitModuleQualifiedName(ctx.moduleQualifiedName()), transitive, staticPhase);
         return configureAST(requires, ctx);
     }
 
     @Override
     public Exports visitExportsDirective(final ExportsDirectiveContext ctx) {
-        Exports exports = new Exports(this.visitQualifiedName(ctx.qualifiedName()), targetModules(ctx.toClause()));
+        Exports exports = new Exports(this.visitModuleQualifiedName(ctx.moduleQualifiedName()), targetModules(ctx.toClause()));
         return configureAST(exports, ctx);
     }
 
     @Override
     public Opens visitOpensDirective(final OpensDirectiveContext ctx) {
-        Opens opens = new Opens(this.visitQualifiedName(ctx.qualifiedName()), targetModules(ctx.toClause()));
+        Opens opens = new Opens(this.visitModuleQualifiedName(ctx.moduleQualifiedName()), targetModules(ctx.toClause()));
         return configureAST(opens, ctx);
     }
 
     @Override
     public Uses visitUsesDirective(final UsesDirectiveContext ctx) {
-        return configureAST(new Uses(this.visitQualifiedName(ctx.qualifiedName())), ctx);
+        return configureAST(new Uses(this.visitModuleQualifiedName(ctx.moduleQualifiedName())), ctx);
     }
 
     @Override
     public Provides visitProvidesDirective(final ProvidesDirectiveContext ctx) {
         List<String> providers = new ArrayList<>();
-        for (QualifiedNameContext name : ctx.qualifiedName()) {
-            // qualifiedName() also returns the service= label; that name is not a provider.
+        for (ModuleQualifiedNameContext name : ctx.moduleQualifiedName()) {
+            // moduleQualifiedName() also returns the service= label; that name is not a provider.
             if (name == ctx.service) {
                 continue;
             }
-            providers.add(this.visitQualifiedName(name));
+            providers.add(this.visitModuleQualifiedName(name));
         }
-        Provides provides = new Provides(this.visitQualifiedName(ctx.service), providers);
+        Provides provides = new Provides(this.visitModuleQualifiedName(ctx.service), providers);
         return configureAST(provides, ctx);
+    }
+
+    @Override
+    public String visitModuleQualifiedName(final ModuleQualifiedNameContext ctx) {
+        return ctx.qualifiedNameElement().stream()
+                .map(ParseTree::getText)
+                .collect(Collectors.joining(DOT_STR));
     }
 
     private List<String> targetModules(final ToClauseContext toClause) {
@@ -650,8 +669,8 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
             return List.of();
         }
         List<String> targets = new ArrayList<>();
-        for (QualifiedNameContext name : toClause.qualifiedName()) {
-            targets.add(this.visitQualifiedName(name));
+        for (ModuleQualifiedNameContext name : toClause.moduleQualifiedName()) {
+            targets.add(this.visitModuleQualifiedName(name));
         }
         return targets;
     }
@@ -659,65 +678,52 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
     /**
      * Expands {@code import module java.base} into star imports for all
      * packages exported (unqualified) by the named module and, recursively,
-     * by any modules it {@code requires transitive} (per JEP 476).
-     * Packages already covered by Groovy's default imports or existing
-     * star imports are skipped to avoid redundant resolution work.
+     * by any modules it {@code requires transitive} (per JEP 511 / JLS §7.5.5).
+     * {@code java.lang.} (implicitly shadowed per JLS §6.4.1) and packages already
+     * covered by existing star or module-star imports are skipped; other Groovy
+     * default packages (such as {@code java.util.}) are retained so ambiguity
+     * across module imports (e.g. {@code java.base} and {@code java.desktop}) is
+     * detected during semantic analysis.
      * <p>
-     * Modules are located from system modules (JDK) first, then from
-     * modular JARs on the compilation classpath. Automatic modules
-     * (JARs with an {@code Automatic-Module-Name} manifest entry but no
-     * {@code module-info.class}) are supported — all packages in the JAR
-     * are imported since automatic modules have no explicit exports.
+     * Modules are located following JEP 261 search order ({@code --upgrade-module-path},
+     * system modules, {@code --module-path}, and classpath fallback). Automatic modules
+     * are supported — all packages in the module are imported since automatic modules
+     * have no explicit exports.
      * <p>
-     * Resolution treats the packages of one {@code import module} as a single
-     * statement placed at this import. Within that statement the first
-     * accessible type wins. An inaccessible type found by an earlier source
-     * statement claims the name, so a later star does not bind a different
-     * type. An explicit single-type import is resolved earlier and takes
-     * priority.
+     * The module name itself is also recorded on {@link ModuleNode#getModuleImports()}
+     * so semantic analysis can verify named- and unnamed-module readability, report
+     * unknown modules, apply {@code --add-exports}, and expand qualified exports
+     * targeting the compiling module or self-module imports (JLS §7.5.5).
      */
     private ImportNode expandModuleImport(final String moduleName, final List<AnnotationNode> annotations, final ImportDeclarationContext ctx) {
+        ImportNode recorded = configureAST(new ImportNode(moduleName), ctx);
+        recorded.addAnnotations(annotations);
+        moduleNode.addModuleImport(recorded);
+
         var finder = ModuleImportHelper.moduleFinder(sourceUnit);
         List<String> packageNames;
         try {
             packageNames = ModuleImportHelper.resolveModulePackages(moduleName, finder);
-        } catch (IllegalArgumentException e) {
-            throw createParsingFailedException(e.getMessage(), ctx);
+        } catch (IllegalArgumentException | FindException e) {
+            // Defer unknown-module and finder-error reporting to semantic analysis so a named
+            // module can import itself (JEP 511) regardless of source parse order.
+            return recorded;
         }
         Set<String> skip = new HashSet<>();
-        if (this.moduleDescriptor) {
-            // module-info name resolution only implies java.lang, not Groovy's
-            // default imports (java.io, java.net, java.util, groovy.lang, …).
-            skip.add("java.lang.");
-        } else {
-            skip.addAll(Arrays.asList(ResolveVisitor.DEFAULT_IMPORTS));
-        }
+        skip.add("java.lang.");
         moduleNode.getStarImports().stream().map(ImportNode::getPackageName).forEach(skip::add);
         moduleNode.getModuleStarImports().stream().map(ImportNode::getPackageName).forEach(skip::add);
         ImportNode lastImport = null;
         for (String pkg : packageNames) {
             String packageName = pkg + DOT_STR;
-            if (!skip.contains(packageName)) {
-                // Separate list so resolution can apply JLS 6.4.1 shadowing:
-                // a user-written `import foo.*` beats a module-expanded `foo.*`.
+            if (skip.add(packageName)) {
+                // Separate list so resolution can apply JLS §6.4.1 shadowing:
+                // explicit/customizer star imports and implicit java.lang.* shadow import module.
                 moduleNode.addModuleStarImport(packageName, annotations);
-                lastImport = last(moduleNode.getModuleStarImports());
-                skip.add(packageName);
+                lastImport = configureAST(last(moduleNode.getModuleStarImports()), ctx);
             }
         }
-        if (lastImport == null) {
-            // All exported packages were already covered by existing imports
-            List<ImportNode> existing = moduleNode.getModuleStarImports();
-            if (!existing.isEmpty()) {
-                lastImport = last(existing);
-            } else if (!moduleNode.getStarImports().isEmpty()) {
-                lastImport = last(moduleNode.getStarImports());
-            } else {
-                lastImport = new ImportNode(moduleName);
-                lastImport.addAnnotations(annotations);
-            }
-        }
-        return configureAST(lastImport, ctx);
+        return lastImport != null ? lastImport : recorded;
     }
 
     private static AnnotationNode makeAnnotationNode(final Class<? extends Annotation> type) {

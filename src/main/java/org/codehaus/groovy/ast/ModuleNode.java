@@ -18,6 +18,7 @@
  */
 package org.codehaus.groovy.ast;
 
+import groovy.transform.Internal;
 import groovy.transform.NoScript;
 import org.apache.groovy.ast.ModuleInfoNode;
 import org.apache.groovy.ast.tools.ClassNodeUtils;
@@ -79,6 +80,7 @@ public class ModuleNode extends ASTNode {
     private final List<ImportNode> imports = new ArrayList<>();
     private final List<ImportNode> starImports = new ArrayList<>();
     private final List<ImportNode> moduleStarImports = new ArrayList<>();
+    private final List<ImportNode> moduleImports = new ArrayList<>();
     private final Map<String, ImportNode> staticImports = new LinkedHashMap<>();
     private final Map<String, ImportNode> staticStarImports = new LinkedHashMap<>();
     private CompileUnit unit;
@@ -299,6 +301,32 @@ public class ModuleNode extends ASTNode {
         moduleStarImports.add(importNode);
 
         storeLastAddedImportNode(importNode);
+    }
+
+    /**
+     * Records an {@code import module <name>} declaration with its source location
+     * so semantic analysis can verify named-module readability and expand
+     * qualified or self-module exports (JLS §7.5.5 / JEP 511).
+     *
+     * @param importNode an {@link ImportNode} whose package name carries the imported module name
+     * @since 7.0.0
+     */
+    @Internal
+    public void addModuleImport(final ImportNode importNode) {
+        if (importNode != null) {
+            moduleImports.add(importNode);
+        }
+    }
+
+    /**
+     * Returns {@code import module} declarations recorded in this source unit.
+     *
+     * @return unmodifiable list of module import nodes
+     * @since 7.0.0
+     */
+    @Internal
+    public List<ImportNode> getModuleImports() {
+        return Collections.unmodifiableList(moduleImports);
     }
 
     /**

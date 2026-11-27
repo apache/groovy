@@ -48,6 +48,7 @@ import static org.objectweb.asm.Opcodes.ACC_MODULE;
 import static org.objectweb.asm.Opcodes.ACC_OPEN;
 import static org.objectweb.asm.Opcodes.ACC_STATIC_PHASE;
 import static org.objectweb.asm.Opcodes.ACC_TRANSITIVE;
+import static org.objectweb.asm.Opcodes.V12;
 import static org.objectweb.asm.Opcodes.V9;
 import static org.objectweb.asm.Opcodes.V_PREVIEW;
 
@@ -60,13 +61,16 @@ import static org.objectweb.asm.Opcodes.V_PREVIEW;
  */
 public final class ModuleInfoClassGenerator {
 
+    private static final String JAVA_BASE = "java.base";
+
     private ModuleInfoClassGenerator() {
     }
 
     /**
      * Generates {@code module-info.class} for {@code declaration}.
      * The class-file version comes from the compile unit and is raised to 9
-     * when the configured target is older, keeping the preview bit.
+     * when the configured target is older (dropping any preview bit below 12,
+     * since the preview minor version is only defined from class file version 12).
      *
      * @param source the modular compilation unit, or {@code null}
      * @param context the generator context of the compilation
@@ -97,19 +101,50 @@ public final class ModuleInfoClassGenerator {
      * @param bytecodeVersion the requested class-file version; values below 9 are raised to 9
      */
     public static void write(final ClassVisitor classVisitor, final SourceUnit source, final GeneratorContext context,
-            final ModuleInfoNode declaration, int bytecodeVersion) {
-        if ((bytecodeVersion & ~V_PREVIEW) < V9) {
-            bytecodeVersion = V9 | (bytecodeVersion & V_PREVIEW);
-        }
-        classVisitor.visit(bytecodeVersion, ACC_MODULE, ModuleInfoNode.CLASS_FILE_NAME, null, null, null);
+            final ModuleInfoNode declaration, final int bytecodeVersion) {
+        classVisitor.visit(normalizeBytecodeVersion(bytecodeVersion), ACC_MODULE, ModuleInfoNode.CLASS_FILE_NAME, null, null, null);
         classVisitor.visitSource(sourceFileName(source), null);
-        ModuleVisitor moduleVisitor = classVisitor.visitModule(declaration.getName(), declaration.isOpen() ? ACC_OPEN : 0, null);
+        String moduleVersion = resolveModuleVersion(source, context);
+        ModuleVisitor moduleVisitor = classVisitor.visitModule(declaration.getName(), declaration.isOpen() ? ACC_OPEN : 0, moduleVersion);
         if (moduleVisitor == null) {
             classVisitor.visitEnd();
             return;
         }
-        // When ModulePackages is present it must list every package the module
-        // exports, opens, or contains. An open module's opens table must be empty.
+        for (String pkg : collectPackages(context, declaration)) {
+            moduleVisitor.visitPackage(pkg.replace('.', '/'));
+        }
+        ModuleFinder versionFinder = resolveVersionFinder(source, declaration);
+        writeRequires(moduleVisitor, declaration, versionFinder);
+        writeExportsAndOpens(moduleVisitor, declaration);
+        writeServices(moduleVisitor, declaration);
+        moduleVisitor.visitEnd();
+        writeAnnotations(classVisitor, source, context, declaration);
+        classVisitor.visitEnd();
+    }
+
+    private static String resolveModuleVersion(final SourceUnit source, final GeneratorContext context) {
+        CompileUnit unit = context != null ? context.getCompileUnit() : null;
+        String version = unit != null && unit.getConfig() != null ? unit.getConfig().getModuleVersion() : null;
+        if ((version == null || version.isEmpty()) && source != null && source.getConfiguration() != null) {
+            version = source.getConfiguration().getModuleVersion();
+        }
+        return version == null || version.isEmpty() ? null : version;
+    }
+
+    private static int normalizeBytecodeVersion(final int bytecodeVersion) {
+        int major = bytecodeVersion & ~V_PREVIEW;
+        if (major < V9) {
+            return V9;
+        }
+        // Preview minor version (65535) is only defined from class file version 12 (JVMS §4.1).
+        return major < V12 ? major : bytecodeVersion;
+    }
+
+    /**
+     * When {@code ModulePackages} is present it must list every package the module
+     * exports, opens, or contains. An open module's opens table must be empty.
+     */
+    private static Set<String> collectPackages(final GeneratorContext context, final ModuleInfoNode declaration) {
         Set<String> packages = new LinkedHashSet<>();
         for (Exports exports : declaration.getExports()) {
             addPackage(packages, exports.getPackageName());
@@ -119,6 +154,19 @@ public final class ModuleInfoClassGenerator {
                 addPackage(packages, opens.getPackageName());
             }
         }
+        addCompiledPackages(packages, context, declaration);
+        for (Provides provides : declaration.getProvides()) {
+            for (ClassNode provider : provides.getResolvedProviders()) {
+                if (provider != null) {
+                    addPackage(packages, provider.getPackageName());
+                }
+            }
+        }
+        return packages;
+    }
+
+    private static void addCompiledPackages(final Set<String> packages, final GeneratorContext context,
+            final ModuleInfoNode declaration) {
         CompileUnit compileUnit = context != null ? context.getCompileUnit() : null;
         if (compileUnit == null && declaration.getSourceModule() != null) {
             compileUnit = declaration.getSourceModule().getUnit();
@@ -132,39 +180,42 @@ public final class ModuleInfoClassGenerator {
         if (javaClasses != null) {
             packages.addAll(javaClasses.getPackages());
         }
-        for (Provides provides : declaration.getProvides()) {
-            for (ClassNode provider : provides.getResolvedProviders()) {
-                if (provider != null) {
-                    addPackage(packages, provider.getPackageName());
-                }
-            }
+    }
+
+    private static ModuleFinder resolveVersionFinder(final SourceUnit source, final ModuleInfoNode declaration) {
+        ModuleFinder versionFinder = declaration.getAccessibilityFinder();
+        if (versionFinder != null) {
+            return versionFinder;
         }
-        for (String pkg : packages) {
-            moduleVisitor.visitPackage(pkg.replace('.', '/'));
-        }
-        ModuleFinder versionFinder = source != null ? ModuleImportHelper.moduleFinder(source) : ModuleFinder.ofSystem();
-        boolean implicitJavaBase = !"java.base".equals(declaration.getName());
-        if (implicitJavaBase) {
-            for (Requires requires : declaration.getRequires()) {
-                if ("java.base".equals(requires.getModuleName())) {
-                    implicitJavaBase = false;
-                    break;
-                }
-            }
-        }
-        if (implicitJavaBase) {
-            moduleVisitor.visitRequire("java.base", ACC_MANDATED, ModuleInfoVerifier.readModuleVersion(versionFinder, "java.base"));
+        return source != null ? ModuleImportHelper.moduleFinder(source) : ModuleFinder.ofSystem();
+    }
+
+    private static void writeRequires(final ModuleVisitor moduleVisitor, final ModuleInfoNode declaration,
+            final ModuleFinder versionFinder) {
+        if (needsImplicitJavaBase(declaration)) {
+            moduleVisitor.visitRequire(JAVA_BASE, ACC_MANDATED, ModuleInfoVerifier.readModuleVersion(versionFinder, JAVA_BASE));
         }
         for (Requires requires : declaration.getRequires()) {
-            int access = 0;
-            if (requires.isTransitive()) {
-                access |= ACC_TRANSITIVE;
-            }
-            if (requires.isStaticPhase()) {
-                access |= ACC_STATIC_PHASE;
-            }
-            moduleVisitor.visitRequire(requires.getModuleName(), access, ModuleInfoVerifier.readModuleVersion(versionFinder, requires.getModuleName()));
+            int access = (requires.isTransitive() ? ACC_TRANSITIVE : 0)
+                    | (requires.isStaticPhase() ? ACC_STATIC_PHASE : 0);
+            moduleVisitor.visitRequire(requires.getModuleName(), access,
+                    ModuleInfoVerifier.readModuleVersion(versionFinder, requires.getModuleName()));
         }
+    }
+
+    private static boolean needsImplicitJavaBase(final ModuleInfoNode declaration) {
+        if (JAVA_BASE.equals(declaration.getName())) {
+            return false;
+        }
+        for (Requires requires : declaration.getRequires()) {
+            if (JAVA_BASE.equals(requires.getModuleName())) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private static void writeExportsAndOpens(final ModuleVisitor moduleVisitor, final ModuleInfoNode declaration) {
         for (Exports exports : declaration.getExports()) {
             moduleVisitor.visitExport(exports.getPackageName().replace('.', '/'), 0, friendModules(exports.getTargets()));
         }
@@ -173,6 +224,9 @@ public final class ModuleInfoClassGenerator {
                 moduleVisitor.visitOpen(opens.getPackageName().replace('.', '/'), 0, friendModules(opens.getTargets()));
             }
         }
+    }
+
+    private static void writeServices(final ModuleVisitor moduleVisitor, final ModuleInfoNode declaration) {
         for (Uses uses : declaration.getUses()) {
             moduleVisitor.visitUse(internalTypeName(uses.getResolvedType(), uses.getServiceName()));
         }
@@ -186,9 +240,6 @@ public final class ModuleInfoClassGenerator {
             }
             moduleVisitor.visitProvide(service, providers);
         }
-        moduleVisitor.visitEnd();
-        writeAnnotations(classVisitor, source, context, declaration);
-        classVisitor.visitEnd();
     }
 
     private static void addPackage(final Set<String> packages, final String pkg) {
@@ -209,12 +260,8 @@ public final class ModuleInfoClassGenerator {
     }
 
     private static String sourceFileName(final SourceUnit source) {
-        if (source == null || source.getName() == null) {
-            return "module-info.groovy";
-        }
-        String name = source.getName();
-        int slash = Math.max(name.lastIndexOf('/'), name.lastIndexOf('\\'));
-        return slash >= 0 ? name.substring(slash + 1) : name;
+        String name = ModuleInfoNode.sourceFileName(source);
+        return name == null || name.isEmpty() ? "module-info.groovy" : name;
     }
 
     private static void writeAnnotations(final ClassVisitor classVisitor, final SourceUnit source,

@@ -505,4 +505,68 @@ public final class CompilerConfigurationTest {
                 CompilerConfiguration.DEFAULT.setTargetPhase(CompilePhase.INSTRUCTION_SELECTION));
         assertEquals(Phases.ALL, CompilerConfiguration.DEFAULT.getTargetPhase());
     }
+
+    @Test // GROOVY-9273
+    public void testJpmsOptionsSettersCopyAndDefaultImmutability() {
+        CompilerConfiguration config = new CompilerConfiguration();
+        assertEquals(Collections.emptyList(), config.getModulePath());
+        assertEquals(Collections.emptyList(), config.getUpgradeModulePath());
+        assertNull(config.getModuleVersion());
+        assertEquals(Collections.emptyList(), config.getAddModules());
+        assertEquals(Collections.emptyList(), config.getLimitModules());
+        assertEquals(Collections.emptyList(), config.getAddReads());
+        assertEquals(Collections.emptyList(), config.getAddExports());
+
+        String sep = File.pathSeparator;
+        config.setModulePath("mods1" + sep + "mods2");
+        config.setUpgradeModulePath("up1" + sep + "up2");
+        config.setModuleVersion("2.0.0");
+        config.setAddModules(Arrays.asList("java.sql", "ALL-MODULE-PATH"));
+        config.setLimitModules(Arrays.asList("java.base"));
+        config.setAddReads(Arrays.asList("demo.app=java.sql"));
+        config.setAddExports(Arrays.asList("java.base/sun.security.util=demo.app"));
+
+        assertEquals(Arrays.asList("mods1", "mods2"), config.getModulePath());
+        assertEquals(Arrays.asList("up1", "up2"), config.getUpgradeModulePath());
+        assertEquals("2.0.0", config.getModuleVersion());
+        assertEquals(Arrays.asList("java.sql", "ALL-MODULE-PATH"), config.getAddModules());
+        assertEquals(Arrays.asList("java.base"), config.getLimitModules());
+        assertEquals(Arrays.asList("demo.app=java.sql"), config.getAddReads());
+        assertEquals(Arrays.asList("java.base/sun.security.util=demo.app"), config.getAddExports());
+
+        // Copy constructor preserves independent copies
+        CompilerConfiguration copy = new CompilerConfiguration(config);
+        config.setModulePathList(null);
+        config.setUpgradeModulePathList(null);
+        config.setAddModules(null);
+        config.setLimitModules(null);
+        config.setAddReads(null);
+        config.setAddExports(null);
+        assertEquals(Collections.emptyList(), config.getModulePath());
+        assertEquals(Collections.emptyList(), config.getUpgradeModulePath());
+        assertEquals(Arrays.asList("mods1", "mods2"), copy.getModulePath());
+        assertEquals(Arrays.asList("up1", "up2"), copy.getUpgradeModulePath());
+        assertEquals("2.0.0", copy.getModuleVersion());
+        assertEquals(Arrays.asList("java.sql", "ALL-MODULE-PATH"), copy.getAddModules());
+        assertEquals(Arrays.asList("java.base"), copy.getLimitModules());
+        assertEquals(Arrays.asList("demo.app=java.sql"), copy.getAddReads());
+        assertEquals(Arrays.asList("java.base/sun.security.util=demo.app"), copy.getAddExports());
+
+        // DEFAULT configuration is immutable
+        assertThrows(UnsupportedOperationException.class, () -> CompilerConfiguration.DEFAULT.getModulePath().add("x"));
+        assertThrows(UnsupportedOperationException.class, () -> CompilerConfiguration.DEFAULT.getUpgradeModulePath().add("x"));
+        assertThrows(UnsupportedOperationException.class, () -> CompilerConfiguration.DEFAULT.getAddModules().add("x"));
+        assertThrows(UnsupportedOperationException.class, () -> CompilerConfiguration.DEFAULT.getLimitModules().add("x"));
+        assertThrows(UnsupportedOperationException.class, () -> CompilerConfiguration.DEFAULT.getAddReads().add("x"));
+        assertThrows(UnsupportedOperationException.class, () -> CompilerConfiguration.DEFAULT.getAddExports().add("x"));
+        assertThrows(UnsupportedOperationException.class, () -> CompilerConfiguration.DEFAULT.setModulePath("x"));
+        assertThrows(UnsupportedOperationException.class, () -> CompilerConfiguration.DEFAULT.setModulePathList(Collections.emptyList()));
+        assertThrows(UnsupportedOperationException.class, () -> CompilerConfiguration.DEFAULT.setUpgradeModulePath("x"));
+        assertThrows(UnsupportedOperationException.class, () -> CompilerConfiguration.DEFAULT.setUpgradeModulePathList(Collections.emptyList()));
+        assertThrows(UnsupportedOperationException.class, () -> CompilerConfiguration.DEFAULT.setModuleVersion("1.0"));
+        assertThrows(UnsupportedOperationException.class, () -> CompilerConfiguration.DEFAULT.setAddModules(Collections.emptyList()));
+        assertThrows(UnsupportedOperationException.class, () -> CompilerConfiguration.DEFAULT.setLimitModules(Collections.emptyList()));
+        assertThrows(UnsupportedOperationException.class, () -> CompilerConfiguration.DEFAULT.setAddReads(Collections.emptyList()));
+        assertThrows(UnsupportedOperationException.class, () -> CompilerConfiguration.DEFAULT.setAddExports(Collections.emptyList()));
+    }
 }

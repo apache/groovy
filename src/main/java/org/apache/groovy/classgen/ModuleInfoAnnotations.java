@@ -55,15 +55,23 @@ public final class ModuleInfoAnnotations {
         if (source == null || declaration == null || declaration.getAnnotations().isEmpty()) {
             return;
         }
+        List<AnnotationNode> original = new ArrayList<>(declaration.getAnnotations());
         ClassNode carrier = new ClassNode(ModuleInfoNode.CLASS_FILE_NAME, Opcodes.ACC_ABSTRACT | Opcodes.ACC_INTERFACE, ClassHelper.OBJECT_TYPE);
         if (declaration.getSourceModule() != null) {
             carrier.setModule(declaration.getSourceModule());
         }
-        carrier.addAnnotations(new ArrayList<>(declaration.getAnnotations()));
+        carrier.addAnnotations(original);
         ASTTransformationCollectorCodeVisitor collector =
                 new ASTTransformationCollectorCodeVisitor(source, compilationUnit.getTransformLoader());
         collector.visitClass(carrier);
         List<AnnotationNode> expanded = new ArrayList<>(carrier.getAnnotations());
+        List<AnnotationNode> replaced = new ArrayList<>();
+        for (AnnotationNode candidate : original) {
+            if (!expanded.contains(candidate)) {
+                replaced.add(candidate);
+            }
+        }
+        declaration.setExpandedCollectors(replaced);
         declaration.getAnnotations().clear();
         declaration.addAnnotations(expanded);
     }
