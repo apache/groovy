@@ -578,717 +578,67 @@ used the variable or method. A cast now applies to the keyword, as
 `(BigDecimal) await(price)` and `(Awaitable<Integer>) async { 7 }` need, so
 those forms follow the same rules as without the cast.
 
+### Groovy 6.0.1 — overview of the breaking changes
+
+Code that compiled and ran with 6.0.0 can fail to compile, throw, or give a
+different result with 6.0.1 in the cases below, grouped by area. Each has an
+entry of its own, in the same order.
+
+| Area | Issues |
+|---|---|
+| Parsing and statements | GROOVY-12831, GROOVY-12832, GROOVY-12478, GROOVY-12790 |
+| Static type checking rejects more code | GROOVY-12714, GROOVY-12525, GROOVY-12484, GROOVY-12428, GROOVY-12599, GROOVY-12568, GROOVY-12569, GROOVY-12526, GROOVY-12717 |
+| Static compilation gives different results | GROOVY-12469, GROOVY-12761, GROOVY-12488, GROOVY-12534, GROOVY-12649, GROOVY-12476, GROOVY-12470, GROOVY-12700, GROOVY-12479, GROOVY-12560, GROOVY-12574, GROOVY-12535, GROOVY-12576, GROOVY-12826 |
+| Dynamic dispatch and properties | GROOVY-12439, GROOVY-12521, GROOVY-12520, GROOVY-12592, GROOVY-12489, GROOVY-12538, GROOVY-12619, GROOVY-12622, GROOVY-12613, GROOVY-12558, GROOVY-12580, GROOVY-12490 |
+| Closures | GROOVY-12673, GROOVY-12667, GROOVY-12578, GROOVY-12829 |
+| Traits | GROOVY-12608, GROOVY-12597, GROOVY-12590, GROOVY-12611, GROOVY-12618, GROOVY-12612, GROOVY-12624, GROOVY-12575 |
+| Packed closures (incubating) | GROOVY-12658, GROOVY-12666, GROOVY-12670, GROOVY-12660, GROOVY-12663 |
+| Libraries and API | GROOVY-12471, GROOVY-12730, GROOVY-10498, GROOVY-12762, GROOVY-11744, GROOVY-12555, GROOVY-8113, GROOVY-12744, GROOVY-12461, GROOVY-12457, GROOVY-12763, GROOVY-12571 |
+| groovy-contracts and groovy-typecheckers | GROOVY-12463, GROOVY-12464, GROOVY-12477, GROOVY-12723, GROOVY-12728, GROOVY-12729, GROOVY-12741, GROOVY-12742 |
+
 ### Groovy 6.0.1 — `await(x)` binds like a call, and `await` needs its operand on the same line (GROOVY-12831, GROOVY-12832)
 
 Two changes to how `await` (incubating) is parsed:
 
 - A method call, property or index after a parenthesised `await` applies to
-  the awaited value: `await(task).toString()` is `(await task).toString()`.
-  In 6.0.0 it awaited `task.toString()`, which failed at run time, although
-  `await(task) + 1` already added to the awaited value. Without parentheses
-  `await` still takes the whole expression, so `await task.toString()` keeps
-  awaiting `task.toString()`.
+  the awaited value: `await(task).toString()` is `(await task).toString()`,
+  as `await(task) + 1` already added to the awaited value. Without
+  parentheses `await` still takes the whole expression.
 - `await` at the end of a line is a name, not the keyword. In 6.0.0 the next
-  line became its operand, so `def r = await` followed by `r` on the next
-  line was read as `def r = await r`. An `await` with its operand on the next
-  line now needs the operand moved up, or `await(` with the arguments on the
-  following lines. `async` may still have its closure on the next line.
-
-**Who is affected (source).** Code that relied on `await(x).m()` awaiting
-`x.m()` should write `await x.m()`, and code that put the operand of `await`
-on the next line should join the lines.
-
-### Groovy 6.0.1 — `abs()` on a `Number` receiver keeps the number's precision (GROOVY-12471)
-
-`DefaultGroovyMethods.abs(Number)` used to return `int`, truncating any
-`Long`, `BigInteger`, `BigDecimal` or floating-point value whose static type
-was `Number`. Dynamic dispatch rarely hit it, because the `Long`, `Float` and
-`Double` overloads and the `BigInteger`/`BigDecimal` instance methods were
-selected first, but `@CompileStatic` code with a `Number`-typed receiver —
-`(item - value).abs()` — always did. The method now returns `Number`, computed
-with the same type rules as Groovy's arithmetic operators. New `int abs(Integer)`,
-`int abs(Short)` and `int abs(Byte)` overloads keep the integral receivers on
-`int`.
-
-**Who is affected (source).** Java code that assigns the result directly to a
-primitive — `int x = DefaultGroovyMethods.abs(n)` — no longer compiles, and
-`@CompileStatic` code doing the same through a `Number`-typed receiver —
-`int x = n.abs()` — is now a type-checking error. Both were truncating; use
-`.intValue()` or a cast where the narrowing is intended. Receivers typed
-`Integer`, `Short`, `Byte`, `Long`, `Float` or `Double`, and all dynamic code,
-compile and behave as before.
-
-**Who is not affected (binary).** The old `int abs(Number)` descriptor is kept
-as a synthetic bridge method, so classes compiled against earlier releases
-still link and still get the old truncating result. `japicmp` sees no change.
-A `Float` reached through a `Number` receiver now yields a `Double`, as `Float`
-arithmetic does; through a `Float` receiver it still yields a `Float`.
-
-### Groovy 6.0.1 — statically compiled variables declared wider than their initializer's generic type keep the value (GROOVY-12469)
-
-Under `@CompileStatic`, a local variable declared with a type wider than the
-one inferred for its initializer from generics — `CharSequence cs = list.get(0)`
-with `list` a `List<String>` — was converted to the inferred type where it was
-declared. Because generic types are not checked at runtime, the element need
-not be of that type: a `GString` added by dynamic code became a `String`, and
-a `StringBuilder` became its text. The variable now holds the value unchanged,
-as it does in dynamic Groovy and in Java. Calls to methods of the declared type
-are made through that type, as javac does. A `GString` is converted to a
-`String` where a method that only `String` has is called on it, both through
-such a variable and on a generic result used directly —
-`list.get(0).toUpperCase()`, which used to throw `ClassCastException`.
-
-**Who is affected (source).** Code that relied on the conversion at the
-declaration: for a `GString` element, `cs.equals('ab')` and
-`cs instanceof String` are now false (`cs == 'ab'` is still true), and a lazy
-`GString` is no longer fixed at the declaration. Any other non-`String` element,
-such as a `StringBuilder`, now throws `ClassCastException` where a
-`String`-only method is called on it. Variables declared `String`, `def` or
-`var`, and dynamic code, behave as before.
-
-### Groovy 6.0.1 — enum constants with literal arguments are created without the meta class (GROOVY-12490)
-
-GROOVY-12240 made an enum whose constants have no arguments create them with a
-direct constructor call. An enum whose constants have arguments is now created
-the same way when every argument is a literal (a constant, `null` or a class
-literal) and the compiler can tell which constructor the runtime would select:
-one fixed-arity constructor of that arity, each literal of the parameter's own
-type, the primitive of a wrapper literal, or a type other than `Boolean`
-that it extends or implements. Any other
-enum keeps the synthetic `$INIT` helper, which selects the constructor through
-the meta class.
-
-**Who is affected.** Code that registered a meta class, or an
-`ExpandoMetaClass` constructor, for such an enum before it initialized, to
-observe or replace the creation of its constants. That no longer sees them, as
-it already did not for enums without arguments. Writing one argument as a
-non-literal expression, such as `'one'.toString()` in place of `'one'`, keeps
-the whole enum on `$INIT`.
-
-**What is unchanged.** The constants' values, ordinals and fields, the
-constructor chosen, and enums with named arguments, class bodies, abstract
-methods or overloads the literals cannot tell apart.
-
-### Groovy 6.0.1 — `super.x = v` calls a setter of the superclass when it has several (GROOVY-12521)
-
-When a superclass declared more than one `setX` method — `setX(int)` and
-`setX(String)` — `super.x = v` in dynamic Groovy and under `@TypeChecked` used
-ordinary dispatch on the receiver. A `setX` that the class itself overrides or
-declares, including one generated for a redeclared `x` property, was called
-instead of the superclass's. An overriding setter that delegated with
-`super.x = v` therefore called itself until a `StackOverflowError`. The write
-now chooses among the superclass's `setX` methods by the type of `v`, as
-`super.setX(v)` and `@CompileStatic` do, and as `super.x = v` already did when
-the superclass had a single setter. `super.x++` and `super.x += v` write the
-same way.
-
-**Who is affected.** Classes whose superclass overloads a property's setter,
-that override one of those setters or redeclare the property, and that write
-the property through `super`. Such a write now runs the superclass's setter,
-not the class's own; use `this.x = v` where the class's own setter is wanted.
-In the same case, a `setX` added through the class's `ExpandoMetaClass` or
-through a category no longer receives `super.x = v`, which now resolves as it
-does for a single setter. `@CompileStatic` code, reads of `super.x`, writes
-through `this` or another reference, and superclasses with a single setter
-behave as before. There are no API changes.
-
-### Groovy 6.0.1 — a repeated `_` is an ordinary variable holding the last value (GROOVY-11744)
-
-A variable named `_` may now be declared again in the same or an enclosing
-scope, the later declaration replacing the earlier one, as Java allows for
-its unnamed variables. A `_` repeated in a multi-assignment declaration or in
-a closure or lambda parameter list is therefore simply `_` declared more than
-once: after `def (_, y, _) = [3, 4, 5]` the variable `_` is `5`, and
-`{ _, _ -> _ }` returns its last argument.
-
-This restores the Groovy 5 behaviour in dynamic code. In 6.0.0, reading `_`
-after such a declaration threw `MissingPropertyException`, or found a `_` in
-the script binding. That change was not announced and was most likely
-unintentional: it was a side effect of the `instanceof` pattern variable
-scoping work (GROOVY-12242), which made a variable that is not declared in
-scope always resolve as a property, even when a local of that name exists. A
-closure could not see such a `_` in either version; it now can.
-
-**Who is affected (source).**
-- Code that compiled before behaves as in Groovy 5 and as before, with the
-  exception of the 6.0.0 regression described above.
-- Under `@CompileStatic` and `@TypeChecked`, reading `_` after a repeated
-  `_` used to be the error "The variable [_] is undeclared"; it now has the
-  type of the last declaration.
-- Redeclaring `_` — `def _ = 1` followed by `def _ = 2`, `def (_, y) = …`,
-  `{ _ -> … }` or `catch (Exception _)` — used to be the error "The current
-  scope already contains a variable of the name _", and now compiles. An
-  inner declaration shadows the outer `_` rather than changing it.
-
-Method and constructor parameters, fields and properties named `_`, and
-variables of any other name, are still checked for duplicates. The
-undeclared multi-assignment `(_, y, _) = …` was never affected: it assigns
-the existing `_` (or the binding variable) twice.
-
-**Who is affected (API).** `org.codehaus.groovy.control.PlaceholderVisitor`,
-which marked a repeated `_` so that the duplicate check would skip it, is
-deprecated for removal in Groovy 7, and the compiler no longer runs it.
-`PlaceholderVisitor.isPlaceholder` therefore returns `false` for code the
-compiler produced, unless the caller runs the visitor itself. A copy of
-`CompilationUnit` that adds the visitor as a phase operation still compiles
-and can drop it.
-
-### Groovy 6.0.1 — parallel collections run on the pool in scope (GROOVY-12457)
-
-Parallel collection methods (incubating) run on the pool bound with
-`Pool.withCurrent`. In 6.0.0 a pool not backed by a `ForkJoinPool`, such as
-`Pool.virtual()` or `Pool.io()`, was silently replaced by the common
-fork-join pool, so blocking callbacks gained nothing from it.
-
-**Who is affected.**
-
-- Callbacks under `Pool.virtual()` or `Pool.io()` now run on that pool's
-  threads. A short-circuit (`findParallel`, `findAnyParallel`,
-  `anyParallel`, `everyParallel`) or a failing sibling interrupts callbacks
-  still running there, which closes an interruptible channel they are
-  blocked on.
-- `Pool.current()` returns the pool on its own worker threads, where it
-  returned `null`, so a nested parallel call stays on that pool.
-- `groupByParallel` returns its keys in first-seen order, as `groupBy` does.
-- `grepParallel` keeps an element when `isCase` is Groovy-true, as `grep`
-  does. A filter whose `isCase` returns `null`, `0`, an empty string or an
-  empty collection no longer keeps every element.
-
-### Groovy 6.0.1 — a `setProperty` or `getProperty` from another interface's default method receives every access (GROOVY-12489)
-
-For a dynamic property write or read, the runtime checks whether the receiver
-overrides the `setProperty` or `getProperty` that `GroovyObject` provides. An
-override receives the access. For the `GroovyObject` default, the runtime calls
-the metaclass itself and tells it which class is making the access. Since Groovy 5
-(GROOVY-8283), the check treated any interface default method as `GroovyObject`'s
-own. So when a class took `setProperty` or `getProperty` from a default method of
-another interface, such as one extending `GroovyObject`, `obj.x = v` writes and
-computed-name reads (`obj."$name"`) went around that method to the metaclass.
-`obj.setProperty(...)` calls and `obj.x` reads did reach it. Now only
-`GroovyObject`'s own default is set aside, so such a method receives every write
-and read. That matches a method the class declares, and Groovy 4, which compiled
-interface default methods as traits.
-
-**Who is affected.** Classes that implement an interface supplying a default
-`setProperty` or `getProperty`. The method now also receives the writes and
-computed-name reads that used to bypass it. Like any override, it receives the
-access without knowing which class made it, so the access is resolved for the
-receiver's own class. For example, a superclass that writes its own private field
-on an instance of a subclass, `other.secret = v`, now fails with
-`MissingPropertyException`, as the read `other.secret` already did. Use direct
-field access (`other.@secret = v`) where that is intended. An `@Internal` default
-`getProperty` of another interface now answers computed-name reads, while `obj.x`
-reads still go around it, as in Groovy 4.
-
-**Classes reflection cannot read.** Whether a class overrides these methods is now
-decided once per class and cached. Reflection may be unable to read a class's
-public methods: in a GraalVM native image without reflection metadata for the
-class, or on the JVM when a public method names a type missing at run time. Such a
-class now counts as overriding, so the access reaches the object's own
-`setProperty` or `getProperty`. Before, the access threw, or a read went around a
-real override to the metaclass. If the class has the `GroovyObject` default, the
-access is resolved for the receiver's own class.
-
-**What is unchanged.** Classes that use `GroovyObject`'s own defaults, and classes
-that declare `setProperty` or `getProperty` or inherit it from a superclass or a
-trait. Also unchanged: a `setProperty` or `getProperty` contributed through
-`ExpandoMetaClass`, a per-instance metaclass or a mixin, because the metaclass is
-still consulted on each access. `GroovyObjectOverrides`, which holds the check, is
-internal, so `japicmp` does not report this change.
-
-### Groovy 6.0.1 — `>` and `>=` with a primitive NaN operand are false (GROOVY-12538)
-
-When both operands of a comparison are primitive `double` or `float` values,
-the compiler compares them with a JVM instruction. It used the variant that
-treats NaN as greater than every value for all four ordered operators, so
-`NaN > x` and `NaN >= x` were `true` while `NaN < x` and `NaN <= x` were
-`false`. All four are now `false`, as in Java (JLS 15.20.1), and as Groovy
-already gave when both operands are `Double` objects. This applies to
-variables, fields and parameters declared `double` or `float`, in dynamic code
-as well as under `@TypeChecked` and `@CompileStatic`, and to `Double.NaN` and
-`Float.NaN` under `@CompileStatic`, where they are primitive.
-
-**Who is affected.** Code that relied on a NaN comparing greater, for example
-`if (reading > limit)` treating a NaN reading as over the limit. Use
-`Double.isNaN` where NaN needs handling of its own.
-
-**What is unchanged.** Comparisons that go through Groovy's number comparison
-rather than a primitive instruction: operands of different types such as
-`Double` against `Integer` or `BigDecimal`, where NaN is still greater than
-every value as in `Double.compareTo` (GROOVY-3309); `==` on `Double` objects,
-which still treats NaN as equal to NaN as `Double.equals` does; and `<=>`,
-which follows `Double.compare` for primitives and objects alike. Classes
-compiled by an earlier release keep the old comparison until they are
-recompiled.
-
-### Groovy 6.0.1 — instance initializer blocks of `@CompileStatic` classes are statically compiled (GROOVY-12761)
-
-Since Groovy 5.0, method calls in an instance initializer block of a
-`@CompileStatic` class were type checked but then dispatched dynamically,
-unlike the same calls in a constructor or a field initializer. In 6.0.0 an
-anonymous inner class created in such a block was also compiled dynamically
-as a whole. Both are statically compiled again, as in Groovy 4. A closure in
-the block that calls a method of a delegate that is not a Groovy object, such
-as `new StringBuilder('a').with { append('b') }`, no longer throws
-`IncompatibleClassChangeError` (GROOVY-12581).
-
-**Who is affected.** Code in an instance initializer block of a
-`@CompileStatic` class, or in an anonymous inner class created there, that
-calls an overloaded method with an argument whose static type is wider than
-its value. The overload is now chosen from the static type, as in a
-constructor, rather than from the run-time type. Meta-class and category
-changes no longer apply to those calls.
-
-**What is unchanged.** Constructor calls written directly in the block,
-static initializer blocks, field initializers, constructors, and classes that
-are not statically compiled. There are no API changes.
-
-### Groovy 6.0.1 — statically compiled constructor references call the constructor directly (GROOVY-12488)
-
-Under `@CompileStatic`, a constructor reference such as `X::new` created the
-object through the meta-class, which selected the constructor at run time from
-the types of the arguments. The constructor is now selected at compile time,
-among the constructors visible from the enclosing class, for the parameter
-types of the functional interface, as for `new X(args)` in the same class and
-as in Java, and it is called directly.
-
-**Who is affected.** Statically compiled constructor references whose result
-depended on that run-time selection:
-
-- The overload is chosen by the static parameter types of the functional
-  interface. `Function<CharSequence, X> f = X::new` calls `X(CharSequence)` even
-  when it is given a `String`. With `IL(Object)` and `IL(long)`,
-  `Function<Integer, IL>` calls `IL(Object)`, where it called `IL(long)`; with
-  `IL2(int)` and `IL2(Integer)`, `IntFunction<IL2>` calls `IL2(int)`, where it
-  called `IL2(Integer)`.
-- An `Object[]` given to `Function<Object, VO>` for `VO(Object...)` is passed as
-  one element, where its elements were passed.
-- `null` given to `Function<Integer, PI>` for `PI(int)` throws
-  `NullPointerException`, where it threw `GroovyRuntimeException`.
-- A constructor the enclosing class cannot call no longer wins over one it can.
-  With `private Foo(String)` and `public Foo(Object)`, `Function<String, Foo>`
-  in another class calls `Foo(Object)`, as `new Foo(s)` does.
-- A constructor added or overridden through the meta-class, for example with
-  `ExpandoMetaClass`, is not used, as for a statically compiled `new`.
-
-**What is unchanged.** The constructor is still selected at run time when no
-single constructor matches the parameter types (GROOVY-10971), for an enum, for
-a protected constructor of another package, and for a protected or
-package-private constructor of a class that a `GroovyClassLoader` defined in
-another compilation, such as a class of an earlier `GroovyShell` parse. Dynamic
-and `@TypeChecked` code select the constructor at run time as before.
-
-### Groovy 6.0.1 — statically compiled code in a `GroovyShell` reports what the JVM refuses across class loaders (GROOVY-12568)
-
-The JVM allows access to a protected or package-private member only within
-the same run-time package, which is the package name and the class loader. A
-`GroovyClassLoader` defines each compilation in memory with a class loader of
-its own, so a class of an earlier `GroovyShell` parse, or a precompiled class
-used by a script, is in another run-time package even when the package name is
-the same. Statically compiled code that calls such a constructor or method, or
-reads or writes such a field, compiled and then failed with
-`IllegalAccessError` when it ran.
-
-With the new option `CompilerConfiguration.RUNTIME_PACKAGE_CHECK`, such an
-access is a compile error, reported when the class is generated:
-
-```
-Cannot call package-private method pm of p.M from class p.C: M is defined by
-another class loader, so the JVM refuses this access. Use @CompileDynamic to
-reach it through the meta-class
-```
-
-**Who is affected.** `@CompileStatic` code compiled by a `GroovyShell`,
-including scripts run with the `groovy` command: a shell turns the option on
-for the class loader it creates, unless the configuration sets it. Such code that used to fail at run time now fails
-to compile, and so does such code on a path that never ran. Mark the method or
-class `@CompileDynamic`, or make the member public. A protected member that a
-subclass reaches through `this`, `super` or a receiver of the subclass type is
-not reported, as the JVM allows it.
-
-**What is unchanged.** Code compiled to class files (groovyc, Gradle, Maven,
-Ant, joint compilation), dynamic and `@TypeChecked` code, members of classes
-of the same compilation, and constructor references, which already go through
-the meta-class (GROOVY-12488). A `GroovyClassLoader` that a shell did not
-create, as used by `parseClass` or JSR-223, has the option off. The bytecode
-is the same as before.
-
-**Opting out.** Set `RUNTIME_PACKAGE_CHECK` to `false` in the configuration's
-optimization options, or the system property
-`groovy.runtime.package.check=false`, to keep the failure at run time.
-`CompilerConfiguration.RUNTIME_PACKAGE_CHECK` is a new `@Incubating` constant;
-`japicmp` sees only the addition.
-
-### Groovy 6.0.1 — type checking rejects a call to a property accessor that is not generated (GROOVY-12525)
-
-Static type checking assumed that a property had both an `isX()` and a
-`getX()` accessor, whether or not the class generates them. A call to an
-accessor that does not exist was accepted at compile time and failed at
-run time with `MissingMethodException` under `@TypeChecked`, or
-`NoSuchMethodError` under `@CompileStatic`. Such a call is now a compile
-error, `Cannot find matching method`. The accessors type checking accepts
-are the ones the class generates:
-
-- A `boolean` property generates `isX()` and `getX()`, unless the class
-  declares one of them itself, in which case only that one exists.
-- A `Boolean` property, or a property of any other type, generates only
-  `getX()`.
-
-**Who is affected.** `@TypeChecked` code that calls such a missing accessor
-on a class with `methodMissing`, for example `b.isName()` for a `String`
-property `name`. That call reached `methodMissing` at run time and now no
-longer compiles. Call the accessor the class generates, read the property
-(`b.name`), or mark the method `@TypeChecked(TypeCheckingMode.SKIP)` to keep
-the dynamic call. Other calls to a missing accessor already failed at run
-time, and dynamic code is unchanged.
-
-### Groovy 6.0.1 — the receiver of a compound-assigned or incremented property is evaluated once (GROOVY-12619)
-
-A compound assignment or an increment of a property, such as `obj().v += 2`
-or `obj().v++`, evaluated the receiver expression twice: once for the read
-and once for the write. The receiver is now evaluated once and used for
-both, as it already was for subscripts such as `list[i()] += 2`. This
-applies in dynamic Groovy, under `@TypeChecked` and under `@CompileStatic`.
-
-It covers `+=` and the other compound assignment operators, prefix and
-postfix `++` and `--`, attribute access (`obj().@f += 2`), safe navigation
-(`obj()?.v += 2`), property chains, a static property reached through an
-instance, extension properties such as `file.text += 'x'`, and a receiver
-named by a property or dynamic variable that is read through a getter. The
-elvis assignment `?=` is unchanged.
-
-**Who is affected.** Code whose receiver expression has a side effect or
-returns a different object on each evaluation:
-
-- A method or getter that counts calls, logs, or otherwise has an effect
-  now runs once per compound assignment or increment, where it ran twice.
-- A receiver that yields a new or a different object each time, such as
-  `iterator.next().v += 1` or `new Box().v++`, now reads and writes the
-  same object. Before, the read came from one object and the write went to
-  the next.
-
-### Groovy 6.0.1 — `@CompileStatic` property and spread results on collections match dynamic Groovy (GROOVY-12534, GROOVY-12649)
-
-Under `@CompileStatic`, property and spread results on a `List`, `Set` or
-other `Iterable` type that declares a property, or gets one from an
-extension method, now match dynamic Groovy and `@TypeChecked`
-(GROOVY-12534, [PR #3058](https://github.com/apache/groovy/pull/3058);
-GROOVY-12649). A property the collection itself defines is read from the
-collection; an explicit spread (`people*.name`) reads it from each
-element, and a spread assignment (`people*.name = 'x'`) writes it to each
-element. The previous `@CompileStatic` results were wrong, and code that
-relied on them gets different results once recompiled with 6.0.1; the new
-results are correct.
-
-### Groovy 6.0.1 — closure wrappers report and take the delegation settings of the closure they wrap (GROOVY-12673)
-
-The closures returned by `memoize()` and its variants, `trampoline()`,
-`curry()` and its relatives, `>>`/`<<` composition and `asWritable()` wrap
-another closure and call through to it. They reported a `thisObject` of
-their own, `null` or the owner, and the memoize and trampoline wrappers
-also kept a `delegate` and `resolveStrategy` of their own that nothing
-consulted: a delegate set on a memoized or trampolined closure never
-reached the closure that ran, so
-such a closure could not be handed to a builder, or to `with()` and `tap()`,
-without a `MissingMethodException` on the delegate's methods. This was so in
-4.0.x, 5.x and 6.0.0.
-
-A wrapper now reports the `thisObject` of the closure it wraps. The memoize,
-trampoline and async wrappers (GROOVY-12679) also report and take its
-`delegate` and `resolveStrategy`: setting either on the wrapper sets it on
-the wrapped closure, which is, as before, the very closure that was wrapped,
-so a setting made on the original after wrapping is seen by the wrapper too.
-`clone()` of a memoize or trampoline wrapper copies the wrapped closure, so
-`with()`, `tap()` and builders that bind a clone leave the original alone. An
-async wrapper, and a trampolined writable or composed closure, report the
-parameter count and types of the closure they wrap, where they reported a
-single `Object[]` parameter.
-
-The same release also changes these related behaviours:
-
-- `dehydrate()` and `rehydrate()` on a wrapper return a wrapper over the
-  dehydrated or rehydrated copy, where they returned a copy of the wrapper
-  still calling the old closure (GROOVY-12665, GROOVY-12669). A rehydrated
-  memoized closure starts with an empty cache.
-- `memoizeAtMost`, `memoizeAtLeast` and `memoizeBetween` closures, and a
-  memoized closure that has cached a `null` result, are serializable
-  (GROOVY-12674, GROOVY-12677). Softly referenced cached values are not
-  carried in the stream. The serialized form of a memoized closure now
-  holds a cache factory, a named class with a fixed `serialVersionUID`: a
-  plain `memoize()` closure written by 6.0.1 still reads in 6.0.0 and 5.x,
-  and one written by those versions reads in 6.0.1.
-- An `ObjectInputStream` created with a class loader, through
-  `newObjectInputStream` or `withObjectInputStream` on a stream, file or
-  path, resolves primitive classes such as `int.class` and the interfaces
-  of a serialized `Proxy` through that loader, where it threw
-  `ClassNotFoundException` (GROOVY-12676, GROOVY-12681).
-
-**Who is affected (runtime behaviour).**
-
-- Code that read `thisObject` from a wrapper and compared it to the owner
-  now gets the wrapped closure's `thisObject`, which is what the closure
-  itself reports.
-- Code that set the delegate or resolve strategy of a memoized or
-  trampolined closure now has that setting take effect, on the wrapped
-  closure as well. Call `clone()` first for a copy whose settings are
-  independent of the original.
-- A `wrapAsync` or `wrapAsyncGenerator` closure (async/await, incubating)
-  serialized by 6.0.0 does not deserialize in 6.0.1: the anonymous wrapper
-  classes are now named classes with their own serialized form.
-
-**Who is not affected (binary).** `Memoize` gains two public overloads of
-`buildMemoizeFunction` and `buildSoftReferenceMemoizeFunction` that take a
-`Supplier` of the cache; the overloads taking a cache instance are
-unchanged. `japicmp` sees only additions.
-
-### Groovy 6.0.1 — `@IndexedProperty` adds no indexed setter to a record (GROOVY-12730)
-
-An `@IndexedProperty` component of a record, or property of a `@RecordType` or
-`@RecordBase` class, gets only the indexed getter `getX(int)`, as an
-`@Immutable` class's property already did. Earlier versions also generated the
-indexed setter `setX(int, V)`, although a record has no other setters. A record is
-only shallowly immutable, so its list or array can still be changed through
-the value the accessor returns.
-
-**Who is affected.** Code that calls `setX(int, V)` on such a record no longer
-compiles under static compilation or Java, and fails with a
-`MissingMethodException` in dynamic Groovy. `japicmp` reports the method as
-removed from the affected classes.
-
-### Groovy 6.0.1 — a value written to a typed map is converted to the map's value type (GROOVY-12535)
-
-Under `@TypeChecked` and `@CompileStatic`, a property or subscript write to a
-map whose value type is known (`Map<String,String> m; m.k = "$name"`,
-`m['k'] = "$name"`, `m.k ?= "$name"`, `m.with { k = "$name" }`) stores the
-value converted to the value type, as an assignment to a variable of that type
-does. So `String s = "$name"` and `Long l = 1` give the rules: a `GString`
-becomes a `String`, an `Integer` written to a `Map<String,Long>` a `Long`, and
-a number written to a `Map<String,String>`, as in `m.k = 123`, the `String`
-`"123"`. The
-compiler supplies the value type to `putAt(Map, Object, Object, Class)` as a
-`@ClassTag` token, and an explicit `m.putAt('k', "$name")` binds the same
-overload. Before, the property write stored the `GString` as it was and the
-subscript write was rejected.
-
-**Who is affected.** Code that read the stored value back as a `GString`, for
-example to see later changes to an interpolated variable, or compared it with
-`is`. Code that relied on the stored value keeping its own type, such as an
-`Integer` in a `Map<String,Long>` or a number in a `Map<String,String>`, now
-reads a value of the declared type. A value of the value type is stored as
-before, a map whose value type is not known (`def`, raw or a wildcard) is
-written as before, and dynamic code is unchanged. `Map.put` with a `GString`
-is still rejected.
-
-**Opting out.** The upgrade is a `@ClassTag` preemption, so
-`groovy.classtag.preemption.disable` (or
-`CompilerConfiguration.setClassTagPreemptionDisabled`) keeps the previous
-behaviour.
-
-### Groovy 6.0.1 — a method reference selects a functional-interface overload it can be called as at run time (GROOVY-12758)
-
-When overloads take functional interfaces whose abstract methods have
-different numbers of parameters, such as `Function` and `BinaryOperator`,
-`Function` and `Supplier`, or `Consumer` and `Runnable`, run-time method
-selection now first drops the candidates whose interface method a method
-reference or method pointer cannot be called with, as Java does. This applies
-to dynamic code; under `@TypeChecked` and `@CompileStatic` such calls are
-still rejected as ambiguous. When no candidate fits, all are kept and
-selection proceeds as before.
-
-Before, such calls failed:
-
-- `red(numbers, Integer::sum)` with `red(Collection, BinaryOperator)` and
-  `red(Collection, Function)` was ambiguous: `Ambiguous method overloading`.
-- A method reference passed where `Runnable` or `Callable` competed with an
-  interface that takes arguments, such as `Consumer`, matched `Runnable` or
-  `Callable`, because `Closure` implements them, and failed when run, as no
-  method of its name takes no arguments.
-
-**Who is affected.** Only calls that were ambiguous, or that chose an
-overload whose call then failed. A method reference whose methods accept both
-arities, such as `Integer::valueOf`, is still ambiguous, and a dehydrated
-method closure is selected for as before. Closures and lambdas are chosen for
-as before.
-
-**Who is not affected (binary).** There is no change to public API apart
-from two static helpers on the internal `MetaClassHelper`, and the serial
-form of `MethodClosure` is unchanged. A dynamic selection that depends on
-which method a reference names, rather than on argument classes alone, is
-not cached; this arises only for calls that were ambiguous or chose the
-wrong overload before.
-
-### Groovy 6.0.1 — a closure method call skips a null owner or delegate (GROOVY-12667)
-
-A closure's owner or delegate can be null: after `dehydrate()`, after
-`rehydrate` with a null argument, or after `delegate = null`. A method call in
-the closure body that resolves through the owner and delegate now skips a null
-one instead of calling on null:
-
-- **The other candidate answers.** With `OWNER_FIRST` (the default) and a null
-  owner, the delegate's method is used; with `DELEGATE_FIRST` and a null
-  delegate, the owner's. Earlier versions threw `NullPointerException` (from
-  Groovy 4 on; Groovy 3 skipped the null).
-- **With no candidate, the error is a missing method.** When both are null, or
-  the one target of `OWNER_ONLY` or `DELEGATE_ONLY` is null, a method of the
-  closure itself (`toString()`, `with`, `tap` and the like) runs on the
-  closure, and any other method throws `MissingMethodException`, where
-  `NullPointerException` was thrown before. In Groovy 6.0.0, `toString()` and
-  `with` instead ran against `null`, as such methods are first tried on the
-  delegate and owner (GROOVY-11858).
-
-The rules are the same whether the closure dispatches through its own
-metaclass or, once it has an `ExpandoMetaClass` (after
-`ExpandoMetaClass.enableGlobally()` or after adding to a closure's metaclass),
-through `MetaClassImpl`. A method call compiled against the owner is
-unchanged. Property access is unchanged: with a null owner or delegate it can
-still throw `NullPointerException` (see GROOVY-12671).
-
-**Who is affected.** Code that catches `NullPointerException` around a method
-call in a closure with a null owner or delegate, and code that relied on
-`toString()` or `with` receiving `null` there. Nothing that ran without an
-exception before behaves differently, apart from those methods of the
-closure. No public API changes, so `japicmp` does not report this.
-
-### Groovy 6.0.1 — a closure passes a method of `Object` on for a closure nested in it (GROOVY-12829)
-
-A call without a receiver to a method that every object has (`toString()`,
-`hashCode()`, `equals`, `getClass()`, and the Groovy development kit methods
-for `Object` such as `with`, `tap`, `is` and `inspect`) is first tried on the
-closure's owner and delegate (GROOVY-11858, Groovy 6.0.0). When the owner is
-itself a closure, as for a nested closure, a lambda in a closure, or a closure
-passed to `each` or `collect` inside another closure, that enclosing closure
-answered the call itself. It now passes the call on to its own owner and
-delegate, by its own resolve strategy, as it does for any other name:
-
-```groovy
-class C {
-    String toString() { 'C' }
-    def m() {
-        def outer = { ->
-            def inner = { -> toString() }
-            [toString(), inner()]
-        }
-        outer()
-    }
-}
-assert new C().m() == ['C', 'C']    // was ['C', 'C$_m_closure1@...']
-```
-
-- **The call means what it would in the enclosing closure.** In a closure
-  nested in `new D().with { ... }` it reaches `D`. In a closure nested in one
-  with `DELEGATE_FIRST` or `DELEGATE_ONLY` it reaches that closure's delegate.
-- **An enclosing closure still answers when it would for its own body:** with
-  `TO_SELF`, or when it has no owner and no delegate, as after `dehydrate()`.
-- **Dynamic, type checked and statically compiled code agree.** Statically
-  compiled code had resolved `toString()`, `hashCode()`, `equals` and
-  `getClass()` against the enclosing closure, to match. For the Groovy
-  development kit methods, and in a lambda in a closure, it already reached
-  the enclosing instance.
-- **`@PackedClosures`.** A closure that makes such a call is still left as
-  a class, as for any implicit call of a method of `Object` (GROOVY-12576).
-
-Unchanged: a call in a closure that is not nested, any other method or
-property name, the methods that `Closure` declares (`call`, `curry`,
-`getDelegate` and the rest), `this.toString()`, `owner.toString()`, and
-`toString()` called on a closure from outside it. Up to Groovy 5 the nested
-closure answered such a call itself.
-
-**Who is affected.** Code that calls `toString()`, `hashCode()`, `equals`,
-`getClass()` or an `Object` extension method without a receiver in a nested
-closure and relies on getting the enclosing closure: for example
-`getClass().name` to obtain the closure's class name, or `with { ... }` to
-operate on the closure. Use `owner.` or name the closure through a variable
-to keep that. No public API changes, so `japicmp` does not report this.
-
-### Groovy 6.0.1 — async constructs rethrow a checked exception as itself (GROOVY-12763)
-
-In 6.0.0, `await` rethrew a checked exception from an async task unchanged,
-but other async constructs wrapped it: a scope's child task failure and a
-`defer` action in `RuntimeException`, a `withScope` body and a generator body
-in `UndeclaredThrowableException`, and a `Flow.Publisher` error consumed with
-`for await` in `RuntimeException`. All of them now rethrow the original
-exception, as `await` does, and a timed `withScope` uses it as the cause of
-its `TimeoutException`. Async/await is incubating.
-
-**Who is affected.** Code that catches `RuntimeException` or
-`UndeclaredThrowableException` around these constructs and reads
-`getCause()` to find a checked exception. Catch the checked exception
-directly instead. Java callers of `AsyncScope.close()` and `withScope`,
-which declare no checked exceptions, catch `Exception` and test its type.
-
-An `UndeclaredThrowableException` around a checked exception that a
-`withScope` or generator body throws is removed too, because it cannot be
-told apart from the layer closure conversion adds. Such a wrapper most
-often comes from a `java.lang.reflect.Proxy`, such as a Spring AOP proxy or
-an RPC stub, called in the body.
-
-**What is unchanged.** Unchecked exceptions and errors, which were never
-wrapped, and the exception `await` rethrows. Exceptions suppressed by a
-wrapper that `await` or a scope removes now move to the exception
-rethrown. There are no API signature changes in `groovy.concurrent`.
-
-### Groovy 6.0.1 — a lambda in a statically compiled trait reads a super trait's static accessor directly (GROOVY-12608)
-
-In a lambda in a trait annotated with `@CompileStatic`, the property form of
-a static accessor of a super trait (`cnt` for `static int getCnt()`, or for a
-static property `cnt`) is now a call of that accessor. In 6.0.0 the name was
-left for the lambda to resolve at run time: for a static property of the
-super trait that failed with a `MissingMethodException`, and for a declared
-accessor a lambda passed as a closure took the name from the closure's
-delegate when the delegate had a property of that name.
-
-**Who is affected.** A statically compiled trait that passes such a lambda
-where a closure is expected and relies on the closure's delegate to supply
-the name, as in `p.with((x) -> cnt)` where `p` has a `cnt` property: the
-lambda now reads the super trait's accessor. Use a closure (`p.with { cnt }`),
-which consults its delegate, or qualify the name (`x.cnt`).
-
-**What is unchanged.** Dynamic and `@TypeChecked` trait code, where the
-delegate of such a lambda still supplies the name; closures; and the method
-form `getCnt()`.
-
-### Groovy 6.0.1 — trait static state used through the trait itself throws `MissingFieldException` (GROOVY-12597)
-
-A public static method of a trait is promoted onto the trait interface, so it
-can be called as `T.m()` as well as through an implementing class. Called
-through the trait, it has no implementing class, and so no static state: a
-trait's static fields and properties exist only in the classes that implement
-it. Reading or writing one there, as in `T.count`, `T.getCount()`, or `T.m()`
-where `m` uses a static field of `T`, now throws a `MissingFieldException`.
-Its message says that the state belongs to each implementing class, and its
-`field` and `type` are the field's name and the trait. In 6.0.0 the same code
-threw a `MissingMethodException` that named an internal accessor, such as
-`T__count$get`.
-
-To do this, the interface of a trait that has promoted static methods now
-declares a synthetic public static accessor for each static field of the
-trait.
-
-**Who is affected.** Code that catches `MissingMethodException`, or
-inspects its message or method name, around such a call. Catch
-`MissingFieldException` (or `GroovyRuntimeException`, which both extend), or
-better, call the method through an implementing class, as in `C.m()`.
-
-**What is unchanged.** Calls through an implementing class; promoted static
-methods that do not use static state; and code that reaches the static state
-of a super trait, which can still fail with a `MissingMethodException`.
-
-### Groovy 6.0.1 — a late subscriber of `BroadcastChannel.asPublisher()` completes (GROOVY-12571)
-
-In 6.0.0, a subscriber of `BroadcastChannel.asPublisher()` that arrived after
-the broadcast had closed received `onError(ChannelClosedException)`, and after
-`close(failure)` that exception wrapped the failure. It now ends the way a
-subscriber attached before the close does: `onComplete` after `close()`, and
-`onError` with the failure itself after `close(failure)`. `for await` over
-such a publisher ends at once or throws the failure.
-
-**Who is affected.** Code that caught `ChannelClosedException` from a publisher
-obtained from a closed broadcast. Treat completion as the end of the stream,
-and catch the failure passed to `close(failure)` instead.
-
-**What is unchanged.** `BroadcastChannel.subscribe()` on a closed broadcast
-still throws `ChannelClosedException`, and subscribers attached before the
-close receive the same signals as before.
+  line became its operand.
+
+**Who is affected.** Code that relied on `await(x).m()` awaiting `x.m()`
+(write `await x.m()`), and code with the operand of `await` on the next line
+(join the lines, or use `await(` with the arguments on the following lines).
+
+### Groovy 6.0.1 — an early `yield` leaves a statement-position arrow `switch` (GROOVY-12478)
+
+`return`, `break` and `continue` are now allowed in the arrow arms of a
+`switch` used as a statement, as in Java; they were a parse error before. With
+this, a `yield` that does not end its arm now completes the switch. In 6.0.0
+such a `yield` in a statement-position switch was treated as a plain
+expression and the arm ran on: `if (flag) yield 'first'` followed by
+`yield 'second'` gave `'second'` as the method's result, and any statements
+after the early `yield` still ran. It now gives `'first'` and skips them.
+
+**Who is affected.** Code with a `yield` before the end of an arrow arm, in a
+switch whose value is not used (or is the method's implicit result), that
+relied on the rest of the arm running. Remove the early `yield` or restructure
+the arm with `if`/`else`. Switch expressions whose value is used are unchanged.
+
+### Groovy 6.0.1 — multiple assignments in a script with an instance `main` or `run` method behave as elsewhere (GROOVY-12790)
+
+When a script has an instance `main` or `run` method and only declarations
+besides, its declarations become fields. A multiple assignment with a list
+literal paired targets with elements one by one, so
+`def (h, *t) = [1, 2, 3]` set `t` to `2`. One with any other right-hand side
+was dropped, together with every declaration after it, so its initializer
+never ran. The assignment is now kept in the instance initializer: `t` is
+`[2, 3]`, and the initializer runs when the script is created.
+
+**Who is affected.** Such scripts with a rest binding, and scripts whose
+dropped declarations had side effects (method calls on the right-hand side),
+which now run.
 
 ### Groovy 6.0.1 — static type checking applies the wildcard containment rules of JLS 4.5.1 (GROOVY-12714)
 
@@ -1303,173 +653,898 @@ void widen(List<? super Integer> n)   { List<? super Number> s = n }
 void copy(List<? extends Number> src) { List<Number> dst = src }
 void take(Collection<CharSequence> c) { }
 void pass(Collection<? extends CharSequence> s) { take(s) }
-```
-
 A `? extends` type argument is contained only in a `? extends` of a supertype,
 a `? super` only in a `? super` of a subtype, and an invariant type argument
-only in itself. A value of a capture type is typed as `javac` types it, and
-the messages now name the capture (`capture-of ? super java.lang.Integer`).
+only in itself. Messages now name the capture
+(`capture-of ? super java.lang.Integer`).
 
 **Who is affected (source).** Statically typed code that compiled with 6.0.0
 and relied on the looser rules fails with `Incompatible generic argument types`
-or `Cannot call ... with arguments`. The code was unsound, so the fix is in the
-declaration: take the wildcard type (`Collection<? extends CharSequence>`),
-declare the consumer with the supertype (`List<? super Number>`), or copy
-(`new ArrayList<Number>(src)`). If a declaration cannot change, the code can be
-compiled dynamically: leave the class without `@CompileStatic` or
-`@TypeChecked`, or annotate the affected methods, the caller included, with
-`@CompileDynamic`. The checks are then not made at all, so a value of the wrong
-type is stored without complaint. Compiled classes are not affected.
+or `Cannot call ... with arguments`. Fix the declaration: take the wildcard
+type (`Collection<? extends CharSequence>`), declare the consumer with the
+supertype (`List<? super Number>`), or copy (`new ArrayList<Number>(src)`).
+Where a declaration cannot change, mark the affected methods, the caller
+included, `@CompileDynamic`. Compiled classes are not affected.
 
 **What 6.0.1 still accepts, as 6.0.0 did (GROOVY-12755, GROOVY-12756,
-GROOVY-12757).** These are not rules of GROOVY-12714 and are kept so that a
-program 6.0.0 compiled keeps compiling:
+GROOVY-12757).** These are kept so that a program 6.0.0 compiled keeps
+compiling:
 
-- A value that is not a `Class` may be assigned to a parameterized `Class`
-  variable: `Class<String> c = 'java.lang.String'`, or `targetType = types[0]`
-  for a `java.lang.reflect.Type`.
-- `x.getClass()` and `x.class` are accepted for a `Class<? extends T>` when the
-  type of `x` is within `T`, including a type given by `instanceof` without a
-  binding. They keep the type `Class<?>`. `javac` rejects
-  `Class<String> c = s.getClass()`; Groovy 6.0.1 does not.
-- A type variable that a generic call leaves open, and that no enclosing method
-  or class declares, is not checked against the target and takes its type from
-  it: `Consumer<Integer> c = toConsumer(C::takeNumber)`.
+- A value that is not a `Class` assigned to a parameterized `Class` variable:
+  `Class<String> c = 'java.lang.String'`, or `targetType = types[0]` for a
+  `java.lang.reflect.Type`.
+- `x.getClass()` and `x.class` for a `Class<? extends T>` when the type of `x`
+  is within `T`. `javac` rejects `Class<String> c = s.getClass()`.
+- A type variable that a generic call leaves open takes its type from the
+  target: `Consumer<Integer> c = toConsumer(C::takeNumber)`.
 
-A `Class<?>` that is not the class of a receiver is still rejected for a
-bounded `Class`, as is `o.getClass()` for an `Object o`.
+### Groovy 6.0.1 — type checking rejects a call to a property accessor that is not generated (GROOVY-12525)
 
-### Groovy 6.0.1 — the default-package lookup before the default imports is an opt-in (GROOVY-12555)
+Static type checking assumed that every property had both `isX()` and
+`getX()`. A call to an accessor the class does not generate is now the error
+`Cannot find matching method`. A `boolean` property generates `isX()` and
+`getX()`, or only the one the class declares itself; any other property,
+`Boolean` included, generates only `getX()`.
 
-Both `defaultPackageFirst` and `defaultPackageSources` are off by default.
-The resolution order of 6.0.0 is unchanged unless the optimization option
-`defaultPackageFirst` is `true`, and with it only the compiled classes of
-the default package come before the default imports unless
-`defaultPackageSources` is `true` as well.
+**Who is affected.** `@TypeChecked` code that calls such an accessor on a class
+with `methodMissing`, such as `b.isName()` for a `String` property `name`: it
+reached `methodMissing` at run time and no longer compiles. Read the property
+(`b.name`), call the generated accessor, or use `TypeCheckingMode.SKIP`.
 
-When `defaultPackageFirst` is `true`, a compilation unit of the default
-package looks up a simple type name that the unit neither declares nor
-imports, and that no other unit of the same `CompilationUnit` declares, as a
-class of the default package on the class path *before* the default imports
-(`java.lang`, `java.util`, `java.io`, `java.net`, `java.time`, `groovy.lang`,
-`groovy.util`, `BigInteger`, `BigDecimal`). Without the option that lookup
-comes after the default imports, so a default-package `Factory` is found
-while it is compiled together with its callers but lost to
-`groovy.util.Factory` once it has been compiled ahead of them, as in an
-incremental build. A class of a named package was already resolved before
-the default imports for a unit of the same package, and the Java Language
-Specification (§6.4.1) has a type of the same package, the unnamed package
-included, shadow a type imported on demand. An explicit star import still
-takes precedence over a class of the default package, as elsewhere in
-Groovy. A compiled nested class named through its outer class is looked up
-the same way when the option is on: with a compiled default-package `Proxy`
-that has a nested `Type`, `Proxy.Type` is that class and not
-`java.net.Proxy.Type`.
+### Groovy 6.0.1 — type checking rejects calls through an inaccessible type (GROOVY-12484)
 
-Sources on the source path of the `GroovyClassLoader`, and classes that
-loader has already compiled or loaded, join that lookup only when
-`defaultPackageSources` is `true` as well. Otherwise only `.class` files of
-the default package come before the default imports, and a source is still
-found after them.
+The type checker now reports a static method call or constructor call whose
+qualifying type is not accessible from the calling class, such as a
+package-private class in another package: `p.Top.greet()` gives "Cannot access
+method: greet of class: p.Top", and `new p.Top()` "Cannot access constructor of
+class: p.Top". Under `@CompileStatic` these compiled in 6.0.0 and failed at run
+time with `IllegalAccessError`; under `@TypeChecked` they compiled and ran
+through dynamic dispatch. A static method inherited through an accessible
+subclass, class literals, and dynamic code are unaffected.
 
-**Who is affected when the options are on.** Default-package code whose
-class path has a class, or, with `defaultPackageSources`, a `.groovy`
-source, of the default package with the simple name of a default-import
-type. The `groovy` command uses the current directory as the class path
-when none is given, so in a directory of scripts a sibling `Node.groovy`,
-`Timer.groovy` or `Math.groovy` then stands for that name in the other
-scripts, where `groovy.util.Node`, `java.util.Timer` and `java.lang.Math`
-did, and a sibling source that does not compile is then a compile error
-for a script that uses its name. The roots of a `GroovyScriptEngine`, and
-so of groovlets, are source paths of the same kind. A script there records
-a dependency only on the class a name resolved to, so a script that
-resolved `Date` to `java.util.Date` is not recompiled when a `Date.groovy`
-appears in a root: the same engine then gives `java.util.Date` to that
-script and the root's `Date` to a script compiled after it, and a script
-that resolved `Date` to the root's `Date.groovy` keeps it after the file
-is deleted, until the engine is recreated. With `defaultPackageSources`,
-the lookup also takes in the classes that the class loader has already
-compiled or loaded, so in a `GroovyShell` or `GroovyScriptEngine` that is
-reused, and in groovysh or the console, a name resolves to a
-default-package class compiled earlier by the same loader, such as a
-`Timer` from a `Timer.groovy` parsed before, and to the default import
-while there is none.
+**Who is affected.** `@TypeChecked` code that calls static methods or
+constructors of a type it cannot access. Make the type accessible, call through
+an accessible subtype or factory, or mark the method `@TypeChecked(SKIP)`.
 
-**How to enable.** Set them through the system properties
-`groovy.resolve.default.package.first=true` and
-`groovy.resolve.default.package.sources=true`, a configuration script, or,
-in Gradle,
-`groovyOptions.optimizationOptions['defaultPackageFirst'] = true` and
-`groovyOptions.optimizationOptions['defaultPackageSources'] = true`. Only
-the Gradle map reaches the compiler from Gradle, which replaces the
-compiler's optimization options with that map after the configuration
-script has run. An incremental build that compiles a default-package class
-against previously compiled classes of the default package needs
-`defaultPackageFirst` for the same source to compile to the same class as
-in a full build, and does not need `defaultPackageSources`. Leave the
-options unset, or set them to `false`, to keep the 6.0.0 order. When the
-lookup is enabled, rename the file, give it a package, or use the fully
-qualified name of the default-import type where that type is meant.
+### Groovy 6.0.1 — `instanceof` narrowing in a `switch` case does not reach later cases (GROOVY-12428)
 
-**Cost.** With `defaultPackageFirst`, a compilation unit of the default
-package also pays one class-path lookup per default-import type it names,
-as a unit of a named package always has; a `GroovyShell`, `Eval` or
-`GroovyScriptEngine` that compiles many small scripts pays it for each of
-them, since the lookup cache is per compilation unit. A
-`GroovyScriptEngine` also looks each such name up in its roots, two more
-root lookups per name in each compile, when `defaultPackageSources` is
-`true`.
+Under static type checking, a narrowing made inside one `case` of a `switch`,
+by `instanceof` (for example `assert value instanceof String`) or a nested
+class label, applied to later cases too, even where the case ended with
+`break` or `return`. It now ends with its case; on fall-through only the
+switch value's narrowing carries on into a following class label. In 6.0.0
+`value.toUpperCase()` in `case 'name':` type-checked because of an
+`instanceof String` in the preceding `case 'text':`; it is now "Cannot find
+matching method java.lang.Object#toUpperCase()".
 
-Code in a named package, and default-package code whose class path has no
-such class or source, resolve as before whether or not the options are on.
-The two options are the only API change.
+**Who is affected.** `@TypeChecked`/`@CompileStatic` code that used a
+narrowed type in a case that did not do the narrowing itself. Add an
+`instanceof` check or a cast in that case.
+
+### Groovy 6.0.1 — type checking checks the result type of a `Closure<R>` value used as a SAM type (GROOVY-12599)
+
+When a value of static type `Closure<R>` (a variable or a `Closure` subclass,
+not a closure literal) is passed or returned where a parameterized functional
+interface is expected, the type checker now checks that the interface's method
+accepts `R`, as it does for a closure literal. In 6.0.0 a `Closure<Integer>`
+passed for `Supplier<String>` compiled; it now gives "Cannot call ... with
+arguments [groovy.lang.Closure<java.lang.Integer>]". A raw `Closure`,
+`Closure<Object>`, a `void` or `boolean` SAM return, and lossless primitive
+conversions are still accepted.
+
+**Who is affected.** `@TypeChecked` and `@CompileStatic` code passing a
+mismatched `Closure<R>` that happened to work at run time, for example because
+the value was only printed or Groovy converted it on return. Declare the
+closure with the right `R` (or as plain `Closure`), or use a closure literal.
+
+### Groovy 6.0.1 — statically compiled code in a `GroovyShell` reports what the JVM refuses across class loaders (GROOVY-12568, GROOVY-12569)
+
+A `GroovyClassLoader` defines each compilation with a class loader of its own,
+so a class of an earlier `GroovyShell` parse is in another run-time package
+even when its package name is the same. Statically compiled code that used
+its protected or package-private members compiled, then failed with
+`IllegalAccessError`. With the new `@Incubating` option
+`CompilerConfiguration.RUNTIME_PACKAGE_CHECK`, which a `GroovyShell` turns on
+for the class loader it creates, such an access is a compile error. So is naming a package-private class of
+another run-time package, as in `new Hidden()` or `Hidden.FIELD`.
+
+**Who is affected.** `@CompileStatic` code compiled by a `GroovyShell`,
+including scripts run with the `groovy` command, now fails to compile where
+it used to fail at run time, also on paths that never ran. Use
+`@CompileDynamic` or make the member public, or set the option or the system
+property `groovy.runtime.package.check` to `false`. Code compiled to class
+files is not affected.
+
+### Groovy 6.0.1 — `Iface.super` needs an interface the class implements, and a direct one under static compilation (GROOVY-12526)
+
+`Iface.super.m()` is now a compile error when `Iface` is neither the current
+type nor one of its superinterfaces. That used to fail at run time with
+`BUG! ... caller class must be a subclass below the method`. Under
+`@CompileStatic` the interface must also be a direct superinterface. An
+indirect one used to compile and then fail to load with `VerifyError`.
+Dynamic and `@TypeChecked` code may still name an indirect superinterface.
+
+**Who is affected.** Only code where such a call sits on a path that never
+ran. It now fails to compile. Remove the call, or name a direct
+superinterface.
+
+### Groovy 6.0.1 — static compilation reports protected members of another package that the JVM refuses (GROOVY-12717)
+
+Under `@CompileStatic`, `new A()` of a protected constructor of another
+package (outside `super(...)` or an anonymous class) is now a compile error,
+"Cannot call protected constructor". So is a protected method of another
+package called through a receiver of the superclass type, "Cannot access
+method". Both used to make the class fail to load with `VerifyError`. A
+method reference `a::m` to such a method used to fail only when evaluated,
+with `BootstrapMethodError`.
+
+**Who is affected.** Only a class holding such a method reference that was
+never evaluated. It now fails to compile. Use a receiver of the subclass
+type, or `@CompileDynamic`.
+
+### Groovy 6.0.1 — statically compiled variables declared wider than their initializer's generic type keep the value (GROOVY-12469)
+
+Under `@CompileStatic`, a local variable declared wider than the generic type
+of its initializer, such as `CharSequence cs = list.get(0)` for a
+`List<String>`, was converted to that type, so a `GString` element became a
+`String`. The variable now holds the value unchanged, as in dynamic Groovy
+and Java.
+
+**Who is affected.** For a `GString` element, `cs.equals('ab')` and
+`cs instanceof String` are now false (`cs == 'ab'` is still true). Any other
+non-`String` element throws `ClassCastException` where a method that only
+`String` has is called on it. Variables declared `String`, `def` or `var` are
+unchanged.
+
+### Groovy 6.0.1 — instance initializer blocks of `@CompileStatic` classes are statically compiled (GROOVY-12761)
+
+Since Groovy 5.0, method calls in an instance initializer block of a
+`@CompileStatic` class were type checked but dispatched dynamically, and in
+6.0.0 an anonymous inner class created there was compiled dynamically. Both
+are statically compiled again, as in Groovy 4.
+
+**Who is affected.** Calls in such a block to an overloaded method, with an
+argument whose static type is wider than its value, now choose the overload
+from the static type. Meta-class and category changes no longer apply to
+those calls.
+
+### Groovy 6.0.1 — statically compiled constructor references call the constructor directly (GROOVY-12488)
+
+Under `@CompileStatic`, `X::new` selected the constructor at run time through
+the meta-class. It is now selected at compile time for the parameter types of
+the functional interface, as for `new X(args)` and in Java, and called
+directly.
+
+**Who is affected.** References whose result depended on run-time selection.
+`Function<CharSequence, X> f = X::new` calls `X(CharSequence)` even for a
+`String`. An `Object[]` given to a varargs constructor is passed as one
+element. A constructor the enclosing class cannot call no longer wins over
+one it can, and a constructor added through the meta-class is not used. The
+constructor is still selected at run time when no single constructor matches
+(GROOVY-10971), for an enum, and for a protected or package-private
+constructor of a class from another class loader.
+
+### Groovy 6.0.1 — `@CompileStatic` property and spread results on collections match dynamic Groovy (GROOVY-12534, GROOVY-12649)
+
+Under `@CompileStatic`, property and spread access on a `List`, `Set` or other
+`Iterable` type that declares a property, or gets one from an extension
+method, now gives the results of dynamic Groovy and `@TypeChecked`:
+`coll.prop` reads the collection's own property, `coll*.prop` reads it from
+each element, and `coll*.prop = v` writes it to each element.
+
+**Who is affected.** Statically compiled code that relied on the previous
+results gets different ones once recompiled.
+
+### Groovy 6.0.1 — statically compiled `toString()` and `super.toString()` match dynamic Groovy (GROOVY-12476, GROOVY-12470)
+
+Under `@CompileStatic`, `x.toString()` on a receiver whose static type does
+not declare `toString()` (an interface, `Object`, `List`, `Map`, ...) binds to
+a `DefaultGroovyMethods` extension. That extension now calls the runtime
+class's own `toString()` when dynamic dispatch would select it, instead of
+always using Groovy's list/map formatting. Similarly, `super.toString()` now
+calls the superclass method rather than the extension. In 6.0.0 a `List`-typed
+`ArrayList` subclass with its own `toString()` printed `[1]`, a
+`CopyOnWriteArrayList` printed `[[k:1]]` and a `Properties` `[k:v]`; they now
+print the override's result, `[{k=1}]` and `{k=v}`. In a `@CompileStatic`
+`ArrayList` subclass, `'SL:' + super.toString()` gave `SL:[[k:1]]` and now
+gives `SL:[{k=1}]`; a plain class whose `toString()` called `super.toString()`
+recursed into a `StackOverflowError` and now works.
+
+**Who is affected.** Statically compiled code, and Java or Groovy code calling
+`DefaultGroovyMethods.toString(x)` directly, that relied on the Groovy format
+for collections and maps whose class declares its own `toString()` (including
+JDK classes such as `CopyOnWriteArrayList`, `ConcurrentHashMap` and
+`Properties`). Use `org.codehaus.groovy.runtime.FormatHelper.toString(x)`
+where the Groovy format is wanted. String concatenation (`'x' + list`) and GString
+interpolation keep the Groovy format.
+
+### Groovy 6.0.1 — a statically compiled multiple assignment from a list literal has the list as its value (GROOVY-12700)
+
+Under `@CompileStatic`, a multiple assignment whose right-hand side is a list
+literal was rewritten into single assignments everywhere. Its value was then
+the last value assigned, not the list, and in a declaration a later value
+naming an earlier target read the new local instead of the field or property.
+In 6.0.0 `(x, y) = [y, x]` as the last statement of a method returned `1`
+(now `[2, 1]`), and with a field `a`, `def (a, b) = [1, a]` set `b` to `1`
+(now the field's value). Used as a value elsewhere, for example as a closure's
+result, it threw `GroovyCastException`; it now yields the list.
+
+**Who is affected.** Statically compiled methods or closures whose last
+statement is a multiple assignment from a list literal now return the list,
+and declarations of the form `def (a, b) = [1, a]` now read the field or
+property `a`. Dynamic code already behaved this way.
+
+### Groovy 6.0.1 — a statically compiled static member reached through an expression evaluates it (GROOVY-12479)
+
+Under `@CompileStatic`, a static field, property or method reached through an
+expression, such as `make().CONST`, `make().sf = v` or `make().stat()`, was
+compiled to a bare static access, so the expression never ran. It is now
+evaluated and its value discarded, as in Java, dynamic Groovy and
+`@TypeChecked`. A class literal, a variable or the implicit `this` is not
+evaluated, as before.
+
+**Who is affected.** Statically compiled code whose receiver expression has a
+side effect, such as a call that logs, counts or throws. That effect now
+happens. Write the class name instead (`K.stat()`) to skip it.
+
+### Groovy 6.0.1 — statically compiled `<=>` of operands of different types compares as dynamic Groovy does (GROOVY-12560)
+
+Under `@CompileStatic`, `a <=> b` with a primitive right operand called the
+`compare` method of the left operand's wrapper type even when the types
+differed. That narrowed the right operand: `0 <=> 4294967296L` and
+`1 <=> 1.5d` gave `0`, and a `null` left `Integer` threw
+`NullPointerException`. A left operand with no such method, such as a
+`BigDecimal`, `Number` or type parameter, crashed the compiler. Only operands
+of the same primitive type now use the wrapper's `compare`. Any other pair is
+compared as in dynamic Groovy (`-1` for each example above).
+
+**Who is affected.** Statically compiled `<=>` (and sorting comparators using
+it) on mixed `int`/`long`/`double` and similar operands whose values differ
+only beyond the left type's range or precision. These now return a non-zero
+result.
+
+### Groovy 6.0.1 — a call from an inner class to an inherited outer method uses the nearest enclosing instance (GROOVY-12574)
+
+An implicit-this call from an inner class to a method of an enclosing class
+needs the instance whose class has the method. Under `@CompileStatic` the
+outermost class was used. So when `Outer` and its inner class `Mid` both
+extend `Base`, `base()` called from `Mid.Inner` ran on the `Outer` instance.
+Now it runs on the `Mid` instance, as in dynamic Groovy and Java. Property
+reads through an inherited getter behave the same. The other cases (where the
+outermost class does not inherit the method, or a closure in a field
+initializer with `@CompileDynamic` constructors) failed with `VerifyError` or
+`GroovyCastException` and now work.
+
+**Who is affected.** Statically compiled inner classes nested two or more
+levels deep, where an intermediate and the outer class both inherit the
+called method. The result now comes from the intermediate instance. Write
+`Outer.this.base()` to keep the old target.
+
+### Groovy 6.0.1 — a value written to a typed map is converted to the map's value type (GROOVY-12535)
+
+Under `@TypeChecked` and `@CompileStatic`, a property or subscript write to a
+map whose value type is known (`m.k = v`, `m['k'] = v`, `m.k ?= v`,
+`m.with { k = v }`) now converts the value as an assignment to a variable of
+that type does. For a `Map<String,String>`, `"$name"` is stored as a `String`
+and `123` as `"123"`; for a `Map<String,Long>`, an `Integer` is stored as a
+`Long`. Before, the property write stored the value unchanged and the
+subscript write was rejected.
+
+**Who is affected.** Code that read such a value back with its original type,
+or compared it with `is`. Maps whose value type is not known, and dynamic
+code, are unchanged. `groovy.classtag.preemption.disable` keeps the previous
+behaviour.
 
 ### Groovy 6.0.1 — `Object` methods in statically compiled closures and lambdas use the enclosing object (GROOVY-12576, GROOVY-12826)
 
-Under `@CompileStatic`, an implicit call of `toString()`, `hashCode()`,
-`equals()` or `getClass()` in a closure or lambda was made on the generated
-closure or lambda itself. An instance extension method of `Object`, like
-`inspect()`, called in a lambda received a `Class` object. Dynamic Groovy
-uses the enclosing object or the closure's delegate.
+Under `@CompileStatic`, an implicit `toString()`, `hashCode()`, `equals()` or
+`getClass()` in a closure or lambda was called on the generated closure or
+lambda itself. It now uses what dynamic Groovy uses: in a closure, the object
+found through its resolve strategy, so `new D().with { toString() }` calls
+`D.toString()`; in a lambda, the enclosing instance, as in Java. Under
+`@PackedClosures` a closure that makes such a call is no longer packed.
 
-These calls now follow the same rules:
+**Who is affected.** Statically compiled code that relied on such a call
+returning the closure's or lambda's own string, hash code, equality or class.
+Classes compiled by an earlier release keep the old behaviour until they are
+recompiled.
 
-- In a closure, the method is found through the closure's resolve strategy,
-  so `new D().with { toString() }` calls `D.toString()`.
-- In a lambda, the method is the enclosing instance's, as in Java. A lambda
-  inside a closure uses what that closure would use, so this differs only
-  after `rehydrate()` or `dehydrate()`. A serializable lambda does not hold
-  on to the closure for this, so that its serialized form does not change: it
-  uses the this object of the closure, or itself when there is none.
-- In a closure or lambda of an inner class, the method is the inner
-  instance's, even if the outer class overrides it.
-- A rehydrated closure uses its this object, where dynamic Groovy uses its
-  owner. Without a this object it uses its owner, and without an owner it uses
-  itself, where dynamic Groovy would use a delegate.
-- A closure with neither an owner nor a delegate, as after `dehydrate()`, uses
-  itself, even if it was given a this object.
-- Under `@PackedClosures`, a closure that makes such a call is no longer
-  packed, so that it follows these rules after `rehydrate()`. The print
-  methods, like `println`, do not prevent packing.
+### Groovy 6.0.1 — dynamic overload selection prefers `double` over `float` for `BigDecimal` and `BigInteger` arguments (GROOVY-12439)
 
-**Who is affected (runtime behaviour).** Statically compiled code that relied
-on such a call returning the closure's or lambda's own string, hash code,
-equality or class. Classes compiled by an earlier release keep the old
-behaviour until they are recompiled.
+When a call mixes integral arguments with a `BigDecimal` or `BigInteger`
+argument, dynamic method selection now prefers a `double`/`Double` overload
+over a `float`/`Float` one. In 6.0.0 the `float` overload could win and the
+value was silently narrowed: with `g(float, float)` and `g(double, double)`,
+`g(3, 1.1)` computed `3.3000000715255737`; it now gives `3.3000000000000003`.
+A `float` method is still chosen when it is the only applicable one, when all
+arguments are integral, and over a `double...` varargs method.
 
-**What is unchanged.** Dynamic code, explicit receivers such as `this.toString()`
-and `Outer.this.toString()`, and methods that `Closure` declares itself.
+**Who is affected.** Dynamic code calling overloads that differ only in
+`float` versus `double` with a mix of integral and `BigDecimal`/`BigInteger`
+arguments now runs the `double` overload. Cast the argument (`1.1f`) or call
+the `float` overload explicitly if that is what was intended.
 
-### Groovy 6.0.1 — a non-serializable lambda inside a closure can use the closure's delegate (GROOVY-12827)
+### Groovy 6.0.1 — `super.x = v` calls a setter of the superclass when it has several (GROOVY-12521)
 
-Under `@CompileStatic`, an implicit call or property access in a lambda that
-resolved to the delegate of a closure around it compiled, but threw
-`ClassCastException` when evaluated. A lambda that is not serializable now
-captures the closure, and the name resolves as it would in the closure.
+When a superclass declared more than one `setX` method, `super.x = v` in
+dynamic Groovy and under `@TypeChecked` used ordinary dispatch, so a `setX`
+the class itself declared or overrode was called instead, and one that
+delegated with `super.x = v` recursed until a `StackOverflowError`. The write
+now chooses among the superclass's setters by the type of `v`, as
+`super.setX(v)` and `@CompileStatic` do. `super.x++` and `super.x += v` write
+the same way.
 
-**What is unchanged.** A serializable lambda does not capture the closure, so
-its serialized form is the same as in 6.0.0 and such a name in it still throws
-`ClassCastException` (see GROOVY-12830).
+**Who is affected.** Such classes now run the superclass's setter rather than
+their own; use `this.x = v` where the class's own setter is wanted. A `setX`
+added through the class's `ExpandoMetaClass` or a category no longer receives
+`super.x = v`.
+
+### Groovy 6.0.1 — `super.x` reads a property through `isX()` when the class overrides it (GROOVY-12520)
+
+A read of a property that has both `isX()` and `getX()` calls `isX()`, and
+that is meant to hold through `super` too. In dynamic Groovy and under
+`@TypeChecked`, `super.x` called `getX()` instead when the class overrode
+`isX()` or declared a `boolean` property `x`. So with `A` declaring
+`isX() { true }` and `getX() { false }`, and `B extends A` overriding
+`isX()`, `super.x` in `B` gave `false`. It now calls `A.isX()` and gives
+`true`, as Groovy 4 did.
+
+**Who is affected.** Only classes whose `isX()` and `getX()` return different
+values. Call `super.getX()` explicitly where the `getX()` result is wanted.
+
+### Groovy 6.0.1 — `super.name()` in a closure, and `Outer.super.name()`, call the inherited method (GROOVY-12592)
+
+A `super` call made from a closure (`{ super.name() }`) or a nested class
+(`Outer.super.name()`), for a method the class inherits but does not
+override, used the MOP method of the class that declares it. That skipped a
+level of the hierarchy: with `B extends A` overriding `name()` and `E extends B`
+not overriding it, `{ super.name() }` in `E` called `A.name()`. It now calls
+`B.name()`, as `super.name()` outside a closure does. The class now also
+generates the `super$` methods its closures and nested classes need, so such a
+call never reaches the override of a subclass.
+
+**Who is affected.** Code whose closure `super` calls returned the
+grandparent's result. Results now match the same call made outside the
+closure.
+
+### Groovy 6.0.1 — a `setProperty` or `getProperty` from another interface's default method receives every access (GROOVY-12489)
+
+Since Groovy 5 (GROOVY-8283), a `setProperty` or `getProperty` that a class
+took from a default method of an interface other than `GroovyObject` was
+bypassed by `obj.x = v` writes and computed-name reads (`obj."$name"`), which
+went straight to the metaclass. Such a method now receives every access, as a
+declared method does and as in Groovy 4.
+
+**Who is affected.** Classes implementing such an interface. The method does
+not know which class made the access, so a superclass that writes its own
+private field on a subclass instance, `other.secret = v`, now throws
+`MissingPropertyException`, as the read already did. Use `other.@secret = v`.
+
+### Groovy 6.0.1 — `>` and `>=` with a primitive NaN operand are false (GROOVY-12538)
+
+When both operands are primitive `double` or `float` values, `NaN > x` and
+`NaN >= x` were `true`. All four ordered comparisons with NaN are now `false`,
+as in Java and as Groovy already gave for `Double` objects. Under
+`@CompileStatic` this includes `Double.NaN` and `Float.NaN`, which are
+primitive there.
+
+**Who is affected.** Code that relied on NaN comparing greater, such as
+`if (reading > limit)` treating a NaN reading as over the limit; use
+`Double.isNaN`. Mixed-type comparisons, `==` and `<=>` are unchanged. Classes
+compiled by an earlier release keep the old comparison until recompiled.
+
+### Groovy 6.0.1 — the receiver of a compound-assigned or incremented property is evaluated once (GROOVY-12619, GROOVY-12622, GROOVY-12613)
+
+`obj().v += 2` and `obj().v++` evaluated the receiver expression twice, once
+for the read and once for the write. It is now evaluated once, as for
+subscripts, in dynamic and statically compiled code alike: for every compound
+assignment operator, `++` and `--`, attribute access, safe navigation and
+extension properties such as `file.text += 'x'`. Under `@CompileStatic`,
+`++` and `--` on a non-primitive property or subscript, and in trait code a
+compound assignment to a subscript, likewise evaluate each part once: on
+`[10, 20]`, `list[i++]++` gave `[21, 20]` and left `i` at 2, and now gives
+`[11, 20]` with `i` at 1.
+
+**Who is affected.** Receivers with a side effect, which now runs once, and
+receivers that return another object each time, such as
+`iterator.next().v += 1`, which now read and write the same object.
+
+### Groovy 6.0.1 — a call site re-links when the metaclass a receiver shares with another class changes (GROOVY-12558)
+
+A class can answer another class's metaclass from `getMetaClass()`, as Spock
+mocks and many proxy libraries do. In 6.0.0, changing that metaclass, for
+example replacing a method on an `ExpandoMetaClass` set for the stood-in type,
+did not re-link call sites that had already dispatched on the proxy, so they
+kept calling the old method: `[first, first]` instead of `[first, second]`.
+Such call sites now re-link, as they did in Groovy 5. That includes the
+reflective cold tier (`groovy.indy.cold.reflection=true`).
+
+**Who is affected.** Code that, through a proxy or mock, relied on getting
+the method in place when the call site was first linked. It now gets the
+current method.
+
+### Groovy 6.0.1 — `ClassInfo.remove` keeps a class's Groovy methods and drops the metaclasses set for it (GROOVY-12580)
+
+After `ClassInfo.remove(C)`, the class used to get a fresh `ClassInfo` with no
+default Groovy or extension methods. Calls on a JDK class then threw
+`MissingMethodException` (`sb[0..0] = 'z'` on a `StringBuilder`) or picked a
+supertype's overload (`sb << 'x'` could return a new builder). A Groovy class
+kept, through its cached `ClassInfo`, a metaclass set on it before the
+removal, so `Host.metaClass.perClass = {...}` still answered afterwards. The
+class now keeps its methods. The metaclasses set for it and its instances are
+removed, so `new Host().perClass()` now throws `MissingMethodException`.
+
+**Who is affected.** Code that calls `ClassInfo.remove` on a class that is
+still in use and expects metaclass changes made before the call to survive.
+Make the changes again after the removal.
+
+### Groovy 6.0.1 — enum constants with literal arguments are created without the meta class (GROOVY-12490)
+
+An enum whose constants all have literal arguments, and whose constructor
+the compiler can pick unambiguously, now creates them with a direct
+constructor call rather than through the meta class, as GROOVY-12240 already
+did for constants without arguments.
+
+**Who is affected.** Code that registered a meta class or an
+`ExpandoMetaClass` constructor for such an enum before it initialized, to
+observe or replace its constants. Writing one argument as a non-literal
+expression, such as `'one'.toString()`, keeps the old path.
+
+### Groovy 6.0.1 — closure wrappers report and take the delegation settings of the closure they wrap (GROOVY-12673)
+
+The closures returned by `memoize()` and its variants, `trampoline()`,
+`curry()` and its relatives, `>>`/`<<` composition and `asWritable()` now
+report the `thisObject` of the closure they wrap. The memoize, trampoline and
+async wrappers (GROOVY-12679) also report and take its `delegate` and
+`resolveStrategy`, so a memoized or trampolined closure works with builders,
+`with()` and `tap()`. `dehydrate()` and `rehydrate()` on a wrapper return a
+wrapper over the new copy (GROOVY-12665, GROOVY-12669).
+
+**Who is affected.** Code that read `thisObject` from a wrapper, or that set
+the delegate of a wrapper and expected the wrapped closure to keep its own
+(call `clone()` first). A `wrapAsync` or `wrapAsyncGenerator` closure
+serialized by 6.0.0 does not deserialize in 6.0.1. `Memoize` gains two public
+overloads, which `japicmp` reports as additions.
+
+### Groovy 6.0.1 — a closure method call skips a null owner or delegate (GROOVY-12667)
+
+After `dehydrate()`, `rehydrate` with a null argument, or `delegate = null`, a
+method call in the closure body skips a null owner or delegate instead of
+calling on null. With `OWNER_FIRST` and a null owner the delegate's method is
+used, and with `DELEGATE_FIRST` and a null delegate the owner's. With no
+candidate, a method of the closure itself (`toString()`, `with`, `tap`) runs on
+the closure, and any other method throws `MissingMethodException`.
+
+**Who is affected.** Code that catches `NullPointerException` around such a
+call, and code that relied on `toString()` or `with` receiving `null` there,
+as in 6.0.0. Property access is unchanged.
+
+### Groovy 6.0.1 — a closure's own method called with no usable delegate or owner runs once (GROOVY-12578)
+
+An implicit-this call in a closure body to a method the closure inherits,
+such as `toString()`, `with`, `tap` or `identity`, falls back to the closure's
+own method when neither the delegate nor the owner can take it. That happens
+after `rehydrate(null, null, null)` or `dehydrate()` with `OWNER_ONLY`, or with
+`DELEGATE_ONLY` and no delegate. In 6.0.0 the fallback discarded its result
+and threw `MissingMethodException`. Compiled code then called the method a
+second time, so `{ -> int n = 0; with { n++ }; n }` returned `2`. The method
+now runs once and its result is returned (`1`).
+
+**Who is affected.** Closures in that state whose fallback method has side
+effects. A direct `metaClass.invokeMethod` on them no longer throws.
+
+### Groovy 6.0.1 — a closure passes a method of `Object` on for a closure nested in it (GROOVY-12829)
+
+A call without a receiver to a method that every object has (`toString()`,
+`hashCode()`, `equals`, `getClass()`, and `Object` extension methods such as
+`with` and `inspect`) is first tried on the closure's owner and delegate
+(GROOVY-11858, Groovy 6.0.0). When the owner is itself a closure, as for a
+nested closure or a closure passed to `each` inside another, that enclosing
+closure answered the call itself. It now passes the call on by its own
+resolve strategy, as for any other name, in dynamic, type checked and
+statically compiled code alike:
+
+```groovy
+class C {
+    String toString() { 'C' }
+    def m() {
+        def outer = { ->
+            def inner = { -> toString() }
+            [toString(), inner()]
+        }
+        outer()
+    }
+}
+assert new C().m() == ['C', 'C']    // was ['C', 'C$_m_closure1@...']
+**Who is affected.** Nested closures that call such a method without a
+receiver to get the enclosing closure, for example `getClass().name` for the
+closure's class name. Use `owner.getClass()`, or name the closure through a
+variable.
+
+### Groovy 6.0.1 — a lambda in a statically compiled trait reads a super trait's static accessor directly (GROOVY-12608)
+
+In a lambda in a `@CompileStatic` trait, the property form of a super trait's
+static accessor (`cnt` for `static int getCnt()`, or for a static property
+`cnt`) is now a call of that accessor. In 6.0.0 the lambda resolved the name
+at run time, and a lambda passed as a closure took it from the closure's
+delegate.
+
+**Who is affected.** A statically compiled trait that relied on that, as in
+`p.with((x) -> cnt)` where `p` has a `cnt` property. Use a closure
+(`p.with { cnt }`) or qualify the name (`x.cnt`).
+
+### Groovy 6.0.1 — trait static state used through the trait itself throws `MissingFieldException` (GROOVY-12597)
+
+A trait's static fields exist only in the classes that implement it. Reading or
+writing one through the trait itself, as in `T.count`, or `T.m()` where `m`
+uses a static field of `T`, now throws `MissingFieldException`. In 6.0.0 it
+threw a `MissingMethodException` naming an internal accessor such as
+`T__count$get`. The trait interface now declares a synthetic public static
+accessor for each such field.
+
+**Who is affected.** Code that catches `MissingMethodException`, or reads its
+message, around such a call. Catch `MissingFieldException` (or
+`GroovyRuntimeException`), or call through an implementing class.
+
+### Groovy 6.0.1 — a statically compiled trait reads its static accessor property on the implementing class (GROOVY-12590)
+
+Under `@CompileStatic`, trait code that used a static accessor of the trait
+with property syntax, such as `ready` for `isReady()` or `cnt = 1` for
+`setCnt(int)`, called it with the trait itself as the class. An accessor that
+reads the trait's static state threw `MissingMethodException`. One that uses
+the class, such as `static String getWho() { this.simpleName }`, returned the
+trait's name. It is now called with the implementing class, as the method
+call form `getWho()` already was.
+
+**Who is affected.** Statically compiled trait code that reads a static
+accessor as a property and depends on the class it runs for. Such an accessor
+now sees the implementing class (`C`, not `T`).
+
+### Groovy 6.0.1 — a private or static trait method called from a closure is resolved through the closure's delegate (GROOVY-12611, GROOVY-12618)
+
+In a closure in trait code, an implicit-this call to a private or static
+method of the trait, or to a public static method of a super trait, went
+straight to the trait. The closure's delegate was never consulted. It is now
+resolved as in a class: a `DELEGATE_FIRST` closure such as `with` calls the
+delegate's method when the delegate has one. So in a trait with
+`private int size() { 1 }`, `[5, 6].with { size() }` now gives `2`, not `1`.
+This applies in dynamic and statically compiled code.
+
+**Who is affected.** Trait code that calls its own private or static methods
+inside `with`, `tap`, builders or other delegating closures, where the
+delegate has a method of the same name. In dynamic code, a delegate with an
+ambiguous no-match overload set can now throw, as it does in a class. Call
+the method outside the closure, or qualify it (`T.size()` for a static).
+
+### Groovy 6.0.1 — an explicit `this.m()` in a trait closure calls the implementing object (GROOVY-12612)
+
+In a closure or lambda in trait code, an explicit `this.m()` called the
+trait's own method, ignoring an override in the implementing class. Under
+`@CompileStatic` it threw `ClassCastException`. It now calls `m` on the
+implementing object, never on the closure's delegate, as `this.m()` does
+outside the closure. So with `class C implements T { String getName() { 'C' } }`,
+`{ -> this.getName() }()` in `T` now gives `'C'`, not `'T'`.
+
+**Who is affected.** Dynamic trait code that calls `this.m()` inside a closure
+for a method the implementing class overrides. The override is now used.
+
+### Groovy 6.0.1 — a statically compiled trait closure no longer resolves the trait's own calls on the delegate (GROOVY-12624)
+
+Under `@CompileStatic`, the `$self.getClass()` and trait helper calls that the
+trait transformation adds to a closure in trait code could be resolved
+against the closure's delegate. In `new Object().with { who() }`, with
+`static String who() { this.simpleName }`, `who()` ran for `Object`, and a
+delegate method `who(Class, int)` was called in place of the trait's `who(int)`.
+These calls now target the implementing class or object (`C`), as in dynamic
+code.
+
+**Who is affected.** Statically compiled trait code calling a static trait
+method, or using trait static state, inside a delegating closure. It now sees
+the implementing class instead of the delegate.
+
+### Groovy 6.0.1 — a trait's instance initializer blocks run once under joint compilation (GROOVY-12575)
+
+When Groovy and Java sources were compiled together (`groovyc -j`, or the
+Gradle and Maven joint compilation), the stub generator duplicated a trait's
+instance initializer blocks. So each block ran twice per instance of an
+implementing class: `trait T { List log = []; { log << 'block' } }` gave
+`[block, block]`. Each block now runs once, as without joint compilation.
+Field initializers and static initializer blocks were not affected.
+
+**Who is affected.** Joint-compiled projects with traits that have instance
+initializer blocks with side effects. Code written around the double run
+(such as halving a counter) must drop that workaround.
+
+### Groovy 6.0.1 — packed closures access owner properties through their accessors (GROOVY-12658)
+
+With `@PackedClosures` or the `groovy.target.closure.pack` flag (both
+incubating), a packed closure body is a method of the owner class, and `x` or
+`this.x` in it read and wrote the owner's field directly, skipping a custom
+`getX()`/`setX()` or `getProperty`. It now goes through the accessor, as the
+closure class it replaces does; `this.@x` still accesses the field. With a
+`getE()` that returns 100 over a field holding 1, `{ -> e }()` gave `1`.
+
+**Who is affected.** Packed closures in classes whose property accessors do
+more than return or set the field now see the accessor's result and effects.
+
+### Groovy 6.0.1 — a rehydrated packed closure runs against its new this object (GROOVY-12666, GROOVY-12670)
+
+A packed closure (incubating) that uses its owner kept running against the
+instance it was created on after `rehydrate`. A closure class runs against
+the new this object, which a `@CompileStatic` packed closure now does too,
+throwing `ClassCastException` when that object is not an instance of the
+enclosing class. Under the `groovy.target.closure.pack` flag, a dynamic
+closure that names `this` (`this.foo()`, `this.@f`, `Outer.this`, …) is no
+longer packed, so it also uses the new this object. A packed body that does
+not use its owner still runs as before.
+
+**Who is affected.** Code that rehydrated such packed closures onto another
+object and relied on them still answering for the original owner. Such a
+copy now reads the new object's members, or throws `ClassCastException` for
+an unrelated object under `@CompileStatic`.
+
+### Groovy 6.0.1 — packed closures that call a method of the closure itself are not packed (GROOVY-12660, GROOVY-12663)
+
+A packed closure (incubating) body runs as a method of the owner class, so a
+call resolved against the closure itself went to the owner: under
+`@CompileStatic`, `toString()`, `hashCode()`, `equals()` or `getClass()` with
+the `TO_SELF` strategy, and in dynamic code a method or property `Closure`
+declares, such as `curry`, `call` or `maximumNumberOfParameters`. These
+closures are no longer packed, so the closure answers, as it does without
+packing.
+
+**Who is affected.** Owners that declare such a method or property and had
+packed closures reach it, for example a `maximumNumberOfParameters` property
+of 7 read by `{ -> maximumNumberOfParameters }` (now 0). Qualify the call
+with `this.` or rename the member.
+
+### Groovy 6.0.1 — `abs()` on a `Number` receiver keeps the number's precision (GROOVY-12471)
+
+`DefaultGroovyMethods.abs(Number)` returned `int`, truncating a `Long`,
+`BigInteger`, `BigDecimal` or floating-point value whose static type was
+`Number`, as `@CompileStatic` code such as `(a - b).abs()` always found. It now
+returns a `Number` computed with the type rules of the arithmetic operators,
+and new `abs(Integer)`, `abs(Short)` and `abs(Byte)` overloads return `int`.
+
+**Who is affected.** `int x = DefaultGroovyMethods.abs(n)` in Java, and
+`int x = n.abs()` for a `Number n` under `@CompileStatic`, no longer compile;
+add `.intValue()` where the narrowing is wanted. A `Float` reached through a
+`Number` receiver now gives a `Double`. Classes compiled against earlier
+releases still link to a synthetic bridge with the old result.
+
+### Groovy 6.0.1 — `@IndexedProperty` adds no indexed setter to a record (GROOVY-12730)
+
+An `@IndexedProperty` component of a record, or property of a `@RecordType`
+or `@RecordBase` class, now gets only the indexed getter `getX(int)`, as an
+`@Immutable` class's property already did. Earlier versions also generated
+the indexed setter `setX(int, V)`.
+
+**Who is affected.** Code that calls `setX(int, V)` on such a record no longer
+compiles under static compilation or Java, and fails with a
+`MissingMethodException` in dynamic Groovy. `japicmp` reports the method as
+removed.
+
+### Groovy 6.0.1 — `@NamedVariant` keeps explicit falsy arguments and generates default-argument variants (GROOVY-10498, GROOVY-12762)
+
+The map variant generated by `@NamedVariant` now passes a positional argument
+through unchanged. In 6.0.0 it re-applied the parameter's default with `?:`,
+so for `m(@NamedDelegate Color c, Number alpha = 4.5)` the call
+`m(r:1, g:2, b:3, 0.0)` used `4.5`; it now uses `0.0` (and `null` stays
+`null`). The map variant also gets its own default-argument variants, so
+`m(r:1, g:2, b:3)` now works instead of throwing `MissingMethodException`, and
+default values referencing a `@NamedDelegate` or an earlier parameter now work.
+Two forms that compiled in 6.0.0 are now errors: a declared member with the
+same signature as one of the new default-argument variants (such as
+`m(Map)` beside `@NamedVariant m(@NamedParam String n, int x = 3)`), and a
+positional parameter whose default references a `@NamedDelegate` parameter
+(`Color d = c`).
+
+**Who is affected.** Callers passing `0`, `false`, `''` or `null` to a
+positional parameter with a default through the map variant now get that
+value. Classes with a clashing `m(Map)` member must rename one of the methods
+or drop the default; a positional default that references a `@NamedDelegate`
+parameter must be made a `@NamedParam` or computed in the method body.
+
+### Groovy 6.0.1 — a repeated `_` is an ordinary variable holding the last value (GROOVY-11744)
+
+A `_` repeated in a declaration or a closure parameter list is `_` declared
+again, holding the last value, as in Groovy 5. Version 6.0.0 lost this
+unintentionally. `_` may now also be redeclared in the same or an enclosing
+scope.
+
+**Who is affected (API).** `org.codehaus.groovy.control.PlaceholderVisitor`
+is deprecated for removal in Groovy 7, and the compiler no longer runs it, so
+`PlaceholderVisitor.isPlaceholder` returns `false` for code the compiler
+produced unless the caller runs the visitor itself.
+
+### Groovy 6.0.1 — the default-package lookup before the default imports is an opt-in (GROOVY-12555)
+
+Two new optimization options, both off by default, so the resolution order of
+6.0.0 is unchanged. `defaultPackageFirst` looks up a compiled class of the
+default package before the default imports, so an incremental build resolves
+a name such as `Factory` as a full build does. `defaultPackageSources` also
+takes sources and classes the class loader has already loaded into that
+lookup. Set them with the system properties
+`groovy.resolve.default.package.first` and
+`groovy.resolve.default.package.sources`, or in Gradle through
+`groovyOptions.optimizationOptions`.
+
+**Who is affected when the options are on.** Default-package code whose class
+path has a class or source with the simple name of a default-import type: in
+a directory of scripts, a sibling `Node.groovy` or `Timer.groovy` then stands
+for that name. "Default imports" in the user guide
+([`core-program-structure.adoc`](src/spec/doc/core-program-structure.adoc))
+describes the lookup in full.
+
+### Groovy 6.0.1 — anonymous scripts no longer go through the overloads that take a file name (GROOVY-8113)
+
+To stop generated script class names from being retained by parent loaders,
+`GroovyShell.evaluate(String)`, `evaluate(Reader)`, `parse(String)`,
+`parse(Reader)` and their variants without a file name, and
+`GroovyClassLoader.parseClass(String)`, now build a `GroovyCodeSource` marked
+as name-generated. They no longer delegate to `evaluate(String, String, String)`,
+`parse(String, String, Binding)`, `parse(Reader, String)` or
+`parseClass(String, String)`, so subclasses that override those overloads no
+longer see anonymous scripts. Loading `<generated name>Customizer`, such as
+`Script1Customizer`, through the script's loader now throws an internal
+`RuntimeException` instead of `ClassNotFoundException` when no such class was
+defined. For a generated name, a custom `groovy.runtime.metaclass.Script1MetaClass`
+and a `Script1BeanInfo` are no longer looked up.
+
+**Who is affected.** `GroovyShell`/`GroovyClassLoader` subclasses that
+intercept those overloads: override `parse(GroovyCodeSource, Binding)` or
+`parseClass(GroovyCodeSource)` instead (`isNameGenerated()` tells the cases
+apart). Code that catches `ClassNotFoundException` for such names, or relies
+on companions for generated names, should name the script explicitly.
+
+### Groovy 6.0.1 — `ListHashMap` views are live and read-only, so node metadata reads stay current (GROOVY-12744)
+
+`org.codehaus.groovy.util.ListHashMap`, which stores AST node metadata,
+returned snapshot views. In list mode, `keySet()`, `entrySet()` and `values()`
+were mutable copies: changes to them were silently lost, and later puts were
+missing from them. As a result, `ASTNode.getNodeMetaData()` and
+`copyNodeMetaData` could return stale contents: after a second
+`putNodeMetaData`, `getNodeMetaData()` still gave `[a:1]`. The views now
+reflect later changes, and every view is read-only, so modifying one throws
+`UnsupportedOperationException`.
+
+**Who is affected.** AST transforms and other code that used these views to
+modify the map, or relied on them as snapshots. Use `put`/`remove` on the map
+itself, or copy the view.
+
+### Groovy 6.0.1 — `@GrabConfig` system properties follow `Grape.enableGrapes` (GROOVY-12461)
+
+The `systemProperties` of `@GrabConfig` are set at run time only when grapes
+are enabled. 6.0.0 decided this from the system property
+`groovy.grape.enable` at the time the script ran. 6.0.1 uses
+`Grape.getEnableGrapes()`, so after `Grape.setEnableGrapes(false)` the
+properties are no longer set, though 6.0.0 still set them. A
+`-Dgroovy.grape.enable=false` given at startup disables them on both versions.
+
+**Who is affected.** Applications that turn grapes off programmatically but
+rely on `@GrabConfig` to set system properties. Set those properties
+directly instead.
+
+### Groovy 6.0.1 — parallel collections run on the pool in scope (GROOVY-12457)
+
+Parallel collection methods (incubating) run on the pool bound with
+`Pool.withCurrent`. In 6.0.0 a pool not backed by a `ForkJoinPool`, such as
+`Pool.virtual()` or `Pool.io()`, was silently replaced by the common
+fork-join pool.
+
+**Who is affected.**
+
+- Callbacks under `Pool.virtual()` or `Pool.io()` now run on that pool. A
+  short-circuit or a failing sibling interrupts callbacks still running there,
+  which closes an interruptible channel they are blocked on.
+- `Pool.current()` returns the pool on its own worker threads, where it
+  returned `null`.
+- `groupByParallel` returns its keys in first-seen order, and `grepParallel`
+  keeps an element only when `isCase` is Groovy-true, as `groupBy` and `grep`
+  do.
+
+### Groovy 6.0.1 — async constructs rethrow a checked exception as itself (GROOVY-12763)
+
+In 6.0.0 `await` rethrew a checked exception from an async task unchanged,
+but a scope's child task failure, a `defer` action, a `withScope` or
+generator body, and `for await` over a `Flow.Publisher` wrapped it in
+`RuntimeException` or `UndeclaredThrowableException`. All of them now rethrow
+the original exception, as `await` does. Async/await is incubating.
+
+**Who is affected.** Code that catches `RuntimeException` or
+`UndeclaredThrowableException` around these constructs and reads
+`getCause()`. Catch the checked exception directly. Java callers of
+`AsyncScope.close()` and `withScope` catch `Exception` and test its type.
+
+### Groovy 6.0.1 — a late subscriber of `BroadcastChannel.asPublisher()` completes (GROOVY-12571)
+
+A subscriber of `BroadcastChannel.asPublisher()` that arrived after the
+broadcast had closed received `onError(ChannelClosedException)`. It now ends as
+a subscriber attached before the close does: `onComplete` after `close()`, and
+`onError` with the failure itself after `close(failure)`.
+
+**Who is affected.** Code that caught `ChannelClosedException` from such a
+publisher. `BroadcastChannel.subscribe()` on a closed broadcast still throws
+it.
+
+### Groovy 6.0.1 — postconditions and class invariants are checked on a trailing implicit return after an early return (GROOVY-12463)
+
+When a method with an `@Ensures` postcondition, or in a class with an
+`@Invariant`, had an explicit early `return` and ended with an implicit return
+value, the trailing value was returned without the postcondition or the class
+invariant being checked. `if (early) return 1; -1` under
+`@Ensures({ result > 0 })` returned `-1`. Both are now checked on that path as
+on every other.
+
+**Who is affected.** Methods whose trailing value violates their postcondition
+or leaves the object violating its invariant now throw
+`PostconditionViolation` or `ClassInvariantViolation` where they returned.
+
+### Groovy 6.0.1 — `PurityChecker` reports mutating operators in `@Pure` methods (GROOVY-12464)
+
+The checker rejected a mutating call such as `s.add(v)` on a parameter, field
+or `this`, but accepted the same mutation written as an operator. Operators
+that stand for a method call are now checked as that call: `s << v`
+(`leftShift`), `a[i] = v`, `a[i] += v` and `a[i]++` (`putAt`), and a compound
+assignment that resolves to a `*Assign` method such as `plusAssign`, including
+one renamed with `@OperatorRename`. Building up a local value is still accepted.
+
+**Who is affected.** `@Pure` methods checked by `PurityChecker` that mutate a
+parameter, field or `this` through one of these operators no longer compile.
+Remove `@Pure`, copy into a local first, or allow the effect.
+
+### Groovy 6.0.1 — `@Modifies` needs a closure, and `@Modifies({ [] })` declares an empty frame (GROOVY-12477, GROOVY-12723)
+
+`@Modifies({ [] })` left no frame on the method, so `ModifiesChecker` and the
+`@Ensures` `old` validation treated it as if there were no `@Modifies`. It
+now declares that the method modifies nothing, as the newly accepted
+`@Modifies({})` does. A bare `@Modifies`, and any value that is not a closure,
+such as `@Modifies(['this.count'])` or `@Modifies('this.count')`, compiled with
+nothing checked; each is now a compile error that names the value found.
+
+**Who is affected.** Methods with `@Modifies({ [] })` that assign a field
+(under `ModifiesChecker`) or whose `@Ensures` reads `old.x` no longer compile;
+list the targets in the closure. Bare or non-closure `@Modifies` values must
+be rewritten as a closure, for example `@Modifies({ this.count })`.
+
+### Groovy 6.0.1 — a class literal as a contract's value is a compile error (GROOVY-12728, GROOVY-12729)
+
+The contract annotations declare their value as a `Class`, so a class literal
+such as `@Requires(Object)` passed the annotation checks, but the contract was
+then taken for an already generated condition class and never checked. The
+same held for `@Ensures`, a class `@Invariant`, a loop `@Invariant`, and loop
+and method `@Decreases`. Each now reports "requires a closure containing the
+condition". An empty `@Invariant({})` or `@Decreases({})` now compiles with a
+warning that nothing is checked.
+
+**Who is affected.** Code that put a class literal in one of these annotations
+no longer compiles. It was never checked; replace it with a closure holding
+the condition, or remove the annotation.
+
+### Groovy 6.0.1 — contracts on traits and on trait methods with a body are rejected (GROOVY-12741)
+
+The contracts transform treated a trait as a class. `@Requires`, `@Ensures`,
+`@ThrowsIf` and `@Decreases` on a trait method with a body already failed,
+at compile time or on every call. A trait-level `@Invariant` failed when the
+trait had fields, but on a trait without fields it compiled and was checked.
+All of them are now compile errors naming the annotation and the trait or
+method. Contracts on abstract trait methods keep working.
+
+**Who is affected.** A trait annotated with `@Invariant` no longer compiles.
+Put the invariant on the implementing classes instead.
+
+### Groovy 6.0.1 — trait methods of a class with an `@Invariant` return their value (GROOVY-12742)
+
+In a class with a class `@Invariant`, the forwarders and property accessors
+generated for the traits it implements returned `null`, because the invariant
+check was appended after the bare return expression, and a primitive return
+threw `GroovyCastException`. The invariant is now checked before the value is
+returned. A `@Synchronized` method with an explicit `return`, which was left
+unchecked, is now checked against the invariant too.
+
+**Who is affected.** Code that called such trait methods and got `null` now
+gets the method's result. A `@Synchronized` method that leaves the object
+violating its invariant now throws `ClassInvariantViolation`.
 
 ## The binary-compatibility check
 
