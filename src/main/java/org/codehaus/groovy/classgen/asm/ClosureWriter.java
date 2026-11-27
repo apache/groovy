@@ -393,6 +393,7 @@ public class ClosureWriter {
         //    interfaces), trait body ($Trait$Helper's synthetic receiver), or a this(...)/super(...)
         //    argument (uninitializedThis cannot be the dispatch receiver)?
         if (isIntersectionTyped(expression)) return PackStrategy.FULL_CLASS;
+        if (implementsTargetInterface(expression)) return PackStrategy.FULL_CLASS;
         if (isInTraitContext()) return PackStrategy.FULL_CLASS;
         if (controller.getCompileStack().isInSpecialConstructorCall()) return PackStrategy.FULL_CLASS;
         return open ? PackStrategy.OPEN_ADAPTER : PackStrategy.PACKED_ADAPTER;
@@ -421,6 +422,17 @@ public class ClosureWriter {
     private static boolean isIntersectionTyped(final ClosureExpression expression) {
         Object markers = expression.getNodeMetaData(StaticTypesMarker.LAMBDA_MARKERS);
         return markers instanceof List && !((List<?>) markers).isEmpty();
+    }
+
+    /**
+     * A closure literal written in statically compiled code for a slot declared with a type parameter that is
+     * bound to a functional interface, such as {@code list.add { ... }} for a {@code List<Supplier<String>>},
+     * needs its <em>generated class</em> to implement that interface (see
+     * {@code StaticTypesClosureWriter#addTargetInterface}), which the one shared {@code PackedClosure} adapter
+     * cannot do per-literal -- so keep it a class. The interface is recorded by the type checker.
+     */
+    private static boolean implementsTargetInterface(final ClosureExpression expression) {
+        return expression.getNodeMetaData(StaticTypesMarker.CLOSURE_TARGET_INTERFACE) != null;
     }
 
     /**
@@ -665,6 +677,10 @@ public class ClosureWriter {
         if (mode == PackMode.LENIENT || mode == PackMode.DISABLED) return;
         String msg = "@PackedClosures: closure was not packed -- " + declineReason(expression);
         if (mode == PackMode.STRICT) {
+            if (implementsTargetInterface(expression)) {
+                // since GEP-33 such a closure implements its interface, so STRICT code that compiled before reaches here
+                msg += "; use mode LENIENT or WARN to compile it unpacked";
+            }
             controller.getSourceUnit().getErrorCollector()
                     .addErrorAndContinue(msg, expression, controller.getSourceUnit());
         } else {
@@ -739,6 +755,11 @@ public class ClosureWriter {
         }
         if (isIntersectionTyped(expression)) {
             return "it is cast to an intersection type, whose marker interfaces the shared adapter cannot declare";
+        }
+        if (implementsTargetInterface(expression)) {
+            ClassNode type = expression.getNodeMetaData(StaticTypesMarker.CLOSURE_TARGET_INTERFACE);
+            return "it is written for a type parameter bound to " + type.toString(false) + ", which its class implements "
+                    + "and the shared adapter cannot";
         }
         if (isInTraitContext()) {
             return "it is declared inside a trait, whose helper-class context packed dispatch does not yet support";

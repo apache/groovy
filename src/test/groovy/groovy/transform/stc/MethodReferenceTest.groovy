@@ -2641,6 +2641,72 @@ final class MethodReferenceTest {
         assert err.message =~ /Argument is a method reference, but parameter type 'T' is not a functional interface/
     }
 
+    // GROOVY-12823
+    @Test
+    void testNotFunctionalInterface4() {
+        assertScript shell, '''
+            @CompileStatic
+            class C {
+                static <T> T id(T t) { t }
+                static String twice(String s) { s + s }
+                static Function<String, String> returned() {
+                    id(String::trim)
+                }
+                static List<Object> test() {
+                    Function<String, String> assigned = id(String::toUpperCase)
+                    Function<String, String> bound = id(C::twice)
+                    Function<String, StringBuilder> constructor = id(StringBuilder::new)
+                    Supplier<List<String>> supplier = id(ArrayList::new)
+                    Object cast = (Function<String, String>) id(String::trim)
+                    [assigned.apply('a'), bound.apply('a'), constructor.apply('a').toString(), supplier.get(),
+                     returned().apply(' a '), ((Function<String, String>) cast).apply(' a ')]
+                }
+            }
+
+            // the type the call is assigned, returned or cast to gives T, as for a lambda
+            assert C.test() == ['A', 'aa', 'a', [], 'a', 'a']
+        '''
+    }
+
+    // GROOVY-12825
+    @Test
+    void testNotFunctionalInterface5() {
+        assertScript shell, '''
+            class Holder {
+                final Function<String, String> f
+                Holder(Function<String, String> f) { this.f = f }
+            }
+            @CompileStatic
+            class C {
+                static <T> T id(T t) { t }
+                static <T> T wrap(T t) { t }
+                static String take(Function<String, String> f) { f.apply(' a ') }
+                static <U> String takeGeneric(Function<U, String> f, U u) { f.apply(u) }
+                static List<Object> test() {
+                    Function<String, String> assigned = wrap(id(String::trim))
+                    [take(id(String::trim)), take(id(String::new)), new Holder(id(String::toUpperCase)).f.apply('b'),
+                     takeGeneric(id(String::valueOf), 7), take(wrap(id(String::trim))), assigned.apply(' c '),
+                     ((Function<String, String>) wrap(id(String::trim))).apply(' d ')]
+                }
+            }
+
+            // the parameter of the enclosing call gives T, through each call
+            assert C.test() == ['a', ' a ', 'B', '7', 'a', 'c', 'd']
+        '''
+
+        def err = shouldFail shell, '''
+            @CompileStatic
+            class C {
+                static <T> T id(T t) { t }
+                static String take(Object o) { o.toString() }
+                static String test() {
+                    take(id(String::trim))
+                }
+            }
+        '''
+        assert err.message =~ /Argument is a method reference, but parameter type 'T' is not a functional interface/
+    }
+
     // GROOVY-11254
     @Test
     void testLocalFunctionalInterface() {

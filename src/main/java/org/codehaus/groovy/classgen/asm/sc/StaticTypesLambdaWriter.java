@@ -76,6 +76,7 @@ import static org.codehaus.groovy.classgen.asm.sc.StaticTypesFunctionalInterface
 import static org.codehaus.groovy.classgen.asm.sc.StaticTypesFunctionalInterfaceMetadataKey.LAMBDA_PRELOADED_RECEIVER;
 import static org.codehaus.groovy.classgen.asm.sc.StaticTypesFunctionalInterfaceMetadataKey.LAMBDA_SHARED_VARIABLES;
 import static org.codehaus.groovy.transform.stc.StaticTypesMarker.CLOSURE_ARGUMENTS;
+import static org.codehaus.groovy.transform.stc.StaticTypesMarker.CLOSURE_TARGET_INTERFACE;
 import static org.codehaus.groovy.transform.stc.StaticTypesMarker.INFERRED_RETURN_TYPE;
 import static org.codehaus.groovy.transform.stc.StaticTypesMarker.LAMBDA_MARKERS;
 import static org.codehaus.groovy.transform.stc.StaticTypesMarker.PARAMETER_TYPE;
@@ -118,7 +119,8 @@ public class StaticTypesLambdaWriter extends LambdaWriter implements AbstractFun
         // functional interface target is required for native lambda generation
         ClassNode functionalType = expression.getNodeMetaData(PARAMETER_TYPE);
         MethodNode abstractMethod = resolveFunctionalInterfaceMethod(functionalType);
-        if (abstractMethod == null) {
+        // a lambda stored where a type parameter is bound to the interface is a closure whose class implements it
+        if (abstractMethod == null || expression.getNodeMetaData(CLOSURE_TARGET_INTERFACE) != null) {
             // generate bytecode for closure
             super.writeLambda(expression);
             return;

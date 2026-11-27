@@ -139,8 +139,10 @@ import org.codehaus.groovy.transform.trait.TraitASTTransformation;
 import org.codehaus.groovy.transform.trait.Traits;
 import org.objectweb.asm.Opcodes;
 
+import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.text.MessageFormat;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.BitSet;
@@ -390,6 +392,7 @@ import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.typeCh
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.typeVariableArgumentGetsWildcard;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.typeCheckMethodsWithGenerics;
 import static org.codehaus.groovy.transform.stc.StaticTypesMarker.CLOSURE_ARGUMENTS;
+import static org.codehaus.groovy.transform.stc.StaticTypesMarker.CLOSURE_TARGET_INTERFACE;
 import static org.codehaus.groovy.transform.stc.StaticTypesMarker.COMPOUND_ASSIGN_TARGET;
 import static org.codehaus.groovy.transform.stc.StaticTypesMarker.DECLARATION_INFERRED_TYPE;
 import static org.codehaus.groovy.transform.stc.StaticTypesMarker.DELEGATION_METADATA;
@@ -439,6 +442,16 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     private static final Object BODY_RETURN_TYPE = new Object();
     /** Metadata key marking an untyped closure or lambda parameter declared with the type its functional interface gives it. */
     private static final Object FUNCTIONAL_PARAMETER_TYPE = new Object();
+    /** Metadata key marking a value of type Closure that is stored as it is where a closure literal would be converted, and has been reported. */
+    private static final Object CLOSURE_VALUE_NOT_CONVERTED = new Object();
+    /** The type parameter {@code V} of {@code Map.put(K, V)}, which stores a map entry written as a property. */
+    private static final ClassNode MAP_VALUE_TYPE = MAP_TYPE.getMethods("put").get(0).getParameters()[1].getType();
+    /** The names of the methods of {@code Closure}, which a closure class cannot implement for an interface. */
+    private static final Set<String> CLOSURE_METHOD_NAMES = closureMethodNames();
+    /** Metadata key for the type of a subscript that an assignment writes, while the assigned value is visited for it. */
+    private static final Object ASSIGNED_SUBSCRIPT_TYPE = new Object();
+    /** Metadata key for the method references of a call that an argument of the enclosing call resolves. */
+    private static final Object DEFERRED_METHOD_REFERENCES = new Object();
     /** Metadata key for the type a method call's value is assigned or returned to, a witness for its type arguments. */
     private static final Object CALL_TARGET_TYPE = new Object();
     /** Cached {@code Closure#getDelegate()} method. */
@@ -1320,6 +1333,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     lhs.forEach((key, types) -> typeCheckingContext.peekTemporaryTypeInfo(key).addAll(types));
                     rhs.forEach((key, types) -> typeCheckingContext.peekTemporaryTypeInfo(key).addAll(types));
                 } else if (op != LOGICAL_OR && op != BITWISE_OR) { // "|" narrows like "||", see propagateTemporaryTypeInfo
+                    if (!isAssignment(op)) applyOperandTargetType(lType, op, rightExpression);
                     rightExpression.visit(this);
                     if (op == EQUAL) typePatternBinding(expression, leftExpression, rightExpression); // GEP-19
                     if (negation) { // "c == false" tells what "!c" does
@@ -1376,7 +1390,14 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     // left hand side of a subscript assignment: map['key'] = ...
                     Expression enclosingExpressionRHS = enclosingBinaryExpression.getRightExpression();
                     if (!(enclosingExpressionRHS instanceof ClosureExpression)) {
-                        enclosingExpressionRHS.visit(this);
+                        // the value is visited before the assignment: the subscript's type is the target of a lambda,
+                        // method reference or closure that is a branch of a conditional expression
+                        expression.putNodeMetaData(ASSIGNED_SUBSCRIPT_TYPE, resultType);
+                        try {
+                            enclosingExpressionRHS.visit(this);
+                        } finally {
+                            expression.removeNodeMetaData(ASSIGNED_SUBSCRIPT_TYPE);
+                        }
                     }
                     ClassNode[] arguments = {rType, isNullConstant(enclosingExpressionRHS) // GROOVY-11621
                                 ? UNKNOWN_PARAMETER_TYPE : getType(enclosingExpressionRHS)};
@@ -1422,6 +1443,12 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 if (mapValueType != null) {
                     convertMapValue(expression, mapValueType);
                     resultType = mapValueType;
+                }
+                // the assignment compiles a lambda or method reference for lType, so only a closure is converted here
+                if (op == EQUAL && isSAMType(lType) && isStaticDispatchScope()
+                        && !(rightExpression instanceof LambdaExpression || rightExpression instanceof MethodReferenceExpression)) {
+                    ClassNode slotType = getTypeParameterOfSlot(leftExpression, rType);
+                    if (slotType != null) convertClosureValue(rightExpression, lType, slotType, true);
                 }
                 // check for implicit conversion like "String a = 123", "int[] b = [1,2,3]", "List c = [].stream()", etc.
                 if (!implementsInterfaceOrIsSubclassOf(wrapTypeIfNecessary(resultType), wrapTypeIfNecessary(originType))) {
@@ -2950,6 +2977,9 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
                         if (!extension.handleIncompatibleAssignment(targetType, valueType, entryExpression)) {
                             addAssignmentError(targetType, valueType, entryExpression);
                         }
+                    } else if (propertyTypes.size() == 1 && isSAMType(propertyTypes.iterator().next()) && isStaticDispatchScope()) {
+                        ClassNode slotType = getTypeParameterOfSlot(dummyExpression, valueType);
+                        if (slotType != null) convertClosureValue(valueExpression, propertyTypes.iterator().next(), slotType, false);
                     }
                 }
             }
@@ -4433,6 +4463,7 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
                 Expression arguments = call.getArguments();
                 ArgumentListExpression argumentList = InvocationWriter.makeArgumentList(arguments);
 
+                applyNamedArgumentTargetTypes(receiver, argumentList);
                 // visit functional arguments *after* method has been chosen
                 visitMethodCallArguments(receiver, argumentList, false, null);
                 final ClassNode[] argumentTypes = getArgumentTypes(argumentList);
@@ -5698,14 +5729,32 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
         int nSelf = nExpressions - arguments.getExpressions().size(); // receiver of an extension method
         for (int i = 0; i < nExpressions; i += 1) {
             Expression expression = expressions.get(i);
-            if (visitFunctors == (expression instanceof ClosureExpression || expression instanceof MethodPointerExpression)) {
+            boolean closureConditional = isClosureConditional(expression);
+            if (closureConditional && !visitFunctors) { // visited with the closures, once the method is chosen
+                expression.putNodeMetaData(INFERRED_TYPE, CLOSURE_TYPE);
+            }
+            if (visitFunctors == (expression instanceof ClosureExpression || expression instanceof MethodPointerExpression || closureConditional)) {
                 if (visitFunctors && nthParameter != -1) { // GROOVY-10636: vargs call
                     Parameter declared = parameters[Math.min(i, nthParameter)], target = declared;
                     ClassNode targetType = target.getType();
                     if (targetType.isArray() && i >= nthParameter)
                         targetType = targetType.getComponentType();
-                    ClassNode functionalType = (i < nSelf || !isFunctionalLiteral(expression) ? null
+                    ClassNode functionalType = (i < nSelf || !(isFunctionalLiteral(expression) || (closureConditional && isStaticDispatchScope())) ? null
                             : getFunctionalTypeArgument(receiver, selectedMethod, arguments, i - nSelf, targetType));
+                    if (functionalType == null && i >= nSelf && !(expression instanceof MethodPointerExpression)
+                            && (isFunctionalLiteral(expression) || (closureConditional && isStaticDispatchScope()))) {
+                        warnIfTypeVariableSlot(receiver, selectedMethod, arguments, targetType, expression);
+                    }
+                    if (functionalType != null && closureConditional) { // its closure branches implement the interface
+                        convertClosureValue(expression, functionalType, targetType, false);
+                        if (takesParameterTypesFrom(expression, functionalType)) applyTypeParameterTarget(functionalType, targetType, expression);
+                        functionalType = null;
+                    } else if (functionalType != null && !(expression instanceof MethodReferenceExpression)) {
+                        // the class of a closure or lambda implements the interface, or it is passed as it is
+                        convertClosureValue(expression, functionalType, targetType, false);
+                        if (expression.getNodeMetaData(CLOSURE_TARGET_INTERFACE) == null
+                                || !declaresParameterTypesOf((ClosureExpression) expression, functionalType)) functionalType = null;
+                    }
                     if (functionalType != null) { // a type parameter the call binds to a functional interface
                         targetType = functionalType;
                         if (declared.getAnnotations(CLOSUREPARAMS_CLASSNODE).isEmpty())
@@ -5715,9 +5764,11 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
                     if (coerceToMethod) { // resolve the target parameter's type
                         Map<GenericsTypeName, GenericsType> context = extractPlaceHoldersVisibleToDeclaration(receiver, selectedMethod, arguments);
                         targetType = applyGenericsContext(context, targetType);
-                        expression.putNodeMetaData(PARAMETER_TYPE, targetType);
+                        if (!closureConditional) expression.putNodeMetaData(PARAMETER_TYPE, targetType);
                     }
-                    if (expression instanceof ClosureExpression) {
+                    if (closureConditional) {
+                        if (coerceToMethod && targetType.isInterface()) applyTargetType(targetType, expression); // each branch
+                    } else if (expression instanceof ClosureExpression) {
                         checkClosureWithDelegatesTo(receiver, selectedMethod, args(expressions), parameters, expression, declared);
                         if (i > 0 || !(selectedMethod instanceof ExtensionMethodNode)) {
                             inferClosureParameterTypes(receiver, arguments, (ClosureExpression) expression, target, selectedMethod);
@@ -5734,6 +5785,14 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
                             inferClosureParameterTypes(receiver, arguments, lambda, target, selectedMethod);
                             expression.putNodeMetaData(PARAMETER_TYPE, lambda.getNodeMetaData(PARAMETER_TYPE));
                             expression.putNodeMetaData(CLOSURE_ARGUMENTS, lambda.getNodeMetaData(CLOSURE_ARGUMENTS));
+                        } else if (i >= nSelf && isFunctionalLiteral(expression) && declared.getType().isGenericsPlaceHolder()
+                                && isArgumentOfEnclosingCall(typeCheckingContext.getEnclosingMethodCall())) {
+                            // the parameter of the call this one is an argument of may give the type parameter, as in
+                            // "take(id(String::trim))" for "take(Function<String, String>)": resolved with that call
+                            List<Runnable> deferred = typeCheckingContext.getEnclosingMethodCall().getNodeMetaData(DEFERRED_METHOD_REFERENCES, x -> new ArrayList<>());
+                            Expression call = typeCheckingContext.getEnclosingMethodCall();
+                            int index = i - nSelf;
+                            deferred.add(() -> resolveDeferredMethodReference(call, receiver, selectedMethod, arguments, index, declared, (MethodReferenceExpression) expression));
                         } else {
                             addStaticTypeError("Argument is a method reference, but parameter type '" + prettyPrintTypeName(targetType) + "' is not a functional interface", expression);
                         }
@@ -5741,6 +5800,53 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
                 }
                 expression.visit(this);
                 expression.removeNodeMetaData(DELEGATION_METADATA);
+                if (expression instanceof MethodPointerExpression && !(expression instanceof MethodReferenceExpression) // compiled for the interface
+                        && visitFunctors && nthParameter != -1 && i >= nSelf && isStaticDispatchScope()) {
+                    convertClosureArgument(receiver, selectedMethod, arguments, parameters, i, nSelf, expression); // a MethodClosure
+                }
+            } else if (visitFunctors && nthParameter != -1 && i >= nSelf && isStaticDispatchScope()
+                    && implementsInterfaceOrIsSubclassOf(getType(expression), CLOSURE_TYPE)
+                    && expression.getNodeMetaData(DEFERRED_METHOD_REFERENCES) == null) { // a call whose method reference is resolved below
+                // a conditional expression or a value of type Closure, such as a variable
+                convertClosureArgument(receiver, selectedMethod, arguments, parameters, i, nSelf, expression);
+            }
+            if (visitFunctors && expression.getNodeMetaData(DEFERRED_METHOD_REFERENCES) != null) {
+                // a call whose method reference argument takes the type parameter from the parameter here
+                ClassNode callTarget = null;
+                if (nthParameter != -1 && i >= nSelf) {
+                    callTarget = parameters[Math.min(i, nthParameter)].getType();
+                    if (callTarget.isArray() && i >= nthParameter) callTarget = callTarget.getComponentType();
+                    callTarget = applyGenericsContext(extractPlaceHoldersVisibleToDeclaration(receiver, selectedMethod, arguments), callTarget);
+                }
+                List<Runnable> deferred = expression.getNodeMetaData(DEFERRED_METHOD_REFERENCES);
+                expression.removeNodeMetaData(DEFERRED_METHOD_REFERENCES);
+                Expression call = typeCheckingContext.getEnclosingMethodCall();
+                if (callTarget != null && callTarget.isGenericsPlaceHolder() && selectedMethod != null && selectedMethod.getGenericsTypes() != null) {
+                    // a type parameter of this call, as in "take(wrap(id(String::trim)))": its target type gives it
+                    ClassNode typeParameter = callTarget;
+                    Runnable resolve = () -> {
+                        typeCheckingContext.pushEnclosingMethodCall(call);
+                        try {
+                            Map<GenericsTypeName, GenericsType> context = new HashMap<>();
+                            extractGenericsConnectionsFromCallTarget(arguments, selectedMethod.getReturnType(), selectedMethod.getGenericsTypes(), context);
+                            ClassNode type = context.isEmpty() ? null : applyGenericsContext(context, typeParameter);
+                            if (type != null && !type.isGenericsPlaceHolder()) expression.putNodeMetaData(CALL_TARGET_TYPE, type);
+                        } finally {
+                            typeCheckingContext.popEnclosingMethodCall();
+                        }
+                        deferred.forEach(Runnable::run);
+                    };
+                    if (call.getNodeMetaData(CALL_TARGET_TYPE) == null && isArgumentOfEnclosingCall(call)) {
+                        call.<List<Runnable>>getNodeMetaData(DEFERRED_METHOD_REFERENCES, x -> new ArrayList<>()).add(resolve);
+                    } else {
+                        resolve.run();
+                    }
+                } else {
+                    if (callTarget != null && !isDynamicTyped(callTarget) && !isObjectType(callTarget)) {
+                        expression.putNodeMetaData(CALL_TARGET_TYPE, callTarget);
+                    }
+                    deferred.forEach(Runnable::run);
+                }
             }
             if (i == 0 && parameters.length > 0 && expression instanceof MapExpression) {
                 checkNamedParamsAnnotation(parameters[0], (MapExpression) expression, isNestedCopyWith(selectedMethod));
@@ -5749,25 +5855,449 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
     }
 
     /**
-     * Tells if the expression is a lambda or method reference written where the type checker resolves the
-     * functional interface of a parameter declared with a type parameter: only in statically compiled code, and
-     * for a lambda only with {@link CompilerConfiguration#LAMBDA_TYPE_ARGUMENT} set, since a lambda for such a
-     * parameter is otherwise compiled as a closure. Dynamic and type-checked calls pass such an argument as they are.
+     * Tells if the call is an argument of the call that encloses it, which is visited before that call's method is
+     * chosen.
+     */
+    private boolean isArgumentOfEnclosingCall(final Expression call) {
+        List<Expression> calls = typeCheckingContext.getEnclosingMethodCalls();
+        if (calls.size() < 2 || calls.get(0) != call || !(calls.get(1) instanceof MethodCall enclosing)) return false;
+        return InvocationWriter.makeArgumentList(enclosing.getArguments()).getExpressions().stream().anyMatch(argument -> argument == call);
+    }
+
+    /**
+     * Resolves a method reference passed for a type parameter that only the call's target type gives, once the
+     * call is known to be an argument of a parameter of the enclosing call: the type of that parameter is the
+     * call's target type, as for an assignment. Otherwise, the method reference is rejected, as before.
+     */
+    private void resolveDeferredMethodReference(final Expression call, final ClassNode receiver, final MethodNode method, final ArgumentListExpression arguments,
+                                                final int index, final Parameter declared, final MethodReferenceExpression reference) {
+        typeCheckingContext.pushEnclosingMethodCall(call);
+        try {
+            ClassNode functionalType = getFunctionalTypeArgument(receiver, method, arguments, index, declared.getType());
+            if (functionalType != null && functionalType.isInterface()) {
+                Map<GenericsTypeName, GenericsType> context = extractPlaceHoldersVisibleToDeclaration(receiver, method, arguments);
+                functionalType = applyGenericsContext(context, functionalType);
+                Parameter target = declared.getAnnotations(CLOSUREPARAMS_CLASSNODE).isEmpty() ? new Parameter(functionalType, declared.getName()) : declared;
+                LambdaExpression lambda = constructLambdaExpressionForMethodReference(functionalType, reference);
+                inferClosureParameterTypes(receiver, arguments, lambda, target, method);
+                reference.putNodeMetaData(PARAMETER_TYPE, lambda.getNodeMetaData(PARAMETER_TYPE));
+                reference.putNodeMetaData(CLOSURE_ARGUMENTS, lambda.getNodeMetaData(CLOSURE_ARGUMENTS));
+            } else {
+                addStaticTypeError("Argument is a method reference, but parameter type '" + prettyPrintTypeName(declared.getType()) + "' is not a functional interface", reference);
+            }
+        } finally {
+            typeCheckingContext.popEnclosingMethodCall();
+        }
+    }
+
+    /**
+     * Converts a closure value passed for a parameter declared with a type parameter, which the call binds to a
+     * functional interface, as {@link #convertClosureValue} does: a value of type {@code Closure}, such as a
+     * variable or a method pointer, is passed as it is, and the type checker warns that it is.
+     */
+    private void convertClosureArgument(final ClassNode receiver, final MethodNode method, final ArgumentListExpression arguments,
+                                        final Parameter[] parameters, final int i, final int nSelf, final Expression expression) {
+        int last = parameters.length - 1;
+        ClassNode targetType = parameters[Math.min(i, last)].getType();
+        if (targetType.isArray() && i >= last)
+            targetType = targetType.getComponentType();
+        ClassNode functionalType = getFunctionalTypeArgument(receiver, method, arguments, i - nSelf, targetType);
+        if (functionalType != null) {
+            convertClosureValue(expression, functionalType, targetType, false);
+        } else {
+            warnIfTypeVariableSlot(receiver, method, arguments, targetType, expression);
+        }
+    }
+
+    /**
+     * Warns of a closure value passed for a parameter declared with a type parameter that the call binds to a type
+     * variable of the enclosing method or class, rather than to a functional interface, where that type variable
+     * has a functional interface as its bound.
+     */
+    private void warnIfTypeVariableSlot(final ClassNode receiver, final MethodNode method, final ArgumentListExpression arguments,
+                                        final ClassNode parameterType, final Expression expression) {
+        if (!parameterType.isGenericsPlaceHolder()) return;
+        ClassNode slotType = applyGenericsContext(extractPlaceHoldersVisibleToDeclaration(receiver, method, arguments), parameterType);
+        if (!slotType.isGenericsPlaceHolder() || slotType.getUnresolvedName().equals(parameterType.getUnresolvedName())) return;
+        ClassNode bound = getDeclaredBound(slotType.getUnresolvedName());
+        if (bound != null && isSAMType(bound)) warnClosureForTypeVariable(expression, slotType.getUnresolvedName(), bound);
+    }
+
+    /**
+     * Returns the first bound of the type variable of the given name that the enclosing method, or else an
+     * enclosing class, declares, or {@code null} if none declares it.
+     */
+    private ClassNode getDeclaredBound(final String name) {
+        List<GenericsType[]> scopes = new ArrayList<>();
+        MethodNode enclosingMethod = typeCheckingContext.getEnclosingMethod();
+        if (enclosingMethod != null) scopes.add(enclosingMethod.getGenericsTypes());
+        for (ClassNode c = typeCheckingContext.getEnclosingClassNode(); c != null; c = c.getOuterClass()) {
+            scopes.add(c.getGenericsTypes());
+        }
+        for (GenericsType[] declared : scopes) {
+            if (declared == null) continue;
+            for (GenericsType gt : declared) {
+                if (gt.isPlaceholder() && name.equals(gt.getName())) {
+                    return gt.getUpperBounds() != null && gt.getUpperBounds().length > 0 ? gt.getUpperBounds()[0] : null;
+                }
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Warns of a closure value stored in a slot whose type is a type variable of the enclosing method or class with
+     * a functional interface as its bound, such as {@code l.add { .. }} for a {@code List<T>} in
+     * {@code <T extends Function<String, String>> void fill(List<T> l)}. The value is stored as a plain closure,
+     * which is neither a {@code T} nor its bound; implementing the bound would not help, since {@code T} may be a
+     * subinterface of it.
+     */
+    private void warnClosureForTypeVariable(final Expression value, final String name, final ClassNode bound) {
+        if (value instanceof TernaryExpression ternary) { // or Elvis
+            warnClosureForTypeVariable(ternary.getTrueExpression(), name, bound);
+            warnClosureForTypeVariable(ternary.getFalseExpression(), name, bound);
+            return;
+        }
+        ClassNode valueType = value instanceof ClosureExpression ? CLOSURE_TYPE : getType(value);
+        if (implementsInterfaceOrIsSubclassOf(valueType, CLOSURE_TYPE)
+                && value.putNodeMetaData(CLOSURE_VALUE_NOT_CONVERTED, Boolean.TRUE) == null) {
+            addWarning(WarningMessage.LIKELY_ERRORS, "the closure is stored as a Closure, not as " + name + ": "
+                    + name + " is a type variable, and the closure is neither a " + name + " nor a " + prettyPrintType(bound)
+                    + ", so a statically compiled read through either will fail; take the value as a parameter of type " + name, value);
+        }
+    }
+
+    /**
+     * Tells if the expression is a conditional expression whose branches are closures or lambdas, or such
+     * conditional expressions: as an argument, it is visited once the method is chosen, as a closure is, so that
+     * the closures get the types of their parameters from the method's parameter.
+     */
+    private static boolean isClosureConditional(final Expression expression) {
+        return expression instanceof TernaryExpression ternary
+                && (ternary.getTrueExpression() instanceof ClosureExpression || isClosureConditional(ternary.getTrueExpression()))
+                && (ternary.getFalseExpression() instanceof ClosureExpression || isClosureConditional(ternary.getFalseExpression()));
+    }
+
+    /**
+     * Gives a closure or lambda written as the operand of an operator method, or as the branches of a conditional
+     * expression there, the functional interface the method's parameter is declared with, before it is visited,
+     * as an assignment does: {@code sink << { it.toUpperCase() }} for {@code leftShift(Function<String, String>)}.
+     */
+    private void applyOperandTargetType(final ClassNode lType, final int op, final Expression operand) {
+        if (!(operand instanceof ClosureExpression || isClosureConditional(operand)) || lType == null) return;
+        String name = getOperationName(op);
+        if (name == null) return;
+        List<MethodNode> methods = findMethod(lType, name, CLOSURE_TYPE);
+        if (methods.size() != 1) return;
+        MethodNode method = methods.get(0);
+        Parameter[] parameters = (method instanceof ExtensionMethodNode emn ? emn.getExtensionMethodNode() : method).getParameters();
+        if (parameters.length == 0) return;
+        ClassNode type = parameters[parameters.length - 1].getType();
+        if (type.isGenericsPlaceHolder()) { // a type parameter the call binds to a functional interface
+            ClassNode functionalType = isStaticDispatchScope() ? getFunctionalTypeArgument(lType, method, args(operand), 0, type) : null;
+            if (functionalType != null && takesParameterTypesFrom(operand, functionalType)) applyTypeParameterTarget(functionalType, type, operand);
+            return;
+        }
+        type = applyGenericsContext(extractPlaceHoldersVisibleToDeclaration(lType, method, args(operand)), type);
+        if (takesParameterTypesFrom(operand, type)) applyTargetType(type, operand);
+    }
+
+    /**
+     * Tells if a closure or lambda, or each branch of a conditional expression that is one, takes the types of its
+     * parameters from the functional interface: an implicit parameter for a method of one parameter, or as many
+     * parameters as the method, at least one without a type. Another one, or one for an interface whose method has
+     * no parameters, such as {@code Iterable}, is checked as before.
+     */
+    private static boolean takesParameterTypesFrom(final Expression expression, final ClassNode type) {
+        if (expression instanceof TernaryExpression ternary) {
+            return takesParameterTypesFrom(ternary.getTrueExpression(), type) && takesParameterTypesFrom(ternary.getFalseExpression(), type);
+        }
+        if (!(expression instanceof ClosureExpression closure) || !isSAMType(type) || !type.isInterface()) return false;
+        int n = findSAM(type).getParameters().length;
+        if (hasImplicitParameter(closure)) return n == 1;
+        Parameter[] parameters = getParametersSafe(closure);
+        return n > 0 && parameters.length == n && Arrays.stream(parameters).anyMatch(Parameter::isDynamicTyped);
+    }
+
+    /**
+     * Gives a closure or lambda written for a slot declared with a type parameter, or each branch of a conditional
+     * expression that is one, the functional interface the slot is bound to before it is visited, where its class
+     * implements the interface. Another is passed as it is, as before.
+     */
+    private void applyTypeParameterTarget(final ClassNode type, final ClassNode slotType, final Expression expression) {
+        if (expression instanceof TernaryExpression ternary) {
+            applyTypeParameterTarget(type, slotType, ternary.getTrueExpression());
+            applyTypeParameterTarget(type, slotType, ternary.getFalseExpression());
+        } else if (expression instanceof ClosureExpression closure && implementsTargetInterface(closure, type, slotType)) {
+            expression.putNodeMetaData(CLOSURE_TARGET_INTERFACE, type); // a lambda is then checked as the closure it is
+            if (declaresParameterTypesOf(closure, type)) applyTargetType(type, expression);
+        }
+    }
+
+    /**
+     * Gives a closure or lambda written as a named argument of a constructor call, or as the branches of a
+     * conditional expression there, the functional interface the property it sets is declared with, before the
+     * arguments are visited: {@code new Bean(value: { it.toUpperCase() })} for a {@code Function<String, String>}.
+     */
+    private void applyNamedArgumentTargetTypes(final ClassNode receiver, final ArgumentListExpression arguments) {
+        List<Expression> expressions = arguments.getExpressions();
+        if (expressions.isEmpty() || expressions.size() > 2
+                || !(expressions.get(expressions.size() - 1) instanceof MapExpression map)
+                || !findMethod(receiver, "<init>", LINKEDHASHMAP_CLASSNODE).isEmpty()) return; // a constructor takes the map
+        for (MapEntryExpression entry : map.getMapEntryExpressions()) {
+            Expression value = entry.getValueExpression();
+            if (!(entry.getKeyExpression() instanceof ConstantExpression key) || !(key.getValue() instanceof String name)
+                    || !(value instanceof ClosureExpression || isClosureConditional(value))) continue;
+            Set<ClassNode> types = new HashSet<>();
+            PropertyExpression property = propX(varX("_", receiver), name);
+            if (existsProperty(property, true, new PropertyLookup(receiver, types::add)) && types.size() == 1) {
+                ClassNode type = types.iterator().next();
+                if (type.isGenericsPlaceHolder()) continue;
+                if (receiver.getGenericsTypes() != null) type = applyGenericsContext(GenericsUtils.extractPlaceholders(receiver), type);
+                if (!takesParameterTypesFrom(value, type)) continue;
+                // a property declared with a type parameter stores the closure or lambda, whose class implements the interface
+                ClassNode slotType = isStaticDispatchScope() ? getTypeParameterOfSlot(property, CLOSURE_TYPE) : null;
+                if (slotType != null) {
+                    applyTypeParameterTarget(type, slotType, value);
+                } else {
+                    applyTargetType(type, value);
+                }
+            }
+        }
+    }
+
+    /**
+     * Tells if the expression is a closure, lambda or method reference written where the type checker resolves
+     * the functional interface of a parameter declared with a type parameter: only in statically compiled code.
+     * Dynamic and type-checked calls pass such an argument as they are.
      */
     private boolean isFunctionalLiteral(final Expression expression) {
-        if (expression instanceof LambdaExpression) {
-            return isStaticDispatchScope() && SystemUtil.getBooleanSafe(CompilerConfiguration.LAMBDA_TYPE_ARGUMENT);
+        return (expression instanceof ClosureExpression || expression instanceof MethodReferenceExpression) && isStaticDispatchScope();
+    }
+
+    /**
+     * Tells if a closure literal written for a slot of the given declared type can be compiled as an
+     * implementation of the interface the slot is bound to. It cannot if the slot's erasure is the interface,
+     * where the closure is converted as before, or if the interface is one that {@code Closure} already
+     * implements, such as {@code Runnable} or {@code Callable}. Neither can it implement an interface whose
+     * abstract method declares type parameters or has the name of a method of {@code Closure}, such as
+     * {@code call} or {@code isCase}, nor one with a default method that the closure class would replace,
+     * such as {@code getOwner()}. A sealed interface, which only the classes it permits may implement, and
+     * a trait, whose methods a closure class does not get, are not implemented either, nor is an interface
+     * whose method's types the closure class cannot name.
+     */
+    private boolean isClosureTargetInterface(final ClassNode type, final ClassNode slotType) {
+        if (!type.isInterface() || type.equals(slotType.redirect()) || CLOSURE_TYPE.implementsInterface(type) || type.isSealed()) return false;
+        MethodNode sam = findSAM(type);
+        if (sam == null || sam.getGenericsTypes() != null || CLOSURE_METHOD_NAMES.contains(sam.getName())) return false;
+        for (ClassNode face : type.getAllInterfaces()) {
+            if (Traits.isTrait(face)) return false;
+            for (MethodNode method : face.getMethods()) {
+                if (isReplacedByClosureClass(method)) return false;
+            }
         }
-        return expression instanceof MethodReferenceExpression && isStaticDispatchScope();
+        Tuple2<ClassNode[], ClassNode> signature = GenericsUtils.parameterizeSAM(type);
+        List<ClassNode> named = new ArrayList<>(List.of(type, signature.getV2()));
+        named.addAll(Arrays.asList(signature.getV1()));
+        named.addAll(Arrays.asList(sam.getExceptions()));
+        for (ClassNode t : named) {
+            if (!isAccessibleToClosureClass(erasureOf(t))) return false;
+        }
+        return true;
+    }
+
+    /**
+     * Tells if a closure class would replace a default method of an interface: {@code Closure} or one of its
+     * superclasses declares a method of its name and erased parameter types, such as {@code getOwner()}, or it
+     * has the name of {@code doCall} or {@code call}, which the closure class declares. An overload such as
+     * {@code Function.andThen(Function)} of {@code Closure.andThen(Closure)} is inherited.
+     */
+    private static boolean isReplacedByClosureClass(final MethodNode method) {
+        String name = method.getName();
+        if (method.isAbstract() || method.isStatic() || !CLOSURE_METHOD_NAMES.contains(name)) return false;
+        if ("doCall".equals(name) || "call".equals(name)) return true;
+        Parameter[] erased = Arrays.stream(method.getParameters())
+                .map(p -> new Parameter(GenericsUtils.erasure(p.getType()), p.getName())).toArray(Parameter[]::new);
+        for (ClassNode type = CLOSURE_TYPE; type != null; type = type.getSuperClass()) {
+            MethodNode declared = type.getMethod(name, erased);
+            if (declared != null && !declared.isPrivate() && !declared.isStatic()) return true;
+        }
+        return false;
+    }
+
+    /**
+     * Tells if a closure class of the enclosing class can name the type. A type that is not public must be in
+     * the package of the enclosing class and compiled with it: a type loaded by another class loader is in
+     * another run-time package, even if its package has the same name.
+     */
+    private boolean isAccessibleToClosureClass(final ClassNode type) {
+        ClassNode t = type;
+        while (t.isArray()) t = t.getComponentType();
+        return isPrimitiveType(t) || Modifier.isPublic(t.getModifiers())
+                || (t.isPrimaryClassNode() && inSamePackage(typeCheckingContext.getEnclosingClassNode(), t));
+    }
+
+    /**
+     * Tells if the parameters of a closure literal or lambda can be those of the interface method: an implicit
+     * parameter for a method of at most one parameter, or as many parameters, without a default value, and no
+     * array for a parameter of the method that is not one, such as a variadic parameter. A parameter declared with
+     * a type takes the type of the method's parameter, except for a raw interface, whose method is called with an
+     * unchecked conversion of its arguments. Another closure is passed as it is, as its parameters are not checked
+     * against the interface method there.
+     */
+    private static boolean acceptsParametersOf(final ClosureExpression closure, final ClassNode type) {
+        ClassNode[] parameterTypes = GenericsUtils.parameterizeSAM(type).getV1();
+        if (hasImplicitParameter(closure)) return parameterTypes.length <= 1;
+        Parameter[] parameters = getParametersSafe(closure);
+        if (parameters.length != parameterTypes.length) return false;
+        for (int i = 0; i < parameters.length; i += 1) {
+            if (parameters[i].hasInitialExpression()) return false;
+            if (parameters[i].getType().isArray() && !parameterTypes[i].isArray()) return false;
+        }
+        return isRawInterface(type) || declaresParameterTypesOf(closure, type);
+    }
+
+    /**
+     * Tells if each parameter that a closure literal or lambda declares with a type takes the type of the
+     * interface method's parameter, so the closure is checked with the interface as its target type.
+     */
+    private static boolean declaresParameterTypesOf(final ClosureExpression closure, final ClassNode type) {
+        if (hasImplicitParameter(closure)) return true;
+        ClassNode[] parameterTypes = GenericsUtils.parameterizeSAM(type).getV1();
+        Parameter[] parameters = getParametersSafe(closure);
+        if (parameters.length != parameterTypes.length) return false;
+        for (int i = 0, n = parameters.length; i < n; i += 1) {
+            if (!parameters[i].isDynamicTyped()
+                    && !typeCheckMethodArgumentWithGenerics(parameters[i].getOriginType(), parameterTypes[i], i == n - 1)) return false;
+        }
+        return true;
+    }
+
+    private static boolean isRawInterface(final ClassNode type) {
+        return type.getGenericsTypes() == null && type.redirect().getGenericsTypes() != null;
+    }
+
+    private static Set<String> closureMethodNames() {
+        Set<String> names = new HashSet<>();
+        names.add("doCall"); // declared by every closure class
+        Deque<Class<?>> types = new ArrayDeque<>(List.of(Closure.class));
+        while (!types.isEmpty()) {
+            Class<?> type = types.removeFirst();
+            for (Method method : type.getDeclaredMethods()) {
+                if (!Modifier.isPrivate(method.getModifiers())) names.add(method.getName());
+            }
+            if (type.getSuperclass() != null) types.add(type.getSuperclass());
+            types.addAll(List.of(type.getInterfaces()));
+        }
+        return Set.copyOf(names);
+    }
+
+    /**
+     * Converts a closure value written for a slot declared with a type parameter, which the call or assignment
+     * binds to the functional interface: a closure literal or a lambda, or either branch of a conditional
+     * expression that is one, implements the interface if its class can. Any other value of type {@code Closure},
+     * such as a variable, a method pointer or a literal whose class cannot implement the interface, is stored as
+     * it is, and the type checker warns that it is. A slot whose erasure is the interface converts as before.
+     */
+    private void convertClosureValue(final Expression value, final ClassNode type, final ClassNode slotType, final boolean assigned) {
+        if (!type.equals(slotType.redirect())) markClosureValue(value, type, slotType, assigned);
+    }
+
+    /**
+     * Records the interface on a closure literal or lambda and warns of a value that is stored as a plain closure.
+     * A lambda or method reference assigned, as a branch of a conditional expression too, is compiled for the type
+     * of the assignment's target, and a value whose type implements the interface already is an instance of it.
+     */
+    private void markClosureValue(final Expression value, final ClassNode type, final ClassNode slotType, final boolean assigned) {
+        if (value instanceof TernaryExpression ternary) { // or Elvis
+            markClosureValue(ternary.getTrueExpression(), type, slotType, assigned);
+            markClosureValue(ternary.getFalseExpression(), type, slotType, assigned);
+            return;
+        }
+        if (assigned && (value instanceof LambdaExpression || value instanceof MethodReferenceExpression)) return;
+        ClassNode valueType = CLOSURE_TYPE;
+        if (value instanceof ClosureExpression closure) {
+            if (implementsTargetInterface(closure, type, slotType)) {
+                value.putNodeMetaData(CLOSURE_TARGET_INTERFACE, type);
+                return;
+            }
+            value.removeNodeMetaData(CLOSURE_TARGET_INTERFACE);
+        } else {
+            valueType = getType(value);
+        }
+        if (implementsInterfaceOrIsSubclassOf(valueType, CLOSURE_TYPE)
+                && !implementsInterfaceOrIsSubclassOf(valueType, type)
+                && value.putNodeMetaData(CLOSURE_VALUE_NOT_CONVERTED, Boolean.TRUE) == null) {
+            String target = prettyPrintType(type);
+            addWarning(WarningMessage.LIKELY_ERRORS, "the closure is stored as a Closure, not as " + target
+                    + ": a statically compiled read through " + target + " will fail; write 'as " + target + "' to convert it", value);
+        }
+    }
+
+    /**
+     * Tells if the class of a closure literal or lambda written for a slot of the given declared type implements
+     * the interface the slot is bound to: its class {@linkplain #isClosureTargetInterface can}, and its parameters
+     * {@linkplain #acceptsParametersOf can be} those of the interface method.
+     */
+    private boolean implementsTargetInterface(final ClosureExpression closure, final ClassNode type, final ClassNode slotType) {
+        return isClosureTargetInterface(type, slotType) && acceptsParametersOf(closure, type);
+    }
+
+    /**
+     * Returns the type parameter that a subscript or property an assignment writes is declared with, such as
+     * {@code V} of {@code putAt(Map<K, V>, K, V)} or {@code T} of the property of a {@code Holder<T>}: the value
+     * is stored as the erasure of the type parameter.
+     *
+     * @return the type parameter, or {@code null} if the subscript or property is declared with another type
+     */
+    private ClassNode getTypeParameterOfSlot(final Expression target, final ClassNode valueType) {
+        if (target instanceof BinaryExpression subscript && isArrayOp(subscript.getOperation().getType())) {
+            ClassNode receiverType = getType(subscript.getLeftExpression());
+            if (receiverType.isArray()) return null;
+            List<MethodNode> putAt = findMethod(receiverType, "putAt", getType(subscript.getRightExpression()), valueType);
+            if (putAt.size() == 1) {
+                Parameter[] parameters = (putAt.get(0) instanceof ExtensionMethodNode emn ? emn.getExtensionMethodNode() : putAt.get(0)).getParameters();
+                ClassNode type = parameters[parameters.length - 1].getType();
+                if (type.isGenericsPlaceHolder()) return type;
+            }
+        } else if (target instanceof PropertyExpression property && !property.isSpreadSafe()
+                && !(property.getObjectExpression() instanceof ClassExpression) && property.getPropertyAsString() != null) {
+            ClassNode[] declaredType = new ClassNode[1];
+            PropertyExpression probe = propX(varX("_", getType(property.getObjectExpression())), property.getPropertyAsString());
+            if (property instanceof AttributeExpression) probe = new AttributeExpression(probe.getObjectExpression(), probe.getProperty());
+            existsProperty(probe, true, new ClassCodeVisitorSupport() {
+                @Override
+                protected SourceUnit getSourceUnit() {
+                    return StaticTypeCheckingVisitor.this.getSourceUnit();
+                }
+                @Override
+                public void visitField(final FieldNode node) {
+                    declaredType[0] = node.getOriginType();
+                }
+                @Override
+                public void visitMethod(final MethodNode node) {
+                    declaredType[0] = node.getReturnType();
+                }
+                @Override
+                public void visitProperty(final PropertyNode node) {
+                    // a map entry, which put(K, V) stores
+                    declaredType[0] = node.getDeclaringClass().getProperty(node.getName()) == node ? node.getOriginType() : MAP_VALUE_TYPE;
+                }
+            });
+            if (declaredType[0] != null && declaredType[0].isGenericsPlaceHolder()) return declaredType[0];
+        }
+        return null;
     }
 
     /**
      * Returns the functional interface a call binds a parameter declared with a type parameter to, such as
      * {@code Supplier<String>} for the parameter of {@code add(E)} called on a {@code List<Supplier<String>>},
      * or for the second {@code T} of {@code <T extends Function<String, String>> m(T a, T b)} called with a
-     * subinterface of {@code Function} as the first argument. A lambda or method reference for the parameter
-     * is compiled for that interface. Neither the argument itself nor any closure, lambda or method reference
-     * passed for a parameter that is not a functional interface is a witness for the type parameter.
+     * subinterface of {@code Function} as the first argument. A method reference for the parameter is compiled
+     * for that interface, and the class of a closure or lambda implements it. Neither the argument itself nor
+     * any closure, lambda or method reference passed for a parameter that is not a functional interface is a
+     * witness for the type parameter. When no argument is one, the type the call's value is assigned, returned
+     * or cast to gives the type parameter.
      *
      * @return the interface, or {@code null} if the parameter is not declared with a type parameter or the call
      *         does not bind it to a functional interface
@@ -5792,7 +6322,16 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
             if (typeCheckingContext.getEnclosingMethodCall() instanceof MethodCallExpression call && call.getArguments() == arguments) {
                 typeArguments = call.getGenericsTypes();
             }
+            ClassNode typeParameter = type;
             type = inferGenericsOfCall(receiver, method, args(witnesses), typeArguments, parameterType);
+            if ((type == null || !isSAMType(type)) && !method.isConstructor() && method.getGenericsTypes() != null) {
+                // only the type the call's value is assigned, returned or cast to gives the type parameter, such as
+                // T of "Function<String, String> f = id(String::trim)" for "<T> T id(T t)", as for a lambda
+                Map<GenericsTypeName, GenericsType> context = new HashMap<>();
+                extractGenericsConnectionsFromCallTarget(arguments, method.getReturnType(), method.getGenericsTypes(), context);
+                ClassNode targetTyped = context.isEmpty() ? null : applyGenericsContext(context, typeParameter);
+                if (targetTyped != null && !targetTyped.isGenericsPlaceHolder()) type = targetTyped;
+            }
         }
         if (type == null || type.isGenericsPlaceHolder() || !isSAMType(type)
                 || !implementsInterfaceOrIsSubclassOf(type, parameterType.redirect())) {
@@ -6616,7 +7155,8 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
     private boolean isNativeLambda(final TypeCheckingContext.EnclosingClosure enclosingClosure) {
         ClosureExpression closure = enclosingClosure.getClosureExpression();
         return closure instanceof LambdaExpression && isStaticDispatchScope()
-                && isFunctionalInterface(closure.getNodeMetaData(PARAMETER_TYPE));
+                && isFunctionalInterface(closure.getNodeMetaData(PARAMETER_TYPE))
+                && closure.getNodeMetaData(CLOSURE_TARGET_INTERFACE) == null; // a closure whose class implements the interface
     }
 
     /**
@@ -7909,6 +8449,10 @@ trying: for (ClassNode[] signature : signatures) {
     }
 
     private void addPatternSwitchWarning(final String text, final ASTNode node) {
+        addWarning(WarningMessage.LIKELY_ERRORS, text, node);
+    }
+
+    private void addWarning(final int level, final String text, final ASTNode node) {
         Token token = new Token(0, "", node.getLineNumber(), node.getColumnNumber()); // ASTNode to CSTNode
         SourceUnit source = getSourceUnit();
         ErrorCollector collector = typeCheckingContext.getErrorCollector();
@@ -7918,7 +8462,7 @@ trying: for (ClassNode[] signature : signatures) {
         if (collector == null) {
             return;
         }
-        collector.addWarning(new WarningMessage(WarningMessage.LIKELY_ERRORS, text, token, source));
+        collector.addWarning(new WarningMessage(level, text, token, source));
     }
 
     private static boolean provablyDisjoint(final ClassNode subjectType, final ClassNode patternType) {
@@ -8376,6 +8920,10 @@ trying: for (ClassNode[] signature : signatures) {
                 && isAssignment(enclosingExpression.getOperation().getType())
                 && isTypeSource(expr, enclosingExpression.getRightExpression())) {
             targetType = getDeclaredOrInferredType(enclosingExpression.getLeftExpression());
+        } else if (enclosingExpression != null && enclosingExpression.getNodeMetaData(ASSIGNED_SUBSCRIPT_TYPE) != null
+                && typeCheckingContext.getEnclosingBinaryExpressionStack().size() > 1
+                && isTypeSource(expr, typeCheckingContext.getEnclosingBinaryExpressionStack().get(1).getRightExpression())) {
+            targetType = enclosingExpression.getNodeMetaData(ASSIGNED_SUBSCRIPT_TYPE); // "map[key] = value" visits the value early
         } else if (enclosingMethodCall != null
                 && InvocationWriter.makeArgumentList(enclosingMethodCall.getArguments())
                         .getExpressions().stream().anyMatch(arg -> isTypeSource(expr, arg))) {
@@ -8387,7 +8935,7 @@ trying: for (ClassNode[] signature : signatures) {
              targetType = enclosingMethod.getReturnType();
         }
 
-        if (expr instanceof ClosureExpression) { // GROOVY-10271, GROOVY-10272
+        if (expr instanceof ClosureExpression || expr instanceof MethodReferenceExpression) { // GROOVY-10271, GROOVY-10272
             return isSAMType(targetType) ? targetType : type;
         }
 
@@ -8762,15 +9310,13 @@ trying: for (ClassNode[] signature : signatures) {
             typeCheckMethodsWithGenericsOrFail(left, new ClassNode[]{right}, method, expr);
 
             Parameter[] parameters = (method instanceof ExtensionMethodNode emn ? emn.getExtensionMethodNode() : method).getParameters();
-            if (parameters.length > 0 && isFunctionalLiteral(rightExpression)) { // an operand is compiled like an argument
-                ClassNode functionalType = getFunctionalTypeArgument(left, method, args(rightExpression), 0, parameters[parameters.length - 1].getType());
-                if (functionalType != null) {
-                    rightExpression.putNodeMetaData(PARAMETER_TYPE, functionalType);
-                    // a method reference was visited before the operator method gave its functional interface
-                    // type; the method it calls is selected by the parameter types of that type, as for an argument
-                    if (rightExpression instanceof MethodReferenceExpression)
-                        rightExpression.putNodeMetaData(CLOSURE_ARGUMENTS, GenericsUtils.parameterizeSAM(functionalType).getV1());
-                }
+            // the class of a closure or lambda operand implements the interface, as for an argument; any other
+            // closure value, a method reference too, is stored as it is
+            if (parameters.length > 0 && isStaticDispatchScope()
+                    && (rightExpression instanceof ClosureExpression || implementsInterfaceOrIsSubclassOf(right, CLOSURE_TYPE))) {
+                ClassNode parameterType = parameters[parameters.length - 1].getType();
+                ClassNode functionalType = getFunctionalTypeArgument(left, method, args(rightExpression), 0, parameterType);
+                if (functionalType != null) convertClosureValue(rightExpression, functionalType, parameterType, false);
             }
 
             if (isAssignment(op)) return left;
@@ -9568,7 +10114,8 @@ trying: for (ClassNode[] signature : signatures) {
         if (enclosingClosures.size() < 2) return false;
         ClosureExpression closure = enclosingClosures.get(0).getClosureExpression();
         return !(closure instanceof LambdaExpression && isStaticDispatchScope()
-                && isFunctionalInterface(closure.getNodeMetaData(PARAMETER_TYPE)));
+                && isFunctionalInterface(closure.getNodeMetaData(PARAMETER_TYPE))
+                && closure.getNodeMetaData(CLOSURE_TARGET_INTERFACE) == null);
     }
 
     private ClassNode makeThis() {
