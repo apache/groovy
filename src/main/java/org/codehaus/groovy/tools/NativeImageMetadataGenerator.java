@@ -37,6 +37,7 @@ import groovy.lang.ObjectRange;
 import groovy.lang.Reference;
 import groovy.lang.Script;
 import groovy.util.ProxyGenerator;
+import org.apache.groovy.internal.metaclass.FunctionalCallSupport;
 import org.apache.groovy.runtime.async.DefaultPool;
 import org.apache.groovy.runtime.async.ScopedLocal;
 import org.codehaus.groovy.reflection.GeneratedMetaMethod;
@@ -222,7 +223,7 @@ public class NativeImageMetadataGenerator {
      * Classes whose methods the invokedynamic machinery looks up by
      * {@code MethodHandles.Lookup} (see {@code IndyGuardsFiltersAndSignatures},
      * {@code IndyInterface}, {@code IndyMath}, {@code IndyArrayAccess},
-     * {@code IndyCompoundAssign} and {@code TypeTransformers}), plus the runtime
+     * {@code IndyCompoundAssign}, {@code TypeTransformers} and {@code Selector}), plus the runtime
      * entry points generated code calls through the reflective cold tier before
      * their classes are initialised.
      */
@@ -236,6 +237,7 @@ public class NativeImageMetadataGenerator {
             InvokerHelper.class, // runScript, called through the reflective tier from a script's main
             DefaultTypeTransformation.class,
             ConvertedClosure.class,
+            FunctionalCallSupport.class, // isCoercionProxy, the guard Selector binds for call syntax on a coercion proxy
             ProxyGenerator.class,
             GroovyCastException.class,
             CachedSAMClass.class,

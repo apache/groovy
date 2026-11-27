@@ -19,6 +19,7 @@
 package groovy.lang;
 
 import groovy.transform.Internal;
+import org.apache.groovy.internal.metaclass.FunctionalCallSupport;
 import org.apache.groovy.internal.util.UncheckedThrow;
 import org.apache.groovy.runtime.indy.IndyInvalidation;
 import org.apache.groovy.util.BeanUtils;
@@ -148,6 +149,13 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
     private static final String CONSTRUCTOR_NAME = "<init>";
     private static final String GET_PROPERTY_METHOD = "getProperty";
     private static final String SET_PROPERTY_METHOD = "setProperty";
+
+    /**
+     * The functional value whose {@code call} is being tried as the value of a property.
+     *
+     * @see #invokeCallOnPropertyValue(MetaClass, Object, Object[])
+     */
+    private static final ThreadLocal<Object> CALLABLE_PROPERTY_VALUE = new ThreadLocal<>();
 
     private static final Class<?>[] GETTER_MISSING_ARGS = {String.class};
     private static final Class<?>[] SETTER_MISSING_ARGS = {String.class,Object.class};
@@ -1476,9 +1484,58 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
             return invokePropertyOrMissing(sender, object, methodName, originalArguments, fromInsideClass, isCallToSuper);
         } catch (MissingMethodException mme) {
             if (!isCallToSuper) {
-                return invokeOuterMethod(sender, object, methodName, originalArguments, mme); // GROOVY-11823
+                try {
+                    return invokeOuterMethod(sender, object, methodName, originalArguments, mme); // GROOVY-11823
+                } catch (MissingMethodException e) {
+                    if (CALL_METHOD.equals(methodName)) {
+                        return invokeFunctionalCall(object, arguments, e);
+                    }
+                    throw e;
+                }
             }
             throw mme;
+        }
+    }
+
+    /**
+     * Call syntax on a functional value: {@code f(x)} or {@code f.call(x)} on a
+     * lambda, a method reference or a Groovy coercion proxy invokes the abstract
+     * method of its functional interface. This is the last step of a call that
+     * found nothing else to invoke, so it only ever replaces the exception.
+     *
+     * @throws MissingMethodException the given exception, if the object is not a
+     *         functional value or its abstract method does not accept the arguments
+     */
+    private Object invokeFunctionalCall(final Object object, final Object[] arguments, final MissingMethodException mme) {
+        if (!(mme instanceof MissingMethodExecutionFailed) && CALLABLE_PROPERTY_VALUE.get() != object) {
+            CachedMethod method = FunctionalCallSupport.getCallMethod(object, arguments);
+            if (method != null) {
+                return VM_PLUGIN.transformMetaMethod(this, method).doMethodInvoke(object, arguments);
+            }
+        }
+        throw mme;
+    }
+
+    /**
+     * Calls the value of a property on behalf of a method call on the owner of
+     * the property, as in {@code owner.name(x)}. Call syntax on a functional
+     * value does not reach through a property, so that such a value is not
+     * called in place of the {@code methodMissing} of its owner, for example.
+     */
+    private static Object invokeCallOnPropertyValue(final MetaClass metaClass, final Object value, final Object[] arguments) {
+        if (FunctionalCallSupport.getCallMethod(value, arguments != null ? arguments : EMPTY_ARGUMENTS) == null) {
+            return metaClass.invokeMethod(value, CALL_METHOD, arguments);
+        }
+        Object outer = CALLABLE_PROPERTY_VALUE.get();
+        CALLABLE_PROPERTY_VALUE.set(value);
+        try {
+            return metaClass.invokeMethod(value, CALL_METHOD, arguments);
+        } finally {
+            if (outer == null) {
+                CALLABLE_PROPERTY_VALUE.remove();
+            } else {
+                CALLABLE_PROPERTY_VALUE.set(outer);
+            }
         }
     }
 
@@ -1629,7 +1686,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         if (value != null && !(value instanceof Map) && !methodName.equals(CALL_METHOD)) {
             try {
                 MetaClass metaClass = ((MetaClassRegistryImpl) registry).getMetaClass(value);
-                return metaClass.invokeMethod(value, CALL_METHOD, originalArguments); // delegate to call method of property value
+                return invokeCallOnPropertyValue(metaClass, value, originalArguments); // delegate to call method of property value
             } catch (MissingMethodException mme) {
                 // ignore
             }
@@ -1904,7 +1961,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
             if (propertyValue instanceof Closure closure) {
                 return closure.getMetaClass().invokeMethod(theClass, closure, DO_CALL_METHOD, arguments, false, false);
             } else {
-                return registry.getMetaClass(propertyValue.getClass()).invokeMethod(propertyValue, CALL_METHOD, arguments);
+                return invokeCallOnPropertyValue(registry.getMetaClass(propertyValue.getClass()), propertyValue, arguments);
             }
         }
 

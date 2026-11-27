@@ -179,13 +179,14 @@ final class FunctionalTypeArgumentTest {
 
             def list = make()
             assert list[0].get() == 'x'
-            // a lambda is an instance of the interface, not a closure
-            groovy.test.GroovyAssert.shouldFail(MissingMethodException) { list[0]() }
-            groovy.test.GroovyAssert.shouldFail(MissingMethodException) { list[0].call() }
+            // a lambda is an instance of the interface, not a closure; call syntax calls its abstract method
+            assert list[0]() == 'x'
+            assert list[0].call() == 'x'
             def commands = commands()
             assert commands.shout.apply('hi') == 'HI'
+            assert commands.shout.call('hi') == 'HI'
+            // a call through a property, or a map entry, does not reach a lambda-valued property
             groovy.test.GroovyAssert.shouldFail(MissingMethodException) { commands.shout('hi') }
-            groovy.test.GroovyAssert.shouldFail(MissingMethodException) { commands.shout.call('hi') }
         '''
     }
 
