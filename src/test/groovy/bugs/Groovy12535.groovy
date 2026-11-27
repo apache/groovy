@@ -416,6 +416,80 @@ final class Groovy12535 {
         '''
     }
 
+    // a map literal gives the variable an inferred value type; only a declared one converts
+    @Test
+    void rawMapStartedFromALiteralKeepsTheValue() {
+        assertScript '''
+            @groovy.transform.CompileStatic
+            def go(boolean ok) {
+                def n = 'ab'
+                Map m = [a: 'x']
+                m.flag = ok
+                m.k = "$n"
+                [m.get('flag'), m.get('k')]
+            }
+            def (flag, k) = go(false)
+            assert flag == false && flag instanceof Boolean
+            assert k instanceof GString
+        '''
+    }
+
+    @Test
+    void defMapStartedFromALiteralKeepsTheValue() {
+        assertScript '''
+            @groovy.transform.CompileStatic
+            def go(boolean ok) {
+                def m = [a: 'x']
+                m.flag = ok
+                m.count = 3
+                [m.get('flag'), m.get('count')]
+            }
+            def (flag, count) = go(false)
+            assert flag == false && flag instanceof Boolean
+            assert count == 3 && count instanceof Integer
+        '''
+    }
+
+    @Test
+    void rawMapReassignedToATypedMapKeepsTheValue() {
+        assertScript '''
+            @groovy.transform.CompileStatic
+            def go(Map<String, String> typed) {
+                Map m = [:]
+                m = typed
+                m.flag = true
+                m.get('flag')
+            }
+            assert go([a: 'x']) == true
+        '''
+    }
+
+    @Test
+    void declaredMapStartedFromALiteralStillConverts() {
+        assertScript '''
+            @groovy.transform.CompileStatic
+            def go(boolean ok) {
+                Map<String, String> m = [a: 'x']
+                m.flag = ok
+                m['other'] = ok
+                [m.get('flag'), m.get('other')]
+            }
+            assert go(false) == ['false', 'false']
+        '''
+    }
+
+    @Test
+    void subscriptWriteToARawMapStartedFromALiteralIsRejectedAsBefore() {
+        def err = shouldFail '''
+            @groovy.transform.CompileStatic
+            def go(boolean ok) {
+                Map m = [a: 'x']
+                m['flag'] = ok
+            }
+        '''
+        assert err.message.contains('putAt')
+    }
+
     @Test
     void dynamicCodeIsUnchanged() {
         assertScript '''
