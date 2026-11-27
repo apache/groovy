@@ -1385,7 +1385,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                         addNoMatchingMethodError(lType, "putAt", arguments, enclosingBinaryExpression);
                     } else if (methods.size() == 1
                             // GROOVY-12535: the assignment converts a value that only the tagged putAt accepts
-                            && mapValueTypeToConvertTo(lType, arguments[0], arguments[1]) == null) {
+                            && mapValueTypeToConvertTo(writtenMapType(leftExpression), arguments[0], arguments[1]) == null) {
                         typeCheckMethodsWithGenericsOrFail(lType, arguments, methods.get(0), enclosingExpressionRHS);
                     }
                 }
@@ -2823,15 +2823,29 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
     private ClassNode mapValueTypeToConvertTo(final Expression lhs, final ClassNode valueType) {
         ClassNode mapType = null, keyType = STRING_TYPE;
         if (lhs instanceof PropertyExpression pexp) {
-            mapType = getType(pexp.getObjectExpression());
+            mapType = writtenMapType(pexp.getObjectExpression());
         } else if (lhs instanceof VariableExpression vexp && vexp.getAccessedVariable() instanceof DynamicVariable) {
             Object owner = vexp.getNodeMetaData(StaticCompilationMetadataKeys.PROPERTY_OWNER);
             if (owner instanceof ClassNode ownerType) mapType = ownerType;
         } else if (lhs instanceof BinaryExpression subscript && isArrayOp(subscript.getOperation().getType())) {
-            mapType = getType(subscript.getLeftExpression());
+            mapType = writtenMapType(subscript.getLeftExpression());
             keyType = getType(subscript.getRightExpression());
         }
         return mapType == null ? null : mapValueTypeToConvertTo(mapType, keyType, valueType);
+    }
+
+    /**
+     * Returns the type of the map that a property or subscript assignment writes to. A
+     * local variable gives its declared type, not the type inferred from the value last
+     * assigned to it: {@code Map m = [a: 'x']} and {@code def m = [a: 'x']} declare no
+     * value type, so a value written to them is stored as it is.
+     */
+    private ClassNode writtenMapType(final Expression receiver) {
+        if (receiver instanceof VariableExpression vexp && !vexp.isThisExpression() && !vexp.isSuperExpression()
+                && findTargetVariable(vexp) instanceof VariableExpression local) {
+            return local.getOriginType();
+        }
+        return getType(receiver);
     }
 
     /**
