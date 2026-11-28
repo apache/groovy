@@ -66,8 +66,10 @@ import java.lang.annotation.Target;
  * {@code PackedClosure} adapter then fails fast if a delegate, or a delegate-consulting
  * {@code resolveStrategy}, is later set on a packed closure whose body has a free name, or if such
  * a closure is rehydrated with a delegate, owner or this object other than its original owner.
- * Automatic packing of provably-safe {@code @CompileStatic} closures — without this annotation — is
- * available behind the {@code groovy.target.closure.pack} flag. Use {@link #mode()} to have declines
+ * Automatic packing of provably-safe closures — without this annotation — is
+ * available behind the {@code groovy.target.closure.pack} flag: {@code @CompileStatic} closures the
+ * type checker resolved without a delegate, and dynamically compiled closures whose body has no
+ * free name. Use {@link #mode()} to have declines
  * reported (or to opt a scope out); on the un-annotated flag path,
  * {@code groovy.target.closure.pack.report=true} reports every decline with its reason as a
  * compiler warning — the operational way to see where the packability boundary falls in a codebase.
