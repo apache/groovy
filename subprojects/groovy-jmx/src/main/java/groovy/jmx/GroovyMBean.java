@@ -47,9 +47,9 @@ import java.util.Map;
 public class GroovyMBean extends GroovyObjectSupport {
     private final MBeanServerConnection server;
     private final ObjectName name;
-    private MBeanInfo beanInfo;
+    private final MBeanInfo beanInfo;
     private final boolean ignoreErrors;
-    private final Map<String, String[]> operations = new HashMap<String, String[]>();
+    private final Map<String, List<MBeanOperationResolver.Operation>> operations = new HashMap<>();
 
     /**
      * Creates a facade for the named MBean.
@@ -106,9 +106,9 @@ public class GroovyMBean extends GroovyObjectSupport {
         MBeanOperationInfo[] operationInfos = beanInfo.getOperations();
         for (MBeanOperationInfo info : operationInfos) {
             String[] signature = createSignature(info);
-            // Construct a simplistic key to support overloaded operations on the MBean.
             String operationKey = createOperationKey(info.getName(), signature.length);
-            operations.put(operationKey, signature);
+            operations.computeIfAbsent(operationKey, key -> new ArrayList<>(1))
+                    .add(new MBeanOperationResolver.Operation(info.getName(), signature));
         }
     }
 
@@ -181,6 +181,26 @@ public class GroovyMBean extends GroovyObjectSupport {
 
     /**
      * Invokes an operation on the wrapped MBean.
+     * <p>
+     * When multiple operations share the same name and parameter count, the
+     * overload is selected using Groovy's dynamic method selection and argument
+     * coercion rules:
+     * <ul>
+     * <li>For a {@code null} argument, dynamic Groovy distance rules apply
+     *     (for example, {@link Object} is preferred over {@link String}, while
+     *     among equal-distance interfaces or reference array types the strictly
+     *     more specific signature wins).</li>
+     * <li>Because Groovy boxes primitive arguments before invoking this method,
+     *     exact wrapper parameters are preferred over primitive parameters when
+     *     both overloads exist.</li>
+     * <li>Among candidates with equal distance, a strictly more specific
+     *     signature wins; any remaining tie or unmatched call falls back to the
+     *     last registered operation in {@link MBeanInfo#getOperations()} order.</li>
+     * </ul>
+     * A single matching operation is dispatched directly without client-side
+     * type resolution or coercion. To invoke an exact signature explicitly, call
+     * {@link MBeanServerConnection#invoke(ObjectName, String, Object[], String[])}
+     * via {@link #server()} and {@link #name()}.
      *
      * @param method the operation name
      * @param arguments the operation arguments
@@ -189,29 +209,37 @@ public class GroovyMBean extends GroovyObjectSupport {
     @Override
     public Object invokeMethod(String method, Object arguments) {
         Object[] argArray;
-        if (arguments instanceof Object[]) {
-            argArray = (Object[]) arguments;
+        if (arguments instanceof Object[] array) {
+            argArray = array;
         } else {
             argArray = new Object[]{arguments};
         }
-        // Locate the specific method based on the name and number of parameters
-        String operationKey = createOperationKey(method, argArray.length);
-        String[] signature = operations.get(operationKey);
-
-        if (signature != null) {
-            try {
-                return server.invoke(name, method, argArray, signature);
-            }
-            catch (MBeanException e) {
-                throwExceptionWithTarget("Could not invoke method: " + method + ". Reason: ", e);
-            }
-            catch (Exception e) {
-                throwException("Could not invoke method: " + method + ". Reason: ", e);
-            }
-            return null;
-        } else {
+        List<MBeanOperationResolver.Operation> matches =
+                MBeanOperationResolver.filter(operations.get(createOperationKey(method, argArray.length)), method, argArray.length);
+        if (matches.isEmpty()) {
             return super.invokeMethod(method, arguments);
         }
+
+        try {
+            String[] signature;
+            Object[] callArgs;
+            if (matches.size() == 1) {
+                signature = matches.get(0).signature;
+                callArgs = MBeanOperationResolver.prepareArguments(argArray, null);
+            } else {
+                MBeanOperationResolver.Selection selection = MBeanOperationResolver.select(matches, argArray);
+                signature = selection.signature;
+                callArgs = selection.arguments;
+            }
+            return server.invoke(name, method, callArgs, signature);
+        }
+        catch (MBeanException e) {
+            throwExceptionWithTarget("Could not invoke method: " + method + ". Reason: ", e);
+        }
+        catch (Exception e) {
+            throwException("Could not invoke method: " + method + ". Reason: ", e);
+        }
+        return null;
     }
 
     /**
@@ -230,16 +258,14 @@ public class GroovyMBean extends GroovyObjectSupport {
     }
 
     /**
-     * Construct a simple key based on the method name and the number of parameters
+     * Groups operations that share a name and a parameter count.
+     * Overloads in that group are distinguished when the operation is invoked.
      *
-     * @param operation - the mbean operation name
-     * @param params    - the number of parameters the operation supports
-     * @return simple unique identifier for a method
+     * @param operation the mbean operation name
+     * @param params the number of parameters the operation supports
+     * @return key for the overload group
      */
     protected String createOperationKey(String operation, int params) {
-        // This could be changed to support some hash of the parameter types, etc.
-        // but should distinguish between reordered params while allowing normal
-        // type coercions to be honored
         return operation + "_" + params;
     }
 
