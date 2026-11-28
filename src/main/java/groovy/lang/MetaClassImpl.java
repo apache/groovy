@@ -19,6 +19,7 @@
 package groovy.lang;
 
 import groovy.transform.Internal;
+import org.apache.groovy.internal.metaclass.FunctionalCallSupport;
 import org.apache.groovy.internal.util.UncheckedThrow;
 import org.apache.groovy.runtime.indy.IndyInvalidation;
 import org.apache.groovy.util.BeanUtils;
@@ -38,6 +39,7 @@ import org.codehaus.groovy.reflection.ParameterTypes;
 import org.codehaus.groovy.reflection.ReflectionCache;
 import org.codehaus.groovy.reflection.android.AndroidSupport;
 import org.codehaus.groovy.runtime.ArrayTypeUtils;
+import org.codehaus.groovy.runtime.ComposedClosure;
 import org.codehaus.groovy.runtime.ConvertedClosure;
 import org.codehaus.groovy.runtime.CurriedClosure;
 import org.codehaus.groovy.runtime.DefaultGroovyMethods;
@@ -49,6 +51,7 @@ import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.runtime.InvokerInvocationException;
 import org.codehaus.groovy.runtime.MetaClassHelper;
 import org.codehaus.groovy.runtime.MethodClosure;
+import org.codehaus.groovy.runtime.memoize.Memoize;
 import org.codehaus.groovy.runtime.metaclass.ClosureMetaMethod;
 import org.codehaus.groovy.runtime.metaclass.MetaClassRegistryImpl;
 import org.codehaus.groovy.runtime.metaclass.MetaMethodIndex;
@@ -81,6 +84,7 @@ import java.beans.PropertyDescriptor;
 import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.lang.reflect.Proxy;
 import java.net.URL;
 import java.util.ArrayDeque;
@@ -148,6 +152,13 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
     private static final String CONSTRUCTOR_NAME = "<init>";
     private static final String GET_PROPERTY_METHOD = "getProperty";
     private static final String SET_PROPERTY_METHOD = "setProperty";
+
+    /**
+     * The functional value whose {@code call} is being tried as the value of a property.
+     *
+     * @see #invokeCallOnPropertyValue(MetaClass, Object, Object[])
+     */
+    private static final ThreadLocal<Object> CALLABLE_PROPERTY_VALUE = new ThreadLocal<>();
 
     private static final Class<?>[] GETTER_MISSING_ARGS = {String.class};
     private static final Class<?>[] SETTER_MISSING_ARGS = {String.class,Object.class};
@@ -1340,7 +1351,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         MetaMethod method = getMetaMethod(sender, object, methodName, isCallToSuper, arguments);
 
         if (object instanceof Closure closure) {
-            final Object owner = closure.getOwner();
+            Object owner = closure.getOwner();
 
             if (CALL_METHOD.equals(methodName) || DO_CALL_METHOD.equals(methodName)) {
                 var closureClass = closure.getClass();
@@ -1353,7 +1364,20 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
                 if (method == null) invokeMissingMethod(object, methodName, arguments);
             }
 
-            final Object delegate = closure.getDelegate();
+            Object delegate = closure.getDelegate();
+            // a composed, curried or writable closure keeps the closure it wraps as its owner and, by default, its
+            // delegate, so an interface method of that closure would skip the wrapper's own behaviour
+            int wrapped = method == null ? interfaceMethodOfWrappedClosure(closure, owner, methodName) : NOT_WRAPPED;
+            if (wrapped == WRAPPED_ABSTRACT) {
+                // the method the wrapped closure implements: the wrapper answers it by calling itself
+                return invokeMethod(sender, object, CALL_METHOD, originalArguments, false, fromInsideClass);
+            }
+            if (wrapped == WRAPPED_OTHER) {
+                // any other method of the interface, such as a default method, is not the wrapper's: the closure itself
+                // stands for "none" below
+                if (delegate == owner) delegate = closure;
+                owner = closure;
+            }
             final int resolveStrategy = closure.getResolveStrategy();
 
             final Class[] argClasses = MetaClassHelper.convertToTypeArray(arguments);
@@ -1476,9 +1500,58 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
             return invokePropertyOrMissing(sender, object, methodName, originalArguments, fromInsideClass, isCallToSuper);
         } catch (MissingMethodException mme) {
             if (!isCallToSuper) {
-                return invokeOuterMethod(sender, object, methodName, originalArguments, mme); // GROOVY-11823
+                try {
+                    return invokeOuterMethod(sender, object, methodName, originalArguments, mme); // GROOVY-11823
+                } catch (MissingMethodException e) {
+                    if (CALL_METHOD.equals(methodName)) {
+                        return invokeFunctionalCall(object, arguments, e);
+                    }
+                    throw e;
+                }
             }
             throw mme;
+        }
+    }
+
+    /**
+     * Call syntax on a functional value: {@code f(x)} or {@code f.call(x)} on a
+     * lambda, a method reference or a Groovy coercion proxy invokes the abstract
+     * method of its functional interface. This is the last step of a call that
+     * found nothing else to invoke, so it only ever replaces the exception.
+     *
+     * @throws MissingMethodException the given exception, if the object is not a
+     *         functional value or its abstract method does not accept the arguments
+     */
+    private Object invokeFunctionalCall(final Object object, final Object[] arguments, final MissingMethodException mme) {
+        if (!(mme instanceof MissingMethodExecutionFailed) && CALLABLE_PROPERTY_VALUE.get() != object) {
+            CachedMethod method = FunctionalCallSupport.getCallMethod(object, arguments);
+            if (method != null) {
+                return VM_PLUGIN.transformMetaMethod(this, method).doMethodInvoke(object, arguments);
+            }
+        }
+        throw mme;
+    }
+
+    /**
+     * Calls the value of a property on behalf of a method call on the owner of
+     * the property, as in {@code owner.name(x)}. Call syntax on a functional
+     * value does not reach through a property, so that such a value is not
+     * called in place of the {@code methodMissing} of its owner, for example.
+     */
+    private static Object invokeCallOnPropertyValue(final MetaClass metaClass, final Object value, final Object[] arguments) {
+        if (FunctionalCallSupport.getCallMethod(value, arguments != null ? arguments : EMPTY_ARGUMENTS) == null) {
+            return metaClass.invokeMethod(value, CALL_METHOD, arguments);
+        }
+        Object outer = CALLABLE_PROPERTY_VALUE.get();
+        CALLABLE_PROPERTY_VALUE.set(value);
+        try {
+            return metaClass.invokeMethod(value, CALL_METHOD, arguments);
+        } finally {
+            if (outer == null) {
+                CALLABLE_PROPERTY_VALUE.remove();
+            } else {
+                CALLABLE_PROPERTY_VALUE.set(outer);
+            }
         }
     }
 
@@ -1629,7 +1702,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         if (value != null && !(value instanceof Map) && !methodName.equals(CALL_METHOD)) {
             try {
                 MetaClass metaClass = ((MetaClassRegistryImpl) registry).getMetaClass(value);
-                return metaClass.invokeMethod(value, CALL_METHOD, originalArguments); // delegate to call method of property value
+                return invokeCallOnPropertyValue(metaClass, value, originalArguments); // delegate to call method of property value
             } catch (MissingMethodException mme) {
                 // ignore
             }
@@ -1904,7 +1977,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
             if (propertyValue instanceof Closure closure) {
                 return closure.getMetaClass().invokeMethod(theClass, closure, DO_CALL_METHOD, arguments, false, false);
             } else {
-                return registry.getMetaClass(propertyValue.getClass()).invokeMethod(propertyValue, CALL_METHOD, arguments);
+                return invokeCallOnPropertyValue(registry.getMetaClass(propertyValue.getClass()), propertyValue, arguments);
             }
         }
 
@@ -4451,6 +4524,53 @@ out:    if (metaClass instanceof MetaClassImpl metaClassImpl) {
         public Object invoke(Object object, Object[] arguments) {
             return null;
         }
+    }
+
+    private static final int NOT_WRAPPED = 0, WRAPPED_ABSTRACT = 1, WRAPPED_OTHER = 2;
+
+    /**
+     * Whether the closure wraps another, as a composed, curried, writable, memoized or trampoline closure does, and
+     * the method is declared by an interface the closure it wraps implements, as statically compiled code makes a
+     * closure written for a functional interface implement it. A wrapper of a wrapper is followed to the closure
+     * that implements the interface. {@code WRAPPED_ABSTRACT} is for the abstract method of the interface;
+     * {@code WRAPPED_OTHER} is for any other method of it, and only for a wrapper whose owner is the closure it wraps,
+     * which the lookup would otherwise reach.
+     */
+    private static int interfaceMethodOfWrappedClosure(final Closure<?> closure, final Object owner, final String methodName) {
+        Closure<?> wrapped = wrappedClosure(closure);
+        if (wrapped == null) return NOT_WRAPPED;
+        for (int depth = 0; depth < 16; depth += 1) {
+            int found = NOT_WRAPPED;
+            for (Class<?> type : wrapped.getClass().getInterfaces()) {
+                if (type == GeneratedClosure.class) continue;
+                for (Method m : type.getMethods()) {
+                    if (!m.getName().equals(methodName)) continue;
+                    if (Modifier.isAbstract(m.getModifiers())) return WRAPPED_ABSTRACT;
+                    found = WRAPPED_OTHER;
+                }
+            }
+            if (found != NOT_WRAPPED) return wrappedClosure(closure) == owner ? found : NOT_WRAPPED;
+            Closure<?> next = wrappedClosure(wrapped);
+            if (next == null) break;
+            wrapped = next;
+        }
+        return NOT_WRAPPED;
+    }
+
+    /**
+     * The closure a wrapper closure calls through: the owner of a composed, curried or writable closure, and the
+     * one reference a memoized or trampoline closure declares; {@code null} for any other closure.
+     */
+    private static Closure<?> wrappedClosure(final Closure<?> closure) {
+        if (closure instanceof ComposedClosure || closure instanceof CurriedClosure
+                || closure.getClass().getEnclosingClass() == Closure.class) {
+            return closure.getOwner() instanceof Closure<?> owner ? owner : null;
+        }
+        if (closure instanceof TrampolineClosure || closure.getClass().getEnclosingClass() == Memoize.class) {
+            Object[] references = closure.additionalReferences();
+            return references.length == 1 && references[0] instanceof Closure<?> wrapped ? wrapped : null;
+        }
+        return null;
     }
 
     private Tuple2<Object, MetaMethod> invokeMethod(MetaMethod method,

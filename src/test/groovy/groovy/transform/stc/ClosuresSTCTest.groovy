@@ -1916,4 +1916,57 @@ ${' ' * 46}value.prop += 1
             assert C.delegateOnly { -> memoize() } instanceof Closure
         '''
     }
+
+    // GROOVY-12824
+    @Test
+    void testClosureParameterTypeFromOperatorMethod() {
+        assertScript '''import java.util.function.Function
+            class Sink { List<Function<String, String>> all = []; Sink leftShift(Function<String, String> f) { all << f; this } }
+            class Typed<T> { List<Function<T, String>> all = []; Typed<T> leftShift(Function<T, String> f) { all << f; this } }
+
+            def sink = new Sink()
+            sink << { it.toUpperCase() }
+            sink << (s -> s.trim())
+            sink << (true ? { it * 2 } : { it })
+            assert sink.all*.apply(' a ') == [' A ', 'a', ' a  a ']
+
+            def typed = new Typed<Integer>()
+            typed << { it.intValue() + 1 + '' } // T of the receiver
+            assert typed.all[0].apply(1) == '2'
+
+            // minus(List, Iterable) takes a closure too, but iterator() has no parameter to give a type to
+            List xs = [1]
+            xs -= { x -> x }
+            assert xs == [1]
+        '''
+    }
+
+    // GROOVY-12824
+    @Test
+    void testClosureParameterTypeFromParameterOfConditionalArgument() {
+        assertScript '''import java.util.function.Function
+            String apply(Function<String, String> f) { f.apply(' a ') }
+
+            for (flag in [true, false]) {
+                assert apply(flag ? { it.toUpperCase() } : { it.trim() }) == (flag ? ' A ' : 'a')
+                assert apply(flag ? (s -> s.toUpperCase()) : (s -> s.trim())) == (flag ? ' A ' : 'a')
+                assert apply(flag ? { it.toUpperCase() } : (s -> s.trim())) == (flag ? ' A ' : 'a')
+                assert apply(flag ? { it.toUpperCase() } : (!flag ? { it.trim() } : { it })) == (flag ? ' A ' : 'a')
+            }
+        '''
+    }
+
+    // GROOVY-12824
+    @Test
+    void testClosureParameterTypeFromPropertyOfNamedArgument() {
+        assertScript '''import java.util.function.Function
+            class Bean { Function<String, String> value }
+            class MapBean { Map map; MapBean(Map map) { this.map = map } }
+
+            assert new Bean(value: { it.toUpperCase() }).value.apply('a') == 'A'
+            assert new Bean(value: s -> s.toUpperCase()).value.apply('a') == 'A'
+            assert new Bean(value: true ? { it.toUpperCase() } : { it }).value.apply('a') == 'A'
+            assert new MapBean(value: { it }).map.value instanceof Closure // the constructor takes the map
+        '''
+    }
 }

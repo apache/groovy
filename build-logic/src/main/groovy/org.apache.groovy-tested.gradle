@@ -93,12 +93,6 @@ tasks.withType(Test).configureEach {
     if (lambdaHoist) {
         systemProperty 'groovy.target.lambda.hoist', lambdaHoist
     }
-    // Forward the opt-in flag that compiles a @CompileStatic lambda for the functional interface a type parameter
-    // is bound to. Set only when present.
-    def lambdaTypeArgument = findProperty('groovy.target.lambda.typearg') ?: System.getProperty('groovy.target.lambda.typearg')
-    if (lambdaTypeArgument) {
-        systemProperty 'groovy.target.lambda.typearg', lambdaTypeArgument
-    }
     // Forward the automatic @CompileStatic closure-packing flag (GEP-27) to the test JVM. Set only when present.
     def closurePack = findProperty('groovy.target.closure.pack') ?: System.getProperty('groovy.target.closure.pack')
     if (closurePack) {

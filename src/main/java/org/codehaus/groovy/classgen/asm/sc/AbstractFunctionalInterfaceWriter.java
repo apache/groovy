@@ -148,7 +148,8 @@ public interface AbstractFunctionalInterfaceWriter {
      * Reconciles the inferred lambda parameter type with the target functional-interface parameter type.
      */
     default ClassNode convertParameterType(final ClassNode targetType, final ClassNode parameterType, final ClassNode inferredType) {
-        if (!getWrapper(inferredType).isDerivedFrom(getWrapper(parameterType))) {
+        ClassNode inferred = getWrapper(inferredType), declared = getWrapper(parameterType);
+        if (!inferred.isDerivedFrom(declared) && !inferred.implementsInterface(declared)) { // a superclass or superinterface
             throw new RuntimeParserException("The inferred type[" + inferredType.redirect() + "] is not compatible with the parameter type[" + parameterType.redirect() + "]", parameterType);
         }
 

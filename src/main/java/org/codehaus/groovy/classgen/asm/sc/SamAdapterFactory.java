@@ -111,15 +111,55 @@ final class SamAdapterFactory implements Function<ClassNode, ClassNode> {
      * would override, and an interface whose method the adapter cannot name keep the run-time conversion.
      */
     static void prepare(final WriterController controller, final ClassNode closureClass, final MethodNode doCall, final ClosureExpression expression) {
-        if (expression instanceof LambdaExpression) return; // a lambda only gets a closure class when it has no functional target
+        if (expression instanceof LambdaExpression) return; // a lambda only gets a closure class when it has no functional target or its class implements it
         if (!(expression.getNodeMetaData(PARAMETER_TYPE) instanceof ClassNode target)) return;
         ClassNode type = target.getPlainNodeReference();
         if (!type.isInterface() || closureClass.implementsInterface(type)) return; // a closure already is a Runnable and a Callable
-        if (type.isSealed()) return; // the adapter is not a permitted subclass
+        List<MethodNode> methods = adaptedMethods(type, closureClass);
+        if (methods == null) return;
+        boolean implicitParameter = (expression.getParameters() != null && expression.getParameters().length == 0);
+        closureClass.putNodeMetaData(StaticCompilationMetadataKeys.FUNCTIONAL_INTERFACE_ADAPTER,
+                new SamAdapterFactory(controller, closureClass, doCall, type, methods, implicitParameter));
+    }
+
+    /**
+     * Declares the method of a functional interface that the closure class itself implements, and its bridges,
+     * with the body that the adapter gives them: the closure is called through the interface as a proxy for it
+     * would call it, with its arguments converted and its exceptions translated.
+     *
+     * @param type the interface, which the closure class declares already
+     * @return {@code false} if the adapter's methods cannot be declared for the interface, for the reasons that
+     *         {@link #prepare} leaves the run-time conversion in place
+     */
+    static boolean implement(final ClassNode closureClass, final MethodNode doCall, final ClosureExpression expression, final ClassNode type) {
+        List<MethodNode> methods = adaptedMethods(type, closureClass);
+        if (methods == null) return false;
+        boolean implicitParameter = (expression.getParameters() != null && expression.getParameters().length == 0);
+        String parameters = parameterDescriptor(methods.get(0));
+        for (MethodNode method : methods) {
+            // the verifier adds the bridge for a declaration that differs in its return type only
+            if (method != methods.get(0) && parameterDescriptor(method).equals(parameters)) continue;
+            method.setCode(new BytecodeSequence(new AdapterMethod(null, closureClass, doCall, method, implicitParameter)));
+            addGeneratedMethod(closureClass, method, true);
+        }
+        return true;
+    }
+
+    private static String parameterDescriptor(final MethodNode method) {
+        String descriptor = BytecodeHelper.getMethodDescriptor(method);
+        return descriptor.substring(0, descriptor.indexOf(')'));
+    }
+
+    /**
+     * @return the methods of the interface as a class generated for the closure class declares them, or
+     *         {@code null} if it cannot: see {@link #prepare}
+     */
+    private static List<MethodNode> adaptedMethods(final ClassNode type, final ClassNode closureClass) {
+        if (type.isSealed()) return null; // the adapter is not a permitted subclass
         MethodNode sam = ClassHelper.findSAM(type);
-        if (sam == null) return;
+        if (sam == null) return null;
         for (ClassNode face : type.getAllInterfaces()) {
-            if (Traits.isTrait(face)) return;
+            if (Traits.isTrait(face)) return null;
         }
         List<MethodNode> methods = adapterMethods(type, sam);
         List<String> descriptors = methods.stream().map(BytecodeHelper::getMethodDescriptor).toList();
@@ -127,15 +167,13 @@ final class SamAdapterFactory implements Function<ClassNode, ClassNode> {
             for (MethodNode method : face.getDeclaredMethods(sam.getName())) {
                 // a default method with the descriptor of an adapter method, such as the bridge javac adds to an interface that
                 // redeclares the method it inherits, would be overridden; an overload with another descriptor is inherited
-                if (method.isDefault() && descriptors.contains(BytecodeHelper.getMethodDescriptor(erasure(method, 0)))) return;
+                if (method.isDefault() && descriptors.contains(BytecodeHelper.getMethodDescriptor(erasure(method, 0)))) return null;
             }
         }
         for (MethodNode method : methods) {
-            if (!isAccessible(method, type, closureClass)) return;
+            if (!isAccessible(method, type, closureClass)) return null;
         }
-        boolean implicitParameter = (expression.getParameters() != null && expression.getParameters().length == 0);
-        closureClass.putNodeMetaData(StaticCompilationMetadataKeys.FUNCTIONAL_INTERFACE_ADAPTER,
-                new SamAdapterFactory(controller, closureClass, doCall, type, methods, implicitParameter));
+        return methods;
     }
 
     /**
@@ -204,9 +242,12 @@ final class SamAdapterFactory implements Function<ClassNode, ClassNode> {
         return type.isArray() ? erasure(type.getComponentType()).makeArray() : GenericsUtils.erasure(type);
     }
 
+    /**
+     * @param closure the field of the adapter that holds the closure, or {@code null} for the closure itself
+     */
     private static void loadClosure(final MethodVisitor mv, final FieldNode closure) {
         mv.visitVarInsn(ALOAD, 0);
-        mv.visitFieldInsn(GETFIELD, BytecodeHelper.getClassInternalName(closure.getOwner()), closure.getName(), BytecodeHelper.getTypeDescription(closure.getType()));
+        if (closure != null) mv.visitFieldInsn(GETFIELD, BytecodeHelper.getClassInternalName(closure.getOwner()), closure.getName(), BytecodeHelper.getTypeDescription(closure.getType()));
     }
 
     //--------------------------------------------------------------------------
@@ -267,7 +308,7 @@ final class SamAdapterFactory implements Function<ClassNode, ClassNode> {
                     }
                 }));
         for (MethodNode method : methods) {
-            method.setCode(new BytecodeSequence(new AdapterMethod(closure, doCall, method, implicitParameter)));
+            method.setCode(new BytecodeSequence(new AdapterMethod(closure, closureType, doCall, method, implicitParameter)));
             addGeneratedMethod(adapter, method, true);
         }
         addGeneratedMethod(adapter, new MethodNode("toString", ACC_PUBLIC, ClassHelper.STRING_TYPE, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY,
@@ -304,6 +345,7 @@ final class SamAdapterFactory implements Function<ClassNode, ClassNode> {
         private enum Conversion { NONE, BOX, CHECK, CALL_ONLY }
 
         private final FieldNode closure;
+        private final ClassNode closureType;
         private final MethodNode doCall;
         private final Parameter[] parameters;
         private final ClassNode returnType;
@@ -311,8 +353,9 @@ final class SamAdapterFactory implements Function<ClassNode, ClassNode> {
         private final boolean implicitParameter;
         private final int[] slots;
 
-        AdapterMethod(final FieldNode closure, final MethodNode doCall, final MethodNode method, final boolean implicitParameter) {
+        AdapterMethod(final FieldNode closure, final ClassNode closureType, final MethodNode doCall, final MethodNode method, final boolean implicitParameter) {
             this.closure = closure;
+            this.closureType = closureType;
             this.doCall = doCall;
             this.parameters = method.getParameters();
             this.returnType = method.getReturnType();
@@ -393,7 +436,7 @@ final class SamAdapterFactory implements Function<ClassNode, ClassNode> {
                     }
                 }
             }
-            mv.visitMethodInsn(INVOKEVIRTUAL, BytecodeHelper.getClassInternalName(closure.getType()), doCall.getName(),
+            mv.visitMethodInsn(INVOKEVIRTUAL, BytecodeHelper.getClassInternalName(closureType), doCall.getName(),
                     BytecodeHelper.getMethodDescriptor(doCall.getReturnType(), doCallParameters), false);
             writeReturn(mv, erasure(doCall.getReturnType()));
         }

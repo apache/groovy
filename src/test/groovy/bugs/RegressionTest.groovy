@@ -4633,7 +4633,7 @@ def cfg = new ConfigSlurper().parse("""
     }
 
     // GROOVY-11447: Using a conditional when expecting a SAM type leads to type unsafe results
-    @NotYetImplemented @Test
+    @Test
     void testGroovy11447() {
         def err = shouldFail(MultipleCompilationErrorsException) {
             new GroovyClassLoader().parseClass('''
@@ -5069,27 +5069,6 @@ def cfg = new ConfigSlurper().parse("""
                 }
             }
             assert new C().run() == [1, -1]
-        '''
-
-    }
-
-    // GROOVY-12561: SC: a closure passed or assigned for a type parameter bound to a functional interface is stored unconverted
-    @NotYetImplemented @Test
-    void testGroovy12561() {
-        assertScript '''
-            import java.util.function.Function
-            @groovy.transform.CompileStatic
-            class C {
-                static class Box<T> {
-                    T shout
-                }
-                static Box<Function<String, String>> make() {
-                    def b = new Box<Function<String, String>>()
-                    b.shout = { String s -> s + '!' }
-                    b
-                }
-            }
-            assert C.make().shout.apply('hi') == 'hi!'
         '''
 
     }

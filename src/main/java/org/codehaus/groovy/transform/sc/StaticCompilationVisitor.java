@@ -84,6 +84,7 @@ import static org.codehaus.groovy.transform.sc.StaticCompilationMetadataKeys.PRI
 import static org.codehaus.groovy.transform.sc.StaticCompilationMetadataKeys.PROPERTY_OWNER;
 import static org.codehaus.groovy.transform.sc.StaticCompilationMetadataKeys.RECEIVER_OF_DYNAMIC_PROPERTY;
 import static org.codehaus.groovy.transform.sc.StaticCompilationMetadataKeys.STATIC_COMPILE_NODE;
+import static org.codehaus.groovy.transform.stc.StaticTypesMarker.CLOSURE_TARGET_INTERFACE;
 import static org.codehaus.groovy.transform.stc.StaticTypesMarker.DIRECT_METHOD_CALL_TARGET;
 import static org.codehaus.groovy.transform.stc.StaticTypesMarker.DYNAMIC_RESOLUTION;
 import static org.codehaus.groovy.transform.stc.StaticTypesMarker.INITIAL_EXPRESSION;
@@ -348,7 +349,8 @@ public class StaticCompilationVisitor extends StaticTypeCheckingVisitor {
     public void visitLambdaExpression(final LambdaExpression expression) {
         super.visitLambdaExpression(expression);
         // GROOVY-11256: static compiler uses lambda factory not proxy generator
-        if (ClassHelper.isFunctionalInterface(expression.getNodeMetaData(PARAMETER_TYPE))) {
+        if (ClassHelper.isFunctionalInterface(expression.getNodeMetaData(PARAMETER_TYPE))
+                && expression.getNodeMetaData(CLOSURE_TARGET_INTERFACE) == null) { // else it is compiled as a closure
             expression.removeNodeMetaData(POST_TYPECHECKING_REPLACEMENT); // for trait: lambda.rehydrate($self,$self,$self)
         }
     }
