@@ -47,6 +47,16 @@ can be simplified to:
 include::../test/JmxTest.groovy[tags=introduction_simplified_example,indent=0]
 ----
 
+When an MBean exposes overloaded operations with the same name and parameter count,
+`GroovyMBean` selects the target signature and coerces arguments using Groovy's
+dynamic method selection rules (for example, for a `null` argument `Object` is
+preferred over `String`, while among equal-distance interfaces or array types the
+strictly more specific signature wins; any remaining tie or unmatched call falls
+back to the last registered operation in `MBeanInfo` order). A single matching
+operation is dispatched directly without client-side type resolution or coercion.
+To invoke an exact signature explicitly, call
+`mbean.server().invoke(mbean.name(), operationName, params, signature)`.
+
 The remainder of this page shows you how to:
 
 - Monitor the JVM using MXBeans

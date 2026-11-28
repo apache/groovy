@@ -77,6 +77,7 @@ public class RecordingMBean implements DynamicMBean {
 
     @Override
     public void setAttribute(Attribute attribute) {
+        // Attributes are not used by this operation-recording MBean.
     }
 
     @Override
