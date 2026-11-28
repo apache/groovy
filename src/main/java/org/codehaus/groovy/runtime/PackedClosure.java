@@ -65,7 +65,9 @@ import java.util.List;
  * inherited packed closure can never misdispatch to a same-named method a subclass happens
  * to declare. Argument adaptation on every route replicates metaclass dispatch on a
  * generated closure class: arity mismatches raise {@code MissingMethodException}, a single
- * {@code List} destructures across a non-one-parameter signature, trailing-array parameters
+ * {@code List} the signature does not accept as it stands is destructured across the
+ * parameters (whatever their number: {@code { String s -> }} takes {@code ['x']} as it takes
+ * {@code 'x'}), trailing-array parameters
  * vararg-collect, and per-parameter coercion follows the metaclass compatibility rules
  * (including {@code Closure}-to-SAM).
  */
@@ -189,7 +191,9 @@ public abstract class PackedClosure extends Closure<Object> {
          * <p>
          * A parameter type of {@code Object}, a null argument, or an argument
          * that is already an instance of the parameter type is passed through.
-         * Every other value is coerced with the metaclass rules used for a
+         * A {@link List} the parameter type does not accept is destructured: its
+         * one element is the argument, as on a generated closure class. Every other
+         * value is coerced with the metaclass rules used for a
          * generated closure, and a value that cannot be coerced raises
          * {@link MissingMethodException}. No captured values use the
          * one-value dispatch table, one captured value uses the two-value
@@ -201,7 +205,7 @@ public abstract class PackedClosure extends Closure<Object> {
          * @param a value supplied for the closure's parameter
          * @return the value returned by the hoisted method, or {@code null} when that method is void
          */
-        public Object doCall(final Object a) { return dispatchOne(coerceArg(a, parameterTypes[0])); }
+        public Object doCall(final Object a) { return dispatchOne(coerceSole(a)); }
     }
 
     /**
@@ -281,7 +285,7 @@ public abstract class PackedClosure extends Closure<Object> {
          * @param a value supplied for the implicit parameter
          * @return the value returned by the hoisted method, or {@code null} when that method is void
          */
-        public Object doCall(final Object a) { return dispatchOne(coerceArg(a, parameterTypes[0])); }
+        public Object doCall(final Object a) { return dispatchOne(coerceSole(a)); }
     }
 
     /** Packed closure whose only {@code doCall} takes two arguments and passes them to {@link #dispatchTwo}. */
@@ -516,11 +520,11 @@ public abstract class PackedClosure extends Closure<Object> {
         /**
          * Forwards the varargs array to the hoisted method.
          * <p>
-         * A null array is treated as no arguments. A caller that passes one
+         * A null array is a single null argument. A caller that passes one
          * {@code Object[]} supplies that array as {@code args}, so its
          * elements are the call arguments. An exact stored parameter count
          * coerces each value and dispatches. When the argument list holds one
-         * {@link List} and the stored count is not one, that list is spread.
+         * {@link List} the signature does not accept as it stands, that list is spread.
          * A trailing array parameter collects extra arguments, and a call one
          * argument short of that signature supplies an empty array for it.
          * A non-array one-parameter call with no arguments binds null.
@@ -528,10 +532,15 @@ public abstract class PackedClosure extends Closure<Object> {
          * be coerced, raises {@link MissingMethodException}. An exception
          * thrown by the hoisted method propagates to the caller.
          *
-         * @param args call arguments already packed into one array. {@code null} means none
+         * @param args call arguments already packed into one array. {@code null} is one null argument
          * @return the value returned by the hoisted method, or {@code null} when that method is void
          */
-        public Object doCall(final Object... args) { return dispatchAll(args); }
+        public Object doCall(final Object... args) {
+            // a null array is a lone null argument that method selection passed as the array
+            // itself (no arguments at all arrive as an empty array): the closure class's own
+            // doCall binds it as that one argument, so it stays one argument here too
+            return dispatchAll((args != null) ? args : new Object[]{null});
+        }
     }
 
     /**
@@ -814,7 +823,7 @@ public abstract class PackedClosure extends Closure<Object> {
         // cool call sites (and its own standalone compilation lean): the argument-wrapping
         // fallbacks allocate, so they live out-of-line in callGeneral
         if (maximumNumberOfParameters != 1 || !mopUnperturbed()) return callGeneral(arguments);
-        return dispatchOne(coerceArg(arguments, parameterTypes[0]));
+        return dispatchOne(coerceSole(arguments));
     }
 
     private Object callGeneral(final Object arguments) {
@@ -855,8 +864,8 @@ public abstract class PackedClosure extends Closure<Object> {
         // call): skip the List-destructuring, correctArguments and vararg-collection adaptation --
         // the dispatch table's case does any primitive unboxing -- and dispatch
         if (provided.length != arity) return doCallAdapted(provided, arity);
+        if (arity == 1) return dispatchOne(coerceSole(provided[0]));
         Class<?>[] types = parameterTypes;
-        if (arity == 1) return dispatchOne(coerceArg(provided[0], types[0]));
         if (arity == 2 && captured.length == 0) {
             return arity2.dispatch2(id, receiver, coerceArg(provided[0], types[0]), coerceArg(provided[1], types[1]));
         }
@@ -910,15 +919,116 @@ public abstract class PackedClosure extends Closure<Object> {
     // against their wrapper, exactly as metaclass selection autoboxes ({ int x -> } accepts an
     // Integer, coerces a compatible number shape, and rejects a Long with MME).
     final Object coerceArg(final Object arg, final Class<?> t) {
-        // hot-path shape matters: this inlines into the call lanes, so it is three cheap tests
+        // hot-path shape matters: this inlines into the call lanes, so it is a few cheap tests
         // with everything rare out-of-line (a primitive parameter fails isInstance and re-checks
-        // against its wrapper in the tail, exactly as metaclass selection autoboxes)
-        if (t == Object.class || arg == null || t.isInstance(arg)) return arg;
+        // against its wrapper in the tail, exactly as metaclass selection autoboxes). null binds
+        // to any reference type; only null for a primitive parameter leaves the lane.
+        if (t == Object.class || t.isInstance(arg)) return arg;
+        if (arg == null && !t.isPrimitive()) return null;
         return coerceArgSlow(arg, t);
+    }
+
+    // The lone argument of a one-parameter closure, on every route (call(Object), an argument
+    // array of one, the family members' doCall(Object)). The tests are those of coerceArg, so an
+    // argument the parameter takes as it stands costs what it did; only one that is not an
+    // instance of the parameter type goes on to ask whether it is a List to destructure.
+    final Object coerceSole(final Object arg) {
+        Class<?> t = parameterTypes[0];
+        if (t == Object.class || t.isInstance(arg)) return arg;
+        if (arg == null && !t.isPrimitive()) return null;
+        return coerceSoleSlow(arg, t);
+    }
+
+    private Object coerceSoleSlow(final Object arg, final Class<?> t) {
+        if (arg == null) throw loneNullRefused(); // only a primitive parameter gets here with null
+        if (arg instanceof List && !paramInfo().isValidMethod(new Class<?>[]{arg.getClass()})) {
+            return destructure((List<?>) arg, new Object[]{arg})[0];
+        }
+        return coerceArgSlow(arg, t);
+    }
+
+    // A lone null that no doCall accepts (null for a primitive parameter, or for a signature of
+    // another length) is a NullPointerException on a generated closure class and not the
+    // MissingMethodException of any other unaccepted argument: ClosureMetaClass#invokeMethod goes
+    // on to ask whether the single argument is a List to destructure, of an argument class that
+    // is null. Callers see that exception, so it is the one raised here.
+    private static NullPointerException loneNullRefused() {
+        return new NullPointerException("Cannot call a closure with a single null argument that none of its signatures accepts");
+    }
+
+    private ParameterTypes paramInfo() {
+        ParameterTypes info = paramInfo;
+        if (info == null) {
+            // benign race: ParameterTypes is derived from the final parameterTypes, so any winner
+            // is equivalent
+            paramInfo = info = new ParameterTypes(parameterTypes);
+        }
+        return info;
+    }
+
+    /**
+     * The elements of a single {@code List} argument as the closure's arguments, for a call the
+     * signature does not accept with the list as it stands. This is the second step of
+     * {@code ClosureMetaClass#invokeMethod}: it selects {@code doCall} for the list first, and
+     * only when none applies selects again for the list's elements and invokes that method with
+     * them. The second selection is by the same rule as the first, so elements no {@code doCall}
+     * applies to are a {@link MissingMethodException}; the invocation is reflective and adapts
+     * nothing, so elements the selection accepts but the method cannot take unconverted (a
+     * {@code GString} for a {@code String}, none for a parameter that would default to null,
+     * several for a trailing array) are the {@link IllegalArgumentException} of
+     * {@code Method.invoke}.
+     *
+     * @param list     the single argument of the call
+     * @param original the caller's arguments, for the exception
+     * @return the elements, one per parameter, ready for the dispatch table
+     */
+    private Object[] destructure(final List<?> list, final Object[] original) {
+        Object[] elements = list.toArray();
+        if (!paramInfo().isValidMethod(MetaClassHelper.convertToTypeArray(elements))) {
+            throw new MissingMethodException("doCall", getClass(), original);
+        }
+        Class<?>[] types = parameterTypes;
+        if (elements.length != types.length) {
+            throw new IllegalArgumentException("wrong number of arguments: " + elements.length + " expected: " + types.length);
+        }
+        for (int i = 0; i < elements.length; i++) {
+            Object element = elements[i];
+            Class<?> t = types[i];
+            if (element == null ? t.isPrimitive() : !t.isInstance(element)) {
+                if (element == null || !t.isPrimitive() || !widens(element.getClass(), t)) {
+                    throw new IllegalArgumentException("argument type mismatch");
+                }
+                // boxed for the dispatch table, which unboxes to the declared primitive
+                elements[i] = DefaultTypeTransformation.castToType(element, t);
+            }
+        }
+        return elements;
+    }
+
+    // Method.invoke unboxes an argument for a primitive parameter and then widens it as an
+    // assignment would (JLS 5.1.2); it never narrows and never converts to or from boolean.
+    private static boolean widens(final Class<?> boxed, final Class<?> primitive) {
+        if (boxed == TypeUtil.autoboxType(primitive)) return true;
+        int from = primitiveRank(boxed);
+        return from != 0 && primitive != char.class && primitive != boolean.class
+                && primitiveRank(TypeUtil.autoboxType(primitive)) > from;
+    }
+
+    private static int primitiveRank(final Class<?> boxed) {
+        if (boxed == Byte.class) return 1;
+        if (boxed == Short.class || boxed == Character.class) return 2;
+        if (boxed == Integer.class) return 3;
+        if (boxed == Long.class) return 4;
+        if (boxed == Float.class) return 5;
+        if (boxed == Double.class) return 6;
+        return 0;
     }
 
     private Object coerceArgSlow(final Object arg, final Class<?> t) {
         if (t.isPrimitive()) {
+            // no doCall applies to null for a primitive parameter (one argument among several,
+            // or the null a one-parameter closure called without arguments would default to)
+            if (arg == null) throw new MissingMethodException("doCall", getClass(), new Object[]{null});
             Class<?> ct = TypeUtil.autoboxType(t);
             return ct.isInstance(arg) ? arg : coerce(arg, ct);
         }
@@ -969,23 +1079,29 @@ public abstract class PackedClosure extends Closure<Object> {
     private Object doCallAdapted(Object[] provided, final int arity) {
         int base = 1 + captured.length; // packed layout: [owner, captured..., args...]
         final Object[] original = provided; // MME reports the caller's argument types, pre-adaptation
-        // A real closure destructures a single List/Tuple argument across a non-one-parameter
-        // signature ({ a, b -> } called with one Tuple2; { -> } driven with a Tuple0); mirror
-        // that before arity normalisation. A one-parameter closure keeps the list as its argument.
-        if (provided.length == 1 && arity != 1 && provided[0] instanceof List) {
-            provided = ((List<?>) provided[0]).toArray();
+        ParameterTypes info = paramInfo();
+        // A real closure destructures a single List/Tuple argument across its parameters
+        // ({ a, b -> } called with one Tuple2; { -> } driven with a Tuple0) when its signature
+        // does not accept the list as it stands ({ a, Object... rest -> } does, and binds it to
+        // a). A one-parameter closure's single argument never gets here; its list is coerceSole's.
+        // A lone null no signature accepts is not a List to look into: see loneNullRefused.
+        if (provided.length == 1 && provided[0] == null && !info.isValidMethod(new Class<?>[1])) {
+            throw loneNullRefused();
+        }
+        if (provided.length == 1 && provided[0] instanceof List
+                && !info.isValidMethod(new Class<?>[]{provided[0].getClass()})) {
+            provided = destructure((List<?>) provided[0], original);
+            Object[] all = new Object[base + arity];
+            all[0] = receiver;
+            System.arraycopy(captured, 0, all, 1, captured.length);
+            System.arraycopy(provided, 0, all, base, arity);
+            return dispatcher.dispatch(id, all);
         }
         // With the real parameter types available, adapt arguments exactly as metaclass dispatch on
         // a generated closure class would -- collecting excess args into a trailing array parameter
         // ({ Object[] args -> } called with several values), and coercing each argument to its
         // declared parameter type (Closure -> SAM interface, GString -> String, number conversions)
         // as metaclass dispatch does.
-        ParameterTypes info = paramInfo;
-        if (info == null) {
-            // benign race: ParameterTypes is derived from the final parameterTypes, so any winner
-            // is equivalent
-            paramInfo = info = new ParameterTypes(parameterTypes);
-        }
         // arguments to a zero-parameter closure are always a mismatch ({ -> } invoked by each());
         // checked before correctArguments, which would silently drop them for a no-arg signature
         if (arity == 0 && provided.length > 0) {
@@ -998,7 +1114,7 @@ public abstract class PackedClosure extends Closure<Object> {
         }
         // A generated closure class accepts exactly two arity adaptations beyond the vararg
         // collection above: zero arguments to a one-parameter closure ({ it -> }() and
-        // { x -> }() both bind null), and the single-List destructuring already applied. Any
+        // { x -> }() both bind null), and the single-List destructuring that returned above. Any
         // other mismatch is a MissingMethodException from metaclass method selection -- callers
         // like MockFor depend on the failure ({ -> } invoked with arguments must not run).
         if (provided.length != arity) {
