@@ -19,10 +19,13 @@
 package org.codehaus.groovy.runtime;
 
 import groovy.lang.Closure;
+import groovy.transform.Internal;
 import org.apache.groovy.lang.annotation.GroovyABI;
 
 import java.io.ObjectStreamException;
 import java.io.Serial;
+import java.util.ArrayList;
+import java.util.List;
 
 import static org.codehaus.groovy.runtime.ArrayGroovyMethods.last;
 
@@ -212,7 +215,22 @@ public final class CurriedClosure<V> extends Closure<V> {
     public Object clone() {
         @SuppressWarnings("unchecked")
         Closure<V> uncurriedClosure = (Closure<V>) getOwner().clone();
-        return new CurriedClosure<V>(index, uncurriedClosure, curriedArguments);
+        return new CurriedClosure<V>(recreationIndex(), uncurriedClosure, curriedArguments);
+    }
+
+    /**
+     * Index to pass back to the constructor. An {@code rcurry} closure stores the
+     * normalised position, and constructing again from that position would treat it
+     * as an eager {@code ncurry}.
+     */
+    private int recreationIndex() {
+        // rcurry normalises a negative index onto the longest parameter list and
+        // records no minimum. ncurry at that same slot still requires the leading arguments.
+        boolean lazy = !isVararg()
+                && minParamsExpected == 0
+                && curriedArguments.length > 0
+                && index == maximumNumberOfParameters;
+        return lazy ? -curriedArguments.length : index;
     }
 
     /**
@@ -221,7 +239,7 @@ public final class CurriedClosure<V> extends Closure<V> {
      */
     @Override
     public Closure<V> dehydrate() {
-        return new CurriedClosure<V>(index, getOwner().dehydrate(), curriedArguments);
+        return new CurriedClosure<V>(recreationIndex(), getOwner().dehydrate(), curriedArguments);
     }
 
     /**
@@ -230,7 +248,7 @@ public final class CurriedClosure<V> extends Closure<V> {
      */
     @Override
     public Closure<V> rehydrate(final Object delegate, final Object owner, final Object thisObject) {
-        return new CurriedClosure<V>(index, getOwner().rehydrate(delegate, owner, thisObject), curriedArguments);
+        return new CurriedClosure<V>(recreationIndex(), getOwner().rehydrate(delegate, owner, thisObject), curriedArguments);
     }
 
     @Override
@@ -274,6 +292,70 @@ public final class CurriedClosure<V> extends Closure<V> {
 
     private boolean isVararg() {
         return varargType != null;
+    }
+
+    /**
+     * Parameter types that remain when each signature is called through this curry.
+     * Nested curries are applied from the inside out. A signature this curry cannot
+     * accept is dropped. Returns {@code null} when a curry in the chain is varargs,
+     * because a varargs closure keeps a single parameter list.
+     */
+    @Internal
+    public List<Class<?>[]> expandSignatures(final List<Class<?>[]> signatures) {
+        if (signatures == null) {
+            return null;
+        }
+        List<Class<?>[]> current = signatures;
+        Closure<?> uncurried = getOwner();
+        if (uncurried instanceof CurriedClosure<?> nested) {
+            current = nested.expandSignatures(current);
+            if (current == null) {
+                return null;
+            }
+        }
+        if (isVararg()) {
+            return null;
+        }
+        List<Class<?>[]> expanded = new ArrayList<>(current.size());
+        for (Class<?>[] signature : current) {
+            Class<?>[] remaining = parametersWithoutCurried(signature);
+            if (remaining != null) {
+                expanded.add(remaining);
+            }
+        }
+        return expanded;
+    }
+
+    /**
+     * Drops the parameters this curry binds. The insertion point is the one
+     * {@link #getUncurriedArguments(Object...)} uses for a call that supplies
+     * exactly the unbound parameters, so the types that stay are the ones the
+     * caller passes in. Returns {@code null} when this signature cannot accept
+     * the curried arguments.
+     */
+    private Class<?>[] parametersWithoutCurried(final Class<?>[] parameterTypes) {
+        int curriedLen = curriedArguments.length;
+        int arity = parameterTypes.length;
+        if (arity < curriedLen) {
+            return null;
+        }
+        int supplied = arity - curriedLen;
+        // same acceptance test as getUncurriedArguments for a non-vararg call
+        if (curriedLen + supplied < minParamsExpected) {
+            return null;
+        }
+        int insertAt = Math.min(index, curriedLen + supplied - 1);
+        if (insertAt < 0) {
+            return null;
+        }
+        insertAt = Math.min(insertAt, supplied);
+        Class<?>[] remaining = new Class<?>[supplied];
+        System.arraycopy(parameterTypes, 0, remaining, 0, insertAt);
+        int tail = arity - insertAt - curriedLen;
+        if (tail > 0) {
+            System.arraycopy(parameterTypes, insertAt + curriedLen, remaining, insertAt, tail);
+        }
+        return remaining;
     }
 
     /**

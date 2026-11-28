@@ -20,6 +20,7 @@ package org.codehaus.groovy.runtime;
 
 import groovy.lang.Closure;
 import groovy.lang.MetaMethod;
+import groovy.transform.Internal;
 import org.codehaus.groovy.reflection.ReflectionCache;
 import org.codehaus.groovy.runtime.wrappers.Wrapper;
 
@@ -27,8 +28,10 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectStreamException;
 import java.io.Serial;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.BitSet;
+import java.util.List;
 
 /**
  * Represents a method on an object using a closure, which can be invoked at any
@@ -76,29 +79,57 @@ public class MethodClosure extends Closure {
         this.maximumNumberOfParameters = 0;
         this.parameterTypes = MetaClassHelper.EMPTY_TYPE_ARRAY;
 
-        var ownerClass = getOwnerClass();
+        for (Class<?>[] signature : loadSignatures(true)) {
+            setParameterTypesAndNumber(signature);
+        }
+    }
 
+    /**
+     * Parameter types of each method or constructor this closure dispatches to.
+     * An instance-method reference whose owner is a {@link Class} includes that
+     * class as the first parameter, which is the shape {@link #getParameterTypes()}
+     * is taken from. Each array is a copy.
+     */
+    @Internal
+    public List<Class<?>[]> getMethodSignatures() {
+        if (getOwner() == null) { // dehydrated
+            return List.of();
+        }
+        List<Class<?>[]> signatures = loadSignatures(false);
+        List<Class<?>[]> copies = new ArrayList<>(signatures.size());
+        for (Class<?>[] signature : signatures) {
+            copies.add(signature.clone());
+        }
+        return copies;
+    }
+
+    @SuppressWarnings("unchecked")
+    private List<Class<?>[]> loadSignatures(final boolean trackInstanceMethods) {
+        List<Class<?>[]> signatures = new ArrayList<>();
+        Class<?> ownerClass = getOwnerClass();
         if (method.equals(NEW)) {
             if (ownerClass.isArray()) {
-                Class<?>[] sizeTypes = new Class[ArrayTypeUtils.dimension(ownerClass)];
+                Class<?>[] sizeTypes = new Class<?>[ArrayTypeUtils.dimension(ownerClass)];
                 Arrays.fill(sizeTypes, int.class);
-                setParameterTypesAndNumber(sizeTypes);
+                signatures.add(sizeTypes);
             } else {
                 for (var c : ReflectionCache.getCachedClass(ownerClass).getConstructors()) {
-                    setParameterTypesAndNumber(c.getNativeParameterTypes());
+                    signatures.add(c.getNativeParameterTypes());
                 }
             }
         } else {
-            for (var m : InvokerHelper.getMetaClass(ownerClass).respondsTo(getOwner(), method)) {
-                setParameterTypesAndNumber(makeParameterTypes(getOwner(), m));
-                if (!m.isStatic()) {
+            Object owner = getOwner();
+            for (var m : InvokerHelper.getMetaClass(ownerClass).respondsTo(owner, method)) {
+                signatures.add(makeParameterTypes(owner, m));
+                if (trackInstanceMethods && !m.isStatic()) {
                     this.anyInstanceMethodExists = true;
                 }
             }
         }
+        return signatures;
     }
 
-    private void setParameterTypesAndNumber(final Class[] parameterTypes) {
+    private void setParameterTypesAndNumber(final Class<?>[] parameterTypes) {
         if (parameterTypes.length > this.maximumNumberOfParameters) {
             this.maximumNumberOfParameters = parameterTypes.length;
             this.parameterTypes = parameterTypes;

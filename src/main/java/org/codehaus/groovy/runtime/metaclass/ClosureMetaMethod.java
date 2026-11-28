@@ -24,6 +24,7 @@ import groovy.lang.MetaMethod;
 import org.codehaus.groovy.reflection.CachedClass;
 import org.codehaus.groovy.reflection.CachedMethod;
 import org.codehaus.groovy.reflection.ReflectionCache;
+import org.codehaus.groovy.runtime.CurriedClosure;
 import org.codehaus.groovy.runtime.GeneratedClosure;
 import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.runtime.MetaClassHelper;
@@ -32,6 +33,7 @@ import org.codehaus.groovy.runtime.NullObject;
 
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -147,6 +149,9 @@ public class ClosureMetaMethod extends MetaMethod implements ClosureInvokingMeth
     /**
      * Creates a list of MetaMethod instances from the given closure.
      * Handles MethodClosure, GeneratedClosure, and anonymous closures appropriately.
+     * A curried method or closure contributes one meta-method for each overload
+     * that can still be called, including the overloads a default parameter produces,
+     * so a shorter call keeps working after the closure is assigned to a metaClass.
      *
      * @param name the name of the method
      * @param declaringClass the class that declares this meta method
@@ -169,11 +174,68 @@ public class ClosureMetaMethod extends MetaMethod implements ClosureInvokingMeth
                     mms.add(adjustParamTypesForStdMethods(metaMethod, name));
                 }
             }
+        } else if (closure instanceof CurriedClosure<?> curried) {
+            addCurriedClosureMethods(mms, name, declaringClass, curried);
+            if (mms.isEmpty()) {
+                // varargs, or a curry whose target is not a method or generated closure
+                mms.add(adjustParamTypesForStdMethods(new AnonymousMetaMethod(closure, name, declaringClass), name));
+            }
         } else {
             MetaMethod metaMethod = new AnonymousMetaMethod(closure, name, declaringClass);
             mms.add(adjustParamTypesForStdMethods(metaMethod, name));
         }
         return mms;
+    }
+
+    @SuppressWarnings("unchecked")
+    private static void addCurriedClosureMethods(final List<MetaMethod> mms, final String name, final Class declaringClass, final CurriedClosure<?> curried) {
+        Closure core = curried;
+        while (core instanceof CurriedClosure<?> nested) {
+            core = nested.getOwner();
+        }
+        List<Class<?>[]> bases;
+        if (core instanceof MethodClosure methodClosure) {
+            bases = methodClosure.getMethodSignatures();
+        } else if (core instanceof GeneratedClosure) {
+            bases = doCallSignatures(core);
+        } else {
+            return;
+        }
+        List<Class<?>[]> expanded = curried.expandSignatures(bases);
+        if (expanded == null) {
+            return;
+        }
+        for (Class<?>[] signature : uniqueSignatures(expanded)) {
+            mms.add(adjustParamTypesForStdMethods(new AnonymousMetaMethod(curried, name, declaringClass, (Class[]) signature), name));
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private static List<Class<?>[]> doCallSignatures(final Closure closure) {
+        List<Class<?>[]> signatures = new ArrayList<>();
+        for (CachedMethod method : ReflectionCache.getCachedClass(closure.getClass()).getMethods()) {
+            if ("doCall".equals(method.getName())) {
+                signatures.add(method.getNativeParameterTypes().clone());
+            }
+        }
+        return signatures;
+    }
+
+    private static List<Class<?>[]> uniqueSignatures(final List<Class<?>[]> signatures) {
+        List<Class<?>[]> unique = new ArrayList<>(signatures.size());
+        for (Class<?>[] signature : signatures) {
+            boolean seen = false;
+            for (Class<?>[] existing : unique) {
+                if (Arrays.equals(existing, signature)) {
+                    seen = true;
+                    break;
+                }
+            }
+            if (!seen) {
+                unique.add(signature);
+            }
+        }
+        return unique;
     }
 
     private static MetaMethod adjustParamTypesForStdMethods(MetaMethod metaMethod, String methodName) {
@@ -249,7 +311,14 @@ public class ClosureMetaMethod extends MetaMethod implements ClosureInvokingMeth
          * @param declaringClass the class that declares this meta method
          */
         public AnonymousMetaMethod(Closure closure, String name, Class declaringClass) {
-            super(closure.getParameterTypes());
+            this(closure, name, declaringClass, closure.getParameterTypes());
+        }
+
+        /**
+         * @param parameterTypes parameter types of this overload, already adjusted for currying
+         */
+        AnonymousMetaMethod(Closure closure, String name, Class declaringClass, Class[] parameterTypes) {
+            super(parameterTypes);
             this.closure = closure;
             this.name = name;
             this.declaringClass = declaringClass;
