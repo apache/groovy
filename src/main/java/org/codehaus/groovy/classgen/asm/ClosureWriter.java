@@ -1032,7 +1032,12 @@ public class ClosureWriter {
                 if (!isPackable(e)) ok[0] = false;
             }
             @Override public void visitVariableExpression(final VariableExpression ve) {
-                if (ve.isSuperExpression() || FORBIDDEN_CLOSURE_NAMES.contains(ve.getName())) ok[0] = false;
+                if (ve.isSuperExpression()) ok[0] = false;
+                // a parameter or local variable of that name hides the Closure property in a
+                // closure class too, so only a name that is not bound to one reads the property
+                Variable av = ve.getAccessedVariable();
+                if (FORBIDDEN_CLOSURE_NAMES.contains(ve.getName())
+                        && !(av instanceof Parameter || av instanceof VariableExpression)) ok[0] = false;
             }
             @Override public void visitMethodCallExpression(final MethodCallExpression call) {
                 // implicit-this accessor/mutator forms of the same pseudo-properties, e.g. getDelegate()

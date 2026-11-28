@@ -200,6 +200,62 @@ final class ClosurePackCapabilityTest {
                 eval(src, 'new D().pairs([Tuple.tuple("a", 1), Tuple.tuple("b", 2)])', true))
     }
 
+    // GROOVY-12840
+    @Test
+    void parameterOrLocalNamedLikeAClosurePropertyDoesNotDeclinePacking() {
+        // a parameter or local variable named owner, delegate, thisObject, directive,
+        // resolveStrategy or metaClass hides the Closure property of that name in a closure class,
+        // so reading it is no use of the property and the closure packs; the same name bound to
+        // nothing local, or to a field, still reads the property and keeps the class
+        ['', '@groovy.transform.CompileStatic'].each { String mode ->
+            String src = """$mode
+                class Names {
+                    String param(String owner, String delegate) {
+                        Closure c = { String pet -> owner + ' and ' + delegate + ' own ' + pet }
+                        c.getClass().simpleName + ' ' + c.call('Rex')
+                    }
+                    String local() {
+                        String thisObject = 't', directive = 'd', resolveStrategy = 'r', metaClass = 'm'
+                        Closure c = { String x -> thisObject + directive + resolveStrategy + metaClass + x }
+                        c.getClass().simpleName + ' ' + c.call('!')
+                    }
+                    String own() {
+                        Closure c = { String owner -> String delegate = owner * 2; delegate }
+                        c.getClass().simpleName + ' ' + c.call('ab')
+                    }
+                    String nested(String owner) {
+                        Closure c = { String x -> [x].collect { String y -> owner + y }.join('') }
+                        c.getClass().simpleName + ' ' + c.call('!')
+                    }
+                    String property() {
+                        Closure c = { String x -> x + owner.getClass().simpleName }
+                        c.getClass().simpleName + ' ' + c.call('owner ')
+                    }
+                }"""
+            String tail = 'def n = new Names(); [n.param("Ann", "Bob"), n.local(), n.own(), n.nested("Ann"), n.property()]'
+            assertEquals(['_param_closure1 Ann and Bob own Rex', '_local_closure2 tdrm!', '_own_closure3 abab',
+                          '_nested_closure4 Ann!', '_property_closure5 owner Names'], eval(src, tail, false), mode)
+            assertEquals(['Fixed1 Ann and Bob own Rex', 'Fixed1 tdrm!', 'Fixed1 abab',
+                          'Fixed1 Ann!', '_property_closure1 owner Names'], eval(src, tail, true), mode)
+        }
+    }
+
+    // GROOVY-12840
+    @Test
+    void fieldNamedLikeAClosurePropertyStillDeclinesPacking() {
+        // a field of the enclosing class does not hide the property: the bare name in a closure
+        // class is read from the closure, which answers with its own owner
+        String src = '''@groovy.transform.PackedClosures
+            class Fielded {
+                String owner = 'field'
+                String run() {
+                    Closure c = { String x -> x + owner.getClass().simpleName }
+                    c.getClass().simpleName + ' ' + c.call('owner ')
+                }
+            }'''
+        assertEquals('_run_closure1 owner Fielded', eval(src, 'new Fielded().run()', false))
+    }
+
     @Test
     void dynamicFreeNameClosuresAreNotAutoPacked() {
         // No @CompileStatic AND a free name (the implicit-this call helper(), which the runtime
