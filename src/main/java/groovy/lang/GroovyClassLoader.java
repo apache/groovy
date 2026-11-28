@@ -19,6 +19,7 @@
 package groovy.lang;
 
 import groovy.util.CharsetToolkit;
+import org.apache.groovy.control.ModuleOptions;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.FieldNode;
@@ -166,6 +167,9 @@ public class GroovyClassLoader extends URLClassLoader {
         this.config = (config != null ? config : CompilerConfiguration.DEFAULT);
         this.sourceCache = sourceCache;
         if (useConfigurationClasspath) {
+            for (URL url : ModuleOptions.moduleClassLoaderUrls(this.config)) {
+                addURL(url);
+            }
             for (String path : this.config.getClasspath()) {
                 addClasspath(path);
             }

@@ -41,6 +41,13 @@ a number of command line switches:
 |=======================================================================
 | Short version | Long version | Description | Example
 | -cp | -classpath, --classpath | Specify the compilation classpath. Must be the first argument. | groovyc -cp lib/dep.jar MyClass.groovy
+| -p | --module-path | Specify where to find application modules (modular JARs, exploded module directories, directories of modules, or `.jmod` archives). | groovyc -p mods -d mods/com.example.app module-info.groovy
+| | --upgrade-module-path | Override location of upgradeable modules before system modules. | groovyc --upgrade-module-path upgrades module-info.groovy
+| | --module-version | Specify the version string recorded on compiled module descriptors. | groovyc --module-version 1.0.0 -d out module-info.groovy
+| | --add-modules | Comma-separated root modules (or `ALL-DEFAULT`, `ALL-SYSTEM`, `ALL-MODULE-PATH`) to add to the observable/resolved module set. | groovyc --limit-modules java.base --add-modules java.sql module-info.groovy
+| | --limit-modules | Comma-separated module names limiting the universe of observable modules. | groovyc --limit-modules java.base module-info.groovy
+| | --add-reads | Grant additional compile-time readability (`<module>=<target>(,<target>)*`, including `ALL-UNNAMED`). | groovyc --add-reads com.example.app=java.sql module-info.groovy
+| | --add-exports | Grant additional compile-time package exports (`<module>/<package>=<target>(,<target>)*`, including `ALL-UNNAMED`). | groovyc --add-exports java.base/sun.security.util=com.example.app module-info.groovy
 | -sourcepath | --sourcepath | Accepted, and ignored. The compiler does not search this path. |
 | | --temp | Temporary directory for the compiler |
 | | --encoding | Encoding of the source files | groovyc --encoding utf-8 script.groovy

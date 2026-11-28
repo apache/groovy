@@ -244,7 +244,7 @@ Four concentric sets:
 | matching token
 | **yes**
 | `module`: **no**; others: yes
-| contextual. `module` is in `identifier` only (for `import module`)
+| contextual. `module` is in `identifier` only (used in `import module` and `module-info` headers)
 
 | `val`
 | `VAL` or `Identifier` (R5)
@@ -979,7 +979,7 @@ packageDeclaration ::=
 
 importDeclaration ::=
     annotationsOpt 'import'
-    (   'module' qualifiedName
+    (   'module' moduleQualifiedName
       | 'static'? qualifiedName ('.' '*' | 'as' identifier)?
     )
 
@@ -1001,7 +1001,7 @@ construct; the CFG already enforces that.
 
 `importDeclaration` has two branches:
 
-* `import module qualifiedName` -- JEP 476-style module import. The g4
+* `import module moduleQualifiedName` -- JEP 511 module import. The g4
   does not admit `import module p.*` or `import module p as x`.
 * `import static? qualifiedName` with optional `.*` or
   `as identifier`.
@@ -1014,6 +1014,72 @@ productions.
 
 Package names may contain `'def'` `'in'` `'as'` `'trait'`
 (`qualifiedNameElement`) for integration with existing Java packages.
+
+=== Modular compilation units
+
+A source unit named `module-info.groovy` or `module-info.java` uses the
+separate start rule `moduleCompilationUnit` (JLS §7.3 / §7.7). Keeping it
+separate from `compilationUnit` preserves local error spans on ordinary
+scripts and keeps JPMS directive keywords (`open`, `requires`, `transitive`,
+`exports`, `opens`, `to`, `uses`, `provides`, `with`) as ordinary
+identifiers outside module descriptors.
+
+[source,ebnf]
+----
+moduleCompilationUnit ::=
+    NL* modularCompilationUnit EOF
+
+modularCompilationUnit ::=
+    (importDeclaration sep)* moduleDeclaration NL*
+
+moduleDeclaration ::=
+    annotationsOpt moduleHeader NL* '{' NL* moduleDirectives? NL* '}'
+
+moduleHeader ::=
+      'open' NL* 'module' NL* moduleQualifiedName
+    | 'module' NL* moduleQualifiedName
+
+moduleDirectives ::=
+    moduleDirective (NL* moduleDirective)*
+
+moduleDirective ::=
+      requiresDirective
+    | exportsDirective
+    | opensDirective
+    | usesDirective
+    | providesDirective
+
+requiresDirective ::=
+    'requires' (NL* requiresModifier)* NL* moduleQualifiedName NL* ';'
+
+requiresModifier ::=
+      'static'
+    | 'transitive'                      /* when not followed by '.' or ';' */
+
+exportsDirective ::=
+    'exports' NL* moduleQualifiedName toClause? NL* ';'
+
+opensDirective ::=
+    'opens' NL* moduleQualifiedName toClause? NL* ';'
+
+toClause ::=
+    NL* 'to' NL* moduleQualifiedName (NL* ',' NL* moduleQualifiedName)*
+
+usesDirective ::=
+    'uses' NL* moduleQualifiedName NL* ';'
+
+providesDirective ::=
+    'provides' NL* moduleQualifiedName NL* 'with' NL*
+    moduleQualifiedName (NL* ',' NL* moduleQualifiedName)* NL* ';'
+
+moduleQualifiedName ::=
+    qualifiedNameElement (NL* '.' NL* qualifiedNameElement)*
+----
+
+Inside `requiresDirective`, `'transitive'` is parsed as a `requiresModifier`
+only when the next non-`NL` token is neither `'.'` nor `';'`, so
+`requires transitive;` and `requires transitive.extra;` name modules rather
+than modifiers, matching `javac`.
 
 === Script-level methods (R12)
 
@@ -2270,7 +2336,7 @@ Not syntax (not in the g4 as productions of the language):
 * JEP 445 script classification.
 * Trait *implementation* (the `trait` keyword is syntax; mixin
   semantics are a transform).
-* Java `module-info` compilation units; Java text blocks as a
+* Java text blocks as a
   distinct form (Groovy `"""` is triple-quoted String/GString);
   Java 21+ switch type / record / pattern labels and `when` guards
   (Groovy `case` is `expression` / `expressionList`).
@@ -2285,7 +2351,12 @@ in <<grammar-vocabulary>> and <<grammar-lexical>>; rewritten lexer
 rules follow this index.
 
 * <<grammar-compilation-unit,Compilation units>>::
-  `compilationUnit`, `scriptStatements`, `scriptStatement`,
+  `compilationUnit`, `moduleCompilationUnit`, `modularCompilationUnit`,
+  `moduleDeclaration`, `moduleHeader`, `moduleDirectives`,
+  `moduleDirective`, `requiresDirective`, `requiresModifier`,
+  `exportsDirective`, `opensDirective`, `toClause`, `usesDirective`,
+  `providesDirective`, `moduleQualifiedName`,
+  `scriptStatements`, `scriptStatement`,
   `packageDeclaration`, `importDeclaration`, `sep`
 * <<grammar-types-and-names,Types and names>>::
   `qualifiedName`, `qualifiedNameElement`, `qualifiedNameElements`,

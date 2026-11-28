@@ -22,12 +22,15 @@ import org.codehaus.groovy.control.CompilerConfiguration
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Timeout
 
+import javax.tools.FileObject
 import javax.tools.ForwardingJavaFileManager
 import javax.tools.JavaFileManager
 import javax.tools.JavaFileObject
+import javax.tools.SimpleJavaFileObject
 import javax.tools.StandardLocation
 import javax.tools.ToolProvider
 import java.nio.charset.Charset
+import java.nio.file.Path
 import java.util.concurrent.TimeUnit
 
 import static groovy.test.GroovyAssert.shouldFail
@@ -387,6 +390,133 @@ final class InMemoryJavaFileManagerTest {
             }
         } finally {
             parent.close()
+            root.deleteDir()
+            standard.close()
+        }
+    }
+
+    // GROOVY-9273
+    @Test
+    void testRecordingJavaFileManager() {
+        def compiler = ToolProvider.systemJavaCompiler
+        assert compiler != null
+        def standard = compiler.getStandardFileManager(null, Locale.ENGLISH, Charset.forName('UTF-8'))
+        def root = File.createTempDir('rec-jfm', '')
+        try {
+            def stubDir = new File(root, 'stubs')
+            stubDir.mkdirs()
+            def stubFile = new File(stubDir, 'Stub.java')
+            stubFile.text = 'public class Stub {}'
+            def explicitInStubDir = new File(stubDir, 'Explicit.java')
+            explicitInStubDir.text = 'public class Explicit {}'
+            def nonExistent = new File(root, 'does-not-exist/Foo.java').toPath()
+            assert JavacJavaCompiler.canonicalPath(nonExistent) == nonExistent.toAbsolutePath().normalize()
+
+            def sink = new LinkedHashMap<String, byte[]>()
+            def mem = new InMemoryJavaFileManager(standard, sink)
+            // Seed a stale module-info.class, root class, and packaged class in CLASS_OUTPUT.
+            write(mem, 'module-info')
+            write(mem, 'RootClass')
+            write(mem, 'demo.Other')
+
+            def memStubSibling = new MemClassFileObject('demo.MemStub', null)
+            def diskStubSibling = standard.getJavaFileObjects(stubFile).iterator().next()
+            def explicitSibling = standard.getJavaFileObjects(explicitInStubDir).iterator().next()
+            def nonFileSibling = new SimpleJavaFileObject(URI.create('mem:///virtual/Gen.java'), JavaFileObject.Kind.SOURCE) {}
+            def nullUriSibling = new SimpleJavaFileObject(URI.create('mem:///x'), JavaFileObject.Kind.SOURCE) {
+                @Override URI toUri() { null }
+            }
+            def badFileUriSibling = new SimpleJavaFileObject(URI.create('file://invalid-host/path/Foo.java'), JavaFileObject.Kind.SOURCE) {}
+
+            def stubRoot = JavacJavaCompiler.canonicalPath(stubDir.toPath())
+            def explicitPaths = [JavacJavaCompiler.canonicalPath(explicitInStubDir.toPath())] as Set<Path>
+
+            // With hideStaleModuleInfo=true, CLASS_OUTPUT module-info.class is hidden from both getJavaFileForInput and list.
+            def hiding = new JavacJavaCompiler.RecordingJavaFileManager(
+                    mem, [memStubSibling] as Set<FileObject>, stubRoot, explicitPaths, true)
+            assert hiding.getJavaFileForInput(StandardLocation.CLASS_OUTPUT, 'module-info', JavaFileObject.Kind.CLASS) == null
+            assert hiding.getJavaFileForInput(StandardLocation.CLASS_OUTPUT, 'module-info', JavaFileObject.Kind.SOURCE) == null
+            assert hiding.getJavaFileForInput(StandardLocation.CLASS_OUTPUT, 'demo.Other', JavaFileObject.Kind.CLASS) != null
+            assert hiding.getJavaFileForInput(StandardLocation.CLASS_PATH, 'module-info', JavaFileObject.Kind.CLASS) ==
+                    mem.getJavaFileForInput(StandardLocation.CLASS_PATH, 'module-info', JavaFileObject.Kind.CLASS)
+
+            // In-memory CLASS_OUTPUT list() hides stale module-info.class while keeping RootClass and demo.Other.
+            def listedMem = hiding.list(StandardLocation.CLASS_OUTPUT, '', EnumSet.of(JavaFileObject.Kind.CLASS), true).collect {
+                hiding.inferBinaryName(StandardLocation.CLASS_OUTPUT, it)
+            }
+            assert !listedMem.contains('module-info')
+            assert listedMem.contains('RootClass')
+            assert listedMem.contains('demo.Other')
+            assert hiding.list(StandardLocation.CLASS_OUTPUT, 'demo', EnumSet.of(JavaFileObject.Kind.CLASS), false).collect {
+                hiding.inferBinaryName(StandardLocation.CLASS_OUTPUT, it)
+            } == ['demo.Other']
+            assert hiding.list(StandardLocation.CLASS_PATH, '', EnumSet.of(JavaFileObject.Kind.CLASS), false) != null
+
+            // Disk StandardJavaFileManager CLASS_OUTPUT list() with mixed CLASS and SOURCE kinds.
+            def classOutDir = new File(root, 'class-out')
+            classOutDir.mkdirs()
+            new File(classOutDir, 'module-info.class').bytes = MARKER
+            new File(classOutDir, 'RootClass.class').bytes = MARKER
+            new File(classOutDir, 'RootSrc.java').text = 'class RootSrc {}'
+            standard.setLocation(StandardLocation.CLASS_OUTPUT, List.of(classOutDir))
+            def diskHiding = new JavacJavaCompiler.RecordingJavaFileManager(
+                    standard, Set.of(), null, Set.of(), true)
+            def listedDisk = diskHiding.list(StandardLocation.CLASS_OUTPUT, '', EnumSet.of(JavaFileObject.Kind.CLASS, JavaFileObject.Kind.SOURCE), false).collect {
+                diskHiding.inferBinaryName(StandardLocation.CLASS_OUTPUT, it)
+            }
+            assert !listedDisk.contains('module-info')
+            assert listedDisk.contains('RootClass')
+            assert listedDisk.contains('RootSrc')
+            assert diskHiding.list(StandardLocation.CLASS_OUTPUT, '', EnumSet.of(JavaFileObject.Kind.SOURCE), false).collect {
+                diskHiding.inferBinaryName(StandardLocation.CLASS_OUTPUT, it)
+            } == ['RootSrc']
+
+            // With hideStaleModuleInfo=false, CLASS_OUTPUT module-info.class is visible via both getJavaFileForInput and list.
+            def showing = new JavacJavaCompiler.RecordingJavaFileManager(
+                    mem, [memStubSibling] as Set<FileObject>, null, Set.of(), false)
+            assert showing.getJavaFileForInput(StandardLocation.CLASS_OUTPUT, 'module-info', JavaFileObject.Kind.CLASS) != null
+            assert showing.list(StandardLocation.CLASS_OUTPUT, '', EnumSet.of(JavaFileObject.Kind.CLASS), false).collect {
+                showing.inferBinaryName(StandardLocation.CLASS_OUTPUT, it)
+            }.contains('module-info')
+
+            // getJavaFileForOutput recording & filtering across all sibling shapes and locations/kinds.
+            hiding.getJavaFileForOutput(StandardLocation.CLASS_OUTPUT, 'demo.NullSibling', JavaFileObject.Kind.CLASS, null)
+            hiding.getJavaFileForOutput(StandardLocation.CLASS_OUTPUT, 'demo.MemStub', JavaFileObject.Kind.CLASS, memStubSibling)
+            hiding.getJavaFileForOutput(StandardLocation.CLASS_OUTPUT, 'demo.DiskStub', JavaFileObject.Kind.CLASS, diskStubSibling)
+            hiding.getJavaFileForOutput(StandardLocation.CLASS_OUTPUT, 'demo.Explicit', JavaFileObject.Kind.CLASS, explicitSibling)
+            hiding.getJavaFileForOutput(StandardLocation.CLASS_OUTPUT, 'demo.NonFile', JavaFileObject.Kind.CLASS, nonFileSibling)
+            hiding.getJavaFileForOutput(StandardLocation.CLASS_OUTPUT, 'demo.NullUri', JavaFileObject.Kind.CLASS, nullUriSibling)
+            hiding.getJavaFileForOutput(StandardLocation.CLASS_OUTPUT, 'demo.BadFileUri', JavaFileObject.Kind.CLASS, badFileUriSibling)
+            hiding.getJavaFileForOutput(StandardLocation.SOURCE_OUTPUT, 'demo.SrcOut', JavaFileObject.Kind.SOURCE, null)
+            shouldFail(IllegalArgumentException) {
+                hiding.getJavaFileForOutput(StandardLocation.CLASS_OUTPUT, 'demo.NotClass', JavaFileObject.Kind.OTHER, null)
+            }
+
+            // getFileForOutput recording & filtering across package/root/non-class/stub/location shapes.
+            hiding.getFileForOutput(StandardLocation.CLASS_OUTPUT, 'demo.gen', 'sub/Extra.class', null)
+            hiding.getFileForOutput(StandardLocation.CLASS_OUTPUT, '', 'RootExtra.class', null)
+            hiding.getFileForOutput(StandardLocation.CLASS_OUTPUT, null, 'NullPkgExtra.class', null)
+            hiding.getFileForOutput(StandardLocation.CLASS_OUTPUT, 'demo.gen', 'IgnoredStub.class', memStubSibling)
+            hiding.getFileForOutput(StandardLocation.CLASS_OUTPUT, 'demo.gen', 'meta.txt', null)
+            shouldFail(IOException) {
+                hiding.getFileForOutput(StandardLocation.CLASS_OUTPUT, 'demo.gen', null, null)
+            }
+            def srcOutDir = new File(root, 'src-out')
+            srcOutDir.mkdirs()
+            standard.setLocation(StandardLocation.SOURCE_OUTPUT, List.of(srcOutDir))
+            hiding.getFileForOutput(StandardLocation.SOURCE_OUTPUT, 'demo.gen', 'NotClassOut.class', null)
+
+            assert hiding.recordedClasses() == [
+                'demo.NullSibling',
+                'demo.Explicit',
+                'demo.NonFile',
+                'demo.NullUri',
+                'demo.BadFileUri',
+                'demo.gen.sub.Extra',
+                'RootExtra',
+                'NullPkgExtra'
+            ] as Set
+        } finally {
             root.deleteDir()
             standard.close()
         }

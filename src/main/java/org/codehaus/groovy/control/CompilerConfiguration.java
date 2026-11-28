@@ -21,6 +21,7 @@ package org.codehaus.groovy.control;
 import groovy.lang.Groovydoc;
 import groovy.lang.Reference;
 import groovy.transform.stc.ClassTag;
+import org.apache.groovy.control.ModuleOptions;
 import org.apache.groovy.lang.annotation.Incubating;
 import org.apache.groovy.util.Maps;
 import org.codehaus.groovy.GroovyBugError;
@@ -342,6 +343,36 @@ public class CompilerConfiguration {
         }
 
         @Override
+        public List<String> getModulePath() {
+            return Collections.unmodifiableList(super.getModulePath());
+        }
+
+        @Override
+        public List<String> getUpgradeModulePath() {
+            return Collections.unmodifiableList(super.getUpgradeModulePath());
+        }
+
+        @Override
+        public List<String> getAddModules() {
+            return Collections.unmodifiableList(super.getAddModules());
+        }
+
+        @Override
+        public List<String> getLimitModules() {
+            return Collections.unmodifiableList(super.getLimitModules());
+        }
+
+        @Override
+        public List<String> getAddReads() {
+            return Collections.unmodifiableList(super.getAddReads());
+        }
+
+        @Override
+        public List<String> getAddExports() {
+            return Collections.unmodifiableList(super.getAddExports());
+        }
+
+        @Override
         public List<CompilationCustomizer> getCompilationCustomizers() {
             return Collections.unmodifiableList(super.getCompilationCustomizers());
         }
@@ -385,6 +416,51 @@ public class CompilerConfiguration {
 
         @Override
         public void setClasspathList(final List<String> parts) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public void setModulePath(final String modulePath) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public void setModulePathList(final List<String> parts) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public void setUpgradeModulePath(final String upgradeModulePath) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public void setUpgradeModulePathList(final List<String> parts) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public void setModuleVersion(final String moduleVersion) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public void setAddModules(final List<String> addModules) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public void setLimitModules(final List<String> limitModules) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public void setAddReads(final List<String> addReads) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public void setAddExports(final List<String> addExports) {
             throw new UnsupportedOperationException();
         }
 
@@ -559,6 +635,41 @@ public class CompilerConfiguration {
      * Classpath for use during compilation.
      */
     private List<String> classpath;
+
+    /**
+     * Application module path ({@code --module-path} / {@code -p}) for JPMS compilation (JEP 261).
+     */
+    private List<String> modulePath;
+
+    /**
+     * Upgrade module path ({@code --upgrade-module-path}) for JPMS compilation (JEP 261).
+     */
+    private List<String> upgradeModulePath;
+
+    /**
+     * Optional version recorded on a compiled module descriptor ({@code --module-version}, JEP 261).
+     */
+    private String moduleVersion;
+
+    /**
+     * Additional root modules ({@code --add-modules}, JEP 261).
+     */
+    private List<String> addModules;
+
+    /**
+     * Observable module universe restriction ({@code --limit-modules}, JEP 261).
+     */
+    private List<String> limitModules;
+
+    /**
+     * Additional compile-time readability edges ({@code --add-reads}, JEP 261).
+     */
+    private List<String> addReads;
+
+    /**
+     * Additional compile-time package exports ({@code --add-exports}, JEP 261 / JEP 396 / JEP 403).
+     */
+    private List<String> addExports;
 
     /**
      * If true, the compiler should produce action information.
@@ -744,6 +855,12 @@ public class CompilerConfiguration {
      */
     public CompilerConfiguration() {
         classpath = new LinkedList<>();
+        modulePath = new LinkedList<>();
+        upgradeModulePath = new LinkedList<>();
+        addModules = new LinkedList<>();
+        limitModules = new LinkedList<>();
+        addReads = new LinkedList<>();
+        addExports = new LinkedList<>();
 
         tolerance = DEFAULT_TOLERANCE;
         minimumRecompilationInterval = 100;
@@ -826,6 +943,13 @@ public class CompilerConfiguration {
         setWarningLevel(configuration.getWarningLevel());
         setTargetDirectory(configuration.getTargetDirectory());
         setClasspathList(configuration.getClasspath());
+        setModulePathList(configuration.getModulePath());
+        setUpgradeModulePathList(configuration.getUpgradeModulePath());
+        setModuleVersion(configuration.getModuleVersion());
+        setAddModules(configuration.getAddModules());
+        setLimitModules(configuration.getLimitModules());
+        setAddReads(configuration.getAddReads());
+        setAddExports(configuration.getAddExports());
         setVerbose(configuration.getVerbose());
         setDebug(configuration.getDebug());
         setParameters(configuration.getParameters());
@@ -1291,6 +1415,170 @@ public class CompilerConfiguration {
      */
     public void setClasspathList(final List<String> parts) {
         this.classpath = new LinkedList<>(parts);
+    }
+
+    /**
+     * Returns the JPMS application module path ({@code --module-path} / {@code -p}).
+     *
+     * @return the module path entries
+     * @since 7.0.0
+     */
+    public List<String> getModulePath() {
+        return this.modulePath;
+    }
+
+    /**
+     * Sets the JPMS application module path from a {@link File#pathSeparator}-delimited string.
+     *
+     * @param modulePath path-separator-delimited module path entries, or {@code null} to clear
+     * @since 7.0.0
+     */
+    public void setModulePath(final String modulePath) {
+        this.modulePath = new LinkedList<>(ModuleOptions.splitPath(modulePath));
+    }
+
+    /**
+     * Sets the JPMS application module path from a list of entries.
+     *
+     * @param parts list of module path entries, or {@code null} to clear
+     * @since 7.0.0
+     */
+    public void setModulePathList(final List<String> parts) {
+        this.modulePath = parts == null ? new LinkedList<>() : new LinkedList<>(parts);
+    }
+
+    /**
+     * Returns the JPMS upgrade module path ({@code --upgrade-module-path}).
+     *
+     * @return the upgrade module path entries
+     * @since 7.0.0
+     */
+    public List<String> getUpgradeModulePath() {
+        return this.upgradeModulePath;
+    }
+
+    /**
+     * Sets the JPMS upgrade module path from a {@link File#pathSeparator}-delimited string.
+     *
+     * @param upgradeModulePath path-separator-delimited upgrade module path entries, or {@code null} to clear
+     * @since 7.0.0
+     */
+    public void setUpgradeModulePath(final String upgradeModulePath) {
+        this.upgradeModulePath = new LinkedList<>(ModuleOptions.splitPath(upgradeModulePath));
+    }
+
+    /**
+     * Sets the JPMS upgrade module path from a list of entries.
+     *
+     * @param parts list of upgrade module path entries, or {@code null} to clear
+     * @since 7.0.0
+     */
+    public void setUpgradeModulePathList(final List<String> parts) {
+        this.upgradeModulePath = parts == null ? new LinkedList<>() : new LinkedList<>(parts);
+    }
+
+    /**
+     * Returns the version recorded on a compiled module descriptor ({@code --module-version}),
+     * or {@code null} when unset.
+     *
+     * @return the module version string, or {@code null}
+     * @since 7.0.0
+     */
+    public String getModuleVersion() {
+        return this.moduleVersion;
+    }
+
+    /**
+     * Sets the version recorded on a compiled module descriptor ({@code --module-version}).
+     *
+     * @param moduleVersion a valid JPMS module version string, or {@code null}
+     * @since 7.0.0
+     */
+    public void setModuleVersion(final String moduleVersion) {
+        this.moduleVersion = moduleVersion;
+    }
+
+    /**
+     * Returns additional root modules ({@code --add-modules}).
+     *
+     * @return additional root module names
+     * @since 7.0.0
+     */
+    public List<String> getAddModules() {
+        return this.addModules;
+    }
+
+    /**
+     * Sets additional root modules ({@code --add-modules}).
+     *
+     * @param addModules module names (including {@code ALL-DEFAULT}, {@code ALL-SYSTEM}, and {@code ALL-MODULE-PATH}), or {@code null} to clear
+     * @since 7.0.0
+     */
+    public void setAddModules(final List<String> addModules) {
+        this.addModules = addModules == null ? new LinkedList<>() : new LinkedList<>(addModules);
+    }
+
+    /**
+     * Returns the observable module universe limit ({@code --limit-modules}).
+     *
+     * @return module names limiting observable modules
+     * @since 7.0.0
+     */
+    public List<String> getLimitModules() {
+        return this.limitModules;
+    }
+
+    /**
+     * Sets the observable module universe limit ({@code --limit-modules}).
+     *
+     * @param limitModules module names limiting observable modules, or {@code null} to clear
+     * @since 7.0.0
+     */
+    public void setLimitModules(final List<String> limitModules) {
+        this.limitModules = limitModules == null ? new LinkedList<>() : new LinkedList<>(limitModules);
+    }
+
+    /**
+     * Returns additional compile-time readability specifications ({@code --add-reads}).
+     * Each entry has the JEP 261 form {@code <source-module>=<target-module>(,<target-module>)*}.
+     *
+     * @return {@code --add-reads} specifications
+     * @since 7.0.0
+     */
+    public List<String> getAddReads() {
+        return this.addReads;
+    }
+
+    /**
+     * Sets additional compile-time readability specifications ({@code --add-reads}).
+     *
+     * @param addReads specifications of the form {@code <source>=<target>(,<target>)*}, or {@code null} to clear
+     * @since 7.0.0
+     */
+    public void setAddReads(final List<String> addReads) {
+        this.addReads = addReads == null ? new LinkedList<>() : new LinkedList<>(addReads);
+    }
+
+    /**
+     * Returns additional compile-time package export specifications ({@code --add-exports}).
+     * Each entry has the JEP 261 form {@code <source-module>/<package>=<target-module>(,<target-module>)*},
+     * where {@code <target-module>} may be {@code ALL-UNNAMED}.
+     *
+     * @return {@code --add-exports} specifications
+     * @since 7.0.0
+     */
+    public List<String> getAddExports() {
+        return this.addExports;
+    }
+
+    /**
+     * Sets additional compile-time package export specifications ({@code --add-exports}).
+     *
+     * @param addExports specifications of the form {@code <source>/<package>=<target>(,<target>)*}, or {@code null} to clear
+     * @since 7.0.0
+     */
+    public void setAddExports(final List<String> addExports) {
+        this.addExports = addExports == null ? new LinkedList<>() : new LinkedList<>(addExports);
     }
 
     /**

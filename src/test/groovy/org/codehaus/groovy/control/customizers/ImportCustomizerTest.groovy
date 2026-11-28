@@ -19,8 +19,11 @@
 package org.codehaus.groovy.control.customizers
 
 import org.codehaus.groovy.control.CompilerConfiguration
+import org.codehaus.groovy.control.MultipleCompilationErrorsException
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+
+import static org.junit.jupiter.api.Assertions.assertThrows
 
 /**
  * Tests for {@link ImportCustomizer}.
@@ -200,6 +203,40 @@ final class ImportCustomizerTest {
         // java.sql requires transitive java.logging
         shell.evaluate('assert Logger.name == "java.util.logging.Logger"')
         // no exception means success
+    }
+
+    @Test
+    void testAddModuleImportShadowingAndAmbiguity() {
+        // Star import (source or customizer) shadows customizer module import per JLS §6.4.1
+        importCustomizer.addModuleImports('java.desktop')
+        def shell = new GroovyShell(configuration)
+        shell.evaluate('assert List.name == "java.awt.List"')
+        shell.evaluate('''
+            import java.util.*
+            assert List.name == "java.util.List"
+        ''')
+
+        def starConfig = new CompilerConfiguration()
+        starConfig.addCompilationCustomizers(new ImportCustomizer()
+                .addStarImports('java.util')
+                .addModuleImports('java.desktop', 'java.desktop'))
+        new GroovyShell(starConfig).evaluate('assert List.name == "java.util.List"')
+
+        // Ambiguous simple name across two customizer module imports fails with ambiguity error
+        def ambigConfig = new CompilerConfiguration()
+        ambigConfig.addCompilationCustomizers(new ImportCustomizer().addModuleImports('java.base', 'java.desktop'))
+        def err = assertThrows(MultipleCompilationErrorsException) {
+            new GroovyShell(ambigConfig).evaluate('List x = null')
+        }
+        assert err.message.contains('ambiguous')
+
+        // Unknown module name added via customizer is reported during semantic analysis
+        def unknownConfig = new CompilerConfiguration()
+        unknownConfig.addCompilationCustomizers(new ImportCustomizer().addModuleImports('no.such.mod'))
+        def unknownErr = assertThrows(MultipleCompilationErrorsException) {
+            new GroovyShell(unknownConfig).evaluate('1 + 1')
+        }
+        assert unknownErr.message.contains('Unknown module: no.such.mod')
     }
 
     //--------------------------------------------------------------------------

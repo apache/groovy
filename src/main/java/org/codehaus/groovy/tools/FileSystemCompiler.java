@@ -491,6 +491,27 @@ public class FileSystemCompiler {
         @Option(names = {"-cp", "-classpath", "--classpath"}, paramLabel = "<path>", description = "Specify where to find the class files - must be first argument")
         private String classpath;
 
+        @Option(names = {"-p", "--module-path"}, paramLabel = "<path>", description = "Specify where to find application modules")
+        private String modulePath;
+
+        @Option(names = {"--upgrade-module-path"}, paramLabel = "<path>", description = "Override location of upgradeable modules")
+        private String upgradeModulePath;
+
+        @Option(names = {"--module-version"}, paramLabel = "<version>", description = "Specify version of modules that are being compiled")
+        private String moduleVersion;
+
+        @Option(names = {"--add-modules"}, paramLabel = "<module>(,<module>)*", split = ",", description = "Root modules to resolve in addition to the initial modules (supports ALL-DEFAULT, ALL-SYSTEM, ALL-MODULE-PATH)")
+        private List<String> addModules;
+
+        @Option(names = {"--limit-modules"}, paramLabel = "<module>(,<module>)*", split = ",", description = "Limit the universe of observable modules")
+        private List<String> limitModules;
+
+        @Option(names = {"--add-reads"}, paramLabel = "<module>=<target-module>(,<target-module>)*", description = "Specify additional modules to be considered as required by a given module (supports ALL-UNNAMED)")
+        private List<String> addReads;
+
+        @Option(names = {"--add-exports"}, paramLabel = "<module>/<package>=<target-module>(,<target-module>)*", description = "Specify a package to be considered as exported from its defining module to additional modules (supports ALL-UNNAMED)")
+        private List<String> addExports;
+
         @Option(names = {"-sourcepath", "--sourcepath"}, paramLabel = "<path>", description = "Specify where to find the source files")
         private File sourcepath;
 
@@ -580,6 +601,27 @@ public class FileSystemCompiler {
 
             if (classpath != null) {
                 configuration.setClasspath(classpath);
+            }
+            if (modulePath != null) {
+                configuration.setModulePath(modulePath);
+            }
+            if (upgradeModulePath != null) {
+                configuration.setUpgradeModulePath(upgradeModulePath);
+            }
+            if (moduleVersion != null) {
+                configuration.setModuleVersion(moduleVersion);
+            }
+            if (addModules != null) {
+                configuration.setAddModules(addModules);
+            }
+            if (limitModules != null) {
+                configuration.setLimitModules(limitModules);
+            }
+            if (addReads != null) {
+                configuration.setAddReads(addReads);
+            }
+            if (addExports != null) {
+                configuration.setAddExports(addExports);
             }
 
             if (targetDir != null && !targetDir.getName().isEmpty()) {

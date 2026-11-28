@@ -34,8 +34,10 @@ import org.junit.jupiter.api.io.TempDir;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.StringWriter;
 import java.io.Writer;
+import java.lang.module.ModuleDescriptor;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -311,6 +313,50 @@ public class FileSystemCompilerTest {
             assertTrue(survivor.exists(), "linked-to file must survive");
         } finally {
             FileSystemCompiler.deleteRecursive(base);
+        }
+    }
+
+    @Test // GROOVY-9273
+    public void testJpmsCommandLineOptions(@TempDir Path dir) throws Exception {
+        FileSystemCompiler.CompilationOptions options = new FileSystemCompiler.CompilationOptions();
+        FileSystemCompiler.configureParser(options).parseArgs(
+                "-p", "mods1" + File.pathSeparator + "mods2",
+                "--upgrade-module-path", "upgrades",
+                "--module-version", "1.5.0",
+                "--add-modules", "java.sql,ALL-MODULE-PATH",
+                "--limit-modules", "java.base",
+                "--add-reads", "demo.cli=java.sql",
+                "--add-exports", "java.base/sun.security.util=demo.cli"
+        );
+        CompilerConfiguration cfg = options.toCompilerConfiguration();
+        assertEquals(List.of("mods1", "mods2"), cfg.getModulePath());
+        assertEquals(List.of("upgrades"), cfg.getUpgradeModulePath());
+        assertEquals("1.5.0", cfg.getModuleVersion());
+        assertEquals(List.of("java.sql", "ALL-MODULE-PATH"), cfg.getAddModules());
+        assertEquals(List.of("java.base"), cfg.getLimitModules());
+        assertEquals(List.of("demo.cli=java.sql"), cfg.getAddReads());
+        assertEquals(List.of("java.base/sun.security.util=demo.cli"), cfg.getAddExports());
+
+        // End-to-end groovyc compile with --module-version and --add-reads
+        Path srcDir = Files.createDirectory(dir.resolve("src"));
+        Path outDir = Files.createDirectory(dir.resolve("out"));
+        Path modInfo = srcDir.resolve("module-info.groovy");
+        Path appSrc = srcDir.resolve("App.groovy");
+        Files.writeString(modInfo, "module demo.cli { exports demo.cli; }\n", StandardCharsets.UTF_8);
+        Files.writeString(appSrc, "package demo.cli\nclass App { java.sql.Driver d }\n", StandardCharsets.UTF_8);
+
+        FileSystemCompiler.commandLineCompile(new String[] {
+                "--module-version", "1.5.0",
+                "--add-reads", "demo.cli=java.sql",
+                "-d", outDir.toString(),
+                modInfo.toString(),
+                appSrc.toString()
+        });
+        assertTrue(Files.isRegularFile(outDir.resolve("module-info.class")));
+        try (InputStream in = Files.newInputStream(outDir.resolve("module-info.class"))) {
+            ModuleDescriptor descriptor = ModuleDescriptor.read(in);
+            assertEquals("demo.cli", descriptor.name());
+            assertEquals("1.5.0", descriptor.rawVersion().orElse(null));
         }
     }
 

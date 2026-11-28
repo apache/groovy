@@ -18,7 +18,9 @@
  */
 package org.codehaus.groovy.ast;
 
+import groovy.transform.Internal;
 import groovy.transform.NoScript;
+import org.apache.groovy.ast.ModuleInfoNode;
 import org.apache.groovy.ast.tools.ClassNodeUtils;
 import org.codehaus.groovy.ast.expr.BinaryExpression;
 import org.codehaus.groovy.ast.expr.ConstructorCallExpression;
@@ -78,9 +80,15 @@ public class ModuleNode extends ASTNode {
     private final List<ImportNode> imports = new ArrayList<>();
     private final List<ImportNode> starImports = new ArrayList<>();
     private final List<ImportNode> moduleStarImports = new ArrayList<>();
+    private final List<ImportNode> moduleImports = new ArrayList<>();
     private final Map<String, ImportNode> staticImports = new LinkedHashMap<>();
     private final Map<String, ImportNode> staticStarImports = new LinkedHashMap<>();
     private CompileUnit unit;
+    /**
+     * JPMS module declaration parsed from this source, adopted by {@link CompileUnit}
+     * when the module is added. Not the source unit itself.
+     */
+    private ModuleInfoNode moduleDeclaration;
     private PackageNode packageNode;
     private String description;
     private boolean createClassForStatements = true;
@@ -293,6 +301,32 @@ public class ModuleNode extends ASTNode {
         moduleStarImports.add(importNode);
 
         storeLastAddedImportNode(importNode);
+    }
+
+    /**
+     * Records an {@code import module <name>} declaration with its source location
+     * so semantic analysis can verify named-module readability and expand
+     * qualified or self-module exports (JLS §7.5.5 / JEP 511).
+     *
+     * @param importNode an {@link ImportNode} whose package name carries the imported module name
+     * @since 7.0.0
+     */
+    @Internal
+    public void addModuleImport(final ImportNode importNode) {
+        if (importNode != null) {
+            moduleImports.add(importNode);
+        }
+    }
+
+    /**
+     * Returns {@code import module} declarations recorded in this source unit.
+     *
+     * @return unmodifiable list of module import nodes
+     * @since 7.0.0
+     */
+    @Internal
+    public List<ImportNode> getModuleImports() {
+        return Collections.unmodifiableList(moduleImports);
     }
 
     /**
@@ -535,6 +569,80 @@ public class ModuleNode extends ASTNode {
 
     void setUnit(final CompileUnit unit) {
         this.unit = unit;
+    }
+
+    /**
+     * The JPMS module declaration parsed from this source, or {@code null}.
+     * {@link CompileUnit} adopts this when the module is added. A compilation
+     * looks the declaration up on the compile unit, not on this source unit.
+     *
+     * @return the declaration parsed from this source, or {@code null}
+     * @since 7.0.0
+     */
+    public ModuleInfoNode getModuleDeclaration() {
+        return moduleDeclaration;
+    }
+
+    /**
+     * Records the JPMS module declaration parsed from this source.
+     * When this module already belongs to a compile unit, the declaration is
+     * adopted or rejected there. A rejected declaration is not left on this
+     * module, so a later conflict is not dropped.
+     *
+     * @param moduleDeclaration the declaration, or {@code null}
+     * @since 7.0.0
+     */
+    public void setModuleDeclaration(final ModuleInfoNode moduleDeclaration) {
+        if (this.moduleDeclaration == moduleDeclaration) {
+            attachModuleDeclaration(moduleDeclaration);
+            return;
+        }
+        ModuleInfoNode previous = this.moduleDeclaration;
+        // Leave the previous declaration attached until adoption succeeds.
+        // Detaching it first hides the owner, and a rejection then restores null.
+        this.moduleDeclaration = moduleDeclaration;
+        attachModuleDeclaration(moduleDeclaration);
+        if (unit == null) {
+            detachModuleDeclaration(previous);
+            return;
+        }
+        unit.setModuleInfo(moduleDeclaration);
+        if (unit.getModuleInfo() == moduleDeclaration) {
+            detachModuleDeclaration(previous);
+            return;
+        }
+        // Rejected. rejectModuleInfo restores the accepted declaration when this
+        // module owns it. A leftover rejected instance would make a later call
+        // with the same instance look unchanged and drop the conflict.
+        detachModuleDeclaration(moduleDeclaration);
+        if (unit.getModuleInfo() == previous && this.moduleDeclaration != previous) {
+            this.moduleDeclaration = previous;
+            attachModuleDeclaration(previous);
+        }
+    }
+
+    /**
+     * Replaces the declaration without asking the compile unit to adopt it.
+     * Used when a rejected declaration is cleared or the accepted one is restored.
+     */
+    void replaceModuleDeclaration(final ModuleInfoNode moduleDeclaration) {
+        if (this.moduleDeclaration != moduleDeclaration) {
+            detachModuleDeclaration(this.moduleDeclaration);
+        }
+        this.moduleDeclaration = moduleDeclaration;
+        attachModuleDeclaration(moduleDeclaration);
+    }
+
+    private void attachModuleDeclaration(final ModuleInfoNode moduleDeclaration) {
+        if (moduleDeclaration != null) {
+            moduleDeclaration.setSourceModule(this);
+        }
+    }
+
+    private void detachModuleDeclaration(final ModuleInfoNode moduleDeclaration) {
+        if (moduleDeclaration != null && moduleDeclaration.getSourceModule() == this) {
+            moduleDeclaration.setSourceModule(null);
+        }
     }
 
     /**

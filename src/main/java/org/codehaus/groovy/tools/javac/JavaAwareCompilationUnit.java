@@ -19,6 +19,7 @@
 package org.codehaus.groovy.tools.javac;
 
 import groovy.lang.GroovyClassLoader;
+import org.apache.groovy.ast.ModuleInfoNode;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.GroovyClassVisitor;
 import org.codehaus.groovy.ast.ModuleNode;
@@ -27,11 +28,14 @@ import org.codehaus.groovy.control.AnnotationConstantsVisitor;
 import org.codehaus.groovy.control.ClassNodeResolver;
 import org.codehaus.groovy.control.CompilationFailedException;
 import org.codehaus.groovy.control.CompilationUnit;
+import org.codehaus.groovy.control.CompiledClassIndex;
 import org.codehaus.groovy.control.CompilePhase;
 import org.codehaus.groovy.control.CompilerConfiguration;
+import org.codehaus.groovy.control.MultipleCompilationErrorsException;
 import org.codehaus.groovy.control.Phases;
 import org.codehaus.groovy.control.ResolveVisitor;
 import org.codehaus.groovy.control.SourceUnit;
+import org.codehaus.groovy.control.messages.Message;
 import org.codehaus.groovy.control.messages.SimpleMessage;
 import org.codehaus.groovy.control.messages.WarningMessage;
 import org.codehaus.groovy.tools.GroovyClass;
@@ -41,11 +45,18 @@ import org.codehaus.groovy.transform.ASTTransformationVisitor;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.net.URL;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.attribute.BasicFileAttributes;
+import java.nio.file.attribute.FileTime;
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Stream;
 
 import static org.codehaus.groovy.control.CompilerConfiguration.MEM_STUB;
 
@@ -165,7 +176,9 @@ public class JavaAwareCompilationUnit extends CompilationUnit {
 
         addPhaseOperation((final SourceUnit source, final GeneratorContext context, final ClassNode classNode) -> {
             try {
-                if (!javaSources.isEmpty()) stubGenerator.generateClass(classNode);
+                if (!javaSources.isEmpty()) {
+                    stubGenerator.generateClass(classNode);
+                }
             } catch (FileNotFoundException fnfe) {
                 source.addException(fnfe);
             }
@@ -194,7 +207,17 @@ public class JavaAwareCompilationUnit extends CompilationUnit {
                             "memClassOutput requires the default javac joint compiler", this));
                 }
                 addJavaCompilationUnits(stubGenerator.getJavaStubCompilationUnitSet()); // add java stubs
+                getCompiledClasses().clear();
+                // JavacJavaCompiler records exact emitted class names through its
+                // JavaFileManager; only a custom JavaCompiler falls back to diffing
+                // newly written class files in the target directory.
+                Map<String, ClassFileStamp> before = compiler instanceof JavacJavaCompiler
+                        ? null
+                        : snapshotTargetClassFiles();
                 compiler.compile(new ArrayList<>(javaSources), this);
+                if (before != null && getCompiledClasses().isEmpty()) {
+                    indexWrittenClassFiles(before);
+                }
                 warnIfShadowed();
             } finally {
                 if (!keepStubs) stubGenerator.clean();
@@ -379,10 +402,106 @@ public class JavaAwareCompilationUnit extends CompilationUnit {
     }
 
     private void addJavaOrGroovySource(final File file) {
-        if (file.getName().endsWith(".java")) {
+        // module-info.java is a modular compilation unit (JLS §7.3). Routing it
+        // to javac would put the joint compilation in single-module mode, where
+        // the unnamed classpath (Groovy stubs and the runtime) is unreadable.
+        // Groovy parses and emits module-info; javac compiles the sibling .java files.
+        if (ModuleInfoNode.isModuleInfoSource(file)) {
+            addSource(file);
+        } else if (file.getName().endsWith(".java")) {
             addJavaSource(file);
         } else {
             addSource(file);
+        }
+    }
+
+    private Map<String, ClassFileStamp> snapshotTargetClassFiles() {
+        File targetDir = this.configuration.getTargetDirectory();
+        try {
+            return snapshotClassFiles(targetDir);
+        } catch (IOException e) {
+            throw failIndexing(targetDir, e);
+        }
+    }
+
+    private void indexWrittenClassFiles(final Map<String, ClassFileStamp> before) {
+        File targetDir = this.configuration.getTargetDirectory();
+        Map<String, ClassFileStamp> after;
+        try {
+            after = snapshotClassFiles(targetDir);
+        } catch (IOException e) {
+            throw failIndexing(targetDir, e);
+        }
+        CompiledClassIndex index = getCompiledClasses();
+        for (Map.Entry<String, ClassFileStamp> entry : after.entrySet()) {
+            String relative = entry.getKey();
+            ClassFileStamp previous = before.get(relative);
+            if (previous == null || !previous.sameAs(entry.getValue())) {
+                index.add(relative.substring(0, relative.length() - 6).replace('/', '.'));
+            }
+        }
+    }
+
+    private Map<String, ClassFileStamp> snapshotClassFiles(final File targetDir) throws IOException {
+        Map<String, ClassFileStamp> stamps = new LinkedHashMap<>();
+        if (targetDir == null || !targetDir.isDirectory()) {
+            return stamps;
+        }
+        Path root = targetDir.toPath();
+        try (Stream<Path> paths = Files.walk(root)) {
+            paths.filter(Files::isRegularFile).forEach(path -> {
+                String relative = root.relativize(path).toString().replace(File.separatorChar, '/');
+                if (!relative.endsWith(".class")) {
+                    return;
+                }
+                try {
+                    stamps.put(relative, ClassFileStamp.of(path));
+                } catch (IOException e) {
+                    throw new UncheckedIOException(e);
+                }
+            });
+        } catch (UncheckedIOException e) {
+            throw e.getCause();
+        }
+        return stamps;
+    }
+
+    private MultipleCompilationErrorsException failIndexing(final File targetDir, final IOException e) {
+        String detail = e.getMessage() == null || e.getMessage().isBlank() ? e.getClass().getSimpleName() : e.getMessage();
+        getErrorCollector().addErrorAndContinue(Message.create(
+                "Failed to index class files in " + targetDir + " for joint compilation: " + detail, this));
+        return new MultipleCompilationErrorsException(getErrorCollector());
+    }
+
+    /**
+     * Identity of a class file used by the fallback scanner for custom {@link JavaCompiler}
+     * implementations that write directly to the target directory without populating
+     * {@link CompiledClassIndex}.
+     */
+    private static final class ClassFileStamp {
+        private final long size;
+        private final FileTime lastModified;
+        private final Object fileKey;
+
+        private ClassFileStamp(final long size, final FileTime lastModified, final Object fileKey) {
+            this.size = size;
+            this.lastModified = lastModified;
+            this.fileKey = fileKey;
+        }
+
+        static ClassFileStamp of(final Path path) throws IOException {
+            BasicFileAttributes attributes = Files.readAttributes(path, BasicFileAttributes.class);
+            return new ClassFileStamp(attributes.size(), attributes.lastModifiedTime(), attributes.fileKey());
+        }
+
+        boolean sameAs(final ClassFileStamp other) {
+            if (size != other.size || !lastModified.equals(other.lastModified)) {
+                return false;
+            }
+            if (fileKey != null && other.fileKey != null) {
+                return fileKey.equals(other.fileKey);
+            }
+            return true;
         }
     }
 
