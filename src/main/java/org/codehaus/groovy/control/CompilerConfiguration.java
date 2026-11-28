@@ -175,7 +175,10 @@ public class CompilerConfiguration {
 
     /**
      * System-property name for the GEP-27 incubating option that automatically packs provably-safe
-     * {@code @CompileStatic} closures (hoisting their bodies to a shared adapter instead of a class).
+     * closures (hoisting their bodies to a shared adapter instead of a class): under
+     * {@code @CompileStatic}, those the type checker resolved without a delegate; under dynamic
+     * compilation, those whose body has no free name (no implicit-{@code this} call and no name
+     * other than a parameter or local variable), which no delegate can affect.
      * Incubating: this switch may change or be removed until the feature graduates.
      */
     @Incubating
